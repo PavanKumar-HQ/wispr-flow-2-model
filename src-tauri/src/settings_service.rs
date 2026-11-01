@@ -8,16 +8,17 @@ pub struct AppSettings {
     pub default_model_id: String,
     pub language: String, // "auto", "en", "hi", etc.
     pub shortcut: String, // e.g., "CommandOrControl+Shift+Space"
+    pub insertion_policy: String, // "original_destination" or "active_at_stop"
     pub spoken_punctuation: bool,
     pub conservative_filler_removal: bool,
     pub auto_capitalization: bool,
     pub retain_history: bool,
     pub play_sound_effects: bool,
+    pub max_duration_secs: u32,
 }
 
 impl Default for AppSettings {
     fn default() -> Self {
-        // Find if a valid downloaded model exists; otherwise default to whisper-small for fresh installs
         let installed = dirs::data_local_dir()
             .map(|d| d.join("VoxQuest").join("models"))
             .unwrap_or_else(|| PathBuf::from("."));
@@ -36,11 +37,13 @@ impl Default for AppSettings {
             default_model_id: initial_model,
             language: "auto".to_string(),
             shortcut: "CommandOrControl+Shift+Space".to_string(),
+            insertion_policy: "original_destination".to_string(),
             spoken_punctuation: true,
             conservative_filler_removal: false,
             auto_capitalization: true,
             retain_history: true,
             play_sound_effects: true,
+            max_duration_secs: 180, // 3 minutes limit with safety cutoff
         }
     }
 }
@@ -69,4 +72,3 @@ pub fn save_settings(settings: &AppSettings) -> Result<(), String> {
     fs::write(path, content).map_err(|e| format!("Failed to write settings file: {}", e))?;
     Ok(())
 }
-

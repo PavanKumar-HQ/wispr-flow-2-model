@@ -7,17 +7,26 @@ mod pipeline_tests {
     use crate::history_service::HistoryDatabase;
     use crate::settings_service::AppSettings;
     use crate::safety_service::TargetSnapshot;
-    use crate::commands::DictationStatus;
+
+    use crate::session_state::{SessionState, SessionSnapshot};
 
     #[test]
     fn test_duplicate_shortcut_event_prevention() {
-        // State machine must ignore double triggers or prevent overlapping recordings
         let audio = Arc::new(Mutex::new(AudioCaptureService::new()));
         let whisper = Arc::new(Mutex::new(WhisperEngine::new()));
         let history = Arc::new(HistoryDatabase::new().unwrap());
         let settings = Arc::new(Mutex::new(AppSettings::default()));
         let active_target = Arc::new(Mutex::new(None));
         let recording_start = Arc::new(Mutex::new(None));
+        let active_session = Arc::new(Mutex::new(SessionSnapshot {
+            session_id: "test-sess-1".to_string(),
+            state: SessionState::Idle,
+            message: Some("Ready".to_string()),
+            elapsed_seconds: 0.0,
+            last_transcript: None,
+            target_app: None,
+            recovery_id: None,
+        }));
 
         let state = AppState {
             audio,
@@ -26,6 +35,7 @@ mod pipeline_tests {
             settings,
             active_target,
             recording_start,
+            active_session,
         };
 
         // When recording is already in progress, audio.start_recording() returns Err
@@ -34,41 +44,17 @@ mod pipeline_tests {
             assert!(!a.is_recording());
         }
 
-        // Test state transitions
-        let initial_status = DictationStatus {
-            state: "idle".to_string(),
-            message: Some("Ready".to_string()),
-            last_transcript: None,
-        };
-        assert_eq!(initial_status.state, "idle");
-
-        let recording_status = DictationStatus {
-            state: "recording".to_string(),
-            message: Some("Listening".to_string()),
-            last_transcript: None,
-        };
-        assert_eq!(recording_status.state, "recording");
-
-        let transcribing_status = DictationStatus {
-            state: "transcribing".to_string(),
-            message: Some("Inferring".to_string()),
-            last_transcript: None,
-        };
-        assert_eq!(transcribing_status.state, "transcribing");
-
-        let success_status = DictationStatus {
-            state: "success".to_string(),
-            message: Some("Inserted".to_string()),
-            last_transcript: Some("Hello world".to_string()),
-        };
-        assert_eq!(success_status.state, "success");
-
-        let recovery_warning_status = DictationStatus {
-            state: "warning".to_string(),
-            message: Some("Target changed. Preserved in history".to_string()),
-            last_transcript: Some("Recovered speech".to_string()),
-        };
-        assert_eq!(recovery_warning_status.state, "warning");
+        // Test explicit state transitions
+        assert!(SessionState::Idle.can_transition_to(SessionState::Starting));
+        assert!(SessionState::Starting.can_transition_to(SessionState::Recording));
+        assert!(SessionState::Recording.can_transition_to(SessionState::Stopping));
+        assert!(SessionState::Stopping.can_transition_to(SessionState::Transcribing));
+        assert!(SessionState::Transcribing.can_transition_to(SessionState::Inserting));
+        assert!(SessionState::Transcribing.can_transition_to(SessionState::RecoveryRequired));
+        assert!(SessionState::Inserting.can_transition_to(SessionState::Completed));
+        assert!(SessionState::Recording.can_transition_to(SessionState::Cancelled));
+        // Overlapping transition cannot be starting again from active
+        assert!(!SessionState::Recording.can_transition_to(SessionState::Starting));
     }
 
     #[test]
@@ -77,23 +63,25 @@ mod pipeline_tests {
         let target_snapshot = TargetSnapshot {
             timestamp_ms: 1000,
             platform_app_id: Some("TargetApp".to_string()),
+            app_pid: Some(1111),
             window_title: Some("Doc1".to_string()),
+            is_secure_input: false,
         };
 
-        // Simulate destination revalidation failure
-        let is_safe = target_snapshot.is_destination_match(Some("DifferentAppSwitchedByUser"), Some("Other"));
+        // Simulate destination revalidation failure when user switched apps
+        let is_safe = target_snapshot.is_destination_match(Some("DifferentAppSwitchedByUser"), Some(2222), Some("Other"));
         assert!(!is_safe);
 
-        // When safe insertion fails, status becomes preserved_for_recovery
-        let insertion_status = if is_safe { "inserted" } else { "preserved_for_recovery" };
-        assert_eq!(insertion_status, "preserved_for_recovery");
+        // When safe insertion fails, status becomes preserved_for_recovery or recovery_required
+        let insertion_status = if is_safe { "inserted" } else { "recovery_required" };
+        assert_eq!(insertion_status, "recovery_required");
 
         let transcript = "Critical user dictation that must never be lost";
         let rec_id = history.insert_record(transcript, transcript, 1.8, insertion_status, Some("TargetApp")).unwrap();
 
         let records = history.list_records(5).unwrap();
         let rec = records.iter().find(|r| r.id == rec_id).expect("Record must be preserved in history");
-        assert_eq!(rec.status, "preserved_for_recovery");
+        assert_eq!(rec.status, "recovery_required");
         assert_eq!(rec.formatted_text, transcript);
     }
 }

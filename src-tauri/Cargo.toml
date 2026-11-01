@@ -30,6 +30,7 @@ dirs = "7.0.0"
 whisper-rs = "0.16.0"
 tauri-plugin-global-shortcut = "2"
 hound = "3.5.1"
+uuid = { version = "1.10", features = ["v4", "fast-rng"] }
 
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration

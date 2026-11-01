@@ -1,5 +1,5 @@
 import React from 'react';
-import { Keyboard, Mic, Sliders, Shield } from 'lucide-react';
+import { Keyboard, Mic, Sliders, Shield, Target } from 'lucide-react';
 import { AppSettings } from '../types';
 
 interface SettingsTabProps {
@@ -13,7 +13,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
   devices,
   onUpdate,
 }) => {
-  const handleChange = (key: keyof AppSettings, value: any) => {
+  const handleChange = (key: keyof AppSettings, value: unknown) => {
     onUpdate({ ...settings, [key]: value });
   };
 
@@ -22,11 +22,58 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
       <div className="flex flex-col gap-1">
         <h2 className="text-lg font-bold text-vq-tealDark">Engine & Dictation Settings</h2>
         <p className="text-xs text-vq-charcoal/70">
-          Configure deterministic formatting, shortcut activations, and privacy boundaries.
+          Configure persistent multi-window recording, deterministic formatting, and safety policies.
         </p>
       </div>
 
       <div className="grid gap-5">
+        {/* Destination Policy */}
+        <div className="p-4 rounded-lg border-2 border-vq-border bg-vq-surface space-y-3">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-vq-tealDark font-mono flex items-center gap-1.5">
+            <Target className="w-3.5 h-3.5" /> Destination Resolution Policy
+          </h3>
+
+          <div className="space-y-3">
+            <label className="flex items-start gap-2.5 cursor-pointer">
+              <input
+                type="radio"
+                name="insertion_policy"
+                value="original_destination"
+                checked={settings.insertion_policy === 'original_destination'}
+                onChange={() => handleChange('insertion_policy', 'original_destination')}
+                className="mt-0.5 text-vq-tealDark focus:ring-vq-tealDark"
+              />
+              <div>
+                <span className="text-xs font-bold text-vq-charcoal">
+                  Original Destination (Safe Default)
+                </span>
+                <p className="text-[11px] text-vq-charcoal/70">
+                  Dictation is anchored to the field where you started. If you switch applications or navigate during recording, text is preserved for manual recovery rather than injected into the wrong place.
+                </p>
+              </div>
+            </label>
+
+            <label className="flex items-start gap-2.5 cursor-pointer">
+              <input
+                type="radio"
+                name="insertion_policy"
+                value="active_at_stop"
+                checked={settings.insertion_policy === 'active_at_stop'}
+                onChange={() => handleChange('insertion_policy', 'active_at_stop')}
+                className="mt-0.5 text-vq-tealDark focus:ring-vq-tealDark"
+              />
+              <div>
+                <span className="text-xs font-bold text-vq-charcoal">
+                  Active Field When Dictation Stops (Wispr-style compatibility)
+                </span>
+                <p className="text-[11px] text-vq-charcoal/70">
+                  Injects text into whichever eligible editable field is in the foreground when you finish speaking, provided it is not a password or secure field.
+                </p>
+              </div>
+            </label>
+          </div>
+        </div>
+
         {/* Shortcut and Language */}
         <div className="p-4 rounded-lg border-2 border-vq-border bg-vq-surface space-y-4">
           <h3 className="text-xs font-bold uppercase tracking-wider text-vq-tealDark font-mono flex items-center gap-1.5">
@@ -42,7 +89,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                 onChange={(e) => handleChange('shortcut', e.target.value)}
                 className="w-full px-3 py-1.5 text-xs font-mono rounded border border-vq-border bg-vq-surfaceLight focus:outline-none focus:ring-2 focus:ring-vq-tealDark"
               />
-              <span className="text-[10px] text-vq-charcoal/60">Press twice to stop & insert</span>
+              <span className="text-[10px] text-vq-charcoal/60">Toggle to start, speak naturally, toggle to insert</span>
             </div>
 
             <div className="space-y-1">
@@ -80,7 +127,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                 <option key={i} value={d}>{d}</option>
               ))}
             </select>
-            <span className="text-[10px] text-vq-charcoal/60">Microphone stream captured via native cpal runtime</span>
+            <span className="text-[10px] text-vq-charcoal/60">Continuous capture via native cpal audio stream</span>
           </div>
         </div>
 

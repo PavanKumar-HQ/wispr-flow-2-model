@@ -83,20 +83,22 @@ fn test_target_destination_safety_validation() {
     let snapshot = TargetSnapshot {
         timestamp_ms: 123456789,
         platform_app_id: Some("TextEdit".to_string()),
+        app_pid: Some(51702),
         window_title: Some("Untitled.txt".to_string()),
+        is_secure_input: false,
     };
 
-    // Safe when current matches original
-    assert!(snapshot.is_destination_match(Some("TextEdit"), Some("Untitled.txt")));
+    // Safe when current matches original app, pid, and window
+    assert!(snapshot.is_destination_match(Some("TextEdit"), Some(51702), Some("Untitled.txt")));
 
     // Unsafe when app changed (e.g. user switched to Slack or Chrome)
-    assert!(!snapshot.is_destination_match(Some("Slack"), Some("General")));
-    assert!(!snapshot.is_destination_match(Some("Google Chrome"), Some("New Tab")));
+    assert!(!snapshot.is_destination_match(Some("Slack"), Some(55555), Some("General")));
+    assert!(!snapshot.is_destination_match(Some("Google Chrome"), Some(66666), Some("New Tab")));
 
     // Unsafe if switched to VoxQuest itself
-    assert!(!snapshot.is_destination_match(Some("VoxQuest"), Some("Settings")));
-    assert!(!snapshot.is_destination_match(Some("tauri-app"), Some("tauri-app")));
+    assert!(!snapshot.is_destination_match(Some("VoxQuest"), Some(1234), Some("Settings")));
+    assert!(!snapshot.is_destination_match(Some("tauri-app"), Some(1234), Some("tauri-app")));
 
-    // Unsafe if target window title within same app changed if known
-    assert!(!snapshot.is_destination_match(Some("TextEdit"), Some("SecretCredentials.txt")));
+    // Unsafe if target window title within same app changed
+    assert!(!snapshot.is_destination_match(Some("TextEdit"), Some(51702), Some("SecretCredentials.txt")));
 }

@@ -11,7 +11,7 @@ pub struct HistoryRecord {
     pub original_text: String,
     pub formatted_text: String,
     pub duration_seconds: f32,
-    pub status: String,
+    pub status: String, // "transcription_completed", "inserted", "preserved_for_recovery", "recovery_required", "cancelled", "failed"
     pub target_app: Option<String>,
 }
 
@@ -59,6 +59,41 @@ impl HistoryDatabase {
         Ok(conn.last_insert_rowid())
     }
 
+    pub fn update_status(&self, id: i64, status: &str) -> Result<(), String> {
+        let conn = Connection::open(&self.db_path).map_err(|e| format!("DB open failed: {}", e))?;
+        conn.execute(
+            "UPDATE transcript_history SET status = ?1 WHERE id = ?2",
+            params![status, id],
+        ).map_err(|e| format!("DB update failed: {}", e))?;
+        Ok(())
+    }
+
+    pub fn get_record(&self, id: i64) -> Result<Option<HistoryRecord>, String> {
+        let conn = Connection::open(&self.db_path).map_err(|e| format!("DB open failed: {}", e))?;
+        let mut stmt = conn.prepare(
+            "SELECT id, timestamp_ms, original_text, formatted_text, duration_seconds, status, target_app
+             FROM transcript_history WHERE id = ?1"
+        ).map_err(|e| format!("DB prepare failed: {}", e))?;
+
+        let mut rows = stmt.query_map(params![id], |row| {
+            Ok(HistoryRecord {
+                id: row.get(0)?,
+                timestamp_ms: row.get(1)?,
+                original_text: row.get(2)?,
+                formatted_text: row.get(3)?,
+                duration_seconds: row.get(4)?,
+                status: row.get(5)?,
+                target_app: row.get(6)?,
+            })
+        }).map_err(|e| format!("DB query failed: {}", e))?;
+
+        if let Some(record) = rows.next() {
+            record.map(Some).map_err(|e| e.to_string())
+        } else {
+            Ok(None)
+        }
+    }
+
     pub fn list_records(&self, limit: u32) -> Result<Vec<HistoryRecord>, String> {
         let conn = Connection::open(&self.db_path).map_err(|e| format!("DB open failed: {}", e))?;
         let mut stmt = conn.prepare(
@@ -78,24 +113,26 @@ impl HistoryDatabase {
             })
         }).map_err(|e| format!("DB query execution failed: {}", e))?;
 
-        let mut list = Vec::new();
+        let mut records = Vec::new();
         for r in rows {
             if let Ok(rec) = r {
-                list.push(rec);
+                records.push(rec);
             }
         }
-        Ok(list)
-    }
-
-    pub fn clear_all(&self) -> Result<(), String> {
-        let conn = Connection::open(&self.db_path).map_err(|e| format!("DB open failed: {}", e))?;
-        conn.execute("DELETE FROM transcript_history", []).map_err(|e| format!("DB delete failed: {}", e))?;
-        Ok(())
+        Ok(records)
     }
 
     pub fn delete_record(&self, id: i64) -> Result<(), String> {
         let conn = Connection::open(&self.db_path).map_err(|e| format!("DB open failed: {}", e))?;
-        conn.execute("DELETE FROM transcript_history WHERE id = ?1", params![id]).map_err(|e| format!("DB record delete failed: {}", e))?;
+        conn.execute("DELETE FROM transcript_history WHERE id = ?1", params![id])
+            .map_err(|e| format!("Delete error: {}", e))?;
+        Ok(())
+    }
+
+    pub fn clear_all(&self) -> Result<(), String> {
+        let conn = Connection::open(&self.db_path).map_err(|e| format!("DB open failed: {}", e))?;
+        conn.execute("DELETE FROM transcript_history", [])
+            .map_err(|e| format!("Clear error: {}", e))?;
         Ok(())
     }
 }

@@ -1,22 +1,19 @@
 use std::time::Instant;
 use tauri::{AppHandle, Emitter, State};
-use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 use crate::AppState;
+use crate::audio_service::AudioCaptureService;
+use crate::session_state::{SessionState, SessionSnapshot};
 use crate::model_manifest::{self, ModelInfo};
 use crate::model_manager;
-use crate::audio_service::AudioCaptureService;
 use crate::formatter::{format_transcript, FormattingConfig};
 use crate::safety_service::{TargetSnapshot, insert_text_safely};
 use crate::history_service::HistoryRecord;
 use crate::settings_service::{save_settings, AppSettings};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct DictationStatus {
-    pub state: String, // "idle", "recording", "transcribing", "success", "error"
-    pub message: Option<String>,
-    pub last_transcript: Option<String>,
-}
+// DictationStatus alias for backward compatibility
+pub type DictationStatus = SessionSnapshot;
 
 #[tauri::command]
 pub fn get_models(state: State<'_, AppState>) -> Vec<ModelInfo> {
@@ -58,16 +55,42 @@ pub fn download_model(app: AppHandle, model_id: String) -> Result<String, String
 }
 
 #[tauri::command]
-pub fn start_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<(), String> {
+pub fn get_session_snapshot(state: State<'_, AppState>) -> SessionSnapshot {
+    let session_lock = state.active_session.lock().unwrap();
+    session_lock.clone()
+}
+
+#[tauri::command]
+pub fn start_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<SessionSnapshot, String> {
+    let mut session_lock = state.active_session.lock().unwrap();
+    if session_lock.state.is_active() {
+        return Err("A dictation session is already active".to_string());
+    }
+
+    if !session_lock.state.can_transition_to(SessionState::Starting) {
+        return Err(format!("Cannot transition from {} to starting", session_lock.state));
+    }
+
+    let session_id = Uuid::new_v4().to_string();
     let snapshot = TargetSnapshot::capture_current();
+    let target_app_name = snapshot.platform_app_id.clone();
+
+    // Store target snapshot
     {
         let mut target_lock = state.active_target.lock().unwrap();
         *target_lock = Some(snapshot);
     }
 
+    // Start physical audio recording
     {
         let mut audio = state.audio.lock().unwrap();
-        audio.start_recording()?;
+        if let Err(e) = audio.start_recording() {
+            session_lock.state = SessionState::Failed;
+            session_lock.message = Some(format!("Microphone error: {}", e));
+            let snap = session_lock.clone();
+            let _ = app.emit("dictation-session-changed", &snap);
+            return Err(e);
+        }
     }
 
     {
@@ -75,22 +98,33 @@ pub fn start_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<(),
         *start_lock = Some(Instant::now());
     }
 
-    let _ = app.emit("dictation-state-changed", DictationStatus {
-        state: "recording".to_string(),
-        message: Some("Listening naturally... Press shortcut again to complete".to_string()),
-        last_transcript: None,
-    });
+    session_lock.session_id = session_id.clone();
+    session_lock.state = SessionState::Recording;
+    session_lock.message = Some("Listening naturally across all windows... Press shortcut or click pill to finish.".to_string());
+    session_lock.elapsed_seconds = 0.0;
+    session_lock.last_transcript = None;
+    session_lock.target_app = target_app_name;
+    session_lock.recovery_id = None;
 
-    Ok(())
+    let snap = session_lock.clone();
+    let _ = app.emit("dictation-session-changed", &snap);
+
+    Ok(snap)
 }
 
 #[tauri::command]
-pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<String, String> {
-    let _ = app.emit("dictation-state-changed", DictationStatus {
-        state: "transcribing".to_string(),
-        message: Some("Processing local speech recognition...".to_string()),
-        last_transcript: None,
-    });
+pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<SessionSnapshot, String> {
+    let session_id = {
+        let mut session_lock = state.active_session.lock().unwrap();
+        if session_lock.state != SessionState::Recording {
+            return Err("Cannot stop: session is not in recording state".to_string());
+        }
+        session_lock.state = SessionState::Transcribing;
+        session_lock.message = Some("Transcribing audio locally via whisper.cpp...".to_string());
+        let snap = session_lock.clone();
+        let _ = app.emit("dictation-session-changed", &snap);
+        session_lock.session_id.clone()
+    };
 
     let audio_samples = {
         let mut audio = state.audio.lock().unwrap();
@@ -116,7 +150,12 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Stri
 
     let model_path = models_dir.join(&current_info.filename);
     if !model_path.exists() {
-        return Err(format!("Model {} is not yet downloaded. Please install it in Model Settings.", current_info.name));
+        let mut session_lock = state.active_session.lock().unwrap();
+        session_lock.state = SessionState::Failed;
+        session_lock.message = Some(format!("Model {} is not downloaded. Please install it in Model Settings.", current_info.name));
+        let snap = session_lock.clone();
+        let _ = app.emit("dictation-session-changed", &snap);
+        return Err(format!("Model {} is not installed", current_info.name));
     }
 
     {
@@ -128,7 +167,8 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Stri
 
     let raw_transcript = {
         let mut engine = state.whisper.lock().unwrap();
-        engine.transcribe(&audio_samples, Some(&settings.language))?
+        let lang = if settings.language == "auto" { None } else { Some(settings.language.as_str()) };
+        engine.transcribe(&audio_samples, lang)?
     };
 
     let fmt_cfg = FormattingConfig {
@@ -143,56 +183,159 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Stri
         t.take()
     };
 
-    let mut insertion_status = "inserted";
     let target_app_name = target_snapshot.as_ref().and_then(|s| s.platform_app_id.clone());
 
-    if let Some(ref snapshot) = target_snapshot {
-        match insert_text_safely(&formatted_transcript, snapshot) {
-            Ok(_) => {
-                insertion_status = "inserted";
+    // Evaluate destination resolution policy
+    let should_insert = if settings.insertion_policy == "active_at_stop" {
+        // Target whatever valid editable window is currently active at stop time
+        let current_snap = TargetSnapshot::capture_current();
+        !current_snap.is_secure_input
+    } else {
+        // Safe default: original destination must match
+        target_snapshot.as_ref().map(|s| s.is_destination_safe()).unwrap_or(false)
+    };
+
+    let mut record_id: Option<i64> = None;
+
+    let mut session_lock = state.active_session.lock().unwrap();
+    // Verify session ID has not been superceded
+    if session_lock.session_id != session_id {
+        return Err("Session was cancelled or superceded".to_string());
+    }
+
+    if should_insert && !formatted_transcript.trim().is_empty() {
+        session_lock.state = SessionState::Inserting;
+        let snap = session_lock.clone();
+        let _ = app.emit("dictation-session-changed", &snap);
+
+        if let Some(ref snapshot) = target_snapshot {
+            match insert_text_safely(&formatted_transcript, snapshot) {
+                Ok(_) => {
+                    if settings.retain_history {
+                        record_id = state.history.insert_record(
+                            &raw_transcript,
+                            &formatted_transcript,
+                            duration_sec,
+                            "inserted",
+                            target_app_name.as_deref(),
+                        ).ok();
+                    }
+                    session_lock.state = SessionState::Completed;
+                    session_lock.message = Some("Dictated text inserted successfully into target field.".to_string());
+                    session_lock.last_transcript = Some(formatted_transcript.clone());
+                    session_lock.recovery_id = record_id;
+                }
+                Err(e) => {
+                    eprintln!("Insertion guarded: {}", e);
+                    if settings.retain_history {
+                        record_id = state.history.insert_record(
+                            &raw_transcript,
+                            &formatted_transcript,
+                            duration_sec,
+                            "recovery_required",
+                            target_app_name.as_deref(),
+                        ).ok();
+                    }
+                    session_lock.state = SessionState::RecoveryRequired;
+                    session_lock.message = Some("Original field was unavailable. Preserved safely for one-click recovery!".to_string());
+                    session_lock.last_transcript = Some(formatted_transcript.clone());
+                    session_lock.recovery_id = record_id;
+                }
             }
-            Err(e) => {
-                eprintln!("Safe insertion guarded: {}", e);
-                insertion_status = "preserved_for_recovery";
-            }
+        }
+    } else {
+        // Destination mismatch, navigation occurred, or empty text
+        if settings.retain_history && !formatted_transcript.trim().is_empty() {
+            record_id = state.history.insert_record(
+                &raw_transcript,
+                &formatted_transcript,
+                duration_sec,
+                "recovery_required",
+                target_app_name.as_deref(),
+            ).ok();
+        }
+
+        if formatted_transcript.trim().is_empty() {
+            session_lock.state = SessionState::Completed;
+            session_lock.message = Some("Dictation was silent or had no audible speech.".to_string());
+            session_lock.last_transcript = None;
+        } else {
+            session_lock.state = SessionState::RecoveryRequired;
+            session_lock.message = Some("Destination changed during dictation. Preserved safely for manual copy or insertion.".to_string());
+            session_lock.last_transcript = Some(formatted_transcript.clone());
+            session_lock.recovery_id = record_id;
         }
     }
 
-    if settings.retain_history && !formatted_transcript.is_empty() {
-        let _ = state.history.insert_record(
-            &raw_transcript,
-            &formatted_transcript,
-            duration_sec,
-            insertion_status,
-            target_app_name.as_deref(),
-        );
-    }
+    let final_snap = session_lock.clone();
+    let _ = app.emit("dictation-session-changed", &final_snap);
 
-    let _ = app.emit("dictation-state-changed", DictationStatus {
-        state: if insertion_status == "inserted" { "success".to_string() } else { "warning".to_string() },
-        message: if insertion_status == "inserted" {
-            Some("Dictation inserted successfully!".to_string())
-        } else {
-            Some("Active window changed during speech. Preserved safely in history!".to_string())
-        },
-        last_transcript: Some(formatted_transcript.clone()),
-    });
-
-    Ok(formatted_transcript)
+    Ok(final_snap)
 }
 
 #[tauri::command]
-pub fn toggle_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<String, String> {
+pub fn cancel_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<SessionSnapshot, String> {
+    let mut session_lock = state.active_session.lock().unwrap();
+    if session_lock.state == SessionState::Recording || session_lock.state == SessionState::Starting {
+        let _ = {
+            let mut audio = state.audio.lock().unwrap();
+            if audio.is_recording() {
+                let _ = audio.stop_recording();
+            }
+        };
+
+        {
+            let mut target_lock = state.active_target.lock().unwrap();
+            *target_lock = None;
+        }
+
+        session_lock.state = SessionState::Cancelled;
+        session_lock.message = Some("Dictation session cancelled by user.".to_string());
+        session_lock.last_transcript = None;
+
+        let snap = session_lock.clone();
+        let _ = app.emit("dictation-session-changed", &snap);
+        return Ok(snap);
+    }
+
+    Ok(session_lock.clone())
+}
+
+#[tauri::command]
+pub fn retry_insertion(state: State<'_, AppState>, app: AppHandle, history_id: i64) -> Result<bool, String> {
+    let record = state.history.get_record(history_id)?
+        .ok_or_else(|| format!("History record {} not found", history_id))?;
+
+    let current_target = TargetSnapshot::capture_current();
+    if current_target.is_secure_input {
+        return Err("Cannot insert into a secure password field.".to_string());
+    }
+
+    match insert_text_safely(&record.formatted_text, &current_target) {
+        Ok(_) => {
+            let _ = state.history.update_status(history_id, "inserted_via_retry");
+            let mut session_lock = state.active_session.lock().unwrap();
+            session_lock.state = SessionState::Completed;
+            session_lock.message = Some("Text inserted via retry.".to_string());
+            let snap = session_lock.clone();
+            let _ = app.emit("dictation-session-changed", &snap);
+            Ok(true)
+        }
+        Err(e) => Err(format!("Retry insertion failed: {}", e)),
+    }
+}
+
+#[tauri::command]
+pub fn toggle_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<SessionSnapshot, String> {
     let is_rec = {
-        let audio = state.audio.lock().unwrap();
-        audio.is_recording()
+        let session_lock = state.active_session.lock().unwrap();
+        session_lock.state == SessionState::Recording
     };
 
     if is_rec {
         stop_dictation(state, app)
     } else {
-        start_dictation(state, app)?;
-        Ok("Recording started".to_string())
+        start_dictation(state, app)
     }
 }
 
@@ -218,25 +361,10 @@ pub fn get_settings(state: State<'_, AppState>) -> AppSettings {
 }
 
 #[tauri::command]
-pub fn save_settings_cmd(app: AppHandle, state: State<'_, AppState>, new_settings: AppSettings) -> Result<(), String> {
+pub fn save_settings_cmd(state: State<'_, AppState>, new_settings: AppSettings) -> Result<(), String> {
     save_settings(&new_settings)?;
     let mut s = state.settings.lock().unwrap();
-    let old_shortcut = s.shortcut.clone();
-    *s = new_settings.clone();
-
-    // Dynamically re-register global shortcut if it changed
-    if old_shortcut != new_settings.shortcut {
-        use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut};
-        if let Ok(old_sc) = old_shortcut.parse::<Shortcut>() {
-            let _ = app.global_shortcut().unregister(old_sc);
-        }
-        if let Ok(new_sc) = new_settings.shortcut.parse::<Shortcut>() {
-            if let Err(e) = app.global_shortcut().register(new_sc) {
-                eprintln!("Failed to register updated shortcut: {}", e);
-            }
-        }
-    }
-
+    *s = new_settings;
     Ok(())
 }
 
@@ -249,26 +377,25 @@ pub fn get_audio_devices() -> Result<Vec<String>, String> {
 pub fn smoke_test_transcription(state: State<'_, AppState>, model_id: String) -> Result<String, String> {
     let models_dir = model_manager::get_voxquest_models_dir();
     let manifest = model_manifest::get_official_manifest();
-    let info = manifest.iter().find(|m| m.id == model_id)
+    let info = manifest.into_iter().find(|m| m.id == model_id)
         .ok_or_else(|| format!("Unknown model: {}", model_id))?;
 
     let model_path = models_dir.join(&info.filename);
     if !model_path.exists() {
-        return Err(format!("Model file {} does not exist on disk", info.filename));
+        return Err(format!("Model file {} not found on disk. Please download it first.", info.filename));
     }
 
     let mut engine = state.whisper.lock().unwrap();
     engine.load_model(&model_path)?;
 
     let sample_rate = 16000;
-    let mut test_audio = Vec::with_capacity(sample_rate);
-    for i in 0..sample_rate {
+    let mut audio = Vec::with_capacity(sample_rate * 2);
+    for i in 0..(sample_rate * 2) {
         let t = i as f32 / sample_rate as f32;
         let sample = (2.0 * std::f32::consts::PI * 440.0 * t).sin() * 0.1;
-        test_audio.push(sample);
+        audio.push(sample);
     }
 
-    let result = engine.transcribe(&test_audio, Some("en"))?;
-    Ok(format!("Smoke test passed! Engine initialized successfully with {}. Output: '{}'", info.name, result))
+    let transcript = engine.transcribe(&audio, Some("en"))?;
+    Ok(format!("Local whisper.cpp inference successful on '{}'! Output: '{}'", info.name, transcript))
 }
-

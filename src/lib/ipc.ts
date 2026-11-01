@@ -55,11 +55,13 @@ let mockSettings: AppSettings = {
   default_model_id: 'whisper-tiny',
   language: 'auto',
   shortcut: 'CommandOrControl+Shift+Space',
+  insertion_policy: 'original_destination',
   spoken_punctuation: true,
   conservative_filler_removal: false,
   auto_capitalization: true,
   retain_history: true,
   play_sound_effects: true,
+  max_duration_secs: 180,
 };
 
 let mockHistory: HistoryRecord[] = [

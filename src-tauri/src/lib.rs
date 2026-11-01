@@ -8,7 +8,9 @@ use crate::whisper_service::WhisperEngine;
 use crate::safety_service::TargetSnapshot;
 use crate::history_service::HistoryDatabase;
 use crate::settings_service::{load_settings, AppSettings};
+use crate::session_state::{SessionState, SessionSnapshot};
 
+pub mod session_state;
 pub mod model_manifest;
 pub mod model_manager;
 pub mod audio_service;
@@ -32,6 +34,7 @@ pub struct AppState {
     pub settings: Arc<Mutex<AppSettings>>,
     pub active_target: Arc<Mutex<Option<TargetSnapshot>>>,
     pub recording_start: Arc<Mutex<Option<Instant>>>,
+    pub active_session: Arc<Mutex<SessionSnapshot>>,
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -42,6 +45,15 @@ pub fn run() {
     let whisper_engine = Arc::new(Mutex::new(WhisperEngine::new()));
     let active_target = Arc::new(Mutex::new(None));
     let recording_start = Arc::new(Mutex::new(None));
+    let active_session = Arc::new(Mutex::new(SessionSnapshot {
+        session_id: String::new(),
+        state: SessionState::Idle,
+        message: Some("Ready to dictate. Press shortcut or click pill.".to_string()),
+        elapsed_seconds: 0.0,
+        last_transcript: None,
+        target_app: None,
+        recovery_id: None,
+    }));
 
     let app_state = AppState {
         audio: Arc::clone(&audio_service),
@@ -50,6 +62,7 @@ pub fn run() {
         settings: Arc::clone(&settings),
         active_target: Arc::clone(&active_target),
         recording_start: Arc::clone(&recording_start),
+        active_session: Arc::clone(&active_session),
     };
 
     let initial_shortcut_str = {
@@ -65,7 +78,6 @@ pub fn run() {
                     if event.state == ShortcutState::Pressed {
                         let app_handle = app.clone();
                         let app_handle_inner = app.clone();
-                        // Dispatch async dictation toggle safely without blocking the hotkey hook
                         tauri::async_runtime::spawn(async move {
                             if let Some(state) = app_handle.try_state::<AppState>() {
                                 let _ = commands::toggle_dictation(state, app_handle_inner);
@@ -77,7 +89,6 @@ pub fn run() {
         )
         .manage(app_state)
         .setup(move |app| {
-            // Register global shortcut on startup
             let shortcut_res = initial_shortcut_str.parse::<Shortcut>();
             match shortcut_res {
                 Ok(sc) => {
@@ -93,7 +104,6 @@ pub fn run() {
             }
 
             // Create non-activating floating indicator window
-            // Always on top, hidden titlebar, transparent, does not steal focus
             if app.get_webview_window("floating-indicator").is_none() {
                 let _ = WebviewWindowBuilder::new(
                     app,
@@ -106,7 +116,7 @@ pub fn run() {
                 .always_on_top(true)
                 .transparent(true)
                 .skip_taskbar(true)
-                .focused(false) // Does not steal focus from the user's active editor
+                .focused(false)
                 .build();
             }
 
@@ -117,7 +127,10 @@ pub fn run() {
             commands::download_model,
             commands::start_dictation,
             commands::stop_dictation,
+            commands::cancel_dictation,
+            commands::retry_insertion,
             commands::toggle_dictation,
+            commands::get_session_snapshot,
             commands::get_history,
             commands::clear_history,
             commands::delete_history_item,

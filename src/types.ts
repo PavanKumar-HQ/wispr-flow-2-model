@@ -15,11 +15,13 @@ export interface AppSettings {
   default_model_id: string;
   language: string;
   shortcut: string;
+  insertion_policy: string; // 'original_destination' | 'active_at_stop'
   spoken_punctuation: boolean;
   conservative_filler_removal: boolean;
   auto_capitalization: boolean;
   retain_history: boolean;
   play_sound_effects: boolean;
+  max_duration_secs: number;
 }
 
 export interface HistoryRecord {
@@ -32,9 +34,27 @@ export interface HistoryRecord {
   target_app?: string | null;
 }
 
-export interface DictationStatus {
-  state: 'idle' | 'recording' | 'transcribing' | 'success' | 'warning' | 'error';
-  message?: string;
-  last_transcript?: string;
+export type SessionStateType =
+  | 'idle'
+  | 'starting'
+  | 'recording'
+  | 'stopping'
+  | 'transcribing'
+  | 'inserting'
+  | 'completed'
+  | 'recovery_required'
+  | 'cancelled'
+  | 'failed';
+
+export interface SessionSnapshot {
+  session_id: string;
+  state: SessionStateType;
+  message?: string | null;
+  elapsed_seconds: number;
+  last_transcript?: string | null;
+  target_app?: string | null;
+  recovery_id?: number | null;
 }
 
+// Backward compatibility alias
+export type DictationStatus = SessionSnapshot;

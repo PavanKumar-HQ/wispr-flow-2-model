@@ -5,7 +5,7 @@ import { FloatingPill } from './components/FloatingPill';
 import { ModelManagerTab } from './components/ModelManagerTab';
 import { HistoryTab } from './components/HistoryTab';
 import { SettingsTab } from './components/SettingsTab';
-import { ModelInfo, AppSettings, HistoryRecord, DictationStatus } from './types';
+import { ModelInfo, AppSettings, HistoryRecord, SessionSnapshot } from './types';
 import { Layers, History, Settings as SettingsIcon } from 'lucide-react';
 
 export default function App() {
@@ -16,17 +16,24 @@ export default function App() {
     default_model_id: 'whisper-small',
     language: 'auto',
     shortcut: 'CommandOrControl+Shift+Space',
+    insertion_policy: 'original_destination',
     spoken_punctuation: true,
     conservative_filler_removal: false,
     auto_capitalization: true,
     retain_history: true,
     play_sound_effects: true,
+    max_duration_secs: 180,
   });
   const [history, setHistory] = useState<HistoryRecord[]>([]);
   const [devices, setDevices] = useState<string[]>([]);
-  const [dictationStatus, setDictationStatus] = useState<DictationStatus>({
+  const [session, setSession] = useState<SessionSnapshot>({
+    session_id: '',
     state: 'idle',
-    message: 'Press shortcut or click pill to dictate',
+    message: 'Ready to dictate. Press shortcut or click pill.',
+    elapsed_seconds: 0.0,
+    last_transcript: null,
+    target_app: null,
+    recovery_id: null,
   });
   const [downloadProgress, setDownloadProgress] = useState<{ [id: string]: { percent: number; downloaded: number; total: number } }>({});
   const [smokeTestLog, setSmokeTestLog] = useState<string | null>(null);
@@ -55,9 +62,10 @@ export default function App() {
       loadModels();
     });
 
-    const dictPromise = safeListen<DictationStatus>('dictation-state-changed', (e) => {
-      setDictationStatus(e.payload);
-      if (e.payload.state === 'success' || e.payload.state === 'warning') {
+    // Authoritative backend session state changes
+    const sessionPromise = safeListen<SessionSnapshot>('dictation-session-changed', (e) => {
+      setSession(e.payload);
+      if (e.payload.state === 'completed' || e.payload.state === 'recovery_required') {
         loadHistory();
       }
     });
@@ -65,7 +73,7 @@ export default function App() {
     return () => {
       progPromise.then((fn) => fn && fn());
       compPromise.then((fn) => fn && fn());
-      dictPromise.then((fn) => fn && fn());
+      sessionPromise.then((fn) => fn && fn());
     };
   }, []);
 
@@ -74,13 +82,18 @@ export default function App() {
     await loadSettings();
     await loadHistory();
     await loadDevices();
+    try {
+      const snap = await safeInvoke<SessionSnapshot>('get_session_snapshot');
+      if (snap) setSession(snap);
+    } catch {
+      // Ignored in browser preview
+    }
   };
 
   const loadModels = async () => {
     try {
       const res = await safeInvoke<ModelInfo[]>('get_models');
       setModels(res);
-      // Ensure activeModelId reflects actually available model if default is missing
       const downloaded = res.filter(m => m.is_downloaded);
       if (downloaded.length > 0 && !res.find(m => m.id === settings.default_model_id)?.is_downloaded) {
         const fallback = downloaded.find(m => m.id === 'whisper-small') || downloaded[0];
@@ -150,12 +163,34 @@ export default function App() {
 
   const handleToggleDictation = async () => {
     try {
-      await safeInvoke('toggle_dictation');
+      const snap = await safeInvoke<SessionSnapshot>('toggle_dictation');
+      if (snap) setSession(snap);
     } catch (e) {
-      setDictationStatus({
-        state: 'error',
+      setSession((prev) => ({
+        ...prev,
+        state: 'failed',
         message: String(e),
-      });
+      }));
+    }
+  };
+
+  const handleCancelDictation = async () => {
+    try {
+      const snap = await safeInvoke<SessionSnapshot>('cancel_dictation');
+      if (snap) setSession(snap);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleRetryInsertion = async () => {
+    if (session.recovery_id) {
+      try {
+        await safeInvoke('retry_insertion', { historyId: session.recovery_id });
+        await loadHistory();
+      } catch (e) {
+        alert(`Retry failed: ${e}`);
+      }
     }
   };
 
@@ -183,16 +218,15 @@ export default function App() {
     }
   };
 
-  const isRecording = dictationStatus.state === 'recording';
-
   if (isPillOnlyWindow) {
     return (
       <div className="w-screen h-screen flex items-center justify-center bg-transparent select-none p-1">
         <FloatingPill
-          status={dictationStatus}
-          isRecording={isRecording}
+          status={session}
           onToggle={handleToggleDictation}
-          onCopyLast={() => dictationStatus.last_transcript && handleCopy(dictationStatus.last_transcript)}
+          onCancel={handleCancelDictation}
+          onRetry={handleRetryInsertion}
+          onCopyLast={() => session.last_transcript && handleCopy(session.last_transcript)}
           compact
         />
       </div>
@@ -257,13 +291,13 @@ export default function App() {
         </div>
       </header>
 
-      {/* Main Container */}
-      <main className="flex-1 max-w-4xl w-full mx-auto p-6 pb-28">
+      {/* Main Tab Content */}
+      <main className="flex-1 max-w-4xl w-full mx-auto p-6">
         {activeTab === 'models' && (
           <ModelManagerTab
             models={models}
-            downloadProgress={downloadProgress}
             activeModelId={settings.default_model_id}
+            downloadProgress={downloadProgress}
             onDownload={handleDownload}
             onSelectActive={handleSelectActiveModel}
             onSmokeTest={handleSmokeTest}
@@ -294,10 +328,11 @@ export default function App() {
 
       {/* Floating native pill */}
       <FloatingPill
-        status={dictationStatus}
-        isRecording={isRecording}
+        status={session}
         onToggle={handleToggleDictation}
-        onCopyLast={() => dictationStatus.last_transcript && handleCopy(dictationStatus.last_transcript)}
+        onCancel={handleCancelDictation}
+        onRetry={handleRetryInsertion}
+        onCopyLast={() => session.last_transcript && handleCopy(session.last_transcript)}
       />
     </div>
   );
