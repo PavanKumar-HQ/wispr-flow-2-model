@@ -30,7 +30,7 @@ mod pipeline_tests {
 
         // When recording is already in progress, audio.start_recording() returns Err
         {
-            let mut a = state.audio.lock().unwrap();
+            let a = state.audio.lock().unwrap();
             assert!(!a.is_recording());
         }
 
