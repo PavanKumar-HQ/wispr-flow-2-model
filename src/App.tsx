@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { invoke } from '@tauri-apps/api/core';
-import { listen } from '@tauri-apps/api/event';
+import { safeInvoke, safeListen, isNativeTauri } from './lib/ipc';
 import { Mascot } from './components/Mascot';
 import { FloatingPill } from './components/FloatingPill';
 import { ModelManagerTab } from './components/ModelManagerTab';
@@ -36,7 +35,7 @@ export default function App() {
     loadAllData();
 
     // Listen to native download events
-    const unlistenProg = listen<{ model_id: string; downloaded: number; total: number; percent: number }>('model-download-progress', (e) => {
+    const progPromise = safeListen<{ model_id: string; downloaded: number; total: number; percent: number }>('model-download-progress', (e) => {
       setDownloadProgress((prev) => ({
         ...prev,
         [e.payload.model_id]: {
@@ -47,7 +46,7 @@ export default function App() {
       }));
     });
 
-    const unlistenComp = listen<{ model_id: string; path: string }>('model-download-complete', (e) => {
+    const compPromise = safeListen<{ model_id: string; path: string }>('model-download-complete', (e) => {
       setDownloadProgress((prev) => {
         const next = { ...prev };
         delete next[e.payload.model_id];
@@ -56,7 +55,7 @@ export default function App() {
       loadModels();
     });
 
-    const unlistenDict = listen<DictationStatus>('dictation-state-changed', (e) => {
+    const dictPromise = safeListen<DictationStatus>('dictation-state-changed', (e) => {
       setDictationStatus(e.payload);
       if (e.payload.state === 'success' || e.payload.state === 'warning') {
         loadHistory();
@@ -64,9 +63,9 @@ export default function App() {
     });
 
     return () => {
-      unlistenProg.then((fn) => fn());
-      unlistenComp.then((fn) => fn());
-      unlistenDict.then((fn) => fn());
+      progPromise.then((fn) => fn && fn());
+      compPromise.then((fn) => fn && fn());
+      dictPromise.then((fn) => fn && fn());
     };
   }, []);
 
@@ -79,7 +78,7 @@ export default function App() {
 
   const loadModels = async () => {
     try {
-      const res = await invoke<ModelInfo[]>('get_models');
+      const res = await safeInvoke<ModelInfo[]>('get_models');
       setModels(res);
       // Ensure activeModelId reflects actually available model if default is missing
       const downloaded = res.filter(m => m.is_downloaded);
@@ -96,7 +95,7 @@ export default function App() {
 
   const loadSettings = async () => {
     try {
-      const res = await invoke<AppSettings>('get_settings');
+      const res = await safeInvoke<AppSettings>('get_settings');
       setSettings(res);
     } catch (e) {
       console.error(e);
@@ -105,7 +104,7 @@ export default function App() {
 
   const loadHistory = async () => {
     try {
-      const res = await invoke<HistoryRecord[]>('get_history', { limit: 50 });
+      const res = await safeInvoke<HistoryRecord[]>('get_history', { limit: 50 });
       setHistory(res);
     } catch (e) {
       console.error(e);
@@ -114,7 +113,7 @@ export default function App() {
 
   const loadDevices = async () => {
     try {
-      const res = await invoke<string[]>('get_audio_devices');
+      const res = await safeInvoke<string[]>('get_audio_devices');
       setDevices(res);
     } catch (e) {
       console.error(e);
@@ -123,7 +122,7 @@ export default function App() {
 
   const handleDownload = async (modelId: string) => {
     try {
-      await invoke('download_model', { modelId });
+      await safeInvoke('download_model', { modelId });
     } catch (e) {
       alert(`Download trigger error: ${e}`);
     }
@@ -133,7 +132,7 @@ export default function App() {
     const updated = { ...settings, default_model_id: modelId };
     setSettings(updated);
     try {
-      await invoke('save_settings_cmd', { newSettings: updated });
+      await safeInvoke('save_settings_cmd', { newSettings: updated });
     } catch (e) {
       alert(`Save error: ${e}`);
     }
@@ -142,7 +141,7 @@ export default function App() {
   const handleSmokeTest = async (modelId: string) => {
     setSmokeTestLog('Executing local Whisper inference with audio tone...');
     try {
-      const out = await invoke<string>('smoke_test_transcription', { modelId });
+      const out = await safeInvoke<string>('smoke_test_transcription', { modelId });
       setSmokeTestLog(out);
     } catch (e) {
       setSmokeTestLog(`Smoke test error: ${e}`);
@@ -151,7 +150,7 @@ export default function App() {
 
   const handleToggleDictation = async () => {
     try {
-      await invoke('toggle_dictation');
+      await safeInvoke('toggle_dictation');
     } catch (e) {
       setDictationStatus({
         state: 'error',
@@ -166,7 +165,7 @@ export default function App() {
 
   const handleDeleteHistory = async (id: number) => {
     try {
-      await invoke('delete_history_item', { id });
+      await safeInvoke('delete_history_item', { id });
       await loadHistory();
     } catch (e) {
       alert(`Delete error: ${e}`);
@@ -176,7 +175,7 @@ export default function App() {
   const handleClearHistory = async () => {
     if (confirm('Clear all local transcription history?')) {
       try {
-        await invoke('clear_history');
+        await safeInvoke('clear_history');
         await loadHistory();
       } catch (e) {
         alert(`Clear error: ${e}`);
@@ -212,6 +211,11 @@ export default function App() {
               <span className="text-[10px] font-mono font-bold bg-vq-sage/40 text-vq-tealDark px-1.5 py-0.5 rounded border border-vq-border">
                 v0.1.0 Sovereign
               </span>
+              {!isNativeTauri() && (
+                <span className="text-[10px] font-mono font-bold bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded border border-amber-300">
+                  Browser Preview
+                </span>
+              )}
             </div>
             <p className="text-xs text-vq-charcoal/70 font-sans">
               Autonomous system-wide native voice typing (Offline Whisper Engine)
@@ -282,7 +286,7 @@ export default function App() {
             devices={devices}
             onUpdate={async (newSettings) => {
               setSettings(newSettings);
-              await invoke('save_settings_cmd', { newSettings });
+              await safeInvoke('save_settings_cmd', { newSettings });
             }}
           />
         )}
