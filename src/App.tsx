@@ -81,6 +81,14 @@ export default function App() {
     try {
       const res = await invoke<ModelInfo[]>('get_models');
       setModels(res);
+      // Ensure activeModelId reflects actually available model if default is missing
+      const downloaded = res.filter(m => m.is_downloaded);
+      if (downloaded.length > 0 && !res.find(m => m.id === settings.default_model_id)?.is_downloaded) {
+        const fallback = downloaded.find(m => m.id === 'whisper-small') || downloaded[0];
+        if (fallback) {
+          handleSelectActiveModel(fallback.id);
+        }
+      }
     } catch (e) {
       console.error(e);
     }

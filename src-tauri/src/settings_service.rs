@@ -17,8 +17,23 @@ pub struct AppSettings {
 
 impl Default for AppSettings {
     fn default() -> Self {
+        // Find if a valid downloaded model exists; otherwise default to whisper-small for fresh installs
+        let installed = dirs::data_local_dir()
+            .map(|d| d.join("VoxQuest").join("models"))
+            .unwrap_or_else(|| PathBuf::from("."));
+
+        let initial_model = if installed.join("ggml-small.bin").exists() {
+            "whisper-small".to_string()
+        } else if installed.join("ggml-base.bin").exists() {
+            "whisper-base".to_string()
+        } else if installed.join("ggml-tiny.bin").exists() {
+            "whisper-tiny".to_string()
+        } else {
+            "whisper-small".to_string()
+        };
+
         Self {
-            default_model_id: "whisper-small".to_string(),
+            default_model_id: initial_model,
             language: "auto".to_string(),
             shortcut: "CommandOrControl+Shift+Space".to_string(),
             spoken_punctuation: true,

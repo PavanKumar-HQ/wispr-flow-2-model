@@ -4607,30 +4607,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "tauri-app"
-version = "0.1.0"
-dependencies = [
- "arboard",
- "cpal",
- "dirs",
- "global-hotkey 0.9.0",
- "hound",
- "rdev",
- "reqwest",
- "rubato",
- "rusqlite",
- "serde",
- "serde_json",
- "sha2 0.11.1",
- "tauri",
- "tauri-build",
- "tauri-plugin-global-shortcut",
- "tauri-plugin-opener",
- "tokio",
- "whisper-rs",
-]
-
-[[package]]
 name = "tauri-build"
 version = "2.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5350,6 +5326,30 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.119",
+]
+
+[[package]]
+name = "voxquest"
+version = "0.1.0"
+dependencies = [
+ "arboard",
+ "cpal",
+ "dirs",
+ "global-hotkey 0.9.0",
+ "hound",
+ "rdev",
+ "reqwest",
+ "rubato",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "sha2 0.11.1",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-global-shortcut",
+ "tauri-plugin-opener",
+ "tokio",
+ "whisper-rs",
 ]
 
 [[package]]

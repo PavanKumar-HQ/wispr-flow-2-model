@@ -51,3 +51,4 @@ fn test_end_to_end_dictation_into_target_app() {
         println!("Note: TextEdit wasn't frontmost in this headless environment; safety was validated: {:?}", target);
     }
 }
+

@@ -97,3 +97,4 @@ mod pipeline_tests {
         assert_eq!(rec.formatted_text, transcript);
     }
 }
+
