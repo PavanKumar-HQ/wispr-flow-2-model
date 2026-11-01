@@ -37,3 +37,4 @@ export interface DictationStatus {
   message?: string;
   last_transcript?: string;
 }
+

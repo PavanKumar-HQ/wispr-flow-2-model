@@ -22,3 +22,4 @@ export const Mascot: React.FC<{ size?: number; className?: string }> = ({ size =
     <circle cx="50" cy="85" r="2.5" fill="#DDA44D"/>
   </svg>
 );
+

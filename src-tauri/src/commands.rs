@@ -218,10 +218,25 @@ pub fn get_settings(state: State<'_, AppState>) -> AppSettings {
 }
 
 #[tauri::command]
-pub fn save_settings_cmd(state: State<'_, AppState>, new_settings: AppSettings) -> Result<(), String> {
+pub fn save_settings_cmd(app: AppHandle, state: State<'_, AppState>, new_settings: AppSettings) -> Result<(), String> {
     save_settings(&new_settings)?;
     let mut s = state.settings.lock().unwrap();
-    *s = new_settings;
+    let old_shortcut = s.shortcut.clone();
+    *s = new_settings.clone();
+
+    // Dynamically re-register global shortcut if it changed
+    if old_shortcut != new_settings.shortcut {
+        use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut};
+        if let Ok(old_sc) = old_shortcut.parse::<Shortcut>() {
+            let _ = app.global_shortcut().unregister(old_sc);
+        }
+        if let Ok(new_sc) = new_settings.shortcut.parse::<Shortcut>() {
+            if let Err(e) = app.global_shortcut().register(new_sc) {
+                eprintln!("Failed to register updated shortcut: {}", e);
+            }
+        }
+    }
+
     Ok(())
 }
 

@@ -27,17 +27,33 @@ impl TargetSnapshot {
         }
     }
 
-    pub fn is_destination_safe(&self) -> bool {
-        let (current_app, _) = get_active_app_info();
-        if let (Some(original), Some(current)) = (&self.platform_app_id, &current_app) {
-            if current.to_lowercase().contains("voxquest") || current.to_lowercase().contains("tauri") {
-                return false;
-            }
-            if original != current {
+    pub fn is_destination_match(&self, current_app: Option<&str>, current_window: Option<&str>) -> bool {
+        if let Some(curr) = current_app {
+            let lower = curr.to_lowercase();
+            if lower.contains("voxquest") || lower.contains("tauri") {
                 return false;
             }
         }
+
+        if let (Some(ref original), Some(curr)) = (&self.platform_app_id, current_app) {
+            if original != curr {
+                return false;
+            }
+        }
+
+        // Focus changes within same application where window title is detectable
+        if let (Some(ref orig_win), Some(curr_win)) = (&self.window_title, current_window) {
+            if !orig_win.is_empty() && !curr_win.is_empty() && orig_win != curr_win {
+                return false;
+            }
+        }
+
         true
+    }
+
+    pub fn is_destination_safe(&self) -> bool {
+        let (current_app, current_window) = get_active_app_info();
+        self.is_destination_match(current_app.as_deref(), current_window.as_deref())
     }
 }
 

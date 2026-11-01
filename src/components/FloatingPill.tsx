@@ -8,6 +8,7 @@ interface FloatingPillProps {
   isRecording: boolean;
   onToggle: () => void;
   onCopyLast: () => void;
+  compact?: boolean;
 }
 
 export const FloatingPill: React.FC<FloatingPillProps> = ({
@@ -15,9 +16,10 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
   isRecording,
   onToggle,
   onCopyLast,
+  compact = false,
 }) => {
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 transition-all duration-200">
+    <div className={compact ? "transition-all duration-200" : "fixed bottom-6 left-1/2 -translate-x-1/2 z-50 transition-all duration-200"}>
       <div className={`flex items-center gap-3 px-4 py-2.5 rounded-full border-2 border-vq-charcoal bg-vq-surface shadow-tactile ${
         isRecording ? 'ring-4 ring-vq-terracotta/40 animate-pulse' : ''
       }`}>
@@ -82,3 +84,4 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
     </div>
   );
 };
+

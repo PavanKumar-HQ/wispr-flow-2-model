@@ -10,6 +10,7 @@ import { ModelInfo, AppSettings, HistoryRecord, DictationStatus } from './types'
 import { Layers, History, Settings as SettingsIcon } from 'lucide-react';
 
 export default function App() {
+  const isPillOnlyWindow = typeof window !== 'undefined' && window.location.hash === '#pill';
   const [activeTab, setActiveTab] = useState<'models' | 'history' | 'settings'>('models');
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [settings, setSettings] = useState<AppSettings>({
@@ -176,6 +177,20 @@ export default function App() {
   };
 
   const isRecording = dictationStatus.state === 'recording';
+
+  if (isPillOnlyWindow) {
+    return (
+      <div className="w-screen h-screen flex items-center justify-center bg-transparent select-none p-1">
+        <FloatingPill
+          status={dictationStatus}
+          isRecording={isRecording}
+          onToggle={handleToggleDictation}
+          onCopyLast={() => dictationStatus.last_transcript && handleCopy(dictationStatus.last_transcript)}
+          compact
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-vq-cream text-vq-charcoal">

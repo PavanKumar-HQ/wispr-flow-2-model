@@ -112,3 +112,4 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
     </div>
   );
 };
+
