@@ -2,21 +2,26 @@ import { useState, useEffect } from 'react';
 import { safeInvoke, safeListen, isNativeTauri } from './lib/ipc';
 import { Mascot } from './components/Mascot';
 import { FloatingPill } from './components/FloatingPill';
+import { HomeTab } from './components/HomeTab';
+import { InsightsTab } from './components/InsightsTab';
 import { ModelManagerTab } from './components/ModelManagerTab';
 import { HistoryTab } from './components/HistoryTab';
 import { SettingsTab } from './components/SettingsTab';
-import { ModelInfo, AppSettings, HistoryRecord, SessionSnapshot } from './types';
-import { Layers, History, Settings as SettingsIcon } from 'lucide-react';
+import { DictionaryTab } from './components/DictionaryTab';
+import { ModelInfo, AppSettings, HistoryRecord, SessionSnapshot, InsightsData } from './types';
+import { Home, Layers, History, Settings as SettingsIcon, BookA, BarChart2, LocateFixed } from 'lucide-react';
 
 export default function App() {
-  const isPillOnlyWindow = typeof window !== 'undefined' && window.location.hash === '#pill';
-  const [activeTab, setActiveTab] = useState<'models' | 'history' | 'settings'>('models');
+  const isPillOnlyWindow = typeof window !== 'undefined' && window.location.hash.includes('pill');
+  const [activeTab, setActiveTab] = useState<'home' | 'insights' | 'models' | 'dictionary' | 'history' | 'settings'>('home');
+  const [insights, setInsights] = useState<InsightsData | null>(null);
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [settings, setSettings] = useState<AppSettings>({
     default_model_id: 'whisper-small',
     language: 'auto',
     shortcut: 'CommandOrControl+Shift+Space',
     insertion_policy: 'original_destination',
+    interaction_mode: 'toggle',
     spoken_punctuation: true,
     conservative_filler_removal: false,
     auto_capitalization: true,
@@ -37,6 +42,31 @@ export default function App() {
   });
   const [downloadProgress, setDownloadProgress] = useState<{ [id: string]: { percent: number; downloaded: number; total: number } }>({});
   const [smokeTestLog, setSmokeTestLog] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isPillOnlyWindow) {
+      document.body.style.backgroundColor = 'transparent';
+      document.documentElement.style.backgroundColor = 'transparent';
+    }
+  }, [isPillOnlyWindow]);
+
+  // Elapsed timer ticker during recording
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval> | null = null;
+    if (session.state === 'recording') {
+      interval = setInterval(() => {
+        setSession((prev) => {
+          if (prev.state === 'recording') {
+            return { ...prev, elapsed_seconds: prev.elapsed_seconds + 1 };
+          }
+          return prev;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [session.state]);
 
   useEffect(() => {
     loadAllData();
@@ -67,20 +97,69 @@ export default function App() {
       setSession(e.payload);
       if (e.payload.state === 'completed' || e.payload.state === 'recovery_required') {
         loadHistory();
+        loadInsights();
+      }
+      if (e.payload.state === 'completed') {
+        setTimeout(() => {
+          setSession((prev) => {
+            if (prev.session_id === e.payload.session_id && prev.state === 'completed') {
+              return {
+                ...prev,
+                state: 'idle',
+                message: 'Ready to dictate. Press shortcut or click pill.',
+                last_transcript: null,
+              };
+            }
+            return prev;
+          });
+        }, 8000);
       }
     });
+
+    // Listen for automatic external edits synced back from destination apps (e.g. TextEdit)
+    const destSyncPromise = safeListen<{ history_id: number; app_name: string; updated_text: string }>('destination-edit-synced', (_e) => {
+      loadHistory();
+      loadInsights();
+    });
+
+    // In floating pill window, aggressively poll session snapshot every 150ms to ensure 0-latency status sync
+    let syncInterval: ReturnType<typeof setInterval> | null = null;
+    if (isPillOnlyWindow) {
+      syncInterval = setInterval(async () => {
+        try {
+          const snap = await safeInvoke<SessionSnapshot>('get_session_snapshot');
+          if (snap) {
+            setSession((prev) => {
+              if (
+                prev.state !== snap.state ||
+                prev.sequence !== snap.sequence ||
+                prev.last_transcript !== snap.last_transcript
+              ) {
+                return snap;
+              }
+              return prev;
+            });
+          }
+        } catch {
+          // ignore in browser mode
+        }
+      }, 150);
+    }
 
     return () => {
       progPromise.then((fn) => fn && fn());
       compPromise.then((fn) => fn && fn());
       sessionPromise.then((fn) => fn && fn());
+      destSyncPromise.then((fn) => fn && fn());
+      if (syncInterval) clearInterval(syncInterval);
     };
   }, []);
 
   const loadAllData = async () => {
-    await loadModels();
-    await loadSettings();
+    const loadedSettings = await loadSettings();
+    await loadModels(loadedSettings);
     await loadHistory();
+    await loadInsights();
     await loadDevices();
     try {
       const snap = await safeInvoke<SessionSnapshot>('get_session_snapshot');
@@ -90,12 +169,24 @@ export default function App() {
     }
   };
 
-  const loadModels = async () => {
+  const loadInsights = async () => {
+    try {
+      const res = await safeInvoke<InsightsData>('get_insights');
+      if (res) {
+        setInsights(res);
+      }
+    } catch (e) {
+      console.error('Failed to load insights:', e);
+    }
+  };
+
+  const loadModels = async (currentSettings?: AppSettings) => {
     try {
       const res = await safeInvoke<ModelInfo[]>('get_models');
       setModels(res);
+      const activeSettings = currentSettings || settings;
       const downloaded = res.filter(m => m.is_downloaded);
-      if (downloaded.length > 0 && !res.find(m => m.id === settings.default_model_id)?.is_downloaded) {
+      if (downloaded.length > 0 && !res.find(m => m.id === activeSettings.default_model_id)?.is_downloaded) {
         const fallback = downloaded.find(m => m.id === 'whisper-small') || downloaded[0];
         if (fallback) {
           handleSelectActiveModel(fallback.id);
@@ -106,13 +197,17 @@ export default function App() {
     }
   };
 
-  const loadSettings = async () => {
+  const loadSettings = async (): Promise<AppSettings | undefined> => {
     try {
       const res = await safeInvoke<AppSettings>('get_settings');
-      setSettings(res);
+      if (res) {
+        setSettings(res);
+        return res;
+      }
     } catch (e) {
       console.error(e);
     }
+    return undefined;
   };
 
   const loadHistory = async () => {
@@ -152,7 +247,7 @@ export default function App() {
   };
 
   const handleSmokeTest = async (modelId: string) => {
-    setSmokeTestLog('Executing local Whisper inference with audio tone...');
+    setSmokeTestLog('Executing local voice engine diagnostic with acoustic probe...');
     try {
       const out = await safeInvoke<string>('smoke_test_transcription', { modelId });
       setSmokeTestLog(out);
@@ -201,139 +296,201 @@ export default function App() {
   const handleDeleteHistory = async (id: number) => {
     try {
       await safeInvoke('delete_history_item', { id });
-      await loadHistory();
+      await Promise.all([loadHistory(), loadInsights()]);
     } catch (e) {
-      alert(`Delete error: ${e}`);
+      console.warn('Delete history item error:', e);
     }
   };
 
   const handleClearHistory = async () => {
-    if (confirm('Clear all local transcription history?')) {
-      try {
-        await safeInvoke('clear_history');
-        await loadHistory();
-      } catch (e) {
-        alert(`Clear error: ${e}`);
-      }
+    try {
+      await safeInvoke('clear_history');
+      setHistory([]);
+      setSession((prev) => ({
+        ...prev,
+        last_transcript: null,
+        recovery_id: null,
+        message: 'Ready to dictate. Press shortcut or click pill.',
+      }));
+      await Promise.all([loadHistory(), loadInsights()]);
+    } catch (e) {
+      console.warn('Clear history error:', e);
     }
   };
 
   if (isPillOnlyWindow) {
     return (
-      <div className="w-screen h-screen flex items-center justify-center bg-transparent select-none p-1">
+      <div data-tauri-drag-region className="w-screen h-screen flex items-center justify-center bg-transparent select-none p-1 overflow-hidden">
         <FloatingPill
           status={session}
           onToggle={handleToggleDictation}
           onCancel={handleCancelDictation}
           onRetry={handleRetryInsertion}
-          onCopyLast={() => session.last_transcript && handleCopy(session.last_transcript)}
+          onCopyLast={(text) => handleCopy(text || session.last_transcript || '')}
           compact
         />
       </div>
     );
   }
 
+  const pendingRecoveryCount = history.filter(
+    (h) => h.status === 'recovery_required' || h.status === 'uncertain' || h.status === 'failed'
+  ).length;
+
   return (
-    <div className="flex flex-col min-h-screen bg-vq-cream text-vq-charcoal">
-      {/* Header */}
-      <header className="px-6 py-4 border-b-2 border-vq-border flex items-center justify-between bg-vq-surface">
-        <div className="flex items-center gap-3">
-          <Mascot size={36} />
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="font-pixel text-sm text-vq-tealDark tracking-wide">VOXQUEST</h1>
-              <span className="text-[10px] font-mono font-bold bg-vq-sage/40 text-vq-tealDark px-1.5 py-0.5 rounded border border-vq-border">
-                v0.1.0 Sovereign
-              </span>
-              {!isNativeTauri() && (
-                <span className="text-[10px] font-mono font-bold bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded border border-amber-300">
-                  Browser Preview
-                </span>
-              )}
+    <div className="flex h-screen bg-cream text-charcoal overflow-hidden font-sans">
+      {/* Left Sidebar (Responsive Width: compact on small screens, full on desktop) */}
+      <aside className="w-16 sm:w-20 md:w-56 bg-[#F6F6F2] border-r border-charcoal/15 flex flex-col justify-between p-2 sm:p-3 md:p-4 select-none shrink-0 h-full transition-all">
+        <div className="space-y-4 md:space-y-6">
+          {/* Logo / Brand Header */}
+          <div className="flex items-center justify-center md:justify-start gap-2.5 px-1 md:px-2 pt-1">
+            <Mascot size={32} />
+            <div className="hidden md:block">
+              <div className="flex items-center gap-1.5">
+                <span className="font-extrabold text-sm text-darkTeal tracking-wide">VOXQUEST</span>
+                <span className="w-2 h-2 rounded-full bg-amber animate-pulse" />
+              </div>
+              <p className="text-[10px] text-charcoal/60 font-sans font-medium">Sovereign Voice</p>
             </div>
-            <p className="text-xs text-vq-charcoal/70 font-sans">
-              Autonomous system-wide native voice typing (Offline Whisper Engine)
-            </p>
+          </div>
+
+          {/* Navigation Links */}
+          <nav className="space-y-1.5">
+            {[
+              { id: 'home', label: 'Home', icon: Home },
+              { id: 'insights', label: 'Insights', icon: BarChart2 },
+              { id: 'history', label: 'History', icon: History, badge: pendingRecoveryCount > 0 ? `${pendingRecoveryCount}` : null },
+              { id: 'dictionary', label: 'Dictionary', icon: BookA },
+              { id: 'models', label: 'Dictation Modes', icon: Layers },
+              { id: 'settings', label: 'Settings', icon: SettingsIcon },
+            ].map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id as any)}
+                  title={item.label}
+                  className={`w-full flex items-center justify-center md:justify-between px-2.5 md:px-3 py-2.5 rounded-xl text-xs font-semibold transition-all relative ${
+                    isActive
+                      ? 'bg-darkTeal text-white shadow-sm'
+                      : 'text-charcoal/70 hover:text-charcoal hover:bg-black/5'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-amber' : 'text-charcoal/60'}`} />
+                    <span className="hidden md:inline">{item.label}</span>
+                  </div>
+                  {item.badge && (
+                    <span className="hidden md:inline-block px-1.5 py-0.5 rounded-full text-[10px] font-mono bg-amber text-charcoal font-bold shadow-xs">
+                      {item.badge}
+                    </span>
+                  )}
+                  {item.badge && (
+                    <span className="md:hidden absolute top-1 right-1 w-2 h-2 rounded-full bg-amber" />
+                  )}
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Sidebar Footer */}
+        <div className="space-y-2 pt-3 border-t border-charcoal/15">
+          <button
+            onClick={() => safeInvoke('center_pill_window')}
+            className="w-full flex items-center justify-center gap-1.5 px-2 md:px-3 py-2 text-xs font-semibold rounded-xl border border-charcoal/20 bg-white text-darkTeal hover:bg-darkTeal hover:text-white transition-all shadow-sm active:scale-95"
+            title="Summon the floating pill to the front of your screen"
+          >
+            <LocateFixed className="w-3.5 h-3.5 shrink-0" />
+            <span className="hidden md:inline">Summon Pill</span>
+          </button>
+
+          <div className="hidden md:flex px-1 items-center justify-between text-[10px] text-charcoal/60">
+            <span className="flex items-center gap-1 font-semibold text-darkTeal">
+              <span className="w-1.5 h-1.5 rounded-full bg-darkTeal" /> 100% Offline
+            </span>
+            <span className="font-mono">v0.1.0</span>
           </div>
         </div>
+      </aside>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setActiveTab('models')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded border transition-all ${
-              activeTab === 'models'
-                ? 'bg-vq-tealDark text-vq-cream border-vq-charcoal shadow-tactile-sm'
-                : 'bg-vq-surface hover:bg-vq-surfaceLight border-vq-border text-vq-charcoal'
-            }`}
-          >
-            <Layers className="w-3.5 h-3.5" /> Models
-          </button>
-          <button
-            onClick={() => setActiveTab('history')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded border transition-all ${
-              activeTab === 'history'
-                ? 'bg-vq-tealDark text-vq-cream border-vq-charcoal shadow-tactile-sm'
-                : 'bg-vq-surface hover:bg-vq-surfaceLight border-vq-border text-vq-charcoal'
-            }`}
-          >
-            <History className="w-3.5 h-3.5" /> History
-          </button>
-          <button
-            onClick={() => setActiveTab('settings')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded border transition-all ${
-              activeTab === 'settings'
-                ? 'bg-vq-tealDark text-vq-cream border-vq-charcoal shadow-tactile-sm'
-                : 'bg-vq-surface hover:bg-vq-surfaceLight border-vq-border text-vq-charcoal'
-            }`}
-          >
-            <SettingsIcon className="w-3.5 h-3.5" /> Settings
-          </button>
+      {/* Main Tab Content (Fluid Responsive Padding) */}
+      <main className="flex-1 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8 bg-cream">
+        <div className="max-w-5xl mx-auto w-full">
+          {activeTab === 'home' && (
+            <HomeTab
+              insights={insights}
+              history={history}
+              session={session}
+              shortcut={settings.shortcut}
+              onCopy={handleCopy}
+              onDeleteHistory={handleDeleteHistory}
+              onClearHistory={handleClearHistory}
+              onToggleDictation={handleToggleDictation}
+              onNavigateTab={(tab) => setActiveTab(tab)}
+              onSummonPill={() => safeInvoke('center_pill_window')}
+            />
+          )}
+
+          {activeTab === 'insights' && (
+            <InsightsTab
+              insights={insights}
+              history={history}
+              shortcut={settings.shortcut}
+              onCopy={handleCopy}
+              onStartTest={handleToggleDictation}
+            />
+          )}
+
+          {activeTab === 'models' && (
+            <ModelManagerTab
+              models={models}
+              activeModelId={settings.default_model_id}
+              downloadProgress={downloadProgress}
+              onDownload={handleDownload}
+              onSelectActive={handleSelectActiveModel}
+              onSmokeTest={handleSmokeTest}
+              onDismissSmokeTest={() => setSmokeTestLog(null)}
+              smokeTestLog={smokeTestLog}
+            />
+          )}
+
+          {activeTab === 'dictionary' && <DictionaryTab />}
+
+          {activeTab === 'history' && (
+            <HistoryTab
+              history={history}
+              onCopy={handleCopy}
+              onDelete={handleDeleteHistory}
+              onClearAll={handleClearHistory}
+              onReload={loadHistory}
+            />
+          )}
+
+          {activeTab === 'settings' && (
+            <SettingsTab
+              settings={settings}
+              devices={devices}
+              onUpdate={async (newSettings) => {
+                setSettings(newSettings);
+                await safeInvoke('save_settings_cmd', { newSettings });
+              }}
+            />
+          )}
         </div>
-      </header>
-
-      {/* Main Tab Content */}
-      <main className="flex-1 max-w-4xl w-full mx-auto p-6">
-        {activeTab === 'models' && (
-          <ModelManagerTab
-            models={models}
-            activeModelId={settings.default_model_id}
-            downloadProgress={downloadProgress}
-            onDownload={handleDownload}
-            onSelectActive={handleSelectActiveModel}
-            onSmokeTest={handleSmokeTest}
-            smokeTestLog={smokeTestLog}
-          />
-        )}
-
-        {activeTab === 'history' && (
-          <HistoryTab
-            history={history}
-            onCopy={handleCopy}
-            onDelete={handleDeleteHistory}
-            onClearAll={handleClearHistory}
-          />
-        )}
-
-        {activeTab === 'settings' && (
-          <SettingsTab
-            settings={settings}
-            devices={devices}
-            onUpdate={async (newSettings) => {
-              setSettings(newSettings);
-              await safeInvoke('save_settings_cmd', { newSettings });
-            }}
-          />
-        )}
       </main>
 
-      {/* Floating native pill */}
-      <FloatingPill
-        status={session}
-        onToggle={handleToggleDictation}
-        onCancel={handleCancelDictation}
-        onRetry={handleRetryInsertion}
-        onCopyLast={() => session.last_transcript && handleCopy(session.last_transcript)}
-      />
+      {/* Floating preview pill only rendered in web browser preview mode (in native Tauri desktop mode, the dedicated floating-indicator window renders the pill) */}
+      {!isNativeTauri() && (
+        <FloatingPill
+          status={session}
+          onToggle={handleToggleDictation}
+          onCancel={handleCancelDictation}
+          onRetry={handleRetryInsertion}
+          onCopyLast={(text) => handleCopy(text || session.last_transcript || '')}
+        />
+      )}
     </div>
   );
 }

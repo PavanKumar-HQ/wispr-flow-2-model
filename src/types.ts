@@ -16,12 +16,36 @@ export interface AppSettings {
   language: string;
   shortcut: string;
   insertion_policy: string; // 'original_destination' | 'active_at_stop'
+  interaction_mode: string; // 'toggle' | 'push_to_talk'
   spoken_punctuation: boolean;
   conservative_filler_removal: boolean;
   auto_capitalization: boolean;
   retain_history: boolean;
   play_sound_effects: boolean;
   max_duration_secs: number;
+  auto_hide_pill?: boolean;
+  selected_microphone?: string;
+  enable_personal_dictionary?: boolean;
+  enable_correction_learning?: boolean;
+  auto_approve_corrections?: boolean;
+  enable_destination_sync?: boolean;
+  destination_sync_duration_secs?: number;
+}
+
+export interface AppUsageStat {
+  app_name: string;
+  word_count: number;
+  percentage: number;
+}
+
+export interface InsightsData {
+  total_words: number;
+  total_sessions: number;
+  average_wpm: number;
+  total_duration_seconds: number;
+  time_saved_minutes: number;
+  streak_days: number;
+  app_usage: AppUsageStat[];
 }
 
 export interface HistoryRecord {
@@ -32,6 +56,9 @@ export interface HistoryRecord {
   duration_seconds: number;
   status: string;
   target_app?: string | null;
+  failure_reason?: string | null;
+  session_id?: string | null;
+  user_edited_text?: string | null;
 }
 
 export type SessionStateType =
@@ -40,6 +67,8 @@ export type SessionStateType =
   | 'recording'
   | 'stopping'
   | 'transcribing'
+  | 'formatting'
+  | 'validating_target'
   | 'inserting'
   | 'completed'
   | 'recovery_required'
@@ -48,12 +77,88 @@ export type SessionStateType =
 
 export interface SessionSnapshot {
   session_id: string;
+  sequence?: number;
   state: SessionStateType;
   message?: string | null;
   elapsed_seconds: number;
   last_transcript?: string | null;
   target_app?: string | null;
+  target_window?: string | null;
   recovery_id?: number | null;
+  timestamp_ms?: number;
+}
+
+export interface SystemCapabilities {
+  os: string;
+  accessibility_permission: boolean;
+  microphone_permission: boolean;
+  hardware_devices: string[];
+  supported_insertion_methods: string[];
+  default_insertion_policy: string;
+  supported_interaction_modes: string[];
+}
+
+export interface DictionaryEntry {
+  id: number;
+  original: string;
+  replacement: string;
+  original_phrase?: string;
+  replacement_phrase?: string;
+  category: string;
+  created_at?: number;
+}
+
+export interface PersonalVocabularyEntry {
+  id: number;
+  original_text: string;
+  preferred_text: string;
+  entry_type: string; // 'name' | 'company' | 'product' | 'tech' | 'acronym' | 'slang' | 'general' | 'spelling'
+  context_domain?: string | null;
+  confidence: number;
+  positive_count: number;
+  negative_count: number;
+  status: 'candidate' | 'active' | 'disabled' | 'rejected';
+  recognition_count: number;
+  correction_count: number;
+  application_count: number;
+  last_used_at?: number | null;
+  source: 'manual' | 'learned' | string;
+  created_at: number;
+  updated_at: number;
+}
+
+export interface ExtractedCandidate {
+  original_span: string;
+  preferred_span: string;
+  entry_type: string;
+  confidence: number;
+  is_unambiguous: boolean;
+}
+
+export type EnhancementMode =
+  | 'light_correction'
+  | 'professional'
+  | 'concise'
+  | 'natural'
+  | 'improve_clarity'
+  | 'keep_tone'
+  | 'prompt';
+
+export interface EnhancementRequest {
+  session_id?: string | null;
+  text: string;
+  mode: EnhancementMode;
+  auto_replace?: boolean;
+  target_app?: string;
+}
+
+export interface EnhancementResponse {
+  original_text: string;
+  enhanced_text: string;
+  mode: EnhancementMode;
+  changes_made: boolean;
+  explanations: string[];
+  model_used: string;
 }
 
 // Backward compatibility alias

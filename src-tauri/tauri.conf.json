@@ -13,8 +13,11 @@
     "windows": [
       {
         "title": "VoxQuest",
-        "width": 860,
-        "height": 640
+        "width": 960,
+        "height": 680,
+        "minWidth": 760,
+        "minHeight": 540,
+        "resizable": true
       }
     ],
     "security": {

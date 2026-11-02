@@ -35,7 +35,11 @@ impl WhisperEngine {
         self.context.is_some()
     }
 
-    pub fn transcribe(&mut self, audio_data: &[f32], language: Option<&str>) -> Result<String, String> {
+    pub fn current_model_path(&self) -> Option<&str> {
+        self.current_model_path.as_deref()
+    }
+
+    pub fn transcribe(&mut self, audio_data: &[f32], language: Option<&str>, initial_prompt: Option<&str>) -> Result<String, String> {
         let ctx = self.context.as_mut().ok_or_else(|| "Speech engine not initialized. Please install/load a model first.".to_string())?;
 
         let mut state = ctx.create_state().map_err(|e| format!("Failed to create Whisper native state: {:?}", e))?;
@@ -48,6 +52,18 @@ impl WhisperEngine {
         params.set_translate(false);
         params.set_no_context(true);
         params.set_single_segment(false);
+        params.set_suppress_blank(true);
+        params.set_suppress_nst(true);
+        params.set_no_speech_thold(0.75);
+        params.set_temperature(0.0);
+        let n_threads = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(8).clamp(2, 8);
+        params.set_n_threads(n_threads as i32);
+
+        if let Some(prompt) = initial_prompt {
+            if !prompt.trim().is_empty() {
+                params.set_initial_prompt(prompt);
+            }
+        }
 
         if let Some(lang) = language {
             if !lang.is_empty() && lang != "auto" {
@@ -62,10 +78,22 @@ impl WhisperEngine {
         let num_segments = state.full_n_segments();
 
         let mut transcript = String::new();
+        let mut last_segment_clean = String::new();
         for i in 0..num_segments {
             if let Some(segment) = state.get_segment(i) {
                 if let Ok(text) = segment.to_str() {
-                    transcript.push_str(text);
+                    let clean = text.trim();
+                    if clean.is_empty() {
+                        continue;
+                    }
+                    if clean.eq_ignore_ascii_case(&last_segment_clean) {
+                        continue;
+                    }
+                    last_segment_clean = clean.to_string();
+                    if !transcript.is_empty() && !transcript.ends_with(' ') {
+                        transcript.push(' ');
+                    }
+                    transcript.push_str(clean);
                 }
             }
         }

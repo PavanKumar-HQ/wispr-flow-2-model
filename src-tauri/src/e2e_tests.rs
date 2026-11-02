@@ -6,11 +6,16 @@ mod tests {
     fn test_e2e_mock_target_destination_validation() {
         // Fast mock validation without launching external applications
         let target = TargetSnapshot {
+            session_id: "e2e-test-1".to_string(),
             timestamp_ms: 1000,
             platform_app_id: Some("TextEdit".to_string()),
+            bundle_id: Some("com.apple.TextEdit".to_string()),
             app_pid: Some(51702),
             window_title: Some("Untitled.txt".to_string()),
+            element_role: Some("AXTextArea".to_string()),
             is_secure_input: false,
+            confidence: "high".to_string(),
+            is_valid: true,
         };
 
         // When TextEdit matches
@@ -61,13 +66,17 @@ mod tests {
         let mut reader = hound::WavReader::open(wav_path).expect("Failed to open WAV fixture");
         let audio: Vec<f32> = reader.samples::<f32>().map(|s| s.unwrap()).collect();
 
-        let raw = engine.transcribe(&audio, Some("en")).expect("Transcription failed");
+        let raw = engine.transcribe(&audio, Some("en"), None).expect("Transcription failed");
         let cfg = FormattingConfig::default();
         let formatted = format_transcript(&raw, &cfg);
 
         if target.platform_app_id.as_deref() == Some("TextEdit") {
             let insert_res = insert_text_safely(&formatted, &target);
-            assert!(insert_res.is_ok(), "Insertion into TextEdit should succeed when destination matches");
+            assert!(
+                insert_res.status == crate::safety_service::InsertionStatus::InsertedConfirmed 
+                || insert_res.status == crate::safety_service::InsertionStatus::InsertedUnconfirmed,
+                "Insertion into TextEdit should succeed when destination matches"
+            );
         }
     }
 }

@@ -5334,10 +5334,14 @@ name = "voxquest"
 version = "0.1.0"
 dependencies = [
  "arboard",
+ "cocoa",
+ "core-foundation 0.10.1",
+ "core-graphics 0.25.0",
  "cpal",
  "dirs",
  "global-hotkey 0.9.0",
  "hound",
+ "objc",
  "rdev",
  "reqwest",
  "rubato",

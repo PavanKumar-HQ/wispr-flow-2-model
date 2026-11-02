@@ -7,6 +7,13 @@ export default {
   theme: {
     extend: {
       colors: {
+        cream: '#DFDFD4',
+        darkTeal: '#07514C',
+        deepTeal: '#0F5B57',
+        amber: '#DDA44D',
+        terracotta: '#DA6C4C',
+        sage: '#B8CBC3',
+        charcoal: '#212121',
         vq: {
           cream: '#DFDFD4',
           surface: '#EAEAE2',
@@ -18,20 +25,27 @@ export default {
           sage: '#B8CBC3',
           sageLight: '#D2DFD8',
           charcoal: '#212121',
-          border: '#D1D1C5',
-          borderDark: '#07514C'
+          border: '#212121',
+          borderLight: '#D1D1C5',
+          borderDark: '#212121'
         }
       },
       fontFamily: {
-        sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
-        mono: ['"JetBrains Mono"', 'monospace'],
-        pixel: ['"Press Start 2P"', 'monospace'],
+        sans: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       boxShadow: {
-        'tactile': '3px 3px 0px rgba(7, 81, 76, 0.9)',
-        'tactile-sm': '2px 2px 0px rgba(7, 81, 76, 0.9)',
-        'tactile-pressed': '1px 1px 0px rgba(7, 81, 76, 0.9)',
-        'tactile-amber': '3px 3px 0px rgba(221, 164, 77, 0.9)',
+        'pixel-sm': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+        'pixel': '0 4px 8px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.04)',
+        'pixel-lg': '0 10px 18px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.04)',
+        'pixel-amber': '0 4px 12px rgba(221, 164, 77, 0.25)',
+        'pixel-terracotta': '0 4px 12px rgba(218, 108, 76, 0.25)',
+        'tactile': '0 4px 8px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.04)',
+        'tactile-sm': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+        'tactile-pressed': 'inset 0 1px 2px rgba(0, 0, 0, 0.1)',
+        'tactile-amber': '0 4px 12px rgba(221, 164, 77, 0.25)',
+        'card': '0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04)',
+        'soft': '0 2px 8px -2px rgba(0, 0, 0, 0.05), 0 1px 4px -1px rgba(0, 0, 0, 0.03)',
       }
     },
   },

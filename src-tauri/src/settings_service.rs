@@ -4,17 +4,26 @@ use std::path::PathBuf;
 use dirs::data_local_dir;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
 pub struct AppSettings {
     pub default_model_id: String,
     pub language: String, // "auto", "en", "hi", etc.
     pub shortcut: String, // e.g., "CommandOrControl+Shift+Space"
     pub insertion_policy: String, // "original_destination" or "active_at_stop"
+    pub interaction_mode: String, // "toggle" or "push_to_talk"
     pub spoken_punctuation: bool,
     pub conservative_filler_removal: bool,
     pub auto_capitalization: bool,
     pub retain_history: bool,
     pub play_sound_effects: bool,
     pub max_duration_secs: u32,
+    pub selected_microphone: String,
+    pub enable_personal_dictionary: bool,
+    pub enable_correction_learning: bool,
+    pub auto_approve_corrections: bool,
+    pub enhancement_default_mode: String,
+    pub enable_destination_sync: bool,
+    pub destination_sync_duration_secs: u32,
 }
 
 impl Default for AppSettings {
@@ -23,14 +32,14 @@ impl Default for AppSettings {
             .map(|d| d.join("VoxQuest").join("models"))
             .unwrap_or_else(|| PathBuf::from("."));
 
-        let initial_model = if installed.join("ggml-small.bin").exists() {
-            "whisper-small".to_string()
-        } else if installed.join("ggml-base.bin").exists() {
+        let initial_model = if installed.join("ggml-base.bin").exists() {
             "whisper-base".to_string()
         } else if installed.join("ggml-tiny.bin").exists() {
             "whisper-tiny".to_string()
-        } else {
+        } else if installed.join("ggml-small.bin").exists() {
             "whisper-small".to_string()
+        } else {
+            "whisper-base".to_string()
         };
 
         Self {
@@ -38,12 +47,20 @@ impl Default for AppSettings {
             language: "auto".to_string(),
             shortcut: "CommandOrControl+Shift+Space".to_string(),
             insertion_policy: "original_destination".to_string(),
+            interaction_mode: "push_to_talk".to_string(),
             spoken_punctuation: true,
-            conservative_filler_removal: false,
+            conservative_filler_removal: true,
             auto_capitalization: true,
             retain_history: true,
             play_sound_effects: true,
             max_duration_secs: 180, // 3 minutes limit with safety cutoff
+            selected_microphone: "default".to_string(),
+            enable_personal_dictionary: true,
+            enable_correction_learning: true,
+            auto_approve_corrections: false,
+            enhancement_default_mode: "improve_clarity".to_string(),
+            enable_destination_sync: true,
+            destination_sync_duration_secs: 90,
         }
     }
 }

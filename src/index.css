@@ -1,10 +1,18 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Press+Start+2P&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
+  --color-cream: #DFDFD4;
+  --color-dark-teal: #07514C;
+  --color-deep-teal: #0F5B57;
+  --color-warm-amber: #DDA44D;
+  --color-terracotta: #DA6C4C;
+  --color-muted-sage: #B8CBC3;
+  --color-charcoal: #212121;
+
   font-family: 'Plus Jakarta Sans', system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
@@ -14,12 +22,22 @@
   -webkit-user-select: none;
 }
 
+/* Native desktop drag regions for macOS */
+[data-tauri-drag-region] {
+  -webkit-app-region: drag;
+}
+
+button, input, textarea, a, select, [data-tauri-no-drag] {
+  -webkit-app-region: no-drag;
+}
+
 body {
   margin: 0;
   display: flex;
   min-width: 320px;
   min-height: 100vh;
   overflow-x: hidden;
+  background-color: #DFDFD4;
 }
 
 #root {
@@ -35,15 +53,168 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #EAEAE2;
+  background: #DFDFD4;
+  border-left: 1px solid #D1D1C5;
 }
 
 ::-webkit-scrollbar-thumb {
   background: #B8CBC3;
-  border-radius: 2px;
+  border: 1px solid #212121;
+  border-radius: 0px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
+  background: #07514C;
+}
+
+/* VoxQuest Modern Sovereign Design System Patterns */
+
+/* Standard Elevated Card Panel */
+.arcade-panel {
+  background: #FFFFFF;
+  color: #212121;
+  border: 1px solid rgba(33, 33, 33, 0.12);
+  border-radius: 1rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.arcade-panel-hoverable:hover {
+  transform: translateY(-2px);
+  border-color: rgba(7, 81, 76, 0.25);
+  box-shadow: 0 6px 16px -2px rgba(0, 0, 0, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
+}
+
+/* Dark Teal Panel (Hero Canvas, Live Dictation) */
+.arcade-panel-dark {
+  background: #07514C;
+  color: #F5F5F0;
+  border: 1px solid rgba(7, 81, 76, 0.6);
+  border-radius: 1rem;
+  box-shadow: 0 4px 20px -2px rgba(7, 81, 76, 0.25);
+  transition: all 0.2s ease;
+}
+
+/* Deep Teal Elevated Container */
+.arcade-panel-deep {
   background: #0F5B57;
+  color: #F5F5F0;
+  border: 1px solid rgba(15, 91, 87, 0.6);
+  border-radius: 1rem;
+  box-shadow: 0 4px 12px 0 rgba(15, 91, 87, 0.2);
+}
+
+/* Amber Highlight Panel */
+.arcade-panel-amber {
+  background: #FFFDF9;
+  color: #212121;
+  border: 1px solid rgba(221, 164, 77, 0.35);
+  border-radius: 1rem;
+  box-shadow: 0 2px 8px rgba(221, 164, 77, 0.12);
+}
+
+/* Tactile Modern Buttons */
+.arcade-btn {
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(33, 33, 33, 0.14);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.arcade-btn:active {
+  transform: scale(0.98);
+}
+
+/* Primary Amber Button */
+.arcade-btn-primary {
+  background: #DDA44D;
+  color: #212121;
+  border: 1px solid rgba(221, 164, 77, 0.7);
+  box-shadow: 0 2px 6px rgba(221, 164, 77, 0.28);
+}
+
+.arcade-btn-primary:hover {
+  background: #E5B25F;
+  box-shadow: 0 3px 10px rgba(221, 164, 77, 0.38);
+}
+
+/* Ghost / Cream Secondary Button */
+.arcade-btn-ghost {
+  background: #FFFFFF;
+  color: #212121;
+  border: 1px solid rgba(33, 33, 33, 0.15);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.arcade-btn-ghost:hover {
+  background: #F4F4EE;
+  border-color: rgba(33, 33, 33, 0.28);
+}
+
+/* Teal Action Button */
+.arcade-btn-teal {
+  background: #07514C;
+  color: #FFFFFF;
+  border: 1px solid rgba(7, 81, 76, 0.8);
+  box-shadow: 0 2px 6px rgba(7, 81, 76, 0.25);
+}
+
+.arcade-btn-teal:hover {
+  background: #0F5B57;
+  box-shadow: 0 4px 10px rgba(7, 81, 76, 0.32);
+}
+
+/* Terracotta Alert / Stop Button */
+.arcade-btn-danger {
+  background: #DA6C4C;
+  color: #FFFFFF;
+  border: 1px solid rgba(218, 108, 76, 0.8);
+  box-shadow: 0 2px 6px rgba(218, 108, 76, 0.25);
+}
+
+.arcade-btn-danger:hover {
+  background: #E07556;
+}
+
+/* Modern Rounded Badges */
+.arcade-badge {
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 9999px;
+  border: 1px solid rgba(33, 33, 33, 0.12);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Smooth Progress Bar */
+.arcade-xp-container {
+  height: 8px;
+  background: #EAEAE2;
+  border-radius: 9999px;
+  overflow: hidden;
+  position: relative;
+}
+
+.arcade-xp-fill {
+  height: 100%;
+  background: #07514C;
+  border-radius: 9999px;
+  transition: width 0.3s ease;
 }
 
