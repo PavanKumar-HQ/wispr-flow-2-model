@@ -1,5 +1,6 @@
 use std::time::Instant;
 use std::sync::Arc;
+use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager, State};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut};
 use uuid::Uuid;
@@ -33,26 +34,31 @@ pub fn clean_whisper_transcript(raw: &str) -> String {
         || lower == "[music]"
         || lower == "(music)"
         || lower == "[applause]"
+        || lower == "(applause)"
         || lower == "[cough]"
         || lower == "(cough)"
         || lower == "[laughter]"
+        || lower == "(laughter)"
         || lower == "[sigh]"
+        || lower == "(sigh)"
         || lower == "[snort]"
         || lower == "[gasp]"
+        || lower == "(gasp)"
         || lower == "[screaming]"
         || lower == "[whispering]"
+        || lower == "(whispering)"
         || lower == "[cheering]"
+        || lower == "(cheering)"
         || lower == "[background noise]"
-        || (lower.starts_with('[') && lower.ends_with(']'))
-        || (lower.starts_with('(') && lower.ends_with(')'));
+        || (lower.starts_with('[') && lower.ends_with(']'));
 
     if is_only_annotations {
         return String::new();
     }
 
-    // Filter Whisper's known training hallucinations on silence/absent audio
+    // Filter Whisper's known training hallucinations on video/dataset endings
     let stripped = lower.trim_matches(['.', '!', '?', ',', ';', ':', ' ', '"', '\'', '-', '_', '\n', '\r']);
-    let is_silence_hallucination = matches!(
+    let is_dataset_hallucination = matches!(
         stripped,
         "thanks for watching"
             | "thanks for watching!"
@@ -60,14 +66,6 @@ pub fn clean_whisper_transcript(raw: &str) -> String {
             | "thank you for watching"
             | "thank you for watching."
             | "thank you for watching!"
-            | "thank you"
-            | "thank you."
-            | "thank you!"
-            | "thanks"
-            | "thanks."
-            | "thanks!"
-            | "thank you very much"
-            | "thank you so much"
             | "please subscribe"
             | "subscribe to my channel"
             | "like and subscribe"
@@ -76,19 +74,12 @@ pub fn clean_whisper_transcript(raw: &str) -> String {
             | "see you next time"
             | "see you in the next video"
             | "watching"
-            | "bye"
-            | "bye bye"
-            | "goodbye"
-            | "ooh"
-            | "ah"
-            | "oh"
-            | "you"
     ) || stripped.starts_with("thanks for watching")
       || stripped.starts_with("thank you for watching")
       || stripped.starts_with("thanks for listening")
       || stripped.starts_with("thank you for listening");
 
-    if is_silence_hallucination {
+    if is_dataset_hallucination {
         return String::new();
     }
 
@@ -100,6 +91,15 @@ pub fn clean_whisper_transcript(raw: &str) -> String {
         || lower.contains("captioned by");
 
     if is_subtitle_hallucination {
+        return String::new();
+    }
+
+    // Direct matches for classic isolated Whisper silence hallucinations
+    let stripped = lower.trim_matches(['.', '!', '?', ',', ';', ':', '"', '\'', '-', '_', '(', ')', '[', ']', ' ']);
+    if matches!(
+        stripped,
+        "thank you" | "thanks" | "thanks for listening" | "thanks for watching" | "thank you for watching" | "thank you for listening" | "ooh" | "bye bye" | "bye" | "you"
+    ) {
         return String::new();
     }
 
@@ -118,10 +118,13 @@ pub fn clean_whisper_transcript(raw: &str) -> String {
         "thanks", "thank", "you", "for", "watching", "this", "video", "please",
         "like", "subscribe", "and", "share", "channel", "bye", "see", "next",
         "time", "to", "my", "listening", "very", "much", "so", "guys", "everyone",
-        "ooh", "oh", "ah", "goodbye"
+        "goodbye"
     ];
 
-    let all_outro_words = words.iter().all(|w| outro_words.contains(w));
+    // Must contain YouTube-specific outro markers (watching, subscribe, channel, video)
+    // to prevent discarding legitimate conversational phrases like "thank you" or "bye"
+    let has_youtube_marker = words.iter().any(|w| matches!(*w, "watching" | "subscribe" | "channel" | "video"));
+    let all_outro_words = has_youtube_marker && words.iter().all(|w| outro_words.contains(w));
     if all_outro_words {
         return String::new();
     }
@@ -143,6 +146,145 @@ pub fn clean_whisper_transcript(raw: &str) -> String {
     }
 
     deduplicate_repeated_speech(&cleaned)
+}
+
+static LAST_TECHNICAL_JARGON_TIME: std::sync::Mutex<Option<Instant>> = std::sync::Mutex::new(None);
+
+pub fn detect_technical_jargon(text: &str) -> Vec<String> {
+    let lower = text.to_lowercase();
+    let mut matches = Vec::new();
+
+    // Check for developer code syntax and verbal operators
+    if lower.contains("parenthesis") || lower.contains("parentheses") {
+        matches.push("parentheses".to_string());
+    }
+    if lower.contains("curly brace") || lower.contains("curly braces") {
+        matches.push("curly braces".to_string());
+    }
+    if lower.contains("square bracket") || (lower.contains("bracket") && (lower.contains("bracket 0") || lower.contains("bracket zero") || lower.contains("bracket i"))) {
+        matches.push("brackets".to_string());
+    }
+    if lower.contains("snake case") || lower.contains("snake_case") {
+        matches.push("snake_case".to_string());
+    }
+    if lower.contains("camel case") || lower.contains("camelcase") {
+        matches.push("camelCase".to_string());
+    }
+    if lower.contains("kebab case") || lower.contains("kebab-case") {
+        matches.push("kebab-case".to_string());
+    }
+    if lower.contains("pascal case") || lower.contains("pascalcase") {
+        matches.push("PascalCase".to_string());
+    }
+    if lower.contains("console.log") || lower.contains("console dot log") {
+        matches.push("console.log".to_string());
+    }
+    if lower.contains("print(") || lower.contains("print parenthesis") {
+        matches.push("print()".to_string());
+    }
+    if lower.contains("fat arrow") || lower.contains("=>") {
+        matches.push("=>".to_string());
+    }
+    if lower.contains("double equals") || lower.contains("==") {
+        matches.push("==".to_string());
+    }
+
+    const TECH_TERMS: &[(&str, &str)] = &[
+        // Databases
+        ("postgresql", "PostgreSQL"),
+        ("postgres", "Postgres"),
+        ("mongodb", "MongoDB"),
+        ("sqlite", "SQLite"),
+        ("redis", "Redis"),
+        ("supabase", "Supabase"),
+        ("dynamodb", "DynamoDB"),
+        ("cassandra", "Cassandra"),
+        ("elasticsearch", "Elasticsearch"),
+        ("mysql", "MySQL"),
+        ("prisma", "Prisma"),
+        ("drizzle", "Drizzle"),
+        // Languages & Runtimes
+        ("typescript", "TypeScript"),
+        ("javascript", "JavaScript"),
+        ("python", "Python"),
+        ("rust", "Rust"),
+        ("golang", "Golang"),
+        ("c++", "C++"),
+        ("swift", "Swift"),
+        ("kotlin", "Kotlin"),
+        ("solidity", "Solidity"),
+        ("nodejs", "Node.js"),
+        ("node.js", "Node.js"),
+        ("bun", "Bun"),
+        ("deno", "Deno"),
+        ("bash", "Bash"),
+        ("zsh", "Zsh"),
+        // Frameworks & Libraries
+        ("react", "React"),
+        ("nextjs", "Next.js"),
+        ("next.js", "Next.js"),
+        ("vue", "Vue"),
+        ("angular", "Angular"),
+        ("svelte", "Svelte"),
+        ("tailwind", "Tailwind"),
+        ("express", "Express"),
+        ("fastapi", "FastAPI"),
+        ("django", "Django"),
+        ("flask", "Flask"),
+        ("tauri", "Tauri"),
+        ("electron", "Electron"),
+        ("graphql", "GraphQL"),
+        ("grpc", "gRPC"),
+        ("rest api", "REST API"),
+        ("pytorch", "PyTorch"),
+        ("tensorflow", "TensorFlow"),
+        // Cloud & DevOps
+        ("docker", "Docker"),
+        ("kubernetes", "Kubernetes"),
+        ("k8s", "K8s"),
+        ("terraform", "Terraform"),
+        ("ansible", "Ansible"),
+        ("aws", "AWS"),
+        ("gcp", "GCP"),
+        ("azure", "Azure"),
+        ("cloudflare", "Cloudflare"),
+        ("ci/cd", "CI/CD"),
+        ("github actions", "GitHub Actions"),
+        ("pull request", "Pull Request"),
+        ("git push", "Git Push"),
+        ("git commit", "Git Commit"),
+        ("rebase", "Git Rebase"),
+        ("merge conflict", "Merge Conflict"),
+        // Concepts & Keywords
+        ("async await", "Async/Await"),
+        ("async", "Async"),
+        ("endpoint", "Endpoint"),
+        ("jwt", "JWT"),
+        ("oauth", "OAuth"),
+        ("mutex", "Mutex"),
+        ("semaphore", "Semaphore"),
+        ("deadlock", "Deadlock"),
+        ("stack trace", "Stack Trace"),
+        ("segfault", "Segfault"),
+        ("memory leak", "Memory Leak"),
+        ("payload", "Payload"),
+        ("json", "JSON"),
+        ("yaml", "YAML"),
+    ];
+
+    for &(needle, display_name) in TECH_TERMS {
+        let matched = if needle.contains(' ') || needle.contains('.') || needle.contains('/') || needle.contains('-') || needle.contains('+') {
+            lower.contains(needle)
+        } else {
+            lower.split(|c: char| !c.is_alphanumeric() && c != '_').any(|w| w == needle)
+        };
+
+        if matched && !matches.iter().any(|m| m.eq_ignore_ascii_case(display_name)) {
+            matches.push(display_name.to_string());
+        }
+    }
+
+    matches
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -290,6 +432,15 @@ pub fn start_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Ses
         !l.contains("voxquest") && !l.contains("tauri")
     });
 
+    let initial_model_name = {
+        let settings = state.settings.lock().unwrap();
+        let manifest = model_manifest::get_official_manifest();
+        manifest.iter()
+            .find(|m| m.id == settings.default_model_id)
+            .map(|m| m.name.clone())
+            .unwrap_or_else(|| "Balanced Everyday Writing".to_string())
+    };
+
     session_lock.session_id = session_id.clone();
     session_lock.sequence += 1;
     session_lock.state = SessionState::Recording;
@@ -299,11 +450,14 @@ pub fn start_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Ses
     session_lock.target_app = clean_target_app;
     session_lock.target_window = target_win_title;
     session_lock.recovery_id = None;
+    session_lock.active_model_name = Some(initial_model_name);
+    session_lock.technical_suggestion = None;
     session_lock.timestamp_ms = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_millis() as u64;
 
     let snap = session_lock.clone();
     let _ = app.emit("dictation-session-changed", &snap);
+    drop(session_lock);
 
     // Make floating indicator visible immediately on main thread without stealing key focus from target app
     let app_show = app.clone();
@@ -374,6 +528,17 @@ pub fn start_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Ses
         });
     }
 
+    // In push-to-talk mode, if user already released the shortcut key while audio initialization was in flight,
+    // immediately transition to stop_dictation so recording does not get stuck in background!
+    let mode = {
+        let s = state.settings.lock().unwrap();
+        s.interaction_mode.clone()
+    };
+    if mode == "push_to_talk" && !crate::is_shortcut_held() {
+        println!("VoxQuest: Shortcut was released during initialization -> immediately stopping dictation");
+        return stop_dictation(state, app);
+    }
+
     Ok(snap)
 }
 
@@ -384,8 +549,8 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
 
     let session_id = {
         let mut session_lock = state.active_session.lock().unwrap();
-        if session_lock.state != SessionState::Recording {
-            return Err("Cannot stop: session is not in recording state".to_string());
+        if !session_lock.state.can_transition_to(SessionState::Transcribing) {
+            return Err(format!("Cannot stop: session in state {} cannot transition to transcribing", session_lock.state));
         }
         session_lock.state = SessionState::Transcribing;
         session_lock.sequence += 1;
@@ -403,6 +568,9 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
     };
     let t_audio_done = Instant::now();
 
+    // Feature 017: Speech Reliability Monitor
+    let audio_reliability = crate::audio_service::analyze_speech_reliability(&audio_samples, 16000);
+
     let duration_sec = {
         let start_lock = state.recording_start.lock().unwrap();
         start_lock.map(|s| s.elapsed().as_secs_f32()).unwrap_or(0.0)
@@ -415,16 +583,80 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
 
     let models_dir = model_manager::get_voxquest_models_dir();
     let manifest = model_manifest::get_official_manifest();
-    let current_info = manifest.iter()
-        .find(|m| m.id == settings.default_model_id)
-        .or_else(|| manifest.iter().find(|m| m.recommended))
-        .ok_or_else(|| "No model manifest found".to_string())?;
+
+    // Context-Aware Dynamic Model Routing:
+    // When enable_auto_model_routing is true or default_model_id is "auto", VoxQuest dynamically inspects the active application
+    // and speech duration/cadence to route between Instant/Everyday and Pro/Ultra models automatically.
+    let frontmost = crate::safety_service::get_frontmost_app_name().unwrap_or_default().to_lowercase();
+    let is_dev_app = frontmost.contains("code")
+        || frontmost.contains("cursor")
+        || frontmost.contains("terminal")
+        || frontmost.contains("iterm")
+        || frontmost.contains("warp")
+        || frontmost.contains("xcode")
+        || frontmost.contains("studio")
+        || frontmost.contains("intellij")
+        || frontmost.contains("pycharm")
+        || frontmost.contains("webstorm")
+        || frontmost.contains("postman")
+        || frontmost.contains("github")
+        || frontmost.contains("sublime")
+        || frontmost.contains("zed");
+
+    let had_recent_tech = LAST_TECHNICAL_JARGON_TIME.lock().ok().and_then(|t| *t).map(|t| t.elapsed().as_secs() < 600).unwrap_or(false);
+
+    let current_info = if settings.enable_auto_model_routing || settings.default_model_id == "auto" {
+        let prefers_high_precision = is_dev_app || had_recent_tech || duration_sec >= 4.0;
+
+        if prefers_high_precision {
+            // Find highest-tier downloaded model: Large-v3-Turbo -> Small -> Base -> Tiny
+            let candidate_ids = ["whisper-large-v3-turbo", "whisper-small", "whisper-base", "whisper-tiny"];
+            candidate_ids
+                .iter()
+                .filter_map(|id| manifest.iter().find(|m| &m.id == id))
+                .find(|m| models_dir.join(&m.filename).exists())
+                .cloned()
+                .or_else(|| manifest.iter().find(|m| m.recommended).cloned())
+                .ok_or_else(|| "No model manifest found".to_string())?
+        } else {
+            // Instant/Everyday: Base -> Tiny -> Small -> Large-v3-Turbo
+            let candidate_ids = ["whisper-base", "whisper-tiny", "whisper-small", "whisper-large-v3-turbo"];
+            candidate_ids
+                .iter()
+                .filter_map(|id| manifest.iter().find(|m| &m.id == id))
+                .find(|m| models_dir.join(&m.filename).exists())
+                .cloned()
+                .or_else(|| manifest.iter().find(|m| m.recommended).cloned())
+                .ok_or_else(|| "No model manifest found".to_string())?
+        }
+    } else {
+        manifest.iter()
+            .find(|m| m.id == settings.default_model_id)
+            .or_else(|| manifest.iter().find(|m| m.recommended))
+            .cloned()
+            .ok_or_else(|| "No model manifest found".to_string())?
+    };
+
+    // Robust fallback: If selected model file is not downloaded, safely fallback to highest-tier downloaded model
+    let current_info = if !models_dir.join(&current_info.filename).exists() {
+        let fallback_candidates = ["whisper-small", "whisper-base", "whisper-tiny", "whisper-large-v3-turbo"];
+        fallback_candidates
+            .iter()
+            .filter_map(|id| manifest.iter().find(|m| &m.id == id))
+            .find(|m| models_dir.join(&m.filename).exists())
+            .cloned()
+            .unwrap_or(current_info)
+    } else {
+        current_info
+    };
 
     let model_path = models_dir.join(&current_info.filename);
     if !model_path.exists() {
         let mut session_lock = state.active_session.lock().unwrap();
         session_lock.state = SessionState::Failed;
         session_lock.sequence += 1;
+        session_lock.active_model_name = Some(current_info.name.clone());
+        session_lock.technical_suggestion = None;
         session_lock.timestamp_ms = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_millis() as u64;
         session_lock.message = Some(format!("Model {} is not downloaded. Please install it in Model Settings.", current_info.name));
@@ -449,9 +681,10 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
     let raw_transcript = if is_silent {
         String::new()
     } else {
+        let trimmed_samples = crate::audio_service::trim_audio_silence(&audio_samples, 16000);
         let mut engine = state.whisper.lock().unwrap();
         let lang = if settings.language == "auto" { None } else { Some(settings.language.as_str()) };
-        engine.transcribe(&audio_samples, lang, dict_prompt.as_deref())?
+        engine.transcribe(&trimmed_samples, lang, dict_prompt.as_deref())?
     };
     let t_whisper_done = Instant::now();
 
@@ -461,10 +694,16 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
     if cleaned_transcript.is_empty() {
         let mut session_lock = state.active_session.lock().unwrap();
         session_lock.sequence += 1;
+        session_lock.active_model_name = Some(current_info.name.clone());
+        session_lock.technical_suggestion = None;
         session_lock.timestamp_ms = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_millis() as u64;
         session_lock.state = SessionState::Completed;
-        session_lock.message = Some("No speech detected. Ready to dictate.".to_string());
+        session_lock.message = Some(if audio_reliability.status != "optimal" {
+            audio_reliability.advisory.clone()
+        } else {
+            "No speech detected. Ready to dictate.".to_string()
+        });
         session_lock.last_transcript = None;
         let snap = session_lock.clone();
         let _ = app.emit("dictation-session-changed", &snap);
@@ -505,6 +744,7 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
         spoken_punctuation: settings.spoken_punctuation,
         conservative_filler_removal: settings.conservative_filler_removal,
         auto_capitalization: settings.auto_capitalization,
+        speech_repair: settings.enable_speech_repair,
     };
     let formatted_transcript = format_transcript(&cleaned_transcript, &fmt_cfg);
     let (mut formatted_transcript, _applied_vocab) = state.history.apply_personalization_pipeline(&formatted_transcript);
@@ -551,12 +791,15 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
     }).unwrap_or(false);
 
     // Destination Anchor Selection:
-    // Original destination is strictly preserved even if user switched applications while recording
-    let target_anchor: Option<TargetSnapshot> = if orig_is_external {
-        // Priority 1: The original application where dictation was started
+    // Respect user's configured insertion_policy ("original_destination" vs "active_at_stop")
+    let target_anchor: Option<TargetSnapshot> = if settings.insertion_policy == "active_at_stop" && curr_is_external && !current_snap.is_secure_input {
+        // Mode 2: Insert into active cursor at stop
+        Some(current_snap.clone())
+    } else if orig_is_external {
+        // Mode 1 (Default): Original Destination strictly preserved even if user clicked or switched windows while speaking
         Some(target_snapshot.unwrap())
     } else if curr_is_external && !current_snap.is_secure_input {
-        // Priority 2: If dictation was started from VoxQuest UI, use current focused app
+        // Dictation started from VoxQuest UI, use current external app
         Some(current_snap.clone())
     } else if let Some(last_ext) = crate::safety_service::get_last_external_app() {
         // Fallback: Most recent external app
@@ -801,6 +1044,66 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
     }
 
     let t_insert_done = Instant::now();
+
+    let detected_tech_terms = detect_technical_jargon(&formatted_transcript);
+    let is_code_syntax = formatted_transcript.contains("print(")
+        || formatted_transcript.contains("console.log(")
+        || formatted_transcript.contains("def ")
+        || formatted_transcript.contains("fn ")
+        || formatted_transcript.contains("=>")
+        || formatted_transcript.contains("==")
+        || formatted_transcript.contains("!=");
+
+    let has_technical = is_code_syntax || !detected_tech_terms.is_empty();
+
+    let technical_suggestion: Option<String> = if has_technical {
+        if let Ok(mut t) = LAST_TECHNICAL_JARGON_TIME.lock() {
+            *t = Some(Instant::now());
+        }
+
+        let sample = if !detected_tech_terms.is_empty() {
+            detected_tech_terms.iter().take(3).cloned().collect::<Vec<_>>().join(", ")
+        } else {
+            "Code syntax".to_string()
+        };
+
+        let dev_candidate = ["whisper-large-v3-turbo", "whisper-small", "whisper-base", "whisper-tiny"]
+            .iter()
+            .filter_map(|id| manifest.iter().find(|m| &m.id == id))
+            .find(|m| models_dir.join(&m.filename).exists())
+            .cloned();
+
+        if let Some(target_dev_model) = dev_candidate {
+            if current_info.id != target_dev_model.id {
+                // Auto-shift settings to highest downloaded precision model
+                {
+                    let mut settings_lock = state.settings.lock().unwrap();
+                    settings_lock.default_model_id = target_dev_model.id.clone();
+                    let _ = crate::settings_service::save_settings(&settings_lock);
+                    let _ = app.emit("settings-updated", &*settings_lock);
+                }
+
+                let msg = format!("⚡ Technical statement detected ({}). Toggled to {} profile.", sample, target_dev_model.name);
+                let _ = app.emit("technical-model-shifted", &msg);
+                Some(msg)
+            } else {
+                let msg = format!("⚡ {} active for technical statement.", target_dev_model.name);
+                let _ = app.emit("technical-model-shifted", &msg);
+                Some(msg)
+            }
+        } else {
+            None
+        }
+    } else if current_info.id == "whisper-large-v3-turbo" && !is_dev_app && duration_sec < 4.0 {
+        Some(
+            "General conversational speech detected. Switch to Balanced Everyday profile for faster response?".to_string()
+        )
+    } else {
+        None
+    };
+
+    session_lock.active_model_name = Some(current_info.name.clone());
+    session_lock.technical_suggestion = technical_suggestion;
 
     // Print independent latency breakdown and structured diagnostics
     let ms_audio = (t_audio_done - t_stop_requested).as_secs_f64() * 1000.0;
@@ -1134,6 +1437,20 @@ pub fn save_settings_cmd(state: State<'_, AppState>, app: AppHandle, new_setting
         *s = new_settings.clone();
         old
     };
+
+    // Update active model name in session state to reflect setting immediately
+    let manifest = crate::model_manifest::get_official_manifest();
+    if let Some(target_info) = manifest.iter().find(|m| m.id == new_settings.default_model_id) {
+        let mut session_lock = state.active_session.lock().unwrap();
+        session_lock.active_model_name = Some(target_info.name.clone());
+        session_lock.sequence += 1;
+        session_lock.timestamp_ms = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis() as u64;
+        let snap = session_lock.clone();
+        let _ = app.emit("dictation-session-changed", &snap);
+    }
 
     // Re-register hotkey if shortcut key binding changed
     if old_shortcut != new_settings.shortcut {
@@ -1523,13 +1840,29 @@ pub fn propose_correction_rules(
 }
 
 #[tauri::command]
+#[allow(non_snake_case)]
 pub fn update_personal_vocabulary_entry(
     state: State<'_, AppState>,
     id: i64,
-    preferred_text: String,
-    status: String,
+    original_text: Option<String>,
+    originalText: Option<String>,
+    preferred_text: Option<String>,
+    preferredText: Option<String>,
+    entry_type: Option<String>,
+    entryType: Option<String>,
+    status: Option<String>,
 ) -> Result<(), String> {
-    state.history.update_personal_vocabulary(id, &preferred_text, &status)
+    let orig = original_text.or(originalText);
+    let pref = preferred_text.or(preferredText);
+    let cat = entry_type.or(entryType);
+    let stat = status.unwrap_or_else(|| "active".to_string());
+    state.history.update_personal_vocabulary_full(
+        id,
+        orig.as_deref(),
+        pref.as_deref(),
+        cat.as_deref(),
+        Some(&stat),
+    )
 }
 
 #[tauri::command]
@@ -1555,4 +1888,182 @@ pub fn submit_transcript_correction(
     final_text: String,
 ) -> Result<Vec<crate::personalization_service::PersonalVocabularyEntry>, String> {
     state.history.record_correction_event(session_id.as_deref(), &original_text, &final_text)
+}
+
+#[tauri::command]
+pub fn switch_speech_profile(
+    state: State<'_, AppState>,
+    app: AppHandle,
+    profile: String,
+) -> Result<String, String> {
+    let manifest = crate::model_manifest::get_official_manifest();
+    let models_dir = dirs::data_local_dir()
+        .map(|d| d.join("VoxQuest").join("models"))
+        .unwrap_or_else(|| std::path::PathBuf::from("."));
+
+    let target_model_id = match profile.to_lowercase().as_str() {
+        "developer" | "dev" | "tech" | "technical" => {
+            let candidate_ids = ["whisper-large-v3-turbo", "whisper-small", "whisper-base", "whisper-tiny"];
+            candidate_ids
+                .iter()
+                .filter_map(|id| manifest.iter().find(|m| &m.id == id))
+                .find(|m| models_dir.join(&m.filename).exists())
+                .map(|m| m.id.as_str())
+                .unwrap_or("whisper-small")
+        }
+        "multilingual" | "dialects" => {
+            if models_dir.join("ggml-small.bin").exists() { "whisper-small" } else { "whisper-base" }
+        }
+        "general" | "instant" | "fast" => {
+            if models_dir.join("ggml-tiny.bin").exists() { "whisper-tiny" } else { "whisper-base" }
+        }
+        "balanced" | "everyday" => {
+            if models_dir.join("ggml-base.bin").exists() { "whisper-base" } else { "whisper-tiny" }
+        }
+        _ => {
+            return Err(format!("Unknown speech profile: {}", profile));
+        }
+    };
+
+    let target_info = manifest.iter()
+        .find(|m| m.id == target_model_id)
+        .cloned()
+        .unwrap_or_else(|| manifest[0].clone());
+
+    {
+        let mut settings = state.settings.lock().unwrap();
+        settings.default_model_id = target_info.id.clone();
+        if target_info.id == "whisper-large-v3-turbo" || target_info.id == "whisper-small" {
+            settings.spoken_punctuation = true;
+            settings.enable_speech_repair = true;
+        }
+        crate::settings_service::save_settings(&settings)?;
+        let _ = app.emit("settings-updated", &*settings);
+    }
+
+    {
+        let mut session_lock = state.active_session.lock().unwrap();
+        session_lock.active_model_name = Some(target_info.name.clone());
+        session_lock.technical_suggestion = None;
+        session_lock.sequence += 1;
+        session_lock.timestamp_ms = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis() as u64;
+        let snap = session_lock.clone();
+        let _ = app.emit("dictation-session-changed", &snap);
+    }
+
+    Ok(format!("Switched to {} profile", target_info.name))
+}
+
+#[tauri::command]
+pub fn dismiss_technical_suggestion(
+    state: State<'_, AppState>,
+    app: AppHandle,
+) -> Result<(), String> {
+    let mut session_lock = state.active_session.lock().unwrap();
+    session_lock.technical_suggestion = None;
+    session_lock.sequence += 1;
+    session_lock.timestamp_ms = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis() as u64;
+    let snap = session_lock.clone();
+    let _ = app.emit("dictation-session-changed", &snap);
+    Ok(())
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IngestCapsuleResult {
+    pub project_name: String,
+    pub terms_ingested: usize,
+    pub terms: Vec<String>,
+}
+
+#[tauri::command]
+pub fn compose_thought_to_spec_cmd(text: String) -> Result<crate::prompt_service::TechnicalSpec, String> {
+    Ok(crate::prompt_service::compose_thought_to_spec(&text))
+}
+
+#[tauri::command]
+pub fn ingest_project_context_capsule_cmd(
+    state: State<'_, AppState>,
+    project_name: String,
+    project_path: Option<String>,
+) -> Result<IngestCapsuleResult, String> {
+    let clean_name = project_name.trim();
+    if clean_name.is_empty() {
+        return Err("Project name cannot be empty".to_string());
+    }
+
+    let mut detected_terms = Vec::new();
+
+    // 1. If project_path provided, parse package.json or Cargo.toml
+    let base_path = project_path.unwrap_or_else(|| ".".to_string());
+    let path = std::path::Path::new(&base_path);
+
+    let pkg_json_path = path.join("package.json");
+    if pkg_json_path.exists() {
+        if let Ok(content) = std::fs::read_to_string(&pkg_json_path) {
+            if let Ok(val) = serde_json::from_str::<serde_json::Value>(&content) {
+                if let Some(deps) = val.get("dependencies").and_then(|d| d.as_object()) {
+                    for k in deps.keys() {
+                        let clean_k = k.trim_start_matches('@').replace('/', "-");
+                        detected_terms.push(clean_k);
+                    }
+                }
+                if let Some(dev_deps) = val.get("devDependencies").and_then(|d| d.as_object()) {
+                    for k in dev_deps.keys() {
+                        let clean_k = k.trim_start_matches('@').replace('/', "-");
+                        detected_terms.push(clean_k);
+                    }
+                }
+            }
+        }
+    }
+
+    let cargo_toml_path = path.join("Cargo.toml");
+    if cargo_toml_path.exists() {
+        if let Ok(content) = std::fs::read_to_string(&cargo_toml_path) {
+            let mut in_deps = false;
+            for line in content.lines() {
+                let trimmed = line.trim();
+                if trimmed.starts_with('[') {
+                    in_deps = trimmed.contains("dependencies");
+                    continue;
+                }
+                if in_deps && trimmed.contains('=') {
+                    if let Some(dep_name) = trimmed.split('=').next() {
+                        let dep_clean = dep_name.trim().trim_matches('"');
+                        if !dep_clean.is_empty() && !dep_clean.starts_with('#') {
+                            detected_terms.push(dep_clean.to_string());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Default common tech stack terms if none discovered in directory
+    if detected_terms.is_empty() {
+        detected_terms.extend(vec![
+            "Rust".to_string(), "Tauri".to_string(), "TypeScript".to_string(),
+            "React".to_string(), "Zustand".to_string(), "Tailwind".to_string(),
+            "rusqlite".to_string(), "whisper".to_string(),
+        ]);
+    }
+
+    let mut count = 0;
+    for term in &detected_terms {
+        if state.history.add_personal_vocabulary(&term.to_lowercase(), term, "tech", "active", Some("capsule")).is_ok() {
+            count += 1;
+        }
+    }
+
+    Ok(IngestCapsuleResult {
+        project_name: clean_name.to_string(),
+        terms_ingested: count,
+        terms: detected_terms,
+    })
 }

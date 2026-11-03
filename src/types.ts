@@ -30,6 +30,8 @@ export interface AppSettings {
   auto_approve_corrections?: boolean;
   enable_destination_sync?: boolean;
   destination_sync_duration_secs?: number;
+  enable_auto_model_routing?: boolean;
+  enable_speech_repair?: boolean;
 }
 
 export interface AppUsageStat {
@@ -86,6 +88,8 @@ export interface SessionSnapshot {
   target_window?: string | null;
   recovery_id?: number | null;
   timestamp_ms?: number;
+  technical_suggestion?: string | null;
+  active_model_name?: string | null;
 }
 
 export interface SystemCapabilities {
@@ -142,7 +146,9 @@ export type EnhancementMode =
   | 'natural'
   | 'improve_clarity'
   | 'keep_tone'
-  | 'prompt';
+  | 'prompt'
+  | 'prompt_composition'
+  | 'technical_precision';
 
 export interface EnhancementRequest {
   session_id?: string | null;
@@ -152,6 +158,14 @@ export interface EnhancementRequest {
   target_app?: string;
 }
 
+export interface IntentAudit {
+  preserved_negations: string[];
+  protected_terms: string[];
+  preserved_numbers: string[];
+  missing_constraints: string[];
+  status: string;
+}
+
 export interface EnhancementResponse {
   original_text: string;
   enhanced_text: string;
@@ -159,6 +173,24 @@ export interface EnhancementResponse {
   changes_made: boolean;
   explanations: string[];
   model_used: string;
+  intent_audit?: IntentAudit;
+}
+
+export interface TechnicalSpec {
+  raw_thinking: string;
+  objective: string;
+  assumptions: string[];
+  decisions: string[];
+  constraints: string[];
+  acceptance_criteria: string[];
+  open_questions: string[];
+  markdown: string;
+}
+
+export interface IngestCapsuleResult {
+  project_name: string;
+  terms_ingested: number;
+  terms: string[];
 }
 
 // Backward compatibility alias

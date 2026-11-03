@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Wand2, Check, Copy, CornerDownLeft, RotateCcw, X, Sparkles, AlertCircle, RefreshCw } from 'lucide-react';
+import { Wand2, Check, Copy, CornerDownLeft, RotateCcw, X, AlertCircle, RefreshCw, Edit3, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { safeInvoke } from '../lib/ipc';
 import { EnhancementMode, EnhancementResponse, EnhancementRequest } from '../types';
+import { DeveloperCasingBar } from './DeveloperCasingBar';
 
 interface EnhanceReviewCardProps {
   originalText: string;
@@ -17,8 +18,9 @@ interface EnhanceReviewCardProps {
 }
 
 const MODES: { id: EnhancementMode; label: string; desc: string }[] = [
-  { id: 'light_correction', label: 'Light Correction', desc: 'Fix spelling, grammar, punctuation, and capitalization.' },
-  { id: 'prompt', label: 'AI Prompt', desc: 'Polish conversational instructions into precise, high-potency prompts.' },
+  { id: 'light_correction', label: 'Light Correction', desc: 'Fix spelling, grammar, punctuation, and capitalization without rewriting.' },
+  { id: 'technical_precision', label: 'Technical Precision', desc: 'Preserve code, identifiers, commands, flags, and constraints.' },
+  { id: 'prompt', label: 'Prompt Composition', desc: 'Polish conversational instructions into precise, high-potency prompts.' },
   { id: 'professional', label: 'Professional', desc: 'Improve clarity, grammar, and workplace tone while preserving facts.' },
   { id: 'concise', label: 'Concise', desc: 'Remove unnecessary repetition and wordiness without losing meaning.' },
   { id: 'natural', label: 'Natural', desc: 'Improve readability while retaining your natural conversational voice.' },
@@ -36,10 +38,22 @@ export const EnhanceReviewCard: React.FC<EnhanceReviewCardProps> = ({
   defaultMode = 'light_correction',
   className = '',
 }) => {
-  // Auto-detect prompt if spoken text represents an AI prompt or contains prompt instructions
+  // Auto-detect prompt ONLY if explicitly requesting prompt creation
   const isPromptLike = () => {
     const l = (originalText || '').trim().toLowerCase();
-    return l.startsWith('prompt') || l.startsWith('verify') || l.startsWith('write') || l.startsWith('create') || l.startsWith('generate') || l.startsWith('explain') || l.startsWith('fix') || l.startsWith('debug') || l.includes('prompt');
+    return (
+      l.startsWith('generate a prompt') ||
+      l.startsWith('generate prompt') ||
+      l.startsWith('create a prompt') ||
+      l.startsWith('create prompt') ||
+      l.startsWith('write a prompt') ||
+      l.startsWith('write prompt') ||
+      l.startsWith('prompt for') ||
+      l.startsWith('prompt to') ||
+      l.startsWith('make a prompt') ||
+      l.startsWith('give me a prompt') ||
+      l.startsWith('prompt:')
+    );
   };
 
   const initialMode = isPromptLike() ? 'prompt' : defaultMode;
@@ -49,6 +63,8 @@ export const EnhanceReviewCard: React.FC<EnhanceReviewCardProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<boolean>(false);
   const [inserted, setInserted] = useState<boolean>(false);
+  const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [editedText, setEditedText] = useState<string>('');
 
   const runEnhancement = async (mode: EnhancementMode) => {
     if (!originalText.trim()) return;
@@ -65,6 +81,7 @@ export const EnhanceReviewCard: React.FC<EnhanceReviewCardProps> = ({
       const res = await safeInvoke<EnhancementResponse>('enhance_text_cmd', { request: req });
       if (res && res.enhanced_text) {
         setResult(res);
+        setEditedText(res.enhanced_text);
       } else {
         setError('Enhancement returned empty output.');
       }
@@ -86,14 +103,14 @@ export const EnhanceReviewCard: React.FC<EnhanceReviewCardProps> = ({
   };
 
   const handleCopyClick = () => {
-    const textToCopy = result?.enhanced_text || originalText;
+    const textToCopy = isEditing ? editedText : (result?.enhanced_text || originalText);
     onCopy(textToCopy);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   const handleInsertClick = () => {
-    const textToInsert = result?.enhanced_text || originalText;
+    const textToInsert = isEditing ? editedText : (result?.enhanced_text || originalText);
     if (onInsert) {
       onInsert(textToInsert);
       setInserted(true);
@@ -102,7 +119,7 @@ export const EnhanceReviewCard: React.FC<EnhanceReviewCardProps> = ({
   };
 
   const handleAcceptClick = async () => {
-    const textToAccept = result?.enhanced_text || originalText;
+    const textToAccept = isEditing ? editedText : (result?.enhanced_text || originalText);
     if (historyId) {
       try {
         await safeInvoke('accept_enhancement_history_cmd', {
@@ -189,14 +206,14 @@ export const EnhanceReviewCard: React.FC<EnhanceReviewCardProps> = ({
 
       {/* Comparison View */}
       {loading ? (
-        <div className="py-8 text-center space-y-2 border-2 border-dashed border-vq-border rounded-xl bg-vq-surface/50">
-          <RefreshCw className="w-5 h-5 text-vq-tealDark animate-spin mx-auto" />
-          <p className="text-xs font-bold text-vq-charcoal">Enhancing with local engine...</p>
-          <p className="text-[10px] text-vq-charcoal/60">Applying {selectedMode.replace('_', ' ')} transformations</p>
+        <div className="py-8 text-center space-y-2 border border-dashed border-charcoal/20 rounded-xl bg-stone-50">
+          <RefreshCw className="w-5 h-5 text-darkTeal animate-spin mx-auto" />
+          <p className="text-xs font-bold text-charcoal">Enhancing with local engine...</p>
+          <p className="text-[10px] text-charcoal/60">Applying {selectedMode.replace('_', ' ')} transformations</p>
         </div>
       ) : error ? (
-        <div className="p-3 rounded-xl bg-vq-terracotta/10 border-2 border-vq-terracotta/40 text-xs flex items-center gap-2 text-vq-charcoal">
-          <AlertCircle className="w-4 h-4 text-vq-terracotta shrink-0" />
+        <div className="p-3 rounded-xl bg-terracotta/10 border border-terracotta/30 text-xs flex items-center gap-2 text-charcoal">
+          <AlertCircle className="w-4 h-4 text-terracotta shrink-0" />
           <span>{error}</span>
         </div>
       ) : result ? (
@@ -216,29 +233,113 @@ export const EnhanceReviewCard: React.FC<EnhanceReviewCardProps> = ({
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold text-darkTeal uppercase tracking-wide flex items-center gap-1">
-                  <Sparkles className="w-3 h-3 text-amber-500 fill-amber-500" />
+                  <Wand2 className="w-3 h-3 text-amber" />
                   Enhanced ({selectedMode.replace('_', ' ')})
                 </span>
-                {result.changes_made ? (
-                  <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    Refined
-                  </span>
-                ) : (
-                  <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full bg-stone-100 text-charcoal/70 border border-charcoal/10">
-                    No changes needed
-                  </span>
-                )}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditing(!isEditing)}
+                    className="tactile-btn tactile-btn-surface px-2.5 py-1 text-[11px] font-bold rounded-lg cursor-pointer"
+                    title={isEditing ? 'Finish editing' : 'Edit enhanced text manually before accepting'}
+                  >
+                    <Edit3 className="w-3 h-3" />
+                    <span>{isEditing ? 'Done Editing' : 'Edit Draft'}</span>
+                  </button>
+                  {result.changes_made ? (
+                    <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      Refined
+                    </span>
+                  ) : (
+                    <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full bg-stone-100 text-charcoal/70 border border-charcoal/10">
+                      No changes needed
+                    </span>
+                  )}
+                </div>
               </div>
-              <div className="p-3 rounded-xl bg-[#F7FAF8] border border-darkTeal/40 text-xs text-charcoal font-medium leading-relaxed min-h-[64px] select-text">
-                "{result.enhanced_text}"
-              </div>
+
+              {isEditing ? (
+                <textarea
+                  value={editedText}
+                  onChange={(e) => setEditedText(e.target.value)}
+                  className="w-full p-3 rounded-xl bg-white border-2 border-darkTeal text-xs text-charcoal font-medium leading-relaxed min-h-[72px] focus:outline-none focus:ring-1 focus:ring-darkTeal resize-y"
+                  placeholder="Edit enhanced text directly..."
+                />
+              ) : (
+                <div className="p-3 rounded-xl bg-[#F7FAF8] border-2 border-darkTeal/30 text-xs text-charcoal font-medium leading-relaxed min-h-[64px] select-text">
+                  "{editedText || result.enhanced_text}"
+                </div>
+              )}
+
+              {/* Developer Casing Transformations */}
+              <DeveloperCasingBar
+                text={isEditing ? editedText : result.enhanced_text}
+                onApply={(transformed) => {
+                  setEditedText(transformed);
+                  if (onInsert) onInsert(transformed);
+                }}
+              />
             </div>
           </div>
+
+          {/* Explanation Checklist: Exactly what was changed */}
+          {result.explanations && result.explanations.length > 0 && (
+            <div className="p-3 rounded-xl bg-amber/10 border border-amber/30 space-y-1.5 text-xs text-charcoal">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-darkTeal flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-darkTeal" />
+                What was improved:
+              </span>
+              <ul className="space-y-1 pl-4 list-disc text-[11px] text-charcoal/80 font-medium">
+                {result.explanations.map((exp, idx) => (
+                  <li key={idx}>{exp}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Intent Integrity Inspector & Checklist */}
+          {result.intent_audit && (
+            <div className="p-3.5 rounded-xl border-2 border-darkTeal/20 bg-[#F4F9F7] space-y-2 animate-fadeIn">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-darkTeal flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
+                  Intent Integrity Verification
+                </span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                  {result.intent_audit.missing_constraints.length === 0 ? 'Verified Safe & Intact' : 'Warning: Modified'}
+                </span>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                {result.intent_audit.preserved_negations.map((neg, i) => (
+                  <span key={i} className="px-2 py-0.5 rounded-lg bg-white border border-darkTeal/30 text-darkTeal font-mono font-bold flex items-center gap-1 shadow-xs">
+                    <Check className="w-2.5 h-2.5 text-emerald-600" />
+                    <span>Negation: "{neg}"</span>
+                  </span>
+                ))}
+                {result.intent_audit.protected_terms.map((term, i) => (
+                  <span key={i} className="px-2 py-0.5 rounded-lg bg-white border border-amber/50 text-charcoal font-mono font-bold flex items-center gap-1 shadow-xs">
+                    <Check className="w-2.5 h-2.5 text-amber-600" />
+                    <span>Entity: {term}</span>
+                  </span>
+                ))}
+                {result.intent_audit.preserved_numbers.map((num, i) => (
+                  <span key={i} className="px-2 py-0.5 rounded-lg bg-white border border-charcoal/20 text-charcoal font-mono font-bold flex items-center gap-1 shadow-xs">
+                    <Check className="w-2.5 h-2.5 text-emerald-600" />
+                    <span>Constant: {num}</span>
+                  </span>
+                ))}
+                {result.intent_audit.preserved_negations.length === 0 && result.intent_audit.protected_terms.length === 0 && result.intent_audit.preserved_numbers.length === 0 && (
+                  <span className="text-[11px] text-charcoal/60 italic">Zero semantic inversions detected. Tone polished safely.</span>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Clean status note */}
           {result.changes_made && (
             <div className="flex items-center justify-between text-[11px] text-charcoal/70 px-1">
-              <span>Text polished and ready to place</span>
+              <span>Text polished and verified against intent degradation</span>
               <span className="font-semibold text-darkTeal capitalize">{selectedMode.replace('_', ' ')}</span>
             </div>
           )}
@@ -246,12 +347,12 @@ export const EnhanceReviewCard: React.FC<EnhanceReviewCardProps> = ({
       ) : null}
 
       {/* Action Buttons */}
-      <div className="flex items-center justify-between flex-wrap gap-2 pt-1 border-t border-charcoal/10">
+      <div className="flex items-center justify-between flex-wrap gap-2 pt-2 border-t-2 border-charcoal/10">
         <div className="flex items-center gap-2">
           {onRestoreOriginal && (
             <button
               onClick={handleRestoreClick}
-              className="px-3 py-1.5 rounded-xl border border-charcoal/20 bg-white text-charcoal hover:bg-neutral-50 text-xs font-medium transition-all shadow-xs active:scale-95 flex items-center gap-1.5"
+              className="tactile-btn tactile-btn-surface px-3 py-1.5 text-xs font-bold"
               title="Revert back to the exact initial speech recognition transcript"
             >
               <RotateCcw className="w-3.5 h-3.5 text-charcoal/70" />
@@ -261,7 +362,7 @@ export const EnhanceReviewCard: React.FC<EnhanceReviewCardProps> = ({
 
           <button
             onClick={onDiscard}
-            className="px-3 py-1.5 rounded-xl border border-charcoal/20 bg-white text-charcoal/70 hover:bg-neutral-50 text-xs font-medium transition-all shadow-xs active:scale-95"
+            className="tactile-btn tactile-btn-surface px-3 py-1.5 text-xs font-bold"
           >
             Cancel
           </button>
@@ -270,28 +371,28 @@ export const EnhanceReviewCard: React.FC<EnhanceReviewCardProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={handleCopyClick}
-            className="px-3 py-1.5 rounded-xl border border-charcoal/20 bg-white text-charcoal hover:bg-neutral-50 text-xs font-medium transition-all shadow-xs active:scale-95 flex items-center gap-1.5"
+            className="tactile-btn tactile-btn-surface px-3 py-1.5 text-xs font-bold"
             title="Copy enhanced text to clipboard"
           >
-            {copied ? <Check className="w-3.5 h-3.5 text-darkTeal" /> : <Copy className="w-3.5 h-3.5 text-darkTeal" />}
+            {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-darkTeal" />}
             <span className="hidden sm:inline">{copied ? 'Copied' : 'Copy'}</span>
           </button>
 
           {onInsert && (
             <button
               onClick={handleInsertClick}
-              className="px-3 py-1.5 rounded-xl border border-darkTeal/20 bg-darkTeal/10 text-darkTeal hover:bg-darkTeal/20 text-xs font-semibold transition-all shadow-xs active:scale-95 flex items-center gap-1.5"
-              title="Insert enhanced text into active app cursor"
+              className="tactile-btn tactile-btn-primary px-3.5 py-1.5 text-xs font-bold"
+              title="Paste enhanced text directly into your active application at your cursor"
             >
-              {inserted ? <Check className="w-3.5 h-3.5 text-darkTeal" /> : <CornerDownLeft className="w-3.5 h-3.5 text-amber" />}
-              <span className="hidden sm:inline">{inserted ? 'Inserted!' : 'Insert'}</span>
+              {inserted ? <Check className="w-3.5 h-3.5" /> : <CornerDownLeft className="w-3.5 h-3.5" />}
+              <span>{inserted ? 'Pasted to App!' : 'Paste to App'}</span>
             </button>
           )}
 
           <button
             onClick={handleAcceptClick}
             disabled={loading}
-            className="px-4 py-1.5 rounded-xl bg-darkTeal text-white hover:bg-deepTeal text-xs font-bold transition-all shadow-xs active:scale-95 flex items-center gap-1.5 disabled:opacity-50 border border-darkTeal"
+            className="tactile-btn tactile-btn-teal px-4 py-1.5 text-xs font-bold disabled:opacity-50"
             title="Accept enhanced draft as current transcript"
           >
             <Check className="w-3.5 h-3.5 text-amber" />

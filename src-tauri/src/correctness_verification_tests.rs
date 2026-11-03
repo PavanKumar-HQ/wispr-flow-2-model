@@ -370,3 +370,148 @@ fn test_reproduce_real_model_benchmarks() {
     }
     println!("=======================================================\n");
 }
+
+#[test]
+fn test_legitimate_repeated_speech_preservation() {
+    use crate::formatter::deduplicate_repeated_speech;
+
+    // 1. Legitimate human speech with emphatic doubles MUST be preserved
+    let input1 = "Verify audit claims against reality, oh no no, come back out, reality and fix the";
+    let output1 = deduplicate_repeated_speech(input1);
+    assert!(output1.contains("oh no no"), "Expected 'oh no no' to be preserved, got: {}", output1);
+
+    let input2 = "bye bye see you tomorrow";
+    let output2 = deduplicate_repeated_speech(input2);
+    assert!(output2.contains("bye bye"), "Expected 'bye bye' to be preserved, got: {}", output2);
+
+    let input3 = "that is very very important";
+    let output3 = deduplicate_repeated_speech(input3);
+    assert!(output3.contains("very very"), "Expected 'very very' to be preserved, got: {}", output3);
+
+    // 2. Accidental function word stutters MUST be collapsed
+    let input_stutter = "we need to fix the the bug in the code";
+    let output_stutter = deduplicate_repeated_speech(input_stutter);
+    assert_eq!(output_stutter, "we need to fix the bug in the code");
+
+    // 3. Degenerate 3+ loops MUST be collapsed
+    let input_loop = "no no no no no wait";
+    let output_loop = deduplicate_repeated_speech(input_loop);
+    assert_eq!(output_loop, "no wait");
+
+    // 4. Multi-word phrase loops MUST be collapsed
+    let input_phrase = "we need to fix this bug, we need to fix this bug";
+    let output_phrase = deduplicate_repeated_speech(input_phrase);
+    assert_eq!(output_phrase, "we need to fix this bug");
+
+    // 5. Degenerate 2-word stutters/loops of non-emphatic words MUST be collapsed to 1
+    assert_eq!(deduplicate_repeated_speech("reality reality"), "reality");
+    assert_eq!(deduplicate_repeated_speech("test test"), "test");
+    assert_eq!(deduplicate_repeated_speech("problem, problem"), "problem");
+}
+
+#[test]
+fn test_clean_whisper_valid_short_phrases_not_discarded() {
+    use crate::commands::clean_whisper_transcript;
+
+    // Common genuine phrases MUST NOT be discarded
+    assert_eq!(clean_whisper_transcript("Thank you very much."), "Thank you very much.");
+    assert_eq!(clean_whisper_transcript("Thank you for your help."), "Thank you for your help.");
+    assert_eq!(clean_whisper_transcript("sounds good"), "sounds good");
+    assert_eq!(clean_whisper_transcript("got it"), "got it");
+    assert_eq!(clean_whisper_transcript("yes please"), "yes please");
+
+    // YouTube/dataset outro hallucinations MUST still be filtered
+    assert_eq!(clean_whisper_transcript("Thanks for watching!"), "");
+    assert_eq!(clean_whisper_transcript("thank you for watching this video please subscribe"), "");
+    assert_eq!(clean_whisper_transcript("subtitles by opensubtitles"), "");
+    assert_eq!(clean_whisper_transcript("[BLANK_AUDIO]"), "");
+}
+
+#[test]
+fn test_exact_once_insertion_and_status_distinction() {
+    use crate::safety_service::{InsertionStatus, InsertionResult, DestinationAnchor};
+    use crate::safety_service::{NativeTextInsertionProvider, TextInsertionProvider};
+
+    // Construct dummy target anchor
+    let anchor = DestinationAnchor {
+        session_id: "test-session-id".to_string(),
+        timestamp_ms: 1000,
+        platform_app_id: Some("TestApp".to_string()),
+        bundle_id: Some("com.test.app".to_string()),
+        window_title: Some("Untitled Document".to_string()),
+        app_pid: Some(99999999), // nonexistent PID to test graceful recovery
+        is_secure_input: false,
+        element_role: Some("AXTextArea".to_string()),
+        confidence: "high".to_string(),
+        is_valid: true,
+    };
+
+    // When process does not exist, insertion MUST return RecoveryRequired and NEVER attempt duplicate paste
+    let res = NativeTextInsertionProvider::insert_text("Hello world", &anchor);
+    assert_eq!(res.status, InsertionStatus::RecoveryRequired);
+    assert!(res.method_used.contains("process_terminated"));
+
+    // Secure password input MUST return BlockedSecureInput
+    let secure_anchor = DestinationAnchor {
+        is_secure_input: true,
+        ..anchor
+    };
+    let secure_res = NativeTextInsertionProvider::insert_text("SecretPassword", &secure_anchor);
+    assert_eq!(secure_res.status, InsertionStatus::BlockedSecureInput);
+}
+
+#[test]
+fn test_session_lifecycle_state_machine_transitions() {
+    use crate::session_state::SessionState;
+
+    // 1. Valid forward progression
+    assert!(SessionState::Idle.can_transition_to(SessionState::Starting));
+    assert!(SessionState::Starting.can_transition_to(SessionState::Recording));
+    assert!(SessionState::Recording.can_transition_to(SessionState::Transcribing));
+    assert!(SessionState::Transcribing.can_transition_to(SessionState::Formatting));
+    assert!(SessionState::Formatting.can_transition_to(SessionState::ValidatingTarget));
+    assert!(SessionState::ValidatingTarget.can_transition_to(SessionState::Inserting));
+    assert!(SessionState::Inserting.can_transition_to(SessionState::Completed));
+
+    // 2. Terminal recovery and cancellation
+    assert!(SessionState::Recording.can_transition_to(SessionState::Cancelled));
+    assert!(SessionState::Transcribing.can_transition_to(SessionState::Cancelled));
+    assert!(SessionState::Formatting.can_transition_to(SessionState::Cancelled));
+    assert!(SessionState::ValidatingTarget.can_transition_to(SessionState::Cancelled));
+
+    // 3. Illegal backward or overlapping transitions MUST be rejected
+    assert!(!SessionState::Recording.can_transition_to(SessionState::Starting), "Cannot start new session while recording");
+    assert!(!SessionState::Transcribing.can_transition_to(SessionState::Starting), "Cannot start new session while transcribing");
+    assert!(!SessionState::Inserting.can_transition_to(SessionState::Starting), "Cannot start new session while inserting");
+    assert!(!SessionState::Completed.can_transition_to(SessionState::Inserting), "Completed session cannot insert again");
+}
+
+#[test]
+fn test_technical_jargon_detection_and_adaptive_profiling() {
+    use crate::commands::detect_technical_jargon;
+
+    // 1. Casual / General speech should NOT trigger technical jargon
+    let general_text = "The meeting is at 5 PM. Please let me know if you can make it.";
+    let matches = detect_technical_jargon(general_text);
+    assert!(matches.is_empty(), "General conversation should not have technical jargon, got: {:?}", matches);
+
+    // 2. Technical databases, frameworks, and keywords
+    let tech_text = "We need to connect PostgreSQL to the React frontend using async await and Docker.";
+    let matches = detect_technical_jargon(tech_text);
+    assert!(matches.iter().any(|m| m.eq_ignore_ascii_case("postgresql")), "Expected PostgreSQL in {:?}", matches);
+    assert!(matches.iter().any(|m| m.eq_ignore_ascii_case("react")), "Expected React in {:?}", matches);
+    assert!(matches.iter().any(|m| m.eq_ignore_ascii_case("async/await") || m.eq_ignore_ascii_case("async")), "Expected Async in {:?}", matches);
+    assert!(matches.iter().any(|m| m.eq_ignore_ascii_case("docker")), "Expected Docker in {:?}", matches);
+
+    // 3. Spoken code syntax & verbal operators
+    let syntax_text = "print parenthesis items parenthesis and console dot log parenthesis item parenthesis";
+    let matches = detect_technical_jargon(syntax_text);
+    assert!(matches.iter().any(|m| m.contains("print") || m.contains("parenthes")), "Expected print/parentheses in {:?}", matches);
+    assert!(matches.iter().any(|m| m.contains("console.log")), "Expected console.log in {:?}", matches);
+
+    // 4. Word boundary protection against false positives
+    let non_tech = "We trust our lawn mower and think it is wonderful.";
+    let matches = detect_technical_jargon(non_tech);
+    assert!(!matches.iter().any(|m| m.eq_ignore_ascii_case("rust")), "Word 'trust' must not trigger 'Rust'");
+    assert!(!matches.iter().any(|m| m.eq_ignore_ascii_case("aws")), "Word 'lawn' must not trigger 'AWS'");
+}

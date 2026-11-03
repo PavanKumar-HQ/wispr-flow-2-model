@@ -268,7 +268,7 @@ pub fn apply_vocabulary_rules(text: &str, rules: &[PersonalVocabularyEntry]) -> 
     // Sort rules by length of original_text descending so multi-word phrases match before single words
     let mut sorted_rules: Vec<&PersonalVocabularyEntry> = rules
         .iter()
-        .filter(|r| r.status == "active" && r.confidence >= 0.65)
+        .filter(|r| r.status == "active")
         .collect();
     sorted_rules.sort_by(|a, b| b.original_text.len().cmp(&a.original_text.len()));
 
@@ -280,8 +280,8 @@ pub fn apply_vocabulary_rules(text: &str, rules: &[PersonalVocabularyEntry]) -> 
             continue;
         }
 
-        // Word-boundary aware replacement
-        if let Some(new_text) = replace_with_word_boundary(&result, orig, repl) {
+        // Word-boundary aware flexible replacement
+        if let Some(new_text) = replace_phrase_flexible(&result, orig, repl) {
             if new_text != result {
                 applied_rules.push(format!("{} → {}", orig, repl));
                 applied_ids.push(rule.id);
@@ -293,9 +293,81 @@ pub fn apply_vocabulary_rules(text: &str, rules: &[PersonalVocabularyEntry]) -> 
     (result, applied_rules, applied_ids)
 }
 
+fn edit_distance(s1: &str, s2: &str) -> usize {
+    let v1: Vec<char> = s1.chars().collect();
+    let v2: Vec<char> = s2.chars().collect();
+    let mut prev: Vec<usize> = (0..=v2.len()).collect();
+    let mut curr = vec![0; v2.len() + 1];
+
+    for i in 0..v1.len() {
+        curr[0] = i + 1;
+        for j in 0..v2.len() {
+            let cost = if v1[i] == v2[j] { 0 } else { 1 };
+            curr[j + 1] = (prev[j + 1] + 1)
+                .min(curr[j] + 1)
+                .min(prev[j] + cost);
+        }
+        prev.copy_from_slice(&curr);
+    }
+    prev[v2.len()]
+}
+
+/// Flexible phrase replacement supporting direct word-boundary matches, condensed/uncondensed variants,
+/// and adjacent-token consolidation.
+pub fn replace_phrase_flexible(text: &str, pattern: &str, replacement: &str) -> Option<String> {
+    let p_clean = pattern.trim();
+    if p_clean.is_empty() {
+        return None;
+    }
+
+    // 1. Direct word-boundary aware match (e.g. "Satvik" -> "Sathvik", "my email" -> "...")
+    if let Some(res) = replace_with_word_boundary(text, p_clean, replacement) {
+        return Some(res);
+    }
+
+    // 2. Spaced pattern matching condensed text (e.g. pattern "Chat GPT" matching text "ChatGPT")
+    if p_clean.contains(' ') || p_clean.contains('-') || p_clean.contains('_') {
+        let condensed = p_clean.replace([' ', '-', '_', '\''], "");
+        if !condensed.is_empty() {
+            if let Some(res) = replace_with_word_boundary(text, &condensed, replacement) {
+                return Some(res);
+            }
+        }
+    }
+
+    // 3. Condensed pattern matching multi-word sequence in text (e.g. pattern "Madanser" matching "Madan sir")
+    let target_condensed = p_clean.to_lowercase().replace([' ', '-', '_', '\''], "");
+    if !target_condensed.is_empty() {
+        let words: Vec<&str> = text.split_whitespace().collect();
+        // Check window sizes from 1 to 4 words
+        for window_size in 1..=4.min(words.len()) {
+            for i in 0..=words.len().saturating_sub(window_size) {
+                let candidate_span = words[i..i + window_size].join(" ");
+                let candidate_condensed = candidate_span.to_lowercase().replace([' ', '-', '_', '\'', '.', ',', '!', '?'], "");
+                let is_match = if candidate_condensed == target_condensed {
+                    true
+                } else if target_condensed.len() >= 6 && candidate_condensed.len() >= 6 {
+                    edit_distance(&target_condensed, &candidate_condensed) <= 1
+                } else {
+                    false
+                };
+
+                if is_match {
+                    // Match found! Replace the candidate span with word boundary safety
+                    if let Some(res) = replace_with_word_boundary(text, &candidate_span, replacement) {
+                        return Some(res);
+                    }
+                }
+            }
+        }
+    }
+
+    None
+}
+
 /// Replaces whole words or phrases matching `pattern` (case-insensitive) with `replacement`,
 /// strictly respecting Unicode word boundaries so substrings inside longer words are untouched.
-fn replace_with_word_boundary(text: &str, pattern: &str, replacement: &str) -> Option<String> {
+pub fn replace_with_word_boundary(text: &str, pattern: &str, replacement: &str) -> Option<String> {
     let text_lower = text.to_lowercase();
     let pat_lower = pattern.to_lowercase();
 
@@ -448,6 +520,21 @@ mod tests {
         assert_eq!(output, "Hello René, welcome back!");
         assert_eq!(applied.len(), 1);
         assert_eq!(ids, vec![1]);
+    }
+
+    #[test]
+    fn test_replace_phrase_flexible_spaceless_and_names() {
+        // 1. Spaceless rule matching spaced spoken words
+        let res1 = replace_phrase_flexible("Please ask Madan sir if he is ready.", "Madanser", "Madhan Sir");
+        assert_eq!(res1, Some("Please ask Madhan Sir if he is ready.".to_string()));
+
+        // 2. Custom name spelling
+        let res2 = replace_phrase_flexible("Hey satvik can you review this code?", "Satvik", "Sathvik");
+        assert_eq!(res2, Some("Hey Sathvik can you review this code?".to_string()));
+
+        // 3. Spaced rule matching condensed spoken word
+        let res3 = replace_phrase_flexible("You should ask chatgpt for ideas.", "chat gpt", "ChatGPT");
+        assert_eq!(res3, Some("You should ask ChatGPT for ideas.".to_string()));
     }
 }
 

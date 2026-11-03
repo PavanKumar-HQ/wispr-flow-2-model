@@ -11,6 +11,8 @@ interface ModelManagerProps {
   onSmokeTest?: (id: string) => void;
   onDismissSmokeTest?: () => void;
   smokeTestLog?: string | null;
+  autoRoutingEnabled?: boolean;
+  onToggleAutoRouting?: (enabled: boolean) => void;
 }
 
 export const ModelManagerTab: React.FC<ModelManagerProps> = ({
@@ -22,31 +24,46 @@ export const ModelManagerTab: React.FC<ModelManagerProps> = ({
   onSmokeTest,
   onDismissSmokeTest,
   smokeTestLog,
+  autoRoutingEnabled = true,
+  onToggleAutoRouting,
 }) => {
-  // Consumer-friendly profile presentation inspired by Wispr Flow
+  // Purpose-driven speech profile presentation (Zero internal model names in UI)
   const getProfileMeta = (id: string) => {
     switch (id) {
-      case 'whisper-tiny':
+      case 'whisper-large-v3-turbo':
         return {
-          title: 'Daily & Quick Dictation',
-          tag: 'Instant • Everyday',
-          icon: Zap,
-          desc: 'Ultra-fast and responsive. Perfect for quick messages, Slack chats, emails, and everyday notes with zero battery drain.',
+          title: 'Developer & Technical Precision',
+          tag: 'Coding • Terminal • Engineering',
+          icon: Cpu,
+          desc: 'Specialized for software development, code identifiers, terminal syntax, rapid speech, Indian accents, and deep engineering vocabulary.',
+        };
+      case 'whisper-small':
+        return {
+          title: 'Multilingual & Dialects',
+          tag: '99+ Languages • Accents',
+          icon: Globe,
+          desc: 'Deep multilingual comprehension across 99+ languages, regional accents, mixed speech (e.g. Hinglish), and rich documentation.',
         };
       case 'whisper-base':
         return {
-          title: 'Balanced Everyday',
-          tag: 'Balanced',
+          title: 'Balanced Everyday Writing',
+          tag: 'Balanced • Documents',
           icon: BookOpen,
-          desc: 'Great balance of transcription accuracy and speed for writing documents, longer emails, and articles.',
+          desc: 'Optimal balance of transcription accuracy and speed for writing documents, emails, meeting summaries, and daily tasks.',
         };
-      case 'whisper-small':
+      case 'whisper-tiny':
+        return {
+          title: 'General & Instant Speed',
+          tag: 'Instant • Chat & Notes',
+          icon: Zap,
+          desc: 'Ultra-fast response with near-zero latency. Perfect for quick messages, Slack chats, emails, and daily thoughts with minimal battery usage.',
+        };
       default:
         return {
-          title: 'Multilingual & Technical (Pro)',
-          tag: 'High Precision • Recommended',
+          title: 'General Speech Profile',
+          tag: 'Offline Speech',
           icon: Globe,
-          desc: 'Maximum accuracy across 99+ languages, accents, technical jargon, code & programming terms, and mixed speech (e.g. Hinglish).',
+          desc: 'High precision offline speech recognition running natively on your device.',
         };
     }
   };
@@ -62,6 +79,31 @@ export const ModelManagerTab: React.FC<ModelManagerProps> = ({
           Choose the speech profile that fits your daily workflow. Everything runs 100% on your device with complete privacy.
         </p>
       </div>
+
+      {onToggleAutoRouting && (
+        <div className="p-4 rounded-2xl border border-darkTeal/20 bg-darkTeal/5 flex items-center justify-between">
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-darkTeal uppercase tracking-wider font-mono">Smart Context Auto-Pilot</span>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${autoRoutingEnabled ? 'bg-darkTeal text-white' : 'bg-charcoal/20 text-charcoal'}`}>
+                {autoRoutingEnabled ? 'Active' : 'Manual'}
+              </span>
+            </div>
+            <p className="text-xs text-charcoal/80">
+              Dynamically switches to <strong>Developer Precision</strong> in IDEs & Terminal, and <strong>General Speed</strong> in Slack & Notes.
+            </p>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={autoRoutingEnabled}
+              onChange={(e) => onToggleAutoRouting(e.target.checked)}
+              className="sr-only peer"
+            />
+            <div className="w-11 h-6 bg-charcoal/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-darkTeal"></div>
+          </label>
+        </div>
+      )}
 
       <div className="grid gap-4">
         {models.map((m) => {

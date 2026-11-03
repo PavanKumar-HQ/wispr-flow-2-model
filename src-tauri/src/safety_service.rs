@@ -606,34 +606,47 @@ impl TextInsertionProvider for NativeTextInsertionProvider {
             let target_bid = anchor.bundle_id.as_deref();
             let target_pid = anchor.app_pid;
 
-            let is_front = activate_and_verify_frontmost(target_name, target_bid, target_pid, 350);
-            if !is_front {
-                let (curr_app, _, _, _, _, is_secure) = get_active_app_metadata();
-                let is_curr_voxquest = curr_app.as_deref().map(|n| {
-                    let l = n.to_lowercase();
-                    l.contains("voxquest") || l.contains("tauri")
-                }).unwrap_or(false);
+            // Check if VoxQuest currently holds frontmost focus (e.g. user clicked "Paste to App" on HomeTab)
+            let (curr_app, _, _, _, _, is_secure) = get_active_app_metadata();
+            let is_curr_voxquest = curr_app.as_deref().map(|n| {
+                let l = n.to_lowercase();
+                l.contains("voxquest") || l.contains("tauri")
+            }).unwrap_or(false);
 
-                if is_secure {
-                    return InsertionResult {
-                        status: InsertionStatus::BlockedSecureInput,
-                        message: Some("Target field is a secure password input. Insertion blocked.".to_string()),
-                        method_used: "blocked_secure_input".to_string(),
-                    };
+            if is_secure {
+                return InsertionResult {
+                    status: InsertionStatus::BlockedSecureInput,
+                    message: Some("Target field is a secure password input. Insertion blocked.".to_string()),
+                    method_used: "blocked_secure_input".to_string(),
+                };
+            }
+
+            if is_curr_voxquest {
+                // Frontmost window is VoxQuest; actively activate the destination app window so the caret receives the paste
+                activate_and_verify_frontmost(target_name, target_bid, target_pid, 400);
+                if let Some(bid) = target_bid {
+                    let script = format!("tell application id \"{}\" to activate", bid);
+                    let _ = std::process::Command::new("osascript").args(&["-e", &script]).output();
+                } else if let Some(t_name) = target_name {
+                    let clean_t = clean_display_app_name(t_name);
+                    let script = format!("tell application \"{}\" to activate", clean_t);
+                    let _ = std::process::Command::new("osascript").args(&["-e", &script]).output();
                 }
-
-                if is_curr_voxquest {
-                    if let Some(t_name) = target_name {
-                        let clean_t = clean_display_app_name(t_name);
-                        let script = format!("tell application \"{}\" to activate", clean_t);
-                        let _ = std::process::Command::new("osascript").args(&["-e", &script]).output();
-                        sleep(Duration::from_millis(150));
-                    }
+                if let Some(pid) = target_pid {
+                    let script = format!("tell application \"System Events\" to set frontmost of (first process whose unix id is {}) to true", pid);
+                    let _ = std::process::Command::new("osascript").args(&["-e", &script]).output();
+                }
+                sleep(Duration::from_millis(150));
+            } else {
+                activate_and_verify_frontmost(target_name, target_bid, target_pid, 350);
+                if let Some(pid) = target_pid {
+                    let script = format!("tell application \"System Events\" to set frontmost of (first process whose unix id is {}) to true", pid);
+                    let _ = std::process::Command::new("osascript").args(&["-e", &script]).output();
                 }
             }
 
             // Settle window focus so the native caret is ready
-            sleep(Duration::from_millis(60));
+            sleep(Duration::from_millis(120));
 
             // Universal Safe Clipboard Paste Insertion
             // Standard across macOS (Safari, Chrome, Brave, Arc, Slack, VS Code, Cursor, WhatsApp, Notes, TextEdit)
@@ -663,15 +676,9 @@ impl TextInsertionProvider for NativeTextInsertionProvider {
                 };
             }
 
-            // Retain spoken text on system clipboard so user can paste at will, with a relaxed background snapshot restore after 4 seconds
-            let text_to_restore = text.to_string();
-            std::thread::spawn(move || {
-                std::thread::sleep(Duration::from_millis(4000));
-                clip_snap.restore_if_unmodified(&text_to_restore);
-            });
-
+            // Spoken text is kept permanently on system clipboard so the user can paste freely at any time.
             return InsertionResult {
-                status: InsertionStatus::InsertedConfirmed,
+                status: InsertionStatus::InsertedUnconfirmed,
                 message: Some(format!("Pasted into {}.", target_name.unwrap_or("active application"))),
                 method_used: "simulated_paste".to_string(),
             };
@@ -738,36 +745,65 @@ pub fn execute_system_events_cmd_v() -> bool {
 #[cfg(target_os = "macos")]
 pub fn simulate_cmd_v() -> Result<(), String> {
     // Settle keyboard focus so released hotkey modifiers are fully cleared by macOS
-    sleep(Duration::from_millis(80));
+    sleep(Duration::from_millis(90));
 
-    // 1. Primary delivery: execute via macOS System Events keystroke through osascript
-    let _ = execute_system_events_cmd_v();
-
-    // 2. Secondary delivery: post to Session and HID event streams via CoreGraphics
+    // 1. Primary delivery: CoreGraphics SessionEventTap + HID event stream with explicit Cmd keypress
     use core_graphics::event::{CGEvent, CGEventTapLocation, CGKeyCode, CGEventFlags};
     use core_graphics::event_source::{CGEventSource, CGEventSourceStateID};
 
-    let v_key: CGKeyCode = 9; // kVK_ANSI_V
-    if let Ok(source) = CGEventSource::new(CGEventSourceStateID::HIDSystemState) {
+    let cmd_key: CGKeyCode = 55; // kVK_Command
+    let v_key: CGKeyCode = 9;   // kVK_ANSI_V
+
+    let mut cg_success = false;
+    if let Ok(source) = CGEventSource::new(CGEventSourceStateID::CombinedSessionState) {
+        // Explicit Command modifier down
+        if let Ok(cmd_down) = CGEvent::new_keyboard_event(source.clone(), cmd_key, true) {
+            cmd_down.set_flags(CGEventFlags::CGEventFlagCommand);
+            cmd_down.post(CGEventTapLocation::Session);
+            cmd_down.post(CGEventTapLocation::HID);
+        }
+
+        sleep(Duration::from_millis(20));
+
+        // V key down with Command flag
         if let Ok(key_down) = CGEvent::new_keyboard_event(source.clone(), v_key, true) {
             key_down.set_flags(CGEventFlags::CGEventFlagCommand);
             key_down.post(CGEventTapLocation::Session);
             key_down.post(CGEventTapLocation::HID);
         }
 
-        sleep(Duration::from_millis(25));
+        sleep(Duration::from_millis(35));
 
-        if let Ok(key_up) = CGEvent::new_keyboard_event(source, v_key, false) {
+        // V key up
+        if let Ok(key_up) = CGEvent::new_keyboard_event(source.clone(), v_key, false) {
             key_up.set_flags(CGEventFlags::CGEventFlagCommand);
             key_up.post(CGEventTapLocation::Session);
             key_up.post(CGEventTapLocation::HID);
         }
+
+        sleep(Duration::from_millis(20));
+
+        // Explicit Command modifier up
+        if let Ok(cmd_up) = CGEvent::new_keyboard_event(source, cmd_key, false) {
+            cmd_up.post(CGEventTapLocation::Session);
+            cmd_up.post(CGEventTapLocation::HID);
+        }
+
+        cg_success = true;
     }
 
-    // 3. Fallback delivery: rdev keyboard event simulation
+    // 2. Also execute System Events osascript keystroke for Electron/Chromium/Antigravity IDE apps
+    let sys_events_ok = execute_system_events_cmd_v();
+
+    if cg_success || sys_events_ok {
+        return Ok(());
+    }
+
+    // 3. Last-resort fallback: rdev keyboard event simulation
     use rdev::{simulate, EventType, Key};
     let _ = simulate(&EventType::KeyPress(Key::MetaLeft));
     let _ = simulate(&EventType::KeyPress(Key::KeyV));
+    sleep(Duration::from_millis(20));
     let _ = simulate(&EventType::KeyRelease(Key::KeyV));
     let _ = simulate(&EventType::KeyRelease(Key::MetaLeft));
 
@@ -784,17 +820,25 @@ pub fn execute_system_events_cmd_z() -> bool {
 
 #[cfg(target_os = "macos")]
 pub fn simulate_cmd_z() -> Result<(), String> {
-    sleep(Duration::from_millis(60));
+    sleep(Duration::from_millis(50));
 
-    // 1. Primary delivery: osascript System Events
-    let _ = execute_system_events_cmd_z();
-
-    // 2. Secondary delivery: CoreGraphics CGEvent
+    // 1. Primary delivery: CoreGraphics CGEvent (atomic undo)
     use core_graphics::event::{CGEvent, CGEventTapLocation, CGKeyCode, CGEventFlags};
     use core_graphics::event_source::{CGEventSource, CGEventSourceStateID};
 
-    let z_key: CGKeyCode = 6; // kVK_ANSI_Z
-    if let Ok(source) = CGEventSource::new(CGEventSourceStateID::HIDSystemState) {
+    let cmd_key: CGKeyCode = 55; // kVK_Command
+    let z_key: CGKeyCode = 6;   // kVK_ANSI_Z
+    let mut cg_success = false;
+
+    if let Ok(source) = CGEventSource::new(CGEventSourceStateID::CombinedSessionState) {
+        if let Ok(cmd_down) = CGEvent::new_keyboard_event(source.clone(), cmd_key, true) {
+            cmd_down.set_flags(CGEventFlags::CGEventFlagCommand);
+            cmd_down.post(CGEventTapLocation::Session);
+            cmd_down.post(CGEventTapLocation::HID);
+        }
+
+        sleep(Duration::from_millis(20));
+
         if let Ok(key_down) = CGEvent::new_keyboard_event(source.clone(), z_key, true) {
             key_down.set_flags(CGEventFlags::CGEventFlagCommand);
             key_down.post(CGEventTapLocation::Session);
@@ -803,17 +847,36 @@ pub fn simulate_cmd_z() -> Result<(), String> {
 
         sleep(Duration::from_millis(25));
 
-        if let Ok(key_up) = CGEvent::new_keyboard_event(source, z_key, false) {
+        if let Ok(key_up) = CGEvent::new_keyboard_event(source.clone(), z_key, false) {
             key_up.set_flags(CGEventFlags::CGEventFlagCommand);
             key_up.post(CGEventTapLocation::Session);
             key_up.post(CGEventTapLocation::HID);
         }
+
+        sleep(Duration::from_millis(20));
+
+        if let Ok(cmd_up) = CGEvent::new_keyboard_event(source, cmd_key, false) {
+            cmd_up.post(CGEventTapLocation::Session);
+            cmd_up.post(CGEventTapLocation::HID);
+        }
+
+        cg_success = true;
     }
 
-    // 3. Fallback delivery: rdev
+    if cg_success {
+        return Ok(());
+    }
+
+    // 2. Secondary fallback: osascript System Events
+    if execute_system_events_cmd_z() {
+        return Ok(());
+    }
+
+    // 3. Fallback: rdev
     use rdev::{simulate, EventType, Key};
     let _ = simulate(&EventType::KeyPress(Key::MetaLeft));
     let _ = simulate(&EventType::KeyPress(Key::KeyZ));
+    sleep(Duration::from_millis(20));
     let _ = simulate(&EventType::KeyRelease(Key::KeyZ));
     let _ = simulate(&EventType::KeyRelease(Key::MetaLeft));
 

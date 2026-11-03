@@ -13,7 +13,9 @@ import {
   Flame,
   CheckCircle2,
   Wand2,
-  ArrowRight
+  ArrowRight,
+  Zap,
+  Edit3
 } from 'lucide-react';
 import { InsightsData, HistoryRecord, SessionSnapshot } from '../types';
 import { AudioWaveform } from './AudioWaveform';
@@ -26,6 +28,8 @@ interface HomeTabProps {
   history: HistoryRecord[];
   session: SessionSnapshot;
   shortcut: string;
+  interactionMode?: string;
+  onUpdateInteractionMode?: (mode: 'push_to_talk' | 'toggle') => void;
   onCopy: (text: string) => void;
   onDeleteHistory: (id: number) => void;
   onClearHistory: () => void;
@@ -39,6 +43,8 @@ export const HomeTab: React.FC<HomeTabProps> = ({
   history,
   session,
   shortcut,
+  interactionMode = 'push_to_talk',
+  onUpdateInteractionMode,
   onCopy,
   onDeleteHistory,
   onClearHistory: _onClearHistory,
@@ -47,6 +53,31 @@ export const HomeTab: React.FC<HomeTabProps> = ({
   onSummonPill,
 }) => {
   const [copiedId, setCopiedId] = useState<number | null>(null);
+  const [activeTeachId, setActiveTeachId] = useState<number | null>(null);
+  const [teachTexts, setTeachTexts] = useState<{ [id: number]: string }>({});
+  const [teachLearnedId, setTeachLearnedId] = useState<number | null>(null);
+
+  const handleSaveTeach = async (id: number, origText: string) => {
+    const newText = teachTexts[id];
+    if (newText !== undefined && newText.trim() && newText.trim() !== origText.trim()) {
+      try {
+        await safeInvoke('update_recovery_text', { id, newText: newText.trim() });
+        await safeInvoke('add_personal_vocabulary_entry', {
+          original: origText.trim(),
+          preferred: newText.trim(),
+          entry_type: 'tech',
+          status: 'active',
+        });
+        setTeachLearnedId(id);
+        setActiveTeachId(null);
+        setTimeout(() => setTeachLearnedId(null), 3000);
+      } catch (err) {
+        console.warn('Failed to teach vocabulary:', err);
+      }
+    } else {
+      setActiveTeachId(null);
+    }
+  };
   const [copiedSessionText, setCopiedSessionText] = useState(false);
   const [showEnhanceSession, setShowEnhanceSession] = useState(false);
   const [enhanceHistoryItemId, setEnhanceHistoryItemId] = useState<number | null>(null);
@@ -133,7 +164,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
 
         <button
           onClick={onSummonPill}
-          className="px-3.5 py-2 rounded-xl bg-darkTeal hover:bg-deepTeal text-white text-xs font-semibold shadow-xs flex items-center gap-1.5 active:scale-95 transition-all shrink-0"
+          className="tactile-btn tactile-btn-teal px-3.5 py-2 text-xs font-bold shrink-0"
           title="Bring the floating pill onto your screen"
         >
           <LocateFixed className="w-3.5 h-3.5 text-amber" />
@@ -141,12 +172,60 @@ export const HomeTab: React.FC<HomeTabProps> = ({
         </button>
       </div>
 
+      {/* Proactive Adaptive Model Shifting Suggestion */}
+      {session.technical_suggestion && (
+        <div className="bg-gradient-to-r from-amber/20 via-amber/10 to-transparent border-2 border-amber/60 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-fadeIn">
+          <div className="flex items-start gap-3">
+            <div className="p-2 bg-amber/30 rounded-xl text-charcoal border border-amber/50 shrink-0 mt-0.5 shadow-xs">
+              <Zap className="w-4 h-4 text-darkTeal" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider bg-darkTeal text-amber px-2 py-0.5 rounded-md shadow-xs">
+                  Adaptive Intelligence
+                </span>
+                {session.active_model_name && (
+                  <span className="text-[11px] text-charcoal/70">
+                    Active: <strong className="text-charcoal">{session.active_model_name}</strong>
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-charcoal mt-1 font-medium leading-relaxed">
+                {session.technical_suggestion}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+            <button
+              type="button"
+              onClick={async () => {
+                const targetProfile = session.technical_suggestion?.includes('Developer') ? 'developer' : 'balanced';
+                await safeInvoke('switch_speech_profile', { profile: targetProfile });
+              }}
+              className="tactile-btn tactile-btn-primary px-3.5 py-1.5 text-xs font-bold"
+            >
+              <Check className="w-3.5 h-3.5" />
+              <span>{session.technical_suggestion?.includes('Developer') ? 'Switch to Developer' : 'Switch to Balanced'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={async () => {
+                await safeInvoke('dismiss_technical_suggestion');
+              }}
+              className="tactile-btn tactile-btn-surface px-3 py-1.5 text-xs font-bold"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* 2. Interactive Voice Dictation Canvas */}
-      <div className="bg-[#1A332E] text-cream border border-darkTeal/30 rounded-2xl p-5 sm:p-6 shadow-sm relative overflow-hidden space-y-4">
+      <div className="bg-[#1A332E] text-cream border-2 border-darkTeal/40 rounded-2xl p-5 sm:p-6 shadow-md relative overflow-hidden space-y-4">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="space-y-1 text-center sm:text-left">
             <div className="flex items-center justify-center sm:justify-start gap-2">
-              <span className="text-[10px] font-bold text-amber uppercase tracking-wider bg-black/30 px-2.5 py-0.5 rounded-full border border-amber/30">
+              <span className="text-[10px] font-bold text-amber uppercase tracking-wider bg-black/40 px-2.5 py-0.5 rounded-full border border-amber/30 shadow-xs">
                 {isRecording ? 'Listening Now' : isTranscribing ? 'Processing...' : 'Ready to Dictate'}
               </span>
             </div>
@@ -162,12 +241,12 @@ export const HomeTab: React.FC<HomeTabProps> = ({
           {/* Main Action Button */}
           <button
             onClick={onToggleDictation}
-            className={`rounded-xl px-5 py-3 text-xs font-bold transition-all flex items-center gap-2 shadow-sm active:scale-95 ${
+            className={`tactile-btn px-6 py-3.5 text-xs font-bold transition-all shadow-md active:scale-95 ${
               isRecording
-                ? 'bg-terracotta hover:bg-terracotta/90 text-white animate-pulse'
+                ? 'tactile-btn-danger animate-pulse'
                 : isTranscribing
-                ? 'bg-amber text-charcoal opacity-90 cursor-wait'
-                : 'bg-amber hover:bg-amber/90 text-charcoal'
+                ? 'tactile-btn-primary opacity-90 cursor-wait'
+                : 'tactile-btn-primary'
             }`}
           >
             {isRecording ? (
@@ -187,6 +266,43 @@ export const HomeTab: React.FC<HomeTabProps> = ({
               </>
             )}
           </button>
+        </div>
+
+        {/* Activation Mode Selector: Push-to-Talk vs Toggle */}
+        <div className="pt-2 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 text-cream/80 text-[11px]">
+            <span className="font-bold text-amber">Activation Mode:</span>
+            <span>{interactionMode === 'push_to_talk' ? 'Hold shortcut while speaking, release to paste' : 'Tap shortcut once to speak hands-free, tap again to paste'}</span>
+          </div>
+
+          <div className="flex items-center bg-black/40 p-1 rounded-xl border border-white/10 shrink-0">
+            <button
+              type="button"
+              onClick={() => onUpdateInteractionMode && onUpdateInteractionMode('push_to_talk')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                interactionMode === 'push_to_talk'
+                  ? 'bg-amber text-charcoal shadow-sm'
+                  : 'text-cream/70 hover:text-white hover:bg-white/10'
+              }`}
+              title="Hold key to talk, release key to paste"
+            >
+              <Mic className="w-3.5 h-3.5" />
+              <span>Hold to Talk</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onUpdateInteractionMode && onUpdateInteractionMode('toggle')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                interactionMode !== 'push_to_talk'
+                  ? 'bg-amber text-charcoal shadow-sm'
+                  : 'text-cream/70 hover:text-white hover:bg-white/10'
+              }`}
+              title="Tap shortcut once to speak, tap again to paste"
+            >
+              <Wand2 className="w-3.5 h-3.5" />
+              <span>Tap to Toggle</span>
+            </button>
+          </div>
         </div>
 
         {/* Live Audio Visualizer when speaking */}
@@ -213,29 +329,46 @@ export const HomeTab: React.FC<HomeTabProps> = ({
               "{session.last_transcript}"
             </div>
 
-            {/* Action Buttons: Enhance, Copy */}
-            <div className="flex flex-wrap items-center gap-2 pt-0.5">
+            {/* Action Buttons: Paste to App, Enhance, Spec Builder, Copy */}
+            <div className="flex flex-wrap items-center gap-2 pt-1">
               <button
+                type="button"
+                onClick={() => {
+                  if (session.last_transcript) {
+                    safeInvoke('insert_into_selected_field', { id: session.recovery_id || 0, text: session.last_transcript });
+                  }
+                }}
+                className="tactile-btn tactile-btn-primary px-4 py-2 text-xs font-bold"
+                title="Paste directly into your active app at your cursor position"
+              >
+                <CornerDownLeft className="w-3.5 h-3.5 text-darkTeal" />
+                <span>Paste to App</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setShowEnhanceSession(!showEnhanceSession)}
-                className={`rounded-xl text-xs py-2 px-3.5 font-bold flex items-center gap-1.5 transition-all shadow-xs active:scale-95 ${
+                className={`tactile-btn px-4 py-2 text-xs font-bold ${
                   showEnhanceSession
-                    ? 'bg-darkTeal text-white border border-darkTeal'
-                    : 'bg-amber text-charcoal hover:bg-amber/90'
+                    ? 'tactile-btn-teal'
+                    : 'tactile-btn-dark-subtle'
                 }`}
                 title="Enhance clarity, grammar, and phrasing without inventing facts"
                 aria-label="Enhance dictated text"
               >
-                <Wand2 className="w-3.5 h-3.5 text-charcoal shrink-0" />
-                <span>{showEnhanceSession ? 'Close Enhance' : 'Enhance'}</span>
+                <Wand2 className="w-3.5 h-3.5 text-amber shrink-0" />
+                <span>{showEnhanceSession ? 'Close Enhance' : 'Enhance Text'}</span>
               </button>
 
               <button
+                type="button"
                 onClick={handleCopySessionText}
-                className="p-2 rounded-xl ml-auto flex items-center justify-center text-xs font-semibold bg-white/10 hover:bg-white/20 text-cream border border-white/15 transition-all shadow-xs active:scale-95"
+                className="tactile-btn tactile-btn-dark-subtle px-3.5 py-2 text-xs font-bold ml-auto"
                 title="Copy to clipboard"
                 aria-label="Copy transcript"
               >
-                {copiedSessionText ? <Check className="w-4 h-4 text-amber" /> : <Copy className="w-4 h-4 text-cream" />}
+                {copiedSessionText ? <Check className="w-3.5 h-3.5 text-amber" /> : <Copy className="w-3.5 h-3.5 text-cream" />}
+                <span>{copiedSessionText ? 'Copied' : 'Copy'}</span>
               </button>
             </div>
 
@@ -314,35 +447,37 @@ export const HomeTab: React.FC<HomeTabProps> = ({
         </div>
       </div>
 
-      {/* 4. Recent Dictations (Clean, light & uncluttered) */}
-      <div className="bg-white border border-charcoal/15 rounded-2xl p-4 sm:p-5 shadow-sm space-y-3.5">
-        <div className="flex items-center justify-between">
+      {/* 4. Recent Dictations (Clean, modern & seamless) */}
+      <div className="bg-white border border-charcoal/10 rounded-2xl p-5 shadow-xs space-y-3">
+        <div className="flex items-center justify-between pb-1">
           <div className="flex items-center gap-2">
             <h2 className="text-sm font-bold text-charcoal">Recent Dictations</h2>
-            <span className="px-2 py-0.5 rounded-full bg-darkTeal/10 text-darkTeal font-bold text-[10px] border border-darkTeal/20">
+            <span className="px-2 py-0.5 rounded-full bg-darkTeal/10 text-darkTeal font-bold text-[10px]">
               {history.length}
             </span>
           </div>
 
           <button
+            type="button"
             onClick={() => onNavigateTab('history')}
-            className="text-xs font-bold text-darkTeal hover:underline flex items-center gap-1 group"
+            className="px-3 py-1.5 rounded-xl border border-charcoal/20 bg-white hover:bg-neutral-50 hover:border-darkTeal/40 text-darkTeal font-semibold text-xs shadow-xs transition-all active:scale-95 flex items-center gap-1.5"
+            title="Open complete dictation history"
           >
             <span>View all in History</span>
-            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+            <ArrowRight className="w-3.5 h-3.5 text-darkTeal" />
           </button>
         </div>
 
         {recentHistory.length === 0 ? (
-          <div className="text-center py-8 border-2 border-dashed border-charcoal/20 rounded-xl bg-sage/10 space-y-1.5">
-            <Clock className="w-6 h-6 mx-auto text-charcoal/40" />
+          <div className="text-center py-8 border border-dashed border-charcoal/15 rounded-xl bg-sage/5 space-y-1.5">
+            <Clock className="w-6 h-6 mx-auto text-charcoal/30" />
             <p className="text-xs font-bold text-charcoal">No dictations yet</p>
             <p className="text-[11px] text-charcoal/60 max-w-xs mx-auto">
               Hold <kbd className="font-mono font-bold text-darkTeal">{formatShortcut(shortcut)}</kbd> in WhatsApp, Notes, or your browser to dictate.
             </p>
           </div>
         ) : (
-          <div className="space-y-2.5">
+          <div className="divide-y divide-charcoal/10">
             {recentHistory.map((item) => {
               const date = new Date(item.timestamp_ms);
               const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -353,64 +488,87 @@ export const HomeTab: React.FC<HomeTabProps> = ({
               return (
                 <div
                   key={item.id}
-                  className="p-3.5 rounded-xl border border-charcoal/15 hover:border-charcoal/30 bg-white transition-all shadow-sm space-y-2"
+                  className="py-3 first:pt-0 last:pb-0 space-y-2 group transition-colors"
                 >
-                  <div className="flex items-center justify-between gap-2 text-xs">
-                    <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <div className="flex items-center gap-2 flex-wrap min-w-0">
                       <span
-                        className={`px-2 py-0.5 rounded-full font-bold text-[10px] border ${
+                        className={`px-2 py-0.5 rounded-md font-bold text-[10px] shrink-0 whitespace-nowrap ${
                           isVault
-                            ? 'bg-sage/30 text-darkTeal border-darkTeal/20'
-                            : 'bg-darkTeal/10 text-darkTeal border-darkTeal/20'
+                            ? 'bg-sage/30 text-darkTeal'
+                            : 'bg-darkTeal/10 text-darkTeal'
                         }`}
                       >
                         {isVault ? 'Clipboard' : item.target_app}
                       </span>
-                      <span className="text-[10px] font-mono text-charcoal/60">
+                      <span className="text-[11px] font-mono text-charcoal/60 shrink-0 whitespace-nowrap">
                         {timeStr} • {wordCount} words
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-1 bg-stone-100/90 p-1 rounded-xl border border-charcoal/10 shadow-xs">
-                      {/* 1. Enhance Icon Button */}
+                    <div className="flex items-center gap-1 flex-wrap sm:justify-end">
+                      {/* 1. Paste - Single clear accent button */}
                       <button
+                        type="button"
+                        onClick={() => handleInsertHistoryItem(item.id, item.formatted_text)}
+                        className="tactile-btn tactile-btn-xs tactile-btn-teal shrink-0"
+                        title="Paste directly into your active app at cursor position"
+                        aria-label="Paste to App"
+                      >
+                        <CornerDownLeft className="w-3 h-3" />
+                        <span>Paste</span>
+                      </button>
+
+                      {/* 2. Enhance - Ghost action */}
+                      <button
+                        type="button"
                         onClick={() => setEnhanceHistoryItemId(enhanceHistoryItemId === item.id ? null : item.id)}
-                        className={`p-1.5 rounded-lg transition-all active:scale-95 ${
+                        className={`ghost-action-btn shrink-0 ${
                           enhanceHistoryItemId === item.id
-                            ? 'bg-darkTeal text-white shadow-xs'
-                            : 'text-charcoal/70 hover:text-amber-700 hover:bg-white'
+                            ? 'bg-amber/20 text-charcoal font-bold'
+                            : ''
                         }`}
                         title="Enhance grammar, clarity, or convert to prompt"
                         aria-label="Enhance dictation"
                       >
-                        <Wand2 className="w-3.5 h-3.5" />
+                        <Wand2 className="w-3.5 h-3.5 text-amber-700" />
+                        <span>Enhance</span>
                       </button>
 
-                      {/* 2. Insert into Active Cursor */}
+                      {/* 3. Copy - Icon-only */}
                       <button
-                        onClick={() => handleInsertHistoryItem(item.id, item.formatted_text)}
-                        className="p-1.5 rounded-lg text-charcoal/70 hover:text-darkTeal hover:bg-white transition-all active:scale-95"
-                        title="Insert into active cursor"
-                        aria-label="Insert text"
-                      >
-                        <CornerDownLeft className="w-3.5 h-3.5" />
-                      </button>
-
-                      {/* 3. Copy to Clipboard */}
-                      <button
+                        type="button"
                         onClick={() => handleCopyItem(item.id, item.formatted_text)}
-                        className="p-1.5 rounded-lg text-charcoal/70 hover:text-darkTeal hover:bg-white transition-all active:scale-95"
-                        title="Copy to clipboard"
+                        className="ghost-action-btn p-1.5 text-charcoal/70 hover:text-darkTeal shrink-0"
+                        title={isCopied ? 'Copied to clipboard!' : 'Copy to clipboard'}
                         aria-label="Copy text"
                       >
-                        {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                        {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-darkTeal" />}
                       </button>
 
-                      {/* 4. Delete */}
+                      {/* 4. Teach - Ghost action */}
                       <button
+                        type="button"
+                        onClick={() => {
+                          setActiveTeachId(activeTeachId === item.id ? null : item.id);
+                          if (teachTexts[item.id] === undefined) {
+                            setTeachTexts((prev) => ({ ...prev, [item.id]: item.formatted_text }));
+                          }
+                        }}
+                        className="ghost-action-btn shrink-0"
+                        title="Teach preferred spelling"
+                        aria-label="Teach vocabulary"
+                      >
+                        <Edit3 className="w-3.5 h-3.5 text-darkTeal" />
+                        <span>Teach</span>
+                      </button>
+
+                      {/* 5. Delete - Ghost action */}
+                      <button
+                        type="button"
                         onClick={() => onDeleteHistory(item.id)}
-                        className="p-1.5 rounded-lg text-charcoal/40 hover:text-terracotta hover:bg-white transition-all active:scale-95"
-                        title="Delete"
+                        className="ghost-action-btn ghost-action-btn-danger p-1 text-charcoal/40 hover:text-terracotta shrink-0"
+                        title="Delete item"
                         aria-label="Delete item"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -418,9 +576,50 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                     </div>
                   </div>
 
-                  <p className="text-xs font-medium text-charcoal leading-relaxed select-text truncate">
-                    "{item.formatted_text}"
-                  </p>
+                  {activeTeachId === item.id ? (
+                    <div className="space-y-2 mt-2 bg-stone-50 p-2.5 rounded-xl border border-charcoal/15">
+                      <input
+                        type="text"
+                        value={teachTexts[item.id] !== undefined ? teachTexts[item.id] : item.formatted_text}
+                        onChange={(e) => setTeachTexts((prev) => ({ ...prev, [item.id]: e.target.value }))}
+                        className="w-full text-xs font-mono p-2 rounded-lg border border-charcoal/20 bg-white text-charcoal focus:outline-none focus:ring-2 focus:ring-darkTeal/20 focus:border-darkTeal"
+                        placeholder="Corrected spelling or phrase..."
+                      />
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-charcoal/70">
+                          Teaches VoxQuest preferred phrasing for future dictations.
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setActiveTeachId(null)}
+                            className="px-2.5 py-1 text-xs font-medium text-charcoal/70 hover:text-charcoal"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleSaveTeach(item.id, item.formatted_text)}
+                            className="tactile-btn tactile-btn-xs tactile-btn-teal"
+                          >
+                            <Check className="w-3 h-3" />
+                            <span>Save & Teach</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-[13px] font-medium text-charcoal/90 leading-relaxed select-text">
+                      "{item.formatted_text}"
+                    </p>
+                  )}
+
+                  {teachLearnedId === item.id && (
+                    <div className="mt-1.5 text-[11px] font-bold text-darkTeal bg-darkTeal/10 px-2.5 py-0.5 rounded-lg border border-darkTeal/20 inline-flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-darkTeal" />
+                      <span>Correction saved to Personal Vocabulary!</span>
+                    </div>
+                  )}
 
                   {enhanceHistoryItemId === item.id && (
                     <div className="pt-2">

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Keyboard, Mic, Sliders, Shield, Target, CheckCircle2, AlertTriangle, ExternalLink, RotateCcw, BookOpen } from 'lucide-react';
+import { Keyboard, Mic, Sliders, Shield, Target, CheckCircle2, AlertTriangle, ExternalLink, RotateCcw, BookOpen, Wand2 } from 'lucide-react';
 import { AppSettings } from '../types';
 import { safeInvoke } from '../lib/ipc';
 
@@ -204,19 +204,25 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
               </div>
 
               {isRecordingShortcut ? (
-                <div className="relative">
-                  <input
-                    type="text"
-                    autoFocus
-                    readOnly
-                    placeholder="Press keys on your keyboard... (Esc to cancel)"
-                    onKeyDown={handleShortcutKeyDown}
-                    onBlur={() => setIsRecordingShortcut(false)}
-                    className="w-full px-3 py-2 text-xs font-mono rounded-xl border-2 border-terracotta bg-white text-terracotta focus:outline-none animate-pulse shadow-xs font-bold"
-                  />
-                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-terracotta">
-                    Listening...
-                  </span>
+                <div className="space-y-1.5 min-w-0">
+                  <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl border-2 border-terracotta bg-white shadow-xs">
+                    <input
+                      type="text"
+                      autoFocus
+                      readOnly
+                      placeholder="Press shortcut keys..."
+                      onKeyDown={handleShortcutKeyDown}
+                      onBlur={() => setIsRecordingShortcut(false)}
+                      className="w-full min-w-0 bg-transparent text-xs font-mono text-terracotta focus:outline-none font-bold placeholder:text-terracotta/50"
+                    />
+                    <span className="shrink-0 text-[10px] font-bold text-terracotta bg-terracotta/10 px-2 py-0.5 rounded-lg border border-terracotta/25 flex items-center gap-1.5 pointer-events-none whitespace-nowrap">
+                      <span className="w-1.5 h-1.5 rounded-full bg-terracotta animate-ping" />
+                      Listening...
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-terracotta font-medium">
+                    Press any key combination on your keyboard (or press Esc to cancel).
+                  </p>
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
@@ -260,32 +266,77 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
             </div>
           </div>
 
-          <div className="pt-3 border-t border-charcoal/10">
-            <label className="text-xs font-bold text-charcoal">Trigger Mode</label>
-            <div className="flex items-center gap-4 mt-2">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="interaction_mode"
-                  value="toggle"
-                  checked={settings.interaction_mode !== 'push_to_talk'}
-                  onChange={() => handleChange('interaction_mode', 'toggle')}
-                  className="text-darkTeal focus:ring-darkTeal"
-                />
-                <span className="text-xs font-medium text-charcoal">Hands-Free (Click or press to start, press to paste)</span>
-              </label>
+          <div className="pt-3 border-t border-charcoal/10 space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-charcoal">Voice Activation & Trigger Mode</label>
+              <span className="text-[10px] font-semibold text-darkTeal bg-darkTeal/10 px-2.5 py-0.5 rounded-full border border-darkTeal/20">
+                {settings.interaction_mode === 'push_to_talk' ? 'Hold to Talk' : 'Tap to Toggle'}
+              </span>
+            </div>
+            <p className="text-[11px] text-charcoal/70">
+              Choose how you prefer to activate voice dictation using your keyboard shortcut or UI buttons.
+            </p>
 
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="interaction_mode"
-                  value="push_to_talk"
-                  checked={settings.interaction_mode === 'push_to_talk'}
-                  onChange={() => handleChange('interaction_mode', 'push_to_talk')}
-                  className="text-darkTeal focus:ring-darkTeal"
-                />
-                <span className="text-xs font-medium text-charcoal">Push-to-Talk (Hold while speaking, release to paste)</span>
-              </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              {/* Option 1: Push-to-Talk */}
+              <button
+                type="button"
+                onClick={() => handleChange('interaction_mode', 'push_to_talk')}
+                className={`p-3.5 rounded-xl border text-left transition-all relative flex flex-col justify-between shadow-xs active:scale-98 cursor-pointer ${
+                  settings.interaction_mode === 'push_to_talk'
+                    ? 'border-darkTeal bg-darkTeal/5 ring-2 ring-darkTeal/20 shadow-sm'
+                    : 'border-charcoal/20 bg-white hover:border-charcoal/40 hover:bg-neutral-50/80'
+                }`}
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-charcoal flex items-center gap-1.5">
+                      <Mic className="w-3.5 h-3.5 text-darkTeal" />
+                      Push-to-Talk (Hold Key)
+                    </span>
+                    {settings.interaction_mode === 'push_to_talk' && (
+                      <span className="w-2 h-2 rounded-full bg-darkTeal" />
+                    )}
+                  </div>
+                  <p className="text-[11px] text-charcoal/70 leading-relaxed">
+                    Hold down your shortcut key while speaking. Dictation instantly stops and pastes the exact second you release the key.
+                  </p>
+                </div>
+                <div className="mt-2.5 pt-2 border-t border-charcoal/10 flex items-center justify-between text-[10px] text-charcoal/60 font-mono">
+                  <span>Fastest for quick speech</span>
+                  <span className="font-bold text-darkTeal">Hold & Release</span>
+                </div>
+              </button>
+
+              {/* Option 2: Tap to Toggle */}
+              <button
+                type="button"
+                onClick={() => handleChange('interaction_mode', 'toggle')}
+                className={`p-3.5 rounded-xl border text-left transition-all relative flex flex-col justify-between shadow-xs active:scale-98 cursor-pointer ${
+                  settings.interaction_mode !== 'push_to_talk'
+                    ? 'border-darkTeal bg-darkTeal/5 ring-2 ring-darkTeal/20 shadow-sm'
+                    : 'border-charcoal/20 bg-white hover:border-charcoal/40 hover:bg-neutral-50/80'
+                }`}
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-charcoal flex items-center gap-1.5">
+                      <Wand2 className="w-3.5 h-3.5 text-amber-700" />
+                      Toggle Mode (Tap to Talk)
+                    </span>
+                    {settings.interaction_mode !== 'push_to_talk' && (
+                      <span className="w-2 h-2 rounded-full bg-darkTeal" />
+                    )}
+                  </div>
+                  <p className="text-[11px] text-charcoal/70 leading-relaxed">
+                    Tap your shortcut once to start speaking hands-free. Take your time, then tap again when finished to transcribe and paste.
+                  </p>
+                </div>
+                <div className="mt-2.5 pt-2 border-t border-charcoal/10 flex items-center justify-between text-[10px] text-charcoal/60 font-mono">
+                  <span>Best for long dictations</span>
+                  <span className="font-bold text-darkTeal">Tap Once / Tap Again</span>
+                </div>
+              </button>
             </div>
           </div>
         </div>
@@ -358,6 +409,42 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                 Clean up hesitation sounds (removes "um", "uh", "er" while preserving your words)
               </span>
             </label>
+
+            <label className="flex items-center gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={settings.enable_speech_repair ?? true}
+                onChange={(e) => handleChange('enable_speech_repair', e.target.checked)}
+                className="w-4 h-4 rounded text-darkTeal focus:ring-darkTeal"
+              />
+              <span className="text-xs font-medium text-charcoal">
+                Real-time speech self-correction (auto-replaces edits like "at 4pm, oh no, 5pm" → "at 5pm")
+              </span>
+            </label>
+          </div>
+        </div>
+
+        {/* Dynamic Model Routing */}
+        <div className="p-5 rounded-2xl border border-charcoal/15 bg-white shadow-sm space-y-3">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal font-mono flex items-center gap-1.5">
+            <Sliders className="w-3.5 h-3.5" /> Context-Aware Auto Model Routing
+          </h3>
+
+          <div className="space-y-2.5">
+            <label className="flex items-center gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={settings.enable_auto_model_routing ?? true}
+                onChange={(e) => handleChange('enable_auto_model_routing', e.target.checked)}
+                className="w-4 h-4 rounded text-darkTeal focus:ring-darkTeal"
+              />
+              <span className="text-xs font-medium text-charcoal">
+                Automatic profile switching based on active app (Developer Precision for VS Code & Terminal; General Speed for Slack & Notes)
+              </span>
+            </label>
+            <span className="text-[10px] text-charcoal/60 block pl-6">
+              Dynamically routes speech between low-latency speed profiles and deep precision profiles without requiring manual switching.
+            </span>
           </div>
         </div>
 

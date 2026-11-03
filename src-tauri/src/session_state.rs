@@ -63,6 +63,7 @@ impl SessionState {
 
             // From Recording
             (SessionState::Recording, SessionState::Stopping) => true,
+            (SessionState::Recording, SessionState::Transcribing) => true,
             (SessionState::Recording, SessionState::Cancelled) => true,
             (SessionState::Recording, SessionState::Failed) => true,
 
@@ -75,6 +76,7 @@ impl SessionState {
             (SessionState::Transcribing, SessionState::Formatting) => true,
             (SessionState::Transcribing, SessionState::ValidatingTarget) => true,
             (SessionState::Transcribing, SessionState::Inserting) => true,
+            (SessionState::Transcribing, SessionState::Completed) => true,
             (SessionState::Transcribing, SessionState::RecoveryRequired) => true,
             (SessionState::Transcribing, SessionState::Failed) => true,
             (SessionState::Transcribing, SessionState::Cancelled) => true,
@@ -129,6 +131,10 @@ pub struct SessionSnapshot {
     pub recovery_id: Option<i64>,
     #[serde(default)]
     pub timestamp_ms: u64,
+    #[serde(default)]
+    pub technical_suggestion: Option<String>,
+    #[serde(default)]
+    pub active_model_name: Option<String>,
 }
 
 /// Evaluates whether an active recording session has exceeded the maximum safety duration (e.g. 180s)

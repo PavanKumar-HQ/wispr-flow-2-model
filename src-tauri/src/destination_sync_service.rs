@@ -67,8 +67,8 @@ impl DestinationSyncService {
             *lock = Some(session.clone());
         }
 
-        // Spawn bounded async observation task
-        tokio::spawn(async move {
+        // Spawn bounded async observation task using Tauri's global runtime
+        tauri::async_runtime::spawn(async move {
             let poll_interval = Duration::from_millis(650);
             let debounce_threshold = Duration::from_millis(1200);
 
@@ -164,11 +164,23 @@ impl DestinationSyncService {
                                 }
 
                                 // B. Trigger Vocabulary Correction Learning
-                                let candidates = history.record_correction_event(
+                                // Record correction from what was actually inserted into the app to the user's manual edit
+                                let mut candidates = history.record_correction_event(
                                     Some(&current_state.session_id),
-                                    &current_state.original_text,
+                                    &current_state.initial_inserted_text,
                                     &new_text,
                                 ).unwrap_or_default();
+
+                                if current_state.initial_inserted_text != current_state.original_text {
+                                    let extra = history.record_correction_event(
+                                        Some(&current_state.session_id),
+                                        &current_state.original_text,
+                                        &new_text,
+                                    ).unwrap_or_default();
+                                    candidates.extend(extra);
+                                }
+
+                                let _ = app.emit("dictionary-updated", ());
 
                                 let timestamp_ms = std::time::SystemTime::now()
                                     .duration_since(std::time::UNIX_EPOCH)

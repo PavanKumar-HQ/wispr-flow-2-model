@@ -48,6 +48,18 @@ const mockModels: ModelInfo[] = [
     download_url: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin',
     description: 'Maximum accuracy across 99+ languages, technical terminology, programming, and mixed dialects (~1.0 GB).',
     ram_estimate_mb: 1024,
+    recommended: false,
+    is_downloaded: false,
+  },
+  {
+    id: 'whisper-large-v3-turbo',
+    name: 'VoxQuest Ultra (Large-v3-Turbo)',
+    filename: 'ggml-large-v3-turbo-q5_0.bin',
+    size_bytes: 574041195,
+    sha256: '394221709cd5ad1f40c46e6031ca61bce88931e6e088c188294c6d5a55ffa7e2',
+    download_url: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo-q5_0.bin',
+    description: 'State-of-the-art OpenAI Large-v3-Turbo architecture (809M params, 4 decoder layers) optimized with 5-bit Metal quantization. Unrivaled for Indian accents, rapid speech, and complex engineering vocabulary.',
+    ram_estimate_mb: 650,
     recommended: true,
     is_downloaded: false,
   },
@@ -284,6 +296,13 @@ export async function safeInvoke<T>(cmd: string, args?: Record<string, unknown>)
     }
     case 'submit_transcript_correction': {
       return [] as unknown as T;
+    }
+    case 'switch_speech_profile': {
+      const profile = (args?.profile as string) || 'developer';
+      return `Switched to ${profile} profile` as unknown as T;
+    }
+    case 'dismiss_technical_suggestion': {
+      return undefined as unknown as T;
     }
     default:
       return undefined as unknown as T;

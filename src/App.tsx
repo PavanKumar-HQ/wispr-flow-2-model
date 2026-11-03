@@ -21,7 +21,7 @@ export default function App() {
     language: 'auto',
     shortcut: 'CommandOrControl+Shift+Space',
     insertion_policy: 'original_destination',
-    interaction_mode: 'toggle',
+    interaction_mode: 'push_to_talk',
     spoken_punctuation: true,
     conservative_filler_removal: false,
     auto_capitalization: true,
@@ -241,6 +241,16 @@ export default function App() {
     setSettings(updated);
     try {
       await safeInvoke('save_settings_cmd', { newSettings: updated });
+      await safeInvoke('switch_speech_profile', { profile: modelId });
+    } catch (e) {
+      alert(`Save error: ${e}`);
+    }
+  };
+
+  const handleUpdateSettings = async (updated: AppSettings) => {
+    setSettings(updated);
+    try {
+      await safeInvoke('save_settings_cmd', { newSettings: updated });
     } catch (e) {
       alert(`Save error: ${e}`);
     }
@@ -416,7 +426,7 @@ export default function App() {
       </aside>
 
       {/* Main Tab Content (Fluid Responsive Padding) */}
-      <main className="flex-1 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8 bg-cream">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8 bg-cream">
         <div className="max-w-5xl mx-auto w-full">
           {activeTab === 'home' && (
             <HomeTab
@@ -424,6 +434,8 @@ export default function App() {
               history={history}
               session={session}
               shortcut={settings.shortcut}
+              interactionMode={settings.interaction_mode}
+              onUpdateInteractionMode={(mode) => handleUpdateSettings({ ...settings, interaction_mode: mode })}
               onCopy={handleCopy}
               onDeleteHistory={handleDeleteHistory}
               onClearHistory={handleClearHistory}
@@ -453,6 +465,8 @@ export default function App() {
               onSmokeTest={handleSmokeTest}
               onDismissSmokeTest={() => setSmokeTestLog(null)}
               smokeTestLog={smokeTestLog}
+              autoRoutingEnabled={settings.enable_auto_model_routing ?? true}
+              onToggleAutoRouting={(val) => handleUpdateSettings({ ...settings, enable_auto_model_routing: val })}
             />
           )}
 

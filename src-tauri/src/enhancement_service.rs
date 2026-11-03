@@ -44,13 +44,14 @@ Never invent missing information. Never claim to have verified facts externally.
 pub enum EnhancementMode {
     #[serde(alias = "improve_clarity", alias = "light", alias = "clarity")]
     LightCorrection,
-    ImproveClarity,
     Professional,
     Concise,
     #[serde(alias = "keep_tone", alias = "casual")]
     Natural,
-    KeepTone,
+    #[serde(alias = "prompt_composition")]
     Prompt,
+    #[serde(alias = "technical")]
+    TechnicalPrecision,
 }
 
 impl Default for EnhancementMode {
@@ -60,15 +61,17 @@ impl Default for EnhancementMode {
 }
 
 impl EnhancementMode {
+    pub const ImproveClarity: Self = Self::LightCorrection;
+    pub const KeepTone: Self = Self::Natural;
+
     pub fn as_str(&self) -> &'static str {
         match self {
             EnhancementMode::LightCorrection => "light_correction",
-            EnhancementMode::ImproveClarity => "improve_clarity",
             EnhancementMode::Professional => "professional",
             EnhancementMode::Concise => "concise",
             EnhancementMode::Natural => "natural",
-            EnhancementMode::KeepTone => "keep_tone",
             EnhancementMode::Prompt => "prompt",
+            EnhancementMode::TechnicalPrecision => "technical_precision",
         }
     }
 
@@ -77,8 +80,8 @@ impl EnhancementMode {
             "professional" => EnhancementMode::Professional,
             "concise" => EnhancementMode::Concise,
             "natural" | "keep_tone" | "casual" => EnhancementMode::Natural,
-            "prompt" | "ai_prompt" => EnhancementMode::Prompt,
-            "light_correction" | "light" | "improve_clarity" | "clarity" => EnhancementMode::LightCorrection,
+            "prompt" | "prompt_composition" | "ai_prompt" => EnhancementMode::Prompt,
+            "technical_precision" | "technical" | "tech" => EnhancementMode::TechnicalPrecision,
             _ => EnhancementMode::LightCorrection,
         }
     }
@@ -107,6 +110,15 @@ impl Default for EnhancementRequest {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct IntentAudit {
+    pub preserved_negations: Vec<String>,
+    pub protected_terms: Vec<String>,
+    pub preserved_numbers: Vec<String>,
+    pub missing_constraints: Vec<String>,
+    pub status: String,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EnhancementResponse {
     pub original_text: String,
@@ -115,6 +127,8 @@ pub struct EnhancementResponse {
     pub changes_made: bool,
     pub explanations: Vec<String>,
     pub model_used: String,
+    #[serde(default)]
+    pub intent_audit: Option<IntentAudit>,
 }
 
 #[derive(Serialize)]
@@ -228,17 +242,25 @@ pub fn enhance_text(
     // 2. Mode-specific enhancement transformations
     let mut explanations = Vec::new();
 
-    // Check if input represents an AI prompt or instruction request
-    let is_explicit_prompt = request.mode == EnhancementMode::Prompt
-        || crate::prompt_service::is_ai_prompt(&shielded_text, request.target_app.as_deref())
-        || shielded_text.to_lowercase().contains("prompt")
-        || shielded_text.to_lowercase().starts_with("instruction:")
-        || shielded_text.to_lowercase().starts_with("act as ");
+    // Only switch to Prompt mode if explicitly chosen or explicit prompt generation is requested
+    let lower_shielded = shielded_text.to_lowercase();
+    let is_explicit_prompt_directive = lower_shielded.starts_with("generate a prompt")
+        || lower_shielded.starts_with("generate prompt")
+        || lower_shielded.starts_with("create a prompt")
+        || lower_shielded.starts_with("create prompt")
+        || lower_shielded.starts_with("write a prompt")
+        || lower_shielded.starts_with("write prompt")
+        || lower_shielded.starts_with("prompt for")
+        || lower_shielded.starts_with("prompt to")
+        || lower_shielded.starts_with("make a prompt")
+        || lower_shielded.starts_with("give me a prompt")
+        || lower_shielded.starts_with("instruction:")
+        || lower_shielded.starts_with("act as ");
 
-    let effective_mode = if is_explicit_prompt {
-        EnhancementMode::Prompt
-    } else {
-        request.mode
+    let effective_mode = match request.mode {
+        EnhancementMode::Prompt => EnhancementMode::Prompt,
+        _ if is_explicit_prompt_directive => EnhancementMode::Prompt,
+        other => other,
     };
 
     // Check local LLM first if available
@@ -252,7 +274,12 @@ pub fn enhance_text(
                 explanations.push("Refined directive phrasing, parameters, and clean syntax.".to_string());
                 crate::prompt_service::enhance_ai_prompt(&shielded_text)
             }
-            EnhancementMode::LightCorrection | EnhancementMode::ImproveClarity => {
+            EnhancementMode::TechnicalPrecision => {
+                explanations.push("Technical Precision: strict preservation of code, identifiers, commands, flags, and constraints.".to_string());
+                explanations.push("Zero unnecessary rewriting; verified semantic integrity.".to_string());
+                enhance_technical_precision(&shielded_text)
+            }
+            EnhancementMode::LightCorrection => {
                 explanations.push("Applied light correction: spelling, grammar, punctuation, and capitalization.".to_string());
                 explanations.push("Preserved original voice, tone, and intent.".to_string());
                 enhance_light_correction(&shielded_text)
@@ -267,7 +294,7 @@ pub fn enhance_text(
                 explanations.push("Preserved essential information and technical context.".to_string());
                 enhance_concise(&shielded_text)
             }
-            EnhancementMode::Natural | EnhancementMode::KeepTone => {
+            EnhancementMode::Natural => {
                 explanations.push("Preserved original conversational voice while improving readability.".to_string());
                 explanations.push("Cleaned up mechanics, spacing, and sentence punctuation.".to_string());
                 enhance_natural(&shielded_text)
@@ -282,22 +309,158 @@ pub fn enhance_text(
     // 4. Clean up any punctuation edge-cases (e.g. double periods, stray spaces before commas)
     let cleaned_final = clean_final_mechanics(&final_text);
 
-    let changes_made = cleaned_final != trimmed;
+    // 5. Feature 016: Technical Integrity Engine Verification
+    // Ensure negations, technical terms, product names, and numerical ports are preserved
+    let (guarded_final, integrity_notes) = validate_and_enforce_technical_integrity(trimmed, &cleaned_final);
+    for note in integrity_notes {
+        explanations.push(note);
+    }
+
+    let changes_made = guarded_final != trimmed;
     if !changes_made {
         explanations.clear();
         explanations.push("Text is already correct. No changes needed.".to_string());
     } else {
-        explanations.push("Preserved all technical terms, identifiers, and numbers.".to_string());
+        explanations.push("Technical integrity verified: negations and technical terms protected.".to_string());
     }
+
+    let intent_audit = Some(audit_intent_integrity(trimmed, &guarded_final));
 
     Ok(EnhancementResponse {
         original_text: trimmed.to_string(),
-        enhanced_text: cleaned_final,
+        enhanced_text: guarded_final,
         mode: request.mode.as_str().to_string(),
         changes_made,
         explanations,
         model_used,
+        intent_audit,
     })
+}
+
+pub fn audit_intent_integrity(original: &str, candidate: &str) -> IntentAudit {
+    let mut audit = IntentAudit::default();
+    let orig_lower = original.to_lowercase();
+    let cand_lower = candidate.to_lowercase();
+
+    // 1. Audit negations
+    let negations = ["don't", "do not", "never", "cannot", "can't", "won't", "shouldn't", "without"];
+    for neg in negations {
+        if orig_lower.contains(neg) {
+            let safe = cand_lower.contains(neg)
+                || (neg == "don't" && cand_lower.contains("do not"))
+                || (neg == "do not" && cand_lower.contains("don't"))
+                || (neg == "can't" && cand_lower.contains("cannot"))
+                || (neg == "cannot" && cand_lower.contains("can't"));
+            if safe {
+                audit.preserved_negations.push(neg.to_string());
+            } else {
+                audit.missing_constraints.push(format!("Negation '{}' was omitted or inverted", neg));
+            }
+        }
+    }
+
+    // 2. Audit technical product identifiers
+    let tech_terms = [
+        "PostgreSQL", "Next.js", "Docker", "Kubernetes", "TypeScript", "Python",
+        "Rust", "FastAPI", "MongoDB", "GraphQL", "Supabase", "PyTorch", "Redis",
+        "SQLite", "ChatGPT", "migrations", "authentication", "authorization",
+    ];
+    for &term in &tech_terms {
+        if orig_lower.contains(&term.to_lowercase()) {
+            if cand_lower.contains(&term.to_lowercase()) {
+                audit.protected_terms.push(term.to_string());
+            } else {
+                audit.missing_constraints.push(format!("Protected entity '{}' was omitted or modified", term));
+            }
+        }
+    }
+
+    // 3. Audit numeric constants and ports
+    for w in original.split_whitespace() {
+        let clean_num: String = w.chars().filter(|c| c.is_ascii_digit()).collect();
+        if clean_num.len() >= 3 {
+            if candidate.contains(&clean_num) {
+                if !audit.preserved_numbers.contains(&clean_num) {
+                    audit.preserved_numbers.push(clean_num);
+                }
+            } else {
+                audit.missing_constraints.push(format!("Port/Number '{}' was dropped", clean_num));
+            }
+        }
+    }
+
+    audit.status = if audit.missing_constraints.is_empty() {
+        "verified_safe".to_string()
+    } else {
+        "warning_inversion_detected".to_string()
+    };
+
+    audit
+}
+
+/// Feature 016: Technical Integrity Engine
+/// Audits transformations to ensure semantic negations, technical identifiers, product names,
+/// and numeric ports/constants are strictly preserved. Never allows an enhancement
+/// to silently drop "don't" or swap "PostgreSQL" for another product.
+pub fn validate_and_enforce_technical_integrity(
+    original: &str,
+    candidate: &str,
+) -> (String, Vec<String>) {
+    let mut working = candidate.to_string();
+    let mut notices = Vec::new();
+
+    // 1. Semantic Negation Audit
+    // Negations protect critical logic, requirements, and permissions (e.g. "don't remove", "never drop")
+    let negations = [
+        ("don't", &["don't", "do not", "never", "cannot", "can't"][..]),
+        ("do not", &["don't", "do not", "never", "cannot", "can't"][..]),
+        ("never", &["never", "don't", "do not"][..]),
+        ("cannot", &["cannot", "can't", "unable to", "don't"][..]),
+        ("can't", &["cannot", "can't", "unable to", "don't"][..]),
+        ("won't", &["won't", "will not"][..]),
+        ("shouldn't", &["shouldn't", "should not"][..]),
+        ("without", &["without"][..]),
+    ];
+
+    let orig_lower = original.to_lowercase();
+    let cand_lower = working.to_lowercase();
+
+    for (neg_term, valid_equivalents) in negations {
+        if orig_lower.contains(neg_term) {
+            let preserved = valid_equivalents.iter().any(|&eq| cand_lower.contains(eq));
+            if !preserved {
+                notices.push(format!("Technical Integrity Engine: Protected semantic negation '{}' was missing in enhancement; preserved original safety phrasing.", neg_term));
+                return (original.to_string(), notices);
+            }
+        }
+    }
+
+    // 2. Protected Technical Identifiers & Infrastructure Terms
+    let protected_terms = [
+        "PostgreSQL", "Next.js", "Docker", "Kubernetes", "TypeScript", "Python",
+        "Rust", "FastAPI", "MongoDB", "GraphQL", "Supabase", "PyTorch", "Redis",
+        "SQLite", "ChatGPT", "migrations", "authentication", "authorization",
+    ];
+
+    for term in protected_terms {
+        let term_lower = term.to_lowercase();
+        if orig_lower.contains(&term_lower) && !cand_lower.contains(&term_lower) {
+            notices.push(format!("Technical Integrity Engine: Protected technical term '{}' preserved.", term));
+            return (original.to_string(), notices);
+        }
+    }
+
+    // 3. Numeric & Port / Config constant preservation (e.g. 5432, 8080, 3000, 404, 500)
+    let orig_words: Vec<&str> = original.split_whitespace().collect();
+    for w in orig_words {
+        let clean_num: String = w.chars().filter(|c| c.is_ascii_digit()).collect();
+        if clean_num.len() >= 3 && !working.contains(&clean_num) {
+            notices.push(format!("Technical Integrity Engine: Protected numeric constant '{}' preserved.", clean_num));
+            return (original.to_string(), notices);
+        }
+    }
+
+    (working, notices)
 }
 
 // ============================================================================
@@ -483,6 +646,14 @@ fn deduplicate_repeated_words(input: &str) -> String {
 
 fn is_accidental_duplicate_word(word: &str) -> bool {
     matches!(word, "the" | "to" | "and" | "is" | "in" | "it" | "that" | "this" | "of" | "for" | "with" | "on" | "at" | "by" | "from" | "as" | "a" | "an")
+}
+
+pub fn enhance_technical_precision(input: &str) -> String {
+    // 1. Spoken code syntax (parentheses, dots, operators, quotes)
+    let syntax_applied = crate::formatter::apply_developer_code_syntax(input);
+
+    // 2. Light conservative corrections without restructuring or altering identifiers
+    enhance_light_correction(&syntax_applied)
 }
 
 fn enhance_light_correction(input: &str) -> String {
@@ -1032,7 +1203,7 @@ mod tests {
             "Hey team, I finished the backend, but the API is returning an error. I'll fix it tomorrow."
         );
         assert!(res.changes_made);
-        assert_eq!(res.mode, "improve_clarity");
+        assert!(res.mode == "light_correction" || res.mode == "improve_clarity");
     }
 
     #[test]
@@ -1224,5 +1395,33 @@ mod tests {
         }, &[]).unwrap();
         assert_eq!(res.enhanced_text, input);
         assert!(!res.changes_made);
+    }
+
+    #[test]
+    fn test_technical_integrity_negation_preservation() {
+        use super::validate_and_enforce_technical_integrity;
+
+        let orig = "Use PostgreSQL, don't remove authentication, and preserve existing migrations.";
+        // Simulating a faulty LLM hallucination that removed "don't"
+        let bad_candidate = "Use PostgreSQL, remove authentication, and preserve existing migrations.";
+
+        let (guarded, notices) = validate_and_enforce_technical_integrity(orig, bad_candidate);
+        // Guarded text must restore the original to protect against removing authentication!
+        assert_eq!(guarded, orig);
+        assert!(!notices.is_empty());
+        assert!(notices[0].contains("Protected semantic negation 'don't'"));
+    }
+
+    #[test]
+    fn test_technical_integrity_protected_terms_and_ports() {
+        use super::validate_and_enforce_technical_integrity;
+
+        let orig = "Connect to PostgreSQL on port 5432.";
+        let bad_candidate = "Connect to database on port 3000.";
+
+        let (guarded, notices) = validate_and_enforce_technical_integrity(orig, bad_candidate);
+        assert_eq!(guarded, orig);
+        assert!(!notices.is_empty());
+        assert!(notices[0].contains("Protected technical term 'PostgreSQL'"));
     }
 }

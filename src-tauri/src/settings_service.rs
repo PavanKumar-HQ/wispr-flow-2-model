@@ -24,6 +24,8 @@ pub struct AppSettings {
     pub enhancement_default_mode: String,
     pub enable_destination_sync: bool,
     pub destination_sync_duration_secs: u32,
+    pub enable_auto_model_routing: bool,
+    pub enable_speech_repair: bool,
 }
 
 impl Default for AppSettings {
@@ -44,7 +46,7 @@ impl Default for AppSettings {
 
         Self {
             default_model_id: initial_model,
-            language: "auto".to_string(),
+            language: "en".to_string(),
             shortcut: "CommandOrControl+Shift+Space".to_string(),
             insertion_policy: "original_destination".to_string(),
             interaction_mode: "push_to_talk".to_string(),
@@ -61,6 +63,8 @@ impl Default for AppSettings {
             enhancement_default_mode: "improve_clarity".to_string(),
             enable_destination_sync: true,
             destination_sync_duration_secs: 90,
+            enable_auto_model_routing: true,
+            enable_speech_repair: true,
         }
     }
 }

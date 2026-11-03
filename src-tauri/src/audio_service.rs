@@ -49,24 +49,24 @@ impl AudioCaptureService {
                 .or_else(|| host.default_input_device())
                 .ok_or_else(|| "Selected microphone not found and no default device available".to_string())?
         } else {
-            // Intelligent selection for macOS & laptops:
-            // Prefer the built-in microphone (e.g. "MacBook Air Microphone", "Built-in Microphone", "Internal Microphone")
-            // over Bluetooth devices that may be silent, disconnected, in another room, or in standby
-            let all_devices = host.input_devices().ok();
-            let builtin = all_devices.and_then(|devs| {
-                devs.into_iter().find(|d| {
-                    let name = d.to_string().to_lowercase();
-                    (name.contains("macbook") || name.contains("built-in") || name.contains("builtin") || name.contains("internal"))
-                        && !name.contains("bluetooth")
-                })
-            });
-
-            if let Some(b) = builtin {
-                b
+            // Respect the user's active macOS default input device (AirPods, USB mic, headset, or internal mic)
+            if let Some(def) = host.default_input_device() {
+                def
             } else {
-                host.default_input_device()
-                    .or_else(|| host.input_devices().ok().and_then(|mut iter| iter.next()))
-                    .ok_or_else(|| "No default microphone input device detected. Please check your audio settings.".to_string())?
+                let all_devices = host.input_devices().ok();
+                let builtin = all_devices.and_then(|devs| {
+                    devs.into_iter().find(|d| {
+                        let name = d.to_string().to_lowercase();
+                        name.contains("macbook") || name.contains("built-in") || name.contains("builtin") || name.contains("internal")
+                    })
+                });
+
+                if let Some(b) = builtin {
+                    b
+                } else {
+                    host.input_devices().ok().and_then(|mut iter| iter.next())
+                        .ok_or_else(|| "No microphone input device detected. Please check your audio settings.".to_string())?
+                }
             }
         };
 
@@ -110,10 +110,10 @@ impl AudioCaptureService {
                                 }
                             } else {
                                 for chunk in data.chunks_exact(channels) {
-                                    let sum: f32 = chunk.iter().sum();
-                                    let avg = sum / channels as f32;
-                                    buf.push(avg);
-                                    sum_sq += avg * avg;
+                                    // Use channel 0 (primary vocal channel on macOS mic arrays) to prevent destructive phase cancellation
+                                    let s = chunk[0];
+                                    buf.push(s);
+                                    sum_sq += s * s;
                                 }
                             }
                             let count = if channels == 1 { data.len() } else { data.len() / channels };
@@ -145,10 +145,10 @@ impl AudioCaptureService {
                                 }
                             } else {
                                 for chunk in data.chunks_exact(channels) {
-                                    let sum: f32 = chunk.iter().map(|&s| s as f32 / 32768.0).sum();
-                                    let avg = sum / channels as f32;
-                                    buf.push(avg);
-                                    sum_sq += avg * avg;
+                                    // Use channel 0 (primary vocal channel on macOS mic arrays) to prevent destructive phase cancellation
+                                    let s = chunk[0] as f32 / 32768.0;
+                                    buf.push(s);
+                                    sum_sq += s * s;
                                 }
                             }
                             let count = if channels == 1 { data.len() } else { data.len() / channels };
@@ -175,10 +175,17 @@ impl AudioCaptureService {
 
     pub fn stop_recording(&mut self) -> Result<Vec<f32>, String> {
         {
-            let mut rec_lock = self.is_recording.lock().unwrap();
+            let rec_lock = self.is_recording.lock().unwrap();
             if !*rec_lock {
                 return Err("No active recording session to stop".to_string());
             }
+        }
+
+        // Allow final hardware audio buffer (80ms) to drain so trailing word syllables are not truncated
+        std::thread::sleep(std::time::Duration::from_millis(80));
+
+        {
+            let mut rec_lock = self.is_recording.lock().unwrap();
             *rec_lock = false;
         }
 
@@ -285,14 +292,14 @@ pub fn isolate_voice_and_suppress_noise(samples: &[f32], sample_rate: u32) -> Ve
         frame_rms.push(rms);
     }
 
-    // Estimate noise floor from lowest 25% energy frames
+    // Estimate ambient noise floor from lowest 25% energy frames, capped to avoid treating continuous speech as noise
     let mut sorted_rms = frame_rms.clone();
     sorted_rms.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
     let noise_floor_idx = (sorted_rms.len() as f32 * 0.25).floor() as usize;
-    let noise_floor = sorted_rms.get(noise_floor_idx).copied().unwrap_or(0.001);
+    let noise_floor = sorted_rms.get(noise_floor_idx).copied().unwrap_or(0.001).min(0.003);
 
-    // Adaptive threshold: sensitive enough to capture quiet speech and weak consonants
-    let speech_threshold = (noise_floor * 2.0).max(0.004);
+    // Adaptive threshold: sensitive to preserve weak consonants, soft accents, and fast transitions
+    let speech_threshold = (noise_floor * 1.5).clamp(0.0018, 0.0040);
 
     // Identify first and last frame containing genuine user speech
     let first_speech_frame = frame_rms.iter().position(|&r| r >= speech_threshold);
@@ -301,39 +308,41 @@ pub fn isolate_voice_and_suppress_noise(samples: &[f32], sample_rate: u32) -> Ve
     let (start_frame, end_frame) = match (first_speech_frame, last_speech_frame) {
         (Some(start), Some(end)) if end >= start => (start, end),
         _ => {
-            // If quiet speech is below energy threshold, do not discard: pass filtered audio to Whisper
-            return hp_samples;
+            // Ambient rumble with no audible user speech frames is rejected as silence
+            return Vec::new();
         }
     };
 
-    // Pad speech boundary by ~140ms (7 frames) to protect initial and trailing consonants
-    let pad_frames = 7;
+    // Pad speech boundary by ~300ms (15 frames) to fully protect initial and trailing phonemes
+    let pad_frames = 15;
     let safe_start_frame = start_frame.saturating_sub(pad_frames);
     let safe_end_frame = (end_frame + pad_frames + 1).min(num_frames);
 
     let start_sample = safe_start_frame * frame_size;
     let end_sample = (safe_end_frame * frame_size).min(hp_samples.len());
+    let speech_samples = hp_samples[start_sample..end_sample].to_vec();
 
-    // 3. Extract user speech segment and apply soft noise gating to inter-word pauses
-    let mut speech_samples = Vec::with_capacity(end_sample - start_sample);
-    for frame_idx in safe_start_frame..safe_end_frame {
-        let is_speech_active = frame_rms.get(frame_idx).copied().unwrap_or(0.0) >= (speech_threshold * 0.65);
-        let attenuation = if is_speech_active { 1.0f32 } else { 0.15f32 }; // -16dB suppression on non-speech pauses
-
-        let f_start = frame_idx * frame_size;
-        let f_end = (f_start + frame_size).min(hp_samples.len());
-        for i in f_start..f_end {
-            speech_samples.push(hp_samples[i] * attenuation);
-        }
-    }
-
-    // 4. Speech-aware controlled normalization (gain capped at 3.0x to avoid amplifying noise)
+    // 3. Speech-aware controlled normalization (gain up to 15x for quiet laptop mics)
     let peak = speech_samples.iter().copied().fold(0.0f32, |m, s| m.max(s.abs()));
-    if peak > 1e-3 && peak < 0.25 {
-        let gain = (0.40 / peak).clamp(1.0, 3.0);
+    let normalized_samples: Vec<f32> = if peak > 1e-4 && peak < 0.35 {
+        let gain = (0.50 / peak).clamp(1.0, 15.0);
         speech_samples.iter().map(|&s| (s * gain).clamp(-1.0, 1.0)).collect()
     } else {
         speech_samples
+    };
+
+    // 4. Gentle high-frequency pre-emphasis filter for fast speech clarity (boosts weak unvoiced consonant formants)
+    if normalized_samples.len() > 1 {
+        let mut out = Vec::with_capacity(normalized_samples.len());
+        out.push(normalized_samples[0]);
+        for i in 1..normalized_samples.len() {
+            // Gentle alpha = 0.15 flattens vocal tract roll-off and sharpens consonant transitions
+            let y = normalized_samples[i] - 0.15 * normalized_samples[i - 1];
+            out.push(y);
+        }
+        out
+    } else {
+        normalized_samples
     }
 }
 
@@ -388,7 +397,45 @@ pub fn is_audio_silent_or_too_short(audio_samples: &[f32]) -> bool {
     let peak = audio_samples.iter().fold(0.0f32, |m, &s| m.max(s.abs()));
     let sum_sq: f32 = audio_samples.iter().map(|&s| s * s).sum();
     let rms = (sum_sq / audio_samples.len() as f32).sqrt();
-    peak < 0.003 || rms < 0.0008
+    peak < 0.0025 || rms < 0.0006
+}
+
+/// Trims dead silence at the beginning and end of a 16kHz speech buffer to speed up Whisper processing and eliminate silence latency.
+pub fn trim_audio_silence(samples: &[f32], sample_rate: u32) -> Vec<f32> {
+    if samples.len() < (sample_rate as usize / 2) {
+        return samples.to_vec();
+    }
+
+    let frame_size = (sample_rate as usize * 20) / 1000; // 20ms frames
+    let pad_frames = (sample_rate as usize * 120) / 1000; // 120ms safety pad
+
+    let mut start_idx = 0;
+    let mut end_idx = samples.len();
+
+    // Find speech onset
+    for (i, chunk) in samples.chunks(frame_size).enumerate() {
+        let rms = (chunk.iter().map(|&s| s * s).sum::<f32>() / chunk.len() as f32).sqrt();
+        if rms > 0.0012 {
+            start_idx = (i * frame_size).saturating_sub(pad_frames);
+            break;
+        }
+    }
+
+    // Find speech offset
+    for (i, chunk) in samples.rchunks(frame_size).enumerate() {
+        let rms = (chunk.iter().map(|&s| s * s).sum::<f32>() / chunk.len() as f32).sqrt();
+        if rms > 0.0012 {
+            let offset_from_end = i * frame_size;
+            end_idx = (samples.len().saturating_sub(offset_from_end) + pad_frames).min(samples.len());
+            break;
+        }
+    }
+
+    if start_idx < end_idx && (end_idx - start_idx) >= 3200 {
+        samples[start_idx..end_idx].to_vec()
+    } else {
+        samples.to_vec()
+    }
 }
 
 /// High-quality band-limited anti-aliased resampler for speech audio streams (e.g. 48kHz / 44.1kHz -> 16kHz)
@@ -423,4 +470,145 @@ pub fn linear_resample(input: &[f32], from_rate: u32, to_rate: u32) -> Vec<f32> 
     }
 
     output
+}
+
+/// Feature 017: Speech Reliability Monitor
+/// Analyzes audio signals for capture fidelity, acoustic energy, microphone clipping,
+/// excessive background silence, and duration anomalies.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
+pub struct SpeechReliabilityReport {
+    pub duration_seconds: f32,
+    pub peak_amplitude: f32,
+    pub rms_db: f32,
+    pub clipping_ratio: f32,
+    pub silence_ratio: f32,
+    pub status: String, // "optimal" | "low_volume" | "clipped" | "high_silence" | "too_short" | "empty"
+    pub advisory: String,
+}
+
+pub fn analyze_speech_reliability(samples: &[f32], sample_rate: u32) -> SpeechReliabilityReport {
+    if samples.is_empty() {
+        return SpeechReliabilityReport {
+            duration_seconds: 0.0,
+            peak_amplitude: 0.0,
+            rms_db: -99.0,
+            clipping_ratio: 0.0,
+            silence_ratio: 1.0,
+            status: "empty".to_string(),
+            advisory: "No audio captured.".to_string(),
+        };
+    }
+
+    let duration_seconds = samples.len() as f32 / sample_rate as f32;
+    let mut peak: f32 = 0.0;
+    let mut sum_sq: f32 = 0.0;
+    let mut clip_count = 0;
+
+    for &s in samples {
+        let abs = s.abs();
+        if abs > peak {
+            peak = abs;
+        }
+        if abs >= 0.98 {
+            clip_count += 1;
+        }
+        sum_sq += s * s;
+    }
+
+    let rms = (sum_sq / samples.len() as f32).sqrt();
+    let rms_db = 20.0 * (rms + 1e-6).log10();
+    let clipping_ratio = clip_count as f32 / samples.len() as f32;
+
+    // Frame-level silence ratio (20ms frames)
+    let frame_size = (sample_rate as f32 * 0.02).max(1.0) as usize;
+    let mut silent_frames = 0;
+    let mut total_frames = 0;
+    for chunk in samples.chunks(frame_size) {
+        let chunk_sq: f32 = chunk.iter().map(|&x| x * x).sum();
+        let chunk_rms = (chunk_sq / chunk.len() as f32).sqrt();
+        if chunk_rms < 0.015 {
+            silent_frames += 1;
+        }
+        total_frames += 1;
+    }
+    let silence_ratio = if total_frames > 0 {
+        silent_frames as f32 / total_frames as f32
+    } else {
+        0.0
+    };
+
+    let (status, advisory) = if duration_seconds < 0.35 {
+        ("too_short".to_string(), "Recording was very brief (< 0.35s).".to_string())
+    } else if clipping_ratio > 0.01 {
+        ("clipped".to_string(), "Microphone clipping detected. Consider lowering mic input volume.".to_string())
+    } else if rms_db < -42.0 {
+        ("low_volume".to_string(), "Audio level very low. Speak closer to the microphone.".to_string())
+    } else if silence_ratio > 0.88 {
+        ("high_silence".to_string(), "Excessive background silence or distant speech detected.".to_string())
+    } else {
+        ("optimal".to_string(), "Speech audio captured with optimal acoustic fidelity.".to_string())
+    };
+
+    SpeechReliabilityReport {
+        duration_seconds,
+        peak_amplitude: peak,
+        rms_db,
+        clipping_ratio,
+        silence_ratio,
+        status,
+        advisory,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_speech_reliability_optimal() {
+        // Generate 1 second of normal synthetic speech wave (approx 0.3 amplitude at 400Hz)
+        let sample_rate = 16000;
+        let mut samples = Vec::with_capacity(sample_rate);
+        for i in 0..sample_rate {
+            let t = i as f32 / sample_rate as f32;
+            samples.push(0.3 * (2.0 * std::f32::consts::PI * 400.0 * t).sin());
+        }
+        let report = analyze_speech_reliability(&samples, sample_rate as u32);
+        assert_eq!(report.status, "optimal");
+        assert!(report.advisory.contains("optimal"));
+        assert_eq!(report.clipping_ratio, 0.0);
+    }
+
+    #[test]
+    fn test_speech_reliability_clipping_detection() {
+        let sample_rate = 16000;
+        let mut samples = vec![0.2; sample_rate];
+        // Inject clipped samples exceeding 0.98
+        for i in 0..500 {
+            samples[i] = 1.0;
+        }
+        let report = analyze_speech_reliability(&samples, sample_rate as u32);
+        assert_eq!(report.status, "clipped");
+        assert!(report.advisory.contains("clipping detected"));
+    }
+
+    #[test]
+    fn test_speech_reliability_low_volume() {
+        let sample_rate = 16000;
+        // Barely audible signal (amplitude 0.001)
+        let samples = vec![0.001; sample_rate];
+        let report = analyze_speech_reliability(&samples, sample_rate as u32);
+        assert_eq!(report.status, "low_volume");
+        assert!(report.advisory.contains("level very low"));
+    }
+
+    #[test]
+    fn test_speech_reliability_too_short() {
+        let sample_rate = 16000;
+        // 0.1 second of audio
+        let samples = vec![0.2; 1600];
+        let report = analyze_speech_reliability(&samples, sample_rate as u32);
+        assert_eq!(report.status, "too_short");
+        assert!(report.advisory.contains("very brief"));
+    }
 }

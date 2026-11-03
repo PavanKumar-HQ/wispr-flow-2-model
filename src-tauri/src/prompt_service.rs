@@ -5,6 +5,8 @@
 //! and provides instant 1-click prompt enhancement into articulate, high-potency
 //! instructions without boilerplate condition checklists.
 
+use serde::{Deserialize, Serialize};
+
 /// Checks whether a given transcript or destination context represents an AI prompt.
 pub fn is_ai_prompt(text: &str, target_app: Option<&str>) -> bool {
     let trimmed = text.trim();
@@ -99,6 +101,12 @@ pub fn enhance_ai_prompt(raw_text: &str) -> String {
 
     // 0. Clean speech disfluencies, stuttering, and spoken false starts
     let disfluency_cleaned = crate::enhancement_service::clean_speech_disfluencies(trimmed);
+
+    // Feature 018: Check for explicit Prompt Architect invocation
+    let lower = disfluency_cleaned.to_lowercase();
+    if lower.contains("prompt architect") || lower.starts_with("structure as prompt") || lower.starts_with("format as prompt") {
+        return format_as_prompt_architect(&disfluency_cleaned);
+    }
 
     // 1. Strip spoken conversational fluff and pleasantries
     let cleaned = clean_conversational_filler(&disfluency_cleaned);
@@ -402,6 +410,216 @@ fn finalize_prompt_structure(text: &str) -> String {
     result
 }
 
+/// Feature 018: Prompt Architect Mode
+/// Structures natural spoken technical directives into structured, high-potency
+/// prompt specifications with Goal, Context, Requirements, and Constraints.
+pub fn format_as_prompt_architect(input: &str) -> String {
+    let trimmed = input.trim();
+    if trimmed.is_empty() {
+        return String::new();
+    }
+
+    let mut working = trimmed.to_string();
+    let cues = [
+        "prompt architect:", "prompt architect", "act as prompt architect",
+        "format as prompt:", "format as prompt", "structure as prompt:",
+        "structure as prompt",
+    ];
+    let lower = working.to_lowercase();
+    for cue in cues {
+        if lower.starts_with(cue) {
+            working = working[cue.len()..].trim().trim_start_matches(':').trim().to_string();
+            break;
+        }
+    }
+
+    let elevated = enhance_ai_prompt(&working);
+
+    // Identify detected technologies for Context
+    let known_tech = [
+        "Rust", "Python", "TypeScript", "JavaScript", "React", "Next.js",
+        "PostgreSQL", "Docker", "Kubernetes", "FastAPI", "MongoDB", "GraphQL",
+        "Supabase", "PyTorch", "Redis", "SQLite", "Tailwind CSS", "Node.js", "VS Code"
+    ];
+    let mut detected_tech = Vec::new();
+    for tech in known_tech {
+        if elevated.to_lowercase().contains(&tech.to_lowercase()) {
+            detected_tech.push(tech);
+        }
+    }
+    let context_line = if !detected_tech.is_empty() {
+        format!("Technical Stack: {}", detected_tech.join(", "))
+    } else {
+        "Production environment with strict adherence to best practices.".to_string()
+    };
+
+    // Extract potential constraints (e.g. phrases containing "don't", "preserve", "ensure", "without")
+    let sentences: Vec<&str> = elevated.split(&['.', '!', '?'][..]).map(|s| s.trim()).filter(|s| !s.is_empty()).collect();
+    let mut requirements = Vec::new();
+    let mut constraints = Vec::new();
+
+    for s in &sentences {
+        let s_lower = s.to_lowercase();
+        if s_lower.contains("don't") || s_lower.contains("do not") || s_lower.contains("never") || s_lower.contains("preserve") || s_lower.contains("without") || s_lower.contains("must not") {
+            constraints.push(format!("- {}", s));
+        } else {
+            requirements.push(format!("- {}", s));
+        }
+    }
+
+    if requirements.is_empty() {
+        requirements.push(format!("- {}", elevated));
+    }
+    if constraints.is_empty() {
+        constraints.push("- Preserve backward compatibility and existing data integrity.".to_string());
+    }
+
+    format!(
+        "### Goal\n{}\n\n### Context\n{}\n\n### Requirements\n{}\n\n### Constraints\n{}",
+        elevated.lines().next().unwrap_or(&elevated),
+        context_line,
+        requirements.join("\n"),
+        constraints.join("\n")
+    )
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TechnicalSpec {
+    pub raw_thinking: String,
+    pub objective: String,
+    pub assumptions: Vec<String>,
+    pub decisions: Vec<String>,
+    pub constraints: Vec<String>,
+    pub acceptance_criteria: Vec<String>,
+    pub open_questions: Vec<String>,
+    pub markdown: String,
+}
+
+/// Feature: Thought-to-Spec
+/// Parses unstructured conversational thinking, isolates verbal self-corrections
+/// ("actually", "instead", "don't create", "keep existing"), and builds a structured,
+/// verified technical specification with Objectives, Assumptions, Decisions, Constraints, and Criteria.
+pub fn compose_thought_to_spec(input: &str) -> TechnicalSpec {
+    let trimmed = input.trim();
+    if trimmed.is_empty() {
+        return TechnicalSpec {
+            raw_thinking: String::new(),
+            objective: "No objective specified.".to_string(),
+            assumptions: vec![],
+            decisions: vec![],
+            constraints: vec![],
+            acceptance_criteria: vec![],
+            open_questions: vec![],
+            markdown: String::new(),
+        };
+    }
+
+    let sentences: Vec<&str> = trimmed
+        .split(|c| c == '.' || c == '\n' || c == ';')
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
+        .collect();
+
+    let mut objective = String::new();
+    let mut assumptions = Vec::new();
+    let mut decisions = Vec::new();
+    let mut constraints = Vec::new();
+    let mut acceptance_criteria = Vec::new();
+    let mut open_questions = Vec::new();
+
+    for s in &sentences {
+        let lower = s.to_lowercase();
+
+        if s.contains('?') || lower.starts_with("wondering") || lower.starts_with("not sure") || lower.contains("should we") {
+            open_questions.push(format!("❓ {}", s));
+            continue;
+        }
+
+        if lower.contains("actually") || lower.contains("instead") || lower.contains("rather than") || lower.contains("changed my mind") {
+            decisions.push(format!("🔄 Revision: {}", s));
+        }
+
+        if lower.contains("already have") || lower.contains("existing") || lower.contains("currently") || lower.contains("assuming") {
+            assumptions.push(format!("Existing System: {}", s));
+        }
+
+        if lower.contains("don't") || lower.contains("do not") || lower.contains("never") || lower.contains("keep the") || lower.contains("must not") || lower.contains("avoid") {
+            constraints.push(format!("🛡️ Invariant: {}", s));
+        }
+
+        if lower.contains("add test") || lower.contains("tests") || lower.contains("verify") || lower.contains("ensure") || lower.contains("acceptance") || lower.contains("make sure") {
+            acceptance_criteria.push(format!("[ ] {}", s));
+        }
+
+        if objective.is_empty() {
+            if lower.contains("need") || lower.contains("want") || lower.contains("goal") || lower.contains("issue is") || lower.contains("create") || lower.contains("build") || lower.contains("fix") {
+                objective = enhance_ai_prompt(s);
+            }
+        }
+    }
+
+    if objective.is_empty() && !sentences.is_empty() {
+        objective = enhance_ai_prompt(sentences[0]);
+    }
+
+    if assumptions.is_empty() {
+        assumptions.push("Existing technical architecture and dependencies remain intact.".to_string());
+    }
+    if constraints.is_empty() {
+        constraints.push("🛡️ Invariant: Preserve backward compatibility and existing data schema integrity.".to_string());
+    }
+    if acceptance_criteria.is_empty() {
+        acceptance_criteria.push("[ ] Verify functionality with automated unit and integration tests.".to_string());
+    }
+
+    let mut md = String::new();
+    md.push_str("# Technical Specification\n\n");
+    md.push_str(&format!("### 1. Objective\n{}\n\n", objective));
+
+    md.push_str("### 2. System Assumptions\n");
+    for a in &assumptions {
+        md.push_str(&format!("- {}\n", a));
+    }
+    md.push('\n');
+
+    if !decisions.is_empty() {
+        md.push_str("### 3. Decisions & Revisions\n");
+        for d in &decisions {
+            md.push_str(&format!("- {}\n", d));
+        }
+        md.push('\n');
+    }
+
+    md.push_str("### 4. Constraints & Invariants\n");
+    for c in &constraints {
+        md.push_str(&format!("- {}\n", c));
+    }
+    md.push('\n');
+
+    md.push_str("### 5. Acceptance Criteria\n");
+    for ac in &acceptance_criteria {
+        md.push_str(&format!("- {}\n", ac));
+    }
+
+    if !open_questions.is_empty() {
+        md.push_str("\n### 6. Open Questions\n");
+        for q in &open_questions {
+            md.push_str(&format!("- {}\n", q));
+        }
+    }
+
+    TechnicalSpec {
+        raw_thinking: trimmed.to_string(),
+        objective,
+        assumptions,
+        decisions,
+        constraints,
+        acceptance_criteria,
+        open_questions,
+        markdown: md,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -462,5 +680,31 @@ mod tests {
         let enhanced = enhance_ai_prompt("generate prompt for python web scraper");
         assert!(enhanced.contains("Act as a principal expert on"));
         assert!(enhanced.to_lowercase().contains("python web scraper"));
+    }
+
+    #[test]
+    fn test_prompt_architect_mode_formatting() {
+        let input = "prompt architect: build a Next.js app with PostgreSQL. Preserve existing migrations and don't remove authentication.";
+        let res = enhance_ai_prompt(input);
+        assert!(res.contains("### Goal"));
+        assert!(res.contains("### Context"));
+        assert!(res.contains("### Requirements"));
+        assert!(res.contains("### Constraints"));
+        assert!(res.contains("Next.js"));
+        assert!(res.contains("PostgreSQL"));
+        assert!(res.contains("authentication"));
+    }
+
+    #[test]
+    fn test_thought_to_spec_generation() {
+        let input = "I need a login page. Actually, we already have one, so don't create another. The issue is session expiry. Keep the existing API and add tests.";
+        let spec = compose_thought_to_spec(input);
+        assert!(!spec.objective.is_empty());
+        assert!(!spec.constraints.is_empty());
+        assert!(spec.constraints.iter().any(|c| c.to_lowercase().contains("don't create another") || c.to_lowercase().contains("keep the existing api")));
+        assert!(!spec.decisions.is_empty());
+        assert!(spec.markdown.contains("# Technical Specification"));
+        assert!(spec.markdown.contains("### 1. Objective"));
+        assert!(spec.markdown.contains("### 4. Constraints & Invariants"));
     }
 }

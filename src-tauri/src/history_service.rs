@@ -75,6 +75,8 @@ impl HistoryDatabase {
 
     pub fn new_at_path(db_path: PathBuf) -> Result<Self, String> {
         let conn = Connection::open(&db_path).map_err(|e| format!("Failed to open DB: {}", e))?;
+        let _ = conn.busy_timeout(std::time::Duration::from_secs(5));
+        let _ = conn.execute_batch("PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;");
         conn.execute(
             "CREATE TABLE IF NOT EXISTS transcript_history (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -192,6 +194,13 @@ impl HistoryDatabase {
         Ok(Self { db_path })
     }
 
+    pub fn open_conn(&self) -> Result<Connection, String> {
+        let conn = Connection::open(&self.db_path).map_err(|e| format!("DB open failed: {}", e))?;
+        let _ = conn.busy_timeout(std::time::Duration::from_secs(5));
+        let _ = conn.execute_batch("PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;");
+        Ok(conn)
+    }
+
     pub fn insert_record(
         &self,
         original: &str,
@@ -202,7 +211,7 @@ impl HistoryDatabase {
         failure_reason: Option<&str>,
         session_id: Option<&str>,
     ) -> Result<i64, String> {
-        let conn = Connection::open(&self.db_path).map_err(|e| format!("DB open failed: {}", e))?;
+        let conn = self.open_conn()?;
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
@@ -218,7 +227,7 @@ impl HistoryDatabase {
     }
 
     pub fn update_status(&self, id: i64, status: &str) -> Result<(), String> {
-        let conn = Connection::open(&self.db_path).map_err(|e| format!("DB open failed: {}", e))?;
+        let conn = self.open_conn()?;
         conn.execute(
             "UPDATE transcript_history SET status = ?1 WHERE id = ?2",
             params![status, id],
@@ -231,7 +240,7 @@ impl HistoryDatabase {
         if trimmed.is_empty() {
             return Ok(());
         }
-        let conn = Connection::open(&self.db_path).map_err(|e| format!("DB open failed: {}", e))?;
+        let conn = self.open_conn()?;
         conn.execute(
             "UPDATE transcript_history SET formatted_text = ?1, user_edited_text = ?1 WHERE id = ?2",
             params![trimmed, id],
@@ -240,7 +249,7 @@ impl HistoryDatabase {
     }
 
     pub fn restore_record_original_text(&self, id: i64) -> Result<String, String> {
-        let conn = Connection::open(&self.db_path).map_err(|e| format!("DB open failed: {}", e))?;
+        let conn = self.open_conn()?;
         let orig: String = conn.query_row(
             "SELECT original_text FROM transcript_history WHERE id = ?1",
             params![id],
@@ -254,7 +263,7 @@ impl HistoryDatabase {
     }
 
     pub fn update_status_and_target(&self, id: i64, status: &str, target_app: Option<&str>, failure_reason: Option<&str>) -> Result<(), String> {
-        let conn = Connection::open(&self.db_path).map_err(|e| format!("DB open failed: {}", e))?;
+        let conn = self.open_conn()?;
         conn.execute(
             "UPDATE transcript_history SET status = ?1, target_app = COALESCE(?2, target_app), failure_reason = ?3 WHERE id = ?4",
             params![status, target_app, failure_reason, id],
@@ -263,7 +272,7 @@ impl HistoryDatabase {
     }
 
     pub fn get_record(&self, id: i64) -> Result<Option<HistoryRecord>, String> {
-        let conn = Connection::open(&self.db_path).map_err(|e| format!("DB open failed: {}", e))?;
+        let conn = self.open_conn()?;
         let mut stmt = conn.prepare(
             "SELECT id, timestamp_ms, original_text, formatted_text, duration_seconds, status, target_app, failure_reason, session_id, user_edited_text
              FROM transcript_history WHERE id = ?1"
@@ -292,7 +301,7 @@ impl HistoryDatabase {
     }
 
     pub fn list_records(&self, limit: u32) -> Result<Vec<HistoryRecord>, String> {
-        let conn = Connection::open(&self.db_path).map_err(|e| format!("DB open failed: {}", e))?;
+        let conn = self.open_conn()?;
         let mut stmt = conn.prepare(
             "SELECT id, timestamp_ms, original_text, formatted_text, duration_seconds, status, target_app, failure_reason, session_id, user_edited_text
              FROM transcript_history ORDER BY id DESC LIMIT ?1"
@@ -323,7 +332,7 @@ impl HistoryDatabase {
     }
 
     pub fn list_recovery_records(&self, limit: u32) -> Result<Vec<HistoryRecord>, String> {
-        let conn = Connection::open(&self.db_path).map_err(|e| format!("DB open failed: {}", e))?;
+        let conn = self.open_conn()?;
         let mut stmt = conn.prepare(
             "SELECT id, timestamp_ms, original_text, formatted_text, duration_seconds, status, target_app, failure_reason, session_id, user_edited_text
              FROM transcript_history
@@ -356,14 +365,14 @@ impl HistoryDatabase {
     }
 
     pub fn delete_record(&self, id: i64) -> Result<(), String> {
-        let conn = Connection::open(&self.db_path).map_err(|e| format!("DB open failed: {}", e))?;
+        let conn = self.open_conn()?;
         conn.execute("DELETE FROM transcript_history WHERE id = ?1", params![id])
             .map_err(|e| format!("Delete error: {}", e))?;
         Ok(())
     }
 
     pub fn clear_all(&self) -> Result<(), String> {
-        let conn = Connection::open(&self.db_path).map_err(|e| format!("DB open failed: {}", e))?;
+        let conn = self.open_conn()?;
         // Clears ALL transcript history (both regular dictations and pending recovery items),
         // while strictly preserving custom_dictionary, personal_vocabulary, and user settings.
         conn.execute("DELETE FROM transcript_history", [])
@@ -372,7 +381,7 @@ impl HistoryDatabase {
     }
 
     pub fn get_insights(&self) -> Result<InsightsData, String> {
-        let conn = Connection::open(&self.db_path).map_err(|e| format!("DB open failed: {}", e))?;
+        let conn = self.open_conn()?;
         let mut stmt = conn.prepare(
             "SELECT formatted_text, duration_seconds, timestamp_ms, target_app FROM transcript_history"
         ).map_err(|e| format!("DB prepare failed: {}", e))?;
@@ -450,7 +459,7 @@ impl HistoryDatabase {
     }
 
     pub fn add_dictionary_entry(&self, original: &str, replacement: &str, category: &str) -> Result<i64, String> {
-        let conn = Connection::open(&self.db_path).map_err(|e| format!("DB open failed: {}", e))?;
+        let conn = self.open_conn()?;
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
@@ -478,7 +487,7 @@ impl HistoryDatabase {
     }
 
     pub fn list_dictionary_entries(&self) -> Result<Vec<DictionaryEntry>, String> {
-        let conn = Connection::open(&self.db_path).map_err(|e| format!("DB open failed: {}", e))?;
+        let conn = self.open_conn()?;
         let mut stmt = conn.prepare(
             "SELECT id, original_phrase, replacement_phrase, category, created_at FROM custom_dictionary ORDER BY id DESC"
         ).map_err(|e| format!("DB prepare failed: {}", e))?;
@@ -507,7 +516,7 @@ impl HistoryDatabase {
     }
 
     pub fn delete_dictionary_entry(&self, id: i64) -> Result<(), String> {
-        let conn = Connection::open(&self.db_path).map_err(|e| format!("DB open failed: {}", e))?;
+        let conn = self.open_conn()?;
         if let Ok((orig, repl)) = conn.query_row(
             "SELECT original_phrase, replacement_phrase FROM custom_dictionary WHERE id = ?1",
             params![id],
@@ -529,7 +538,11 @@ impl HistoryDatabase {
             .map(|e| e.replacement_phrase)
             .filter(|s| !s.trim().is_empty())
             .collect();
-        Ok(terms.join(", "))
+        if terms.is_empty() {
+            Ok(String::new())
+        } else {
+            Ok(format!("Technical dictation terms: {}.", terms.join(", ")))
+        }
     }
 
     pub fn apply_dictionary_replacements(&self, text: &str) -> String {
@@ -538,40 +551,24 @@ impl HistoryDatabase {
             Err(_) => return text.to_string(),
         };
 
+        if entries.is_empty() {
+            return text.to_string();
+        }
+
+        let mut sorted = entries;
+        sorted.sort_by(|a, b| b.original_phrase.len().cmp(&a.original_phrase.len()));
+
         let mut result = text.to_string();
-        for entry in entries {
+        for entry in sorted {
             let orig = entry.original_phrase.trim();
             let repl = entry.replacement_phrase.trim();
-            if orig.is_empty() || repl.is_empty() {
+            if orig.is_empty() || repl.is_empty() || orig == repl {
                 continue;
             }
 
-            let lower_orig = orig.to_lowercase();
-            let lower_result = result.to_lowercase();
-
-            if lower_result.contains(&lower_orig) {
-                let mut new_res = String::new();
-                let mut last = 0;
-                let mut search_from = 0;
-                while let Some(idx) = lower_result[search_from..].find(&lower_orig) {
-                    let actual_idx = search_from + idx;
-                    let end_idx = actual_idx + orig.len();
-
-                    let before_is_boundary = actual_idx == 0 || !result.as_bytes()[actual_idx - 1].is_ascii_alphanumeric();
-                    let after_is_boundary = end_idx >= result.len() || !result.as_bytes()[end_idx].is_ascii_alphanumeric();
-
-                    if before_is_boundary && after_is_boundary {
-                        new_res.push_str(&result[last..actual_idx]);
-                        new_res.push_str(repl);
-                        last = end_idx;
-                    } else {
-                        new_res.push_str(&result[last..end_idx]);
-                        last = end_idx;
-                    }
-                    search_from = end_idx;
-                }
-                new_res.push_str(&result[last..]);
-                result = new_res;
+            // Flexible phrase replacement (direct word boundary, condensed spaced variants, and multi-word matches)
+            if let Some(new_text) = crate::personalization_service::replace_phrase_flexible(&result, orig, repl) {
+                result = new_text;
             }
         }
         result
@@ -590,7 +587,7 @@ impl HistoryDatabase {
             return Ok(Vec::new());
         }
 
-        let conn = Connection::open(&self.db_path).map_err(|e| format!("DB open failed: {}", e))?;
+        let conn = self.open_conn()?;
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
@@ -661,9 +658,10 @@ impl HistoryDatabase {
                     );
                 }
             } else {
-                // New candidate
-                let initial_status = "candidate";
-                let initial_conf: f32 = 0.55;
+                // New candidate from user's direct edit:
+                // Automatically set to 'active' with high confidence so subsequent dictations use it immediately
+                let initial_status = "active";
+                let initial_conf: f32 = 0.85;
                 let _ = conn.execute(
                     "INSERT INTO personal_vocabulary (original_text, preferred_text, entry_type, confidence, positive_count, negative_count, status, recognition_count, correction_count, application_count, last_used_at, created_at, updated_at, source)
                      VALUES (?1, ?2, ?3, ?4, 1, 0, ?5, 0, 1, 0, NULL, ?6, ?6, 'learned')",
@@ -685,7 +683,7 @@ impl HistoryDatabase {
         &self,
         status_filter: Option<&str>,
     ) -> Result<Vec<crate::personalization_service::PersonalVocabularyEntry>, String> {
-        let conn = Connection::open(&self.db_path).map_err(|e| format!("DB open failed: {}", e))?;
+        let conn = self.open_conn()?;
         let mut query = "SELECT id, original_text, preferred_text, entry_type, context_domain, confidence, positive_count, negative_count, status, recognition_count, correction_count, application_count, last_used_at, created_at, updated_at, source FROM personal_vocabulary".to_string();
 
         if let Some(status) = status_filter {
@@ -732,7 +730,7 @@ impl HistoryDatabase {
         status: &str,
         source: Option<&str>,
     ) -> Result<crate::personalization_service::PersonalVocabularyEntry, String> {
-        let conn = Connection::open(&self.db_path).map_err(|e| format!("DB open failed: {}", e))?;
+        let conn = self.open_conn()?;
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
@@ -786,7 +784,7 @@ impl HistoryDatabase {
     }
 
     pub fn toggle_personal_vocabulary(&self, id: i64, active: bool) -> Result<(), String> {
-        let conn = Connection::open(&self.db_path).map_err(|e| format!("DB open failed: {}", e))?;
+        let conn = self.open_conn()?;
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
@@ -826,27 +824,63 @@ impl HistoryDatabase {
             .map_err(|e| format!("Serialization failed: {}", e))
     }
 
-    pub fn update_personal_vocabulary(&self, id: i64, preferred_text: &str, status: &str) -> Result<(), String> {
-        let conn = Connection::open(&self.db_path).map_err(|e| format!("DB open failed: {}", e))?;
+    pub fn update_personal_vocabulary_full(
+        &self,
+        id: i64,
+        original_text: Option<&str>,
+        preferred_text: Option<&str>,
+        entry_type: Option<&str>,
+        status: Option<&str>,
+    ) -> Result<(), String> {
+        let conn = self.open_conn()?;
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
             .as_millis() as i64;
-        let pref = preferred_text.trim();
-        let stat = status.trim();
 
-        let conf: f32 = if stat == "active" { 1.0 } else if stat == "rejected" { 0.0 } else { 0.5 };
+        // Fetch existing record
+        let (old_orig, old_pref, old_type, old_status): (String, String, String, String) = conn
+            .query_row(
+                "SELECT original_text, preferred_text, entry_type, status FROM personal_vocabulary WHERE id = ?1",
+                params![id],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)),
+            )
+            .map_err(|e| format!("Entry not found: {}", e))?;
+
+        let new_orig = original_text.map(|s| s.trim()).filter(|s| !s.is_empty()).unwrap_or(&old_orig);
+        let new_pref = preferred_text.map(|s| s.trim()).filter(|s| !s.is_empty()).unwrap_or(&old_pref);
+        let new_type = entry_type.map(|s| s.trim()).filter(|s| !s.is_empty()).unwrap_or(&old_type);
+        let new_stat = status.map(|s| s.trim()).filter(|s| !s.is_empty()).unwrap_or(&old_status);
+
+        let conf: f32 = if new_stat == "active" { 1.0 } else if new_stat == "rejected" { 0.0 } else { 0.5 };
 
         conn.execute(
-            "UPDATE personal_vocabulary SET preferred_text = ?1, status = ?2, confidence = ?3, updated_at = ?4 WHERE id = ?5",
-            params![pref, stat, conf, now, id],
-        ).map_err(|e| format!("Update failed: {}", e))?;
+            "UPDATE personal_vocabulary SET original_text = ?1, preferred_text = ?2, entry_type = ?3, status = ?4, confidence = ?5, updated_at = ?6 WHERE id = ?7",
+            params![new_orig, new_pref, new_type, new_stat, conf, now, id],
+        ).map_err(|e| format!("Update personal_vocabulary failed: {}", e))?;
+
+        // Synchronize custom_dictionary: delete old mirror entry and insert updated one if active
+        let _ = conn.execute(
+            "DELETE FROM custom_dictionary WHERE LOWER(original_phrase) = LOWER(?1) OR LOWER(original_phrase) = LOWER(?2)",
+            params![old_orig, new_orig],
+        );
+
+        if new_stat == "active" && !new_orig.is_empty() && !new_pref.is_empty() {
+            let _ = conn.execute(
+                "INSERT INTO custom_dictionary (original_phrase, replacement_phrase, category, created_at) VALUES (?1, ?2, ?3, ?4)",
+                params![new_orig, new_pref, new_type, now],
+            );
+        }
 
         Ok(())
     }
 
+    pub fn update_personal_vocabulary(&self, id: i64, preferred_text: &str, status: &str) -> Result<(), String> {
+        self.update_personal_vocabulary_full(id, None, Some(preferred_text), None, Some(status))
+    }
+
     pub fn delete_personal_vocabulary(&self, id: i64) -> Result<(), String> {
-        let conn = Connection::open(&self.db_path).map_err(|e| format!("DB open failed: {}", e))?;
+        let conn = self.open_conn()?;
         if let Ok((orig, pref)) = conn.query_row(
             "SELECT original_text, preferred_text FROM personal_vocabulary WHERE id = ?1",
             params![id],
@@ -863,7 +897,7 @@ impl HistoryDatabase {
     }
 
     pub fn reset_personalization(&self) -> Result<(), String> {
-        let conn = Connection::open(&self.db_path).map_err(|e| format!("DB open failed: {}", e))?;
+        let conn = self.open_conn()?;
         conn.execute("DELETE FROM personal_vocabulary", [])
             .map_err(|e| format!("Clear personal_vocabulary failed: {}", e))?;
         conn.execute("DELETE FROM custom_dictionary", [])
@@ -878,37 +912,44 @@ impl HistoryDatabase {
     pub fn get_active_biasing_prompt(&self) -> Result<String, String> {
         let mut terms = Vec::new();
 
-        // 1. Custom dictionary replacement phrases
+        // 1. User's custom dictionary replacement phrases come FIRST
         if let Ok(entries) = self.list_dictionary_entries() {
             for e in entries {
-                let term = e.replacement_phrase.trim().to_string();
-                if !term.is_empty() && !terms.contains(&term) {
-                    terms.push(term);
+                let repl = e.replacement_phrase.trim().to_string();
+                if !repl.is_empty() && !terms.contains(&repl) {
+                    terms.push(repl);
+                }
+                if terms.len() >= 15 {
+                    break;
                 }
             }
         }
 
-        // 2. Active personal vocabulary entries (up to 25 total)
+        // 2. User's active personal vocabulary entries (learned, taught, and approved)
         if let Ok(vocab) = self.list_personal_vocabulary(Some("active")) {
             for entry in vocab {
                 let term = entry.preferred_text.trim().to_string();
                 if !term.is_empty() && !terms.contains(&term) {
                     terms.push(term);
                 }
-                if terms.len() >= 25 {
+                if terms.len() >= 20 {
                     break;
                 }
             }
         }
 
-        Ok(terms.join(", "))
+        if terms.is_empty() {
+            Ok(String::new())
+        } else {
+            Ok(format!("Dictation vocabulary: {}.", terms.join(", ")))
+        }
     }
 
     pub fn record_vocabulary_application(&self, rule_ids: &[i64]) -> Result<(), String> {
         if rule_ids.is_empty() {
             return Ok(());
         }
-        let conn = Connection::open(&self.db_path).map_err(|e| format!("DB open failed: {}", e))?;
+        let conn = self.open_conn()?;
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
@@ -923,7 +964,7 @@ impl HistoryDatabase {
     }
 
     pub fn record_vocabulary_recognitions(&self, text: &str) -> Result<(), String> {
-        let conn = Connection::open(&self.db_path).map_err(|e| format!("DB open failed: {}", e))?;
+        let conn = self.open_conn()?;
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()

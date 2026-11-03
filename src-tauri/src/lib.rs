@@ -65,6 +65,10 @@ static LAST_SHORTCUT_EVENT: std::sync::atomic::AtomicU64 = std::sync::atomic::At
 static IS_SHORTCUT_HELD: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 static SHORTCUT_PRESS_TIME: Mutex<Option<Instant>> = Mutex::new(None);
 
+pub fn is_shortcut_held() -> bool {
+    IS_SHORTCUT_HELD.load(std::sync::atomic::Ordering::SeqCst)
+}
+
 pub fn reset_shortcut_held() {
     IS_SHORTCUT_HELD.store(false, std::sync::atomic::Ordering::SeqCst);
     if let Ok(mut t) = SHORTCUT_PRESS_TIME.lock() {
@@ -103,6 +107,8 @@ pub fn run() {
         target_window: None,
         recovery_id: None,
         timestamp_ms: 0,
+        technical_suggestion: None,
+        active_model_name: None,
     }));
 
     let app_state = AppState {
@@ -156,19 +162,27 @@ pub fn run() {
 
                         tauri::async_runtime::spawn_blocking(move || {
                             if let Some(state) = app_handle.try_state::<AppState>() {
-                                let is_recording = {
+                                let current_state = {
                                     let sess = state.active_session.lock().unwrap();
-                                    sess.state == SessionState::Recording
+                                    sess.state
                                 };
 
-                                if is_recording {
-                                    // User tapped shortcut while in active recording -> stop and transcribe
-                                    println!("[VoxQuest Hotkey] New press while recording -> stopping dictation");
-                                    let _ = commands::stop_dictation(state, app_handle_inner);
-                                } else {
-                                    // Normal start: start microphone and capture destination
-                                    println!("[VoxQuest Hotkey] Key pressed -> starting dictation");
-                                    let _ = commands::start_dictation(state, app_handle_inner);
+                                match current_state {
+                                    SessionState::Recording => {
+                                        // User tapped shortcut while in active recording -> stop and transcribe
+                                        println!("[VoxQuest Hotkey] New press while recording -> stopping dictation");
+                                        let _ = commands::stop_dictation(state, app_handle_inner);
+                                    }
+                                    s if s.is_active() => {
+                                        // An operation (Starting, Transcribing, Formatting, Inserting) is actively processing.
+                                        // Strictly reject new session creation to eliminate overlapping transcription races!
+                                        println!("[VoxQuest Hotkey] Ignored press: session is currently busy ({:?})", s);
+                                    }
+                                    _ => {
+                                        // Normal start: start microphone and capture destination
+                                        println!("[VoxQuest Hotkey] Key pressed -> starting dictation");
+                                        let _ = commands::start_dictation(state, app_handle_inner);
+                                    }
                                 }
                             }
                         });
@@ -187,22 +201,29 @@ pub fn run() {
                             "push_to_talk".to_string()
                         };
 
-                        // When key is released:
-                        // Stop recording immediately on key release if in push_to_talk mode,
-                        // or if the key was held for more than a brief tap (>= 200ms).
+                        // When in push-to-talk mode, always stop on key release.
+                        // When in toggle mode, strictly ignore key release so the user can speak hands-free until re-triggered.
                         let press_duration = held_start.map(|t| t.elapsed()).unwrap_or_default();
-                        let should_stop_on_release = mode == "push_to_talk" || press_duration >= std::time::Duration::from_millis(200);
+                        let should_stop_on_release = mode == "push_to_talk";
 
                         if should_stop_on_release {
                             tauri::async_runtime::spawn_blocking(move || {
                                 if let Some(state) = app_handle.try_state::<AppState>() {
-                                    let is_recording = {
-                                        let sess = state.active_session.lock().unwrap();
-                                        sess.state == SessionState::Recording
-                                    };
-                                    if is_recording {
-                                        println!("[VoxQuest Hotkey] Key released after {:?} -> stopping and auto-inserting", press_duration);
-                                        let _ = commands::stop_dictation(state, app_handle_inner);
+                                    // Wait up to 350ms if audio initialization is still in 'Starting' state
+                                    for _ in 0..7 {
+                                        let sess_state = {
+                                            let sess = state.active_session.lock().unwrap();
+                                            sess.state
+                                        };
+                                        if sess_state == SessionState::Recording {
+                                            println!("[VoxQuest Hotkey] Key released after {:?} -> stopping and auto-inserting", press_duration);
+                                            let _ = commands::stop_dictation(state, app_handle_inner);
+                                            break;
+                                        } else if sess_state == SessionState::Starting {
+                                            std::thread::sleep(std::time::Duration::from_millis(50));
+                                        } else {
+                                            break;
+                                        }
                                     }
                                 }
                             });
@@ -302,7 +323,15 @@ pub fn run() {
                     };
                     let models_dir = model_manager::get_voxquest_models_dir();
                     let manifest = model_manifest::get_official_manifest();
-                    if let Some(info) = manifest.iter().find(|m| m.id == default_model_id) {
+                    let target_info = if default_model_id == "auto" {
+                        manifest.iter()
+                            .filter(|m| models_dir.join(&m.filename).exists())
+                            .next()
+                            .or_else(|| manifest.iter().find(|m| m.recommended))
+                    } else {
+                        manifest.iter().find(|m| m.id == default_model_id)
+                    };
+                    if let Some(info) = target_info {
                         let model_path = models_dir.join(&info.filename);
                         if model_path.exists() {
                             let mut engine = whisper.lock().unwrap();
@@ -361,7 +390,11 @@ pub fn run() {
             commands::accept_enhancement_session_cmd,
             commands::accept_enhancement_history_cmd,
             commands::restore_original_history_cmd,
-            commands::request_accessibility_permission
+            commands::request_accessibility_permission,
+            commands::switch_speech_profile,
+            commands::dismiss_technical_suggestion,
+            commands::compose_thought_to_spec_cmd,
+            commands::ingest_project_context_capsule_cmd
         ])
         .run(tauri::generate_context!())
         .expect("error while running VoxQuest application");

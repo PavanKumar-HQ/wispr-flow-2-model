@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Copy, Trash2, Clock, AlertCircle, CornerDownLeft, Search, CheckCircle2, Edit3, Check, Wand2 } from 'lucide-react';
+import { Copy, Trash2, Clock, AlertCircle, CornerDownLeft, Search, CheckCircle2, Edit3, Check, Wand2, RotateCcw } from 'lucide-react';
 import { HistoryRecord } from '../types';
 import { EnhanceReviewCard } from './EnhanceReviewCard';
 import { safeInvoke } from '../lib/ipc';
@@ -84,8 +84,8 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
     }
   };
 
-  const handleInsertIntoActive = async (id: number) => {
-    const currentText = editingTexts[id];
+  const handleInsertIntoActive = async (id: number, overrideText?: string) => {
+    const currentText = overrideText !== undefined ? overrideText : editingTexts[id];
     try {
       await safeInvoke('insert_into_selected_field', { id, text: currentText || null });
       setInsertSuccessId(id);
@@ -95,6 +95,22 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
       }, 1500);
     } catch (err) {
       alert(`Could not insert into active field: ${err}`);
+    }
+  };
+
+  const [restoredId, setRestoredId] = useState<number | null>(null);
+
+  const handleRollbackOriginal = async (id: number) => {
+    try {
+      const restored = await safeInvoke<string>('restore_original_history_cmd', { id });
+      if (restored) {
+        setEditingTexts((prev) => ({ ...prev, [id]: restored }));
+        setRestoredId(id);
+        setTimeout(() => setRestoredId(null), 2500);
+        if (onReload) onReload();
+      }
+    } catch (err) {
+      console.warn('Rollback failed:', err);
     }
   };
 
@@ -156,7 +172,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
               return (
                 <div
                   key={item.id}
-                  className="p-4 sm:p-5 rounded-2xl border border-amber/40 bg-[#FFFDF8] shadow-sm transition-all space-y-3"
+                  className="p-4 sm:p-5 rounded-2xl border border-amber/40 bg-[#FFFDF8] shadow-sm transition-all space-y-3 overflow-hidden"
                 >
                   <div className="flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2 font-semibold text-charcoal">
@@ -176,59 +192,67 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
                   />
 
                   {/* Recovery Actions */}
-                  <div className="flex items-center justify-between flex-wrap gap-2 pt-1">
-                    <p className="text-[11px] text-charcoal/60">
-                      Click your target text cursor, then tap <strong>Insert</strong>.
+                  <div className="flex items-center justify-between flex-wrap gap-2 pt-1 border-b border-amber/20 pb-2">
+                    <p className="text-[11px] text-charcoal/70 flex items-center gap-1">
+                      <span>Click inside any app's text box, then tap</span>
+                      <strong className="text-darkTeal font-bold">Paste to App</strong>.
                     </p>
 
-                    <div className="flex items-center gap-1.5 bg-stone-100/90 p-1 rounded-xl border border-charcoal/10 shadow-xs">
-                      {/* Enhance */}
+                    <div className="flex items-center flex-wrap gap-1.5 sm:justify-end">
+                      {/* 1. Paste to App */}
+                      <button
+                        onClick={() => handleInsertIntoActive(item.id)}
+                        className={`tactile-btn tactile-btn-sm ${
+                          insertSuccessId === item.id
+                            ? 'tactile-btn-primary'
+                            : 'tactile-btn-teal'
+                        }`}
+                        title="Paste directly into your active app at cursor position"
+                        aria-label="Paste to App"
+                      >
+                        {insertSuccessId === item.id ? (
+                          <>
+                            <CheckCircle2 className="w-3.5 h-3.5 text-amber" />
+                            <span>Pasted to App!</span>
+                          </>
+                        ) : (
+                          <>
+                            <CornerDownLeft className="w-3.5 h-3.5" />
+                            <span>Paste</span>
+                          </>
+                        )}
+                      </button>
+
+                      {/* 2. Enhance */}
                       <button
                         onClick={() => setEnhanceRecoveryId(enhanceRecoveryId === item.id ? null : item.id)}
-                        className={`p-1.5 rounded-lg transition-all active:scale-95 ${
+                        className={`tactile-btn tactile-btn-sm ${
                           enhanceRecoveryId === item.id 
-                            ? 'bg-darkTeal text-white shadow-xs' 
-                            : 'text-charcoal/70 hover:text-amber-700 hover:bg-white'
+                            ? 'tactile-btn-primary' 
+                            : 'tactile-btn-surface'
                         }`}
                         title="Enhance phrasing before placing text"
                         aria-label="Enhance recovery text"
                       >
-                        <Wand2 className="w-3.5 h-3.5" />
+                        <Wand2 className="w-3.5 h-3.5 text-amber-700" />
+                        <span>Enhance</span>
                       </button>
 
-                      {/* Copy */}
+                      {/* 3. Copy - Icon-only */}
                       <button
                         onClick={() => onCopy(currentText)}
-                        className="p-1.5 rounded-lg text-charcoal/70 hover:text-darkTeal hover:bg-white transition-all active:scale-95"
+                        className="ghost-action-btn p-1.5 text-charcoal/70 hover:text-darkTeal shrink-0"
                         title="Copy text to clipboard"
-                        aria-label="Copy"
+                        aria-label="Copy text"
                       >
-                        <Copy className="w-3.5 h-3.5" />
+                        <Copy className="w-3.5 h-3.5 text-darkTeal" />
                       </button>
 
-                      {/* Insert */}
-                      <button
-                        onClick={() => handleInsertIntoActive(item.id)}
-                        className={`p-1.5 rounded-lg transition-all active:scale-95 ${
-                          insertSuccessId === item.id
-                            ? 'bg-emerald-600 text-white shadow-xs'
-                            : 'bg-darkTeal text-white hover:bg-deepTeal shadow-xs'
-                        }`}
-                        title="Insert directly into active application text box"
-                        aria-label="Insert"
-                      >
-                        {insertSuccessId === item.id ? (
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                        ) : (
-                          <CornerDownLeft className="w-3.5 h-3.5" />
-                        )}
-                      </button>
-
-                      {/* Dismiss */}
+                      {/* 4. Dismiss */}
                       <button
                         onClick={() => handleDismiss(item.id)}
-                        className="p-1.5 rounded-lg text-charcoal/40 hover:text-terracotta hover:bg-white transition-all active:scale-95"
-                        title="Dismiss"
+                        className="tactile-btn tactile-btn-sm tactile-btn-surface p-1.5 hover:text-terracotta"
+                        title="Dismiss recovery item"
                         aria-label="Dismiss"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -307,17 +331,17 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
             return (
               <div
                 key={item.id}
-                className="p-4 rounded-xl border border-charcoal/15 bg-white hover:border-charcoal/30 transition-all shadow-xs group"
+                className="p-4 rounded-xl border border-charcoal/10 hover:border-charcoal/20 bg-white transition-all shadow-xs group overflow-hidden space-y-2.5"
               >
-                <div className="flex items-center justify-between text-xs text-charcoal/70 mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-charcoal">{dateStr}, {timeStr}</span>
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-charcoal/70">
+                  <div className="flex items-center gap-2 flex-wrap min-w-0">
+                    <span className="font-bold text-charcoal whitespace-nowrap">{dateStr}, {timeStr}</span>
                     <span>•</span>
-                    <span className="font-mono text-[11px] font-bold">{item.duration_seconds.toFixed(1)}s</span>
+                    <span className="font-mono text-[11px] font-bold whitespace-nowrap">{item.duration_seconds.toFixed(1)}s</span>
                     {item.target_app && (
                       <>
                         <span>•</span>
-                        <span className="bg-darkTeal/10 text-darkTeal px-2 py-0.5 rounded-full font-bold text-[10px] border border-darkTeal/20">
+                        <span className="bg-darkTeal/10 text-darkTeal px-2 py-0.5 rounded-md font-bold text-[10px] whitespace-nowrap">
                           {item.target_app}
                         </span>
                       </>
@@ -325,75 +349,98 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
                     {item.user_edited_text && item.user_edited_text !== item.original_text && (
                       <>
                         <span>•</span>
-                        <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-bold text-[10px] border border-emerald-200">
+                        <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-md font-bold text-[10px] whitespace-nowrap">
                           Synced from Edit
                         </span>
                       </>
                     )}
                   </div>
 
-                  <div className="flex items-center gap-1 bg-stone-100/90 p-1 rounded-xl border border-charcoal/10 shadow-xs">
-                    {/* 1. Enhance Icon Button */}
+                  <div className="flex items-center gap-1 flex-wrap sm:justify-end">
+                    {/* 1. Paste Button - Primary accent */}
                     <button
+                      type="button"
+                      onClick={() => handleInsertIntoActive(item.id)}
+                      className="tactile-btn tactile-btn-xs tactile-btn-teal shrink-0"
+                      title="Paste directly into your active app at cursor position"
+                      aria-label="Paste to App"
+                    >
+                      {insertSuccessId === item.id ? (
+                        <>
+                          <Check className="w-3 h-3 text-amber" />
+                          <span>Pasted!</span>
+                        </>
+                      ) : (
+                        <>
+                          <CornerDownLeft className="w-3 h-3" />
+                          <span>Paste</span>
+                        </>
+                      )}
+                    </button>
+
+                    {/* 2. Enhance - Ghost action */}
+                    <button
+                      type="button"
                       onClick={() => setEnhanceRecordId(enhanceRecordId === item.id ? null : item.id)}
-                      className={`p-1.5 rounded-lg transition-all active:scale-95 ${
+                      className={`ghost-action-btn shrink-0 ${
                         enhanceRecordId === item.id 
-                          ? 'bg-darkTeal text-white shadow-xs' 
-                          : 'text-charcoal/70 hover:text-amber-700 hover:bg-white'
+                          ? 'bg-amber/20 text-charcoal font-bold' 
+                          : ''
                       }`}
                       title="Enhance grammar, clarity, or convert to prompt"
                       aria-label="Enhance"
                     >
-                      <Wand2 className="w-3.5 h-3.5" />
+                      <Wand2 className="w-3.5 h-3.5 text-amber-700" />
+                      <span>Enhance</span>
                     </button>
 
-                    {/* 2. Paste / Insert Icon Button */}
+                    {/* 3. Copy - Icon-only */}
                     <button
-                      onClick={() => handleInsertIntoActive(item.id)}
-                      className={`p-1.5 rounded-lg transition-all active:scale-95 ${
-                        insertSuccessId === item.id
-                          ? 'bg-emerald-600 text-white shadow-xs'
-                          : 'text-charcoal/70 hover:text-darkTeal hover:bg-white'
-                      }`}
-                      title="Paste into active text cursor"
-                      aria-label="Paste into active cursor"
-                    >
-                      {insertSuccessId === item.id ? (
-                        <Check className="w-3.5 h-3.5 text-white" />
-                      ) : (
-                        <CornerDownLeft className="w-3.5 h-3.5" />
-                      )}
-                    </button>
-
-                    {/* 3. Copy Icon Button */}
-                    <button
+                      type="button"
                       onClick={() => onCopy(item.formatted_text)}
-                      className="p-1.5 rounded-lg text-charcoal/70 hover:text-darkTeal hover:bg-white transition-all active:scale-95"
+                      className="ghost-action-btn p-1.5 text-charcoal/70 hover:text-darkTeal shrink-0"
                       title="Copy text to clipboard"
                       aria-label="Copy text"
                     >
-                      <Copy className="w-3.5 h-3.5" />
+                      <Copy className="w-3.5 h-3.5 text-darkTeal" />
                     </button>
 
-                    {/* 4. Teach / Edit Vocabulary Icon Button */}
+                    {/* 4. Teach - Ghost action */}
                     <button
+                      type="button"
                       onClick={() => {
                         setActiveEditId(item.id);
                         if (editingTexts[item.id] === undefined) {
                           setEditingTexts((prev) => ({ ...prev, [item.id]: item.formatted_text }));
                         }
                       }}
-                      className="p-1.5 rounded-lg text-charcoal/70 hover:text-darkTeal hover:bg-white transition-all active:scale-95"
+                      className="ghost-action-btn shrink-0"
                       title="Teach preferred spelling"
                       aria-label="Teach vocabulary"
                     >
-                      <Edit3 className="w-3.5 h-3.5" />
+                      <Edit3 className="w-3.5 h-3.5 text-darkTeal" />
+                      <span>Teach</span>
                     </button>
 
-                    {/* 5. Delete Icon Button */}
+                    {/* 5. Rollback to Raw Speech Button */}
+                    {(item.original_text !== item.formatted_text || item.user_edited_text) && (
+                      <button
+                        type="button"
+                        onClick={() => handleRollbackOriginal(item.id)}
+                        className="ghost-action-btn shrink-0"
+                        title={restoredId === item.id ? 'Restored to raw speech!' : 'Roll back to verbatim raw speech'}
+                        aria-label="Roll back to raw speech"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5 text-amber-700" />
+                        <span>{restoredId === item.id ? 'Restored!' : 'Rollback'}</span>
+                      </button>
+                    )}
+
+                    {/* 6. Delete - Ghost action */}
                     <button
+                      type="button"
                       onClick={() => onDelete(item.id)}
-                      className="p-1.5 rounded-lg text-charcoal/40 hover:text-terracotta hover:bg-white transition-all active:scale-95"
+                      className="ghost-action-btn ghost-action-btn-danger p-1 text-charcoal/40 hover:text-terracotta shrink-0"
                       title="Delete entry"
                       aria-label="Delete entry"
                     >

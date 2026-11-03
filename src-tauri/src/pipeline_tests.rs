@@ -29,6 +29,8 @@ mod pipeline_tests {
             target_window: None,
             recovery_id: None,
             timestamp_ms: 1000,
+            technical_suggestion: None,
+            active_model_name: None,
         }));
 
         let state = AppState {

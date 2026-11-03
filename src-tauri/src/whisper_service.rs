@@ -1,8 +1,9 @@
 use std::path::Path;
-use whisper_rs::{WhisperContext, WhisperContextParameters, FullParams, SamplingStrategy};
+use whisper_rs::{WhisperContext, WhisperContextParameters, WhisperState, FullParams, SamplingStrategy};
 
 pub struct WhisperEngine {
     context: Option<WhisperContext>,
+    state: Option<WhisperState>,
     current_model_path: Option<String>,
 }
 
@@ -10,6 +11,7 @@ impl WhisperEngine {
     pub fn new() -> Self {
         Self {
             context: None,
+            state: None,
             current_model_path: None,
         }
     }
@@ -17,7 +19,7 @@ impl WhisperEngine {
     pub fn load_model<P: AsRef<Path>>(&mut self, model_path: P) -> Result<(), String> {
         let p_str = model_path.as_ref().to_string_lossy().to_string();
         if let Some(ref current) = self.current_model_path {
-            if current == &p_str && self.context.is_some() {
+            if current == &p_str && self.context.is_some() && self.state.is_some() {
                 return Ok(());
             }
         }
@@ -26,13 +28,17 @@ impl WhisperEngine {
         let ctx = WhisperContext::new_with_params(&p_str, params)
             .map_err(|e| format!("Whisper.cpp native model initialization failed: {:?}", e))?;
 
+        let state = ctx.create_state()
+            .map_err(|e| format!("Whisper.cpp persistent state initialization failed: {:?}", e))?;
+
         self.context = Some(ctx);
+        self.state = Some(state);
         self.current_model_path = Some(p_str);
         Ok(())
     }
 
     pub fn is_loaded(&self) -> bool {
-        self.context.is_some()
+        self.context.is_some() && self.state.is_some()
     }
 
     pub fn current_model_path(&self) -> Option<&str> {
@@ -40,10 +46,13 @@ impl WhisperEngine {
     }
 
     pub fn transcribe(&mut self, audio_data: &[f32], language: Option<&str>, initial_prompt: Option<&str>) -> Result<String, String> {
-        let ctx = self.context.as_mut().ok_or_else(|| "Speech engine not initialized. Please install/load a model first.".to_string())?;
+        if self.context.is_none() || self.state.is_none() {
+            return Err("Speech engine not initialized. Please install/load a model first.".to_string());
+        }
 
-        let mut state = ctx.create_state().map_err(|e| format!("Failed to create Whisper native state: {:?}", e))?;
+        let state = self.state.as_mut().unwrap();
 
+        // Ultra-snappy low-latency greedy decoding with 0.0 temperature for instant word capture
         let mut params = FullParams::new(SamplingStrategy::Greedy { best_of: 1 });
         params.set_print_progress(false);
         params.set_print_special(false);
@@ -54,8 +63,9 @@ impl WhisperEngine {
         params.set_single_segment(false);
         params.set_suppress_blank(true);
         params.set_suppress_nst(true);
-        params.set_no_speech_thold(0.75);
+        params.set_no_speech_thold(0.85);
         params.set_temperature(0.0);
+        params.set_temperature_inc(0.0);
         let n_threads = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(8).clamp(2, 8);
         params.set_n_threads(n_threads as i32);
 
@@ -71,7 +81,7 @@ impl WhisperEngine {
             }
         }
 
-        // Run local native whisper.cpp inference
+        // Run local native whisper.cpp inference using persistent reusable state
         state.full(params, audio_data)
             .map_err(|e| format!("Whisper inference execution failed: {:?}", e))?;
 
@@ -81,12 +91,20 @@ impl WhisperEngine {
         let mut last_segment_clean = String::new();
         for i in 0..num_segments {
             if let Some(segment) = state.get_segment(i) {
+                let t0 = segment.start_timestamp();
+                let t1 = segment.end_timestamp();
+                if t1 <= t0 && t0 > 0 {
+                    continue; // Skip degenerate zero-duration segment
+                }
                 if let Ok(text) = segment.to_str() {
                     let clean = text.trim();
                     if clean.is_empty() {
                         continue;
                     }
-                    if clean.eq_ignore_ascii_case(&last_segment_clean) {
+                    // Whisper decoding loop detection:
+                    // If the current segment's text is identical to the previous segment,
+                    // or if the transcript already ends with this segment, it is a loop artifact. Skip it!
+                    if clean.eq_ignore_ascii_case(&last_segment_clean) || transcript.ends_with(clean) {
                         continue;
                     }
                     last_segment_clean = clean.to_string();

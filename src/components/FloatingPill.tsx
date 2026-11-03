@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Mic, Square, Check, Copy, Wand2, RotateCcw, X, CornerDownLeft, RefreshCw } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Mic, Square, Check, Copy, Wand2, RotateCcw, X, CornerDownLeft, RefreshCw, Zap } from 'lucide-react';
 import { SessionSnapshot, EnhancementResponse, EnhancementRequest, EnhancementMode } from '../types';
 import { AudioWaveform } from './AudioWaveform';
 import { safeListen, safeInvoke, isNativeTauri } from '../lib/ipc';
@@ -28,6 +28,22 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
   const [activeEnhanceMode, setActiveEnhanceMode] = useState<EnhancementMode>('light_correction');
   const [inserted, setInserted] = useState<boolean>(false);
   const [isDismissed, setIsDismissed] = useState<boolean>(false);
+  const [modelShiftNotice, setModelShiftNotice] = useState<string | null>(null);
+  const lastSessionIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    safeListen<string>('technical-model-shifted', (e) => {
+      setModelShiftNotice(e.payload);
+      setTimeout(() => setModelShiftNotice(null), 5000);
+    }).then((fn) => {
+      unlisten = fn;
+    });
+
+    return () => {
+      if (unlisten) unlisten();
+    };
+  }, []);
 
   const isRecording = status.state === 'recording' || status.state === 'starting';
   const isTranscribing =
@@ -41,14 +57,20 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
 
   const currentActiveText = enhancedText || status.last_transcript || '';
 
-  // Reset enhancement state when a new session begins or arrives
+  // Reset enhancement state ONLY when a genuinely NEW session begins or records
+  // Never reset on 150ms snapshot poll ticks of timestamp_ms or last_transcript!
   useEffect(() => {
-    if (status.last_transcript) {
+    if (status.state === 'recording') {
+      setIsDismissed(false);
+      setEnhancedText(null);
+      setEnhanced(false);
+    } else if (status.session_id && status.session_id !== lastSessionIdRef.current) {
+      lastSessionIdRef.current = status.session_id;
       setIsDismissed(false);
       setEnhancedText(null);
       setEnhanced(false);
     }
-  }, [status.last_transcript, status.timestamp_ms]);
+  }, [status.session_id, status.state]);
 
   // Listen to live microphone volume stream
   useEffect(() => {
@@ -120,6 +142,18 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
         setEnhancedText(res.enhanced_text);
         setEnhanced(true);
         onCopyLast(res.enhanced_text);
+
+        // Immediately paste/insert the enhanced text into the active cursor
+        try {
+          await safeInvoke('insert_into_selected_field', {
+            id: status.recovery_id || 0,
+            text: res.enhanced_text,
+          });
+          setInserted(true);
+          setTimeout(() => setInserted(false), 2000);
+        } catch (insertErr) {
+          console.warn('Auto-insert enhanced text failed:', insertErr);
+        }
       }
     } catch (err) {
       console.warn('Pill enhance failed:', err);
@@ -275,6 +309,24 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
             </button>
           ) : isDone && !isDismissed ? (
             <>
+              {/* Proactive Adaptive Model Switch Badge */}
+              {(modelShiftNotice || status.technical_suggestion) && (
+                <button
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    const text = modelShiftNotice || status.technical_suggestion || '';
+                    const targetProfile = text.includes('Developer') ? 'developer' : 'balanced';
+                    await safeInvoke('switch_speech_profile', { profile: targetProfile });
+                  }}
+                  className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber text-charcoal hover:bg-amber/90 transition-all border border-amber/40 shadow-xs flex items-center gap-1 active:scale-95 shrink-0 cursor-pointer animate-pulse"
+                  title={modelShiftNotice || status.technical_suggestion || ''}
+                  aria-label="Model shifted notification"
+                >
+                  <Zap className="w-3 h-3 text-darkTeal" />
+                  <span>{(modelShiftNotice || status.technical_suggestion)?.includes('Toggled') ? '⚡ Shifted to Dev' : '⚡ Dev Active'}</span>
+                </button>
+              )}
+
               {/* Enhance Icon Button */}
               <button
                 onClick={(e) => {
@@ -344,8 +396,8 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
                     ? 'bg-vq-tealDark text-vq-cream border-vq-borderDark'
                     : 'bg-white text-vq-charcoal border-vq-borderDark/30 hover:bg-vq-surface active:scale-95'
                 }`}
-                title="Paste into active text cursor"
-                aria-label="Paste into active cursor"
+                title="Paste directly into your active app at your cursor position"
+                aria-label="Paste to App"
               >
                 {inserted ? <Check className="w-3.5 h-3.5 text-amber" /> : <CornerDownLeft className="w-3.5 h-3.5 text-vq-tealDark" />}
               </button>
