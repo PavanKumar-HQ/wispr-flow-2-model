@@ -1598,6 +1598,7 @@ fn fix_common_grammar_and_contractions(input: &str) -> String {
             "cuz" | "cause" => Some("because"),
             "imma" | "ima" => Some("I'm going to"),
             "tryna" => Some("trying to"),
+            "dishtary" | "dishtionary" | "dishtry" | "distary" | "dictionery" => Some("dictionary"),
             "i" => Some("I"),
             _ => None,
         };
