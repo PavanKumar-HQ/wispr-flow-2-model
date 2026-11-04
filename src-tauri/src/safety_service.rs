@@ -745,9 +745,9 @@ pub fn execute_system_events_cmd_v() -> bool {
 #[cfg(target_os = "macos")]
 pub fn simulate_cmd_v() -> Result<(), String> {
     // Settle keyboard focus so released hotkey modifiers are fully cleared by macOS
-    sleep(Duration::from_millis(90));
+    sleep(Duration::from_millis(60));
 
-    // 1. Primary delivery: CoreGraphics SessionEventTap + HID event stream with explicit Cmd keypress
+    // 1. Primary delivery: CoreGraphics HID event stream with explicit Cmd keypress
     use core_graphics::event::{CGEvent, CGEventTapLocation, CGKeyCode, CGEventFlags};
     use core_graphics::event_source::{CGEventSource, CGEventSourceStateID};
 
@@ -759,43 +759,42 @@ pub fn simulate_cmd_v() -> Result<(), String> {
         // Explicit Command modifier down
         if let Ok(cmd_down) = CGEvent::new_keyboard_event(source.clone(), cmd_key, true) {
             cmd_down.set_flags(CGEventFlags::CGEventFlagCommand);
-            cmd_down.post(CGEventTapLocation::Session);
             cmd_down.post(CGEventTapLocation::HID);
         }
 
-        sleep(Duration::from_millis(20));
+        sleep(Duration::from_millis(15));
 
         // V key down with Command flag
         if let Ok(key_down) = CGEvent::new_keyboard_event(source.clone(), v_key, true) {
             key_down.set_flags(CGEventFlags::CGEventFlagCommand);
-            key_down.post(CGEventTapLocation::Session);
             key_down.post(CGEventTapLocation::HID);
         }
 
-        sleep(Duration::from_millis(35));
+        sleep(Duration::from_millis(25));
 
         // V key up
         if let Ok(key_up) = CGEvent::new_keyboard_event(source.clone(), v_key, false) {
             key_up.set_flags(CGEventFlags::CGEventFlagCommand);
-            key_up.post(CGEventTapLocation::Session);
             key_up.post(CGEventTapLocation::HID);
         }
 
-        sleep(Duration::from_millis(20));
+        sleep(Duration::from_millis(15));
 
         // Explicit Command modifier up
         if let Ok(cmd_up) = CGEvent::new_keyboard_event(source, cmd_key, false) {
-            cmd_up.post(CGEventTapLocation::Session);
             cmd_up.post(CGEventTapLocation::HID);
         }
 
         cg_success = true;
     }
 
-    // 2. Also execute System Events osascript keystroke for Electron/Chromium/Antigravity IDE apps
-    let sys_events_ok = execute_system_events_cmd_v();
+    // Only return if CGEvent succeeded; do NOT execute duplicate paste!
+    if cg_success {
+        return Ok(());
+    }
 
-    if cg_success || sys_events_ok {
+    // 2. Fallback: System Events osascript keystroke ONLY when CGEvent failed
+    if execute_system_events_cmd_v() {
         return Ok(());
     }
 
@@ -822,7 +821,7 @@ pub fn execute_system_events_cmd_z() -> bool {
 pub fn simulate_cmd_z() -> Result<(), String> {
     sleep(Duration::from_millis(50));
 
-    // 1. Primary delivery: CoreGraphics CGEvent (atomic undo)
+    // 1. Primary delivery: CoreGraphics HID event stream (atomic undo)
     use core_graphics::event::{CGEvent, CGEventTapLocation, CGKeyCode, CGEventFlags};
     use core_graphics::event_source::{CGEventSource, CGEventSourceStateID};
 
@@ -833,15 +832,13 @@ pub fn simulate_cmd_z() -> Result<(), String> {
     if let Ok(source) = CGEventSource::new(CGEventSourceStateID::CombinedSessionState) {
         if let Ok(cmd_down) = CGEvent::new_keyboard_event(source.clone(), cmd_key, true) {
             cmd_down.set_flags(CGEventFlags::CGEventFlagCommand);
-            cmd_down.post(CGEventTapLocation::Session);
             cmd_down.post(CGEventTapLocation::HID);
         }
 
-        sleep(Duration::from_millis(20));
+        sleep(Duration::from_millis(15));
 
         if let Ok(key_down) = CGEvent::new_keyboard_event(source.clone(), z_key, true) {
             key_down.set_flags(CGEventFlags::CGEventFlagCommand);
-            key_down.post(CGEventTapLocation::Session);
             key_down.post(CGEventTapLocation::HID);
         }
 
@@ -849,14 +846,12 @@ pub fn simulate_cmd_z() -> Result<(), String> {
 
         if let Ok(key_up) = CGEvent::new_keyboard_event(source.clone(), z_key, false) {
             key_up.set_flags(CGEventFlags::CGEventFlagCommand);
-            key_up.post(CGEventTapLocation::Session);
             key_up.post(CGEventTapLocation::HID);
         }
 
-        sleep(Duration::from_millis(20));
+        sleep(Duration::from_millis(15));
 
         if let Ok(cmd_up) = CGEvent::new_keyboard_event(source, cmd_key, false) {
-            cmd_up.post(CGEventTapLocation::Session);
             cmd_up.post(CGEventTapLocation::HID);
         }
 

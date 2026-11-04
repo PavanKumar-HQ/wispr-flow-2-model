@@ -205,23 +205,23 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
 
               {isRecordingShortcut ? (
                 <div className="space-y-1.5 min-w-0">
-                  <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl border-2 border-terracotta bg-white shadow-xs">
+                  <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl border-2 border-terracotta bg-white shadow-xs overflow-hidden">
                     <input
                       type="text"
                       autoFocus
                       readOnly
-                      placeholder="Press shortcut keys..."
+                      placeholder="Press keys..."
                       onKeyDown={handleShortcutKeyDown}
                       onBlur={() => setIsRecordingShortcut(false)}
-                      className="w-full min-w-0 bg-transparent text-xs font-mono text-terracotta focus:outline-none font-bold placeholder:text-terracotta/50"
+                      className="flex-1 min-w-0 bg-transparent text-xs font-mono text-terracotta focus:outline-none font-bold placeholder:text-terracotta/50 truncate"
                     />
                     <span className="shrink-0 text-[10px] font-bold text-terracotta bg-terracotta/10 px-2 py-0.5 rounded-lg border border-terracotta/25 flex items-center gap-1.5 pointer-events-none whitespace-nowrap">
                       <span className="w-1.5 h-1.5 rounded-full bg-terracotta animate-ping" />
                       Listening...
                     </span>
                   </div>
-                  <p className="text-[11px] text-terracotta font-medium">
-                    Press any key combination on your keyboard (or press Esc to cancel).
+                  <p className="text-[11px] text-terracotta font-medium truncate">
+                    Press any keys on keyboard (Esc to cancel)
                   </p>
                 </div>
               ) : (

@@ -746,7 +746,8 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
         auto_capitalization: settings.auto_capitalization,
         speech_repair: settings.enable_speech_repair,
     };
-    let formatted_transcript = format_transcript(&cleaned_transcript, &fmt_cfg);
+    let deduped_raw = crate::formatter::deduplicate_repeated_speech(&cleaned_transcript);
+    let formatted_transcript = format_transcript(&deduped_raw, &fmt_cfg);
     let (mut formatted_transcript, _applied_vocab) = state.history.apply_personalization_pipeline(&formatted_transcript);
     if formatted_transcript.trim().is_empty() && !cleaned_transcript.trim().is_empty() {
         formatted_transcript = cleaned_transcript.trim().to_string();

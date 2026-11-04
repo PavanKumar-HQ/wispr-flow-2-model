@@ -450,12 +450,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
       {/* 4. Recent Dictations (Clean, modern & seamless) */}
       <div className="bg-white border border-charcoal/10 rounded-2xl p-5 shadow-xs space-y-3">
         <div className="flex items-center justify-between pb-1">
-          <div className="flex items-center gap-2">
-            <h2 className="text-sm font-bold text-charcoal">Recent Dictations</h2>
-            <span className="px-2 py-0.5 rounded-full bg-darkTeal/10 text-darkTeal font-bold text-[10px]">
-              {history.length}
-            </span>
-          </div>
+          <h2 className="text-sm font-bold text-charcoal">Recent Dictations</h2>
 
           <button
             type="button"

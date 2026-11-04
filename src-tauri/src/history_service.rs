@@ -191,6 +191,51 @@ impl HistoryDatabase {
             }
         }
 
+        // Cleanup existing duplicates to keep database clean
+        let _ = conn.execute(
+            "DELETE FROM custom_dictionary WHERE id NOT IN (SELECT MAX(id) FROM custom_dictionary GROUP BY LOWER(original_phrase))",
+            [],
+        );
+        let _ = conn.execute(
+            "DELETE FROM personal_vocabulary WHERE id NOT IN (SELECT MAX(id) FROM personal_vocabulary GROUP BY LOWER(original_text))",
+            [],
+        );
+
+        // Ensure "dishtary" -> "dictionary" is seeded in production dictionary so mishearings are guaranteed to be corrected
+        if !db_path.to_string_lossy().contains("test") {
+            let now = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_millis() as i64;
+
+            let exists_dict: bool = conn.query_row(
+                "SELECT COUNT(*) FROM custom_dictionary WHERE LOWER(original_phrase) = 'dishtary'",
+                [],
+                |r| Ok(r.get::<_, i64>(0)? > 0),
+            ).unwrap_or(false);
+
+            if !exists_dict {
+                let _ = conn.execute(
+                    "INSERT INTO custom_dictionary (original_phrase, replacement_phrase, category, created_at) VALUES ('dishtary', 'dictionary', 'spelling', ?1)",
+                    params![now],
+                );
+            }
+
+            let exists_vocab: bool = conn.query_row(
+                "SELECT COUNT(*) FROM personal_vocabulary WHERE LOWER(original_text) = 'dishtary'",
+                [],
+                |r| Ok(r.get::<_, i64>(0)? > 0),
+            ).unwrap_or(false);
+
+            if !exists_vocab {
+                let _ = conn.execute(
+                    "INSERT INTO personal_vocabulary (original_text, preferred_text, entry_type, confidence, positive_count, negative_count, status, recognition_count, correction_count, application_count, last_used_at, created_at, updated_at, source)
+                     VALUES ('dishtary', 'dictionary', 'spelling', 1.0, 3, 0, 'active', 0, 0, 0, NULL, ?1, ?1, 'builtin')",
+                    params![now],
+                );
+            }
+        }
+
         Ok(Self { db_path })
     }
 
@@ -469,6 +514,12 @@ impl HistoryDatabase {
         let repl = replacement.trim();
         let cat = if category.trim().is_empty() { "name" } else { category.trim() };
 
+        // Delete any existing entry with the same original phrase to prevent duplicates
+        let _ = conn.execute(
+            "DELETE FROM custom_dictionary WHERE LOWER(original_phrase) = LOWER(?1)",
+            params![orig],
+        );
+
         conn.execute(
             "INSERT INTO custom_dictionary (original_phrase, replacement_phrase, category, created_at) VALUES (?1, ?2, ?3, ?4)",
             params![orig, repl, cat, now],
@@ -476,9 +527,13 @@ impl HistoryDatabase {
 
         let id = conn.last_insert_rowid();
 
-        // Also ensure active mirroring into personal_vocabulary
+        // Also ensure active mirroring into personal_vocabulary without duplicates
         let _ = conn.execute(
-            "INSERT OR REPLACE INTO personal_vocabulary (original_text, preferred_text, entry_type, confidence, positive_count, negative_count, status, recognition_count, correction_count, application_count, last_used_at, created_at, updated_at)
+            "DELETE FROM personal_vocabulary WHERE LOWER(original_text) = LOWER(?1)",
+            params![orig],
+        );
+        let _ = conn.execute(
+            "INSERT INTO personal_vocabulary (original_text, preferred_text, entry_type, confidence, positive_count, negative_count, status, recognition_count, correction_count, application_count, last_used_at, created_at, updated_at)
              VALUES (?1, ?2, ?3, 1.0, 3, 0, 'active', 0, 0, 0, NULL, ?4, ?4)",
             params![orig, repl, cat, now],
         );
@@ -748,17 +803,35 @@ impl HistoryDatabase {
         let conf: f32 = if stat == "active" { 1.0 } else { 0.5 };
         let pos = if stat == "active" { 3 } else { 1 };
 
-        conn.execute(
-            "INSERT INTO personal_vocabulary (original_text, preferred_text, entry_type, confidence, positive_count, negative_count, status, recognition_count, correction_count, application_count, last_used_at, created_at, updated_at, source)
-             VALUES (?1, ?2, ?3, ?4, ?5, 0, ?6, 0, 0, 0, NULL, ?7, ?7, ?8)",
-            params![orig, pref, cat, conf, pos, stat, now, src],
-        ).map_err(|e| format!("Insert failed: {}", e))?;
+        let existing_id: Option<i64> = conn.query_row(
+            "SELECT id FROM personal_vocabulary WHERE LOWER(original_text) = LOWER(?1)",
+            params![orig],
+            |r| r.get(0),
+        ).ok();
 
-        let id = conn.last_insert_rowid();
+        let id = if let Some(existing) = existing_id {
+            conn.execute(
+                "UPDATE personal_vocabulary SET preferred_text = ?1, entry_type = ?2, status = ?3, confidence = ?4, positive_count = ?5, updated_at = ?6 WHERE id = ?7",
+                params![pref, cat, stat, conf, pos, now, existing],
+            ).map_err(|e| format!("Update existing personal_vocabulary failed: {}", e))?;
+            existing
+        } else {
+            conn.execute(
+                "INSERT INTO personal_vocabulary (original_text, preferred_text, entry_type, confidence, positive_count, negative_count, status, recognition_count, correction_count, application_count, last_used_at, created_at, updated_at, source)
+                 VALUES (?1, ?2, ?3, ?4, ?5, 0, ?6, 0, 0, 0, NULL, ?7, ?7, ?8)",
+                params![orig, pref, cat, conf, pos, stat, now, src],
+            ).map_err(|e| format!("Insert failed: {}", e))?;
+            conn.last_insert_rowid()
+        };
+
+        let _ = conn.execute(
+            "DELETE FROM custom_dictionary WHERE LOWER(original_phrase) = LOWER(?1)",
+            params![orig],
+        );
 
         if stat == "active" {
             let _ = conn.execute(
-                "INSERT OR REPLACE INTO custom_dictionary (original_phrase, replacement_phrase, category, created_at) VALUES (?1, ?2, ?3, ?4)",
+                "INSERT INTO custom_dictionary (original_phrase, replacement_phrase, category, created_at) VALUES (?1, ?2, ?3, ?4)",
                 params![orig, pref, cat, now],
             );
         }
@@ -838,14 +911,28 @@ impl HistoryDatabase {
             .unwrap_or_default()
             .as_millis() as i64;
 
-        // Fetch existing record
-        let (old_orig, old_pref, old_type, old_status): (String, String, String, String) = conn
+        // Fetch existing record from personal_vocabulary OR custom_dictionary
+        let existing_vocab: Option<(String, String, String, String)> = conn
             .query_row(
                 "SELECT original_text, preferred_text, entry_type, status FROM personal_vocabulary WHERE id = ?1",
                 params![id],
                 |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)),
             )
-            .map_err(|e| format!("Entry not found: {}", e))?;
+            .ok();
+
+        let (old_orig, old_pref, old_type, old_status, custom_dict_id) = if let Some((o, p, t, s)) = existing_vocab {
+            (o, p, t, s, None)
+        } else {
+            // Check custom_dictionary
+            let dict_record: (String, String, String) = conn
+                .query_row(
+                    "SELECT original_phrase, replacement_phrase, category FROM custom_dictionary WHERE id = ?1",
+                    params![id],
+                    |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+                )
+                .map_err(|e| format!("Entry with id {} not found in dictionary or vocabulary: {}", id, e))?;
+            (dict_record.0, dict_record.1, dict_record.2, "active".to_string(), Some(id))
+        };
 
         let new_orig = original_text.map(|s| s.trim()).filter(|s| !s.is_empty()).unwrap_or(&old_orig);
         let new_pref = preferred_text.map(|s| s.trim()).filter(|s| !s.is_empty()).unwrap_or(&old_pref);
@@ -854,22 +941,51 @@ impl HistoryDatabase {
 
         let conf: f32 = if new_stat == "active" { 1.0 } else if new_stat == "rejected" { 0.0 } else { 0.5 };
 
-        conn.execute(
-            "UPDATE personal_vocabulary SET original_text = ?1, preferred_text = ?2, entry_type = ?3, status = ?4, confidence = ?5, updated_at = ?6 WHERE id = ?7",
-            params![new_orig, new_pref, new_type, new_stat, conf, now, id],
-        ).map_err(|e| format!("Update personal_vocabulary failed: {}", e))?;
+        if let Some(dict_id) = custom_dict_id {
+            // Update custom_dictionary record directly
+            conn.execute(
+                "UPDATE custom_dictionary SET original_phrase = ?1, replacement_phrase = ?2, category = ?3 WHERE id = ?4",
+                params![new_orig, new_pref, new_type, dict_id],
+            ).map_err(|e| format!("Update custom_dictionary failed: {}", e))?;
 
-        // Synchronize custom_dictionary: delete old mirror entry and insert updated one if active
-        let _ = conn.execute(
-            "DELETE FROM custom_dictionary WHERE LOWER(original_phrase) = LOWER(?1) OR LOWER(original_phrase) = LOWER(?2)",
-            params![old_orig, new_orig],
-        );
+            // Also mirror update or insert into personal_vocabulary
+            let existing_v_id: Option<i64> = conn.query_row(
+                "SELECT id FROM personal_vocabulary WHERE LOWER(original_text) = LOWER(?1) OR LOWER(original_text) = LOWER(?2)",
+                params![old_orig, new_orig],
+                |r| r.get(0),
+            ).ok();
 
-        if new_stat == "active" && !new_orig.is_empty() && !new_pref.is_empty() {
+            if let Some(v_id) = existing_v_id {
+                let _ = conn.execute(
+                    "UPDATE personal_vocabulary SET original_text = ?1, preferred_text = ?2, entry_type = ?3, status = ?4, confidence = ?5, updated_at = ?6 WHERE id = ?7",
+                    params![new_orig, new_pref, new_type, new_stat, conf, now, v_id],
+                );
+            } else if new_stat == "active" {
+                let _ = conn.execute(
+                    "INSERT INTO personal_vocabulary (original_text, preferred_text, entry_type, confidence, positive_count, negative_count, status, recognition_count, correction_count, application_count, last_used_at, created_at, updated_at, source)
+                     VALUES (?1, ?2, ?3, 1.0, 3, 0, 'active', 0, 0, 0, NULL, ?4, ?4, 'manual')",
+                    params![new_orig, new_pref, new_type, now],
+                );
+            }
+        } else {
+            // Update personal_vocabulary record directly
+            conn.execute(
+                "UPDATE personal_vocabulary SET original_text = ?1, preferred_text = ?2, entry_type = ?3, status = ?4, confidence = ?5, updated_at = ?6 WHERE id = ?7",
+                params![new_orig, new_pref, new_type, new_stat, conf, now, id],
+            ).map_err(|e| format!("Update personal_vocabulary failed: {}", e))?;
+
+            // Synchronize custom_dictionary: delete old mirror entry and insert updated one if active
             let _ = conn.execute(
-                "INSERT INTO custom_dictionary (original_phrase, replacement_phrase, category, created_at) VALUES (?1, ?2, ?3, ?4)",
-                params![new_orig, new_pref, new_type, now],
+                "DELETE FROM custom_dictionary WHERE LOWER(original_phrase) = LOWER(?1) OR LOWER(original_phrase) = LOWER(?2)",
+                params![old_orig, new_orig],
             );
+
+            if new_stat == "active" && !new_orig.is_empty() && !new_pref.is_empty() {
+                let _ = conn.execute(
+                    "INSERT INTO custom_dictionary (original_phrase, replacement_phrase, category, created_at) VALUES (?1, ?2, ?3, ?4)",
+                    params![new_orig, new_pref, new_type, now],
+                );
+            }
         }
 
         Ok(())
@@ -935,6 +1051,14 @@ impl HistoryDatabase {
                 if terms.len() >= 20 {
                     break;
                 }
+            }
+        }
+
+        // 3. Core conversational keywords
+        let core_terms = ["dictionary"];
+        for c in core_terms {
+            if !terms.iter().any(|t| t.eq_ignore_ascii_case(c)) {
+                terms.push(c.to_string());
             }
         }
 

@@ -11,43 +11,47 @@ interface InsightsTabProps {
 }
 
 export const InsightsTab: React.FC<InsightsTabProps> = ({
+  insights,
   history,
 }) => {
   const [monthOffset, setMonthOffset] = useState<number>(0);
 
-  // Real calculations directly from SQLite history
-  const totalWords = history.reduce((sum, h) => {
+  // Real calculations directly from SQLite insights or fallback to history
+  const totalWords = insights?.total_words ?? history.reduce((sum, h) => {
     return sum + h.formatted_text.trim().split(/\s+/).filter(Boolean).length;
   }, 0);
 
   const totalChars = history.reduce((sum, h) => sum + h.formatted_text.length, 0);
-  const totalDurationSecs = history.reduce((sum, h) => sum + (h.duration_seconds || 0), 0);
-  const totalSessions = history.length;
+  const totalDurationSecs = insights?.total_duration_seconds ?? history.reduce((sum, h) => sum + (h.duration_seconds || 0), 0);
+  const totalSessions = insights?.total_sessions ?? history.length;
 
-  const avgWpm = totalDurationSecs > 0 && totalWords > 0
+  const avgWpm = insights?.average_wpm ?? (totalDurationSecs > 0 && totalWords > 0
     ? Math.round(totalWords / (totalDurationSecs / 60))
-    : 0;
+    : 0);
 
   // Real time saved (Manual typing is ~40 WPM)
-  const timeSavedMinutes = totalWords > 0 && avgWpm > 0
+  const timeSavedMinutes = insights?.time_saved_minutes ?? (totalWords > 0 && avgWpm > 0
     ? Math.max(0, Math.round(totalWords / 40 - totalWords / avgWpm))
-    : 0;
+    : 0);
 
-  // Real app usage breakdown from history records
-  const appMap = new Map<string, number>();
-  for (const h of history) {
-    const app = h.target_app && h.target_app.trim() ? h.target_app.trim() : 'Clipboard Vault';
-    const words = h.formatted_text.trim().split(/\s+/).filter(Boolean).length;
-    appMap.set(app, (appMap.get(app) || 0) + words);
-  }
-
-  const appUsage = Array.from(appMap.entries())
-    .map(([app_name, word_count]) => ({
-      app_name,
-      word_count,
-      percentage: totalWords > 0 ? (word_count / totalWords) * 100 : 0,
-    }))
-    .sort((a, b) => b.word_count - a.word_count);
+  // Real app usage breakdown from insights or fallback to history
+  const appUsage = (insights?.app_usage && insights.app_usage.length > 0)
+    ? insights.app_usage
+    : (() => {
+        const appMap = new Map<string, number>();
+        for (const h of history) {
+          const app = h.target_app && h.target_app.trim() ? h.target_app.trim() : 'Clipboard Vault';
+          const words = h.formatted_text.trim().split(/\s+/).filter(Boolean).length;
+          appMap.set(app, (appMap.get(app) || 0) + words);
+        }
+        return Array.from(appMap.entries())
+          .map(([app_name, word_count]) => ({
+            app_name,
+            word_count,
+            percentage: totalWords > 0 ? (word_count / totalWords) * 100 : 0,
+          }))
+          .sort((a, b) => b.word_count - a.word_count);
+      })();
 
   // Real daily activity map (dateKey -> { count, words })
   const dailyActivity = new Map<string, { count: number; words: number }>();
@@ -238,7 +242,7 @@ export const InsightsTab: React.FC<InsightsTabProps> = ({
                   Activity Calendar
                 </h3>
                 <p className="text-xs text-charcoal/60 mt-0.5">
-                  {history.length} {history.length === 1 ? 'dictation' : 'dictations'} contributed in the last 4 months
+                  {totalSessions} {totalSessions === 1 ? 'dictation' : 'dictations'} contributed in the last 4 months
                 </p>
               </div>
               <span className="self-start sm:self-auto text-xs font-semibold text-darkTeal bg-darkTeal/10 px-2.5 py-1 rounded-full border border-darkTeal/20">
