@@ -122,17 +122,36 @@ export default function App() {
       loadInsights();
     });
 
-    const dictSyncPromise = safeListen('dictionary-updated', () => {
-      loadInsights();
-    });
-
+    // In floating pill window, aggressively poll session snapshot every 150ms to ensure 0-latency status sync
+    let syncInterval: ReturnType<typeof setInterval> | null = null;
+    if (isPillOnlyWindow) {
+      syncInterval = setInterval(async () => {
+        try {
+          const snap = await safeInvoke<SessionSnapshot>('get_session_snapshot');
+          if (snap) {
+            setSession((prev) => {
+              if (
+                prev.state !== snap.state ||
+                prev.sequence !== snap.sequence ||
+                prev.last_transcript !== snap.last_transcript
+              ) {
+                return snap;
+              }
+              return prev;
+            });
+          }
+        } catch {
+          // ignore in browser mode
+        }
+      }, 150);
+    }
 
     return () => {
       progPromise.then((fn) => fn && fn());
       compPromise.then((fn) => fn && fn());
       sessionPromise.then((fn) => fn && fn());
       destSyncPromise.then((fn) => fn && fn());
-      dictSyncPromise.then((fn) => fn && fn());
+      if (syncInterval) clearInterval(syncInterval);
     };
   }, []);
 

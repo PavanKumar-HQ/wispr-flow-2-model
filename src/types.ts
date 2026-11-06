@@ -32,12 +32,6 @@ export interface AppSettings {
   destination_sync_duration_secs?: number;
   enable_auto_model_routing?: boolean;
   enable_speech_repair?: boolean;
-  speech_engine?: 'local' | 'cloud' | 'hybrid';
-  cloud_provider?: 'groq' | 'openai' | 'custom';
-  cloud_api_key?: string;
-  cloud_api_endpoint?: string;
-  max_cpu_threads?: number;
-  power_save_mode?: boolean;
 }
 
 export interface AppUsageStat {

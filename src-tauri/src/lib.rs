@@ -275,7 +275,7 @@ pub fn run() {
                 .transparent(true)
                 .skip_taskbar(true)
                 .focused(false)
-                .visible(false);
+                .visible(true);
 
                 if let Ok(pill_win) = pill_builder.build() {
                     // Position at bottom-center of the primary display
@@ -302,8 +302,10 @@ pub fn run() {
                             let () = objc::msg_send![ns_win, setHidesOnDeactivate: 0u8];
                             let () = objc::msg_send![ns_win, setMovableByWindowBackground: 1u8];
                             let () = objc::msg_send![ns_win, setMovable: 1u8];
+                            let () = objc::msg_send![ns_win, orderFrontRegardless];
                         }
                     }
+                    let _ = pill_win.show();
                 }
             }
 
