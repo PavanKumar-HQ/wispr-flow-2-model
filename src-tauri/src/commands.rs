@@ -699,8 +699,8 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
         current_info
     };
 
-    // Audio energy and duration pre-checks: trim silence to save compute operations
-    let trimmed_samples = crate::audio_service::trim_audio_silence(&audio_samples, 16000);
+    // Preserve natural vocal formants and full speech onset (already cleanly isolated on audio stop)
+    let trimmed_samples = audio_samples;
 
     let use_cloud = (settings.speech_engine == "cloud" || settings.speech_engine == "hybrid")
         && !settings.cloud_api_key.trim().is_empty();

@@ -303,7 +303,7 @@ pub fn isolate_voice_and_suppress_noise(samples: &[f32], sample_rate: u32) -> Ve
     let noise_floor = sorted_rms.get(noise_floor_idx).copied().unwrap_or(0.001).min(0.003);
 
     // Adaptive threshold: sensitive to preserve weak consonants, soft accents, and fast transitions
-    let speech_threshold = (noise_floor * 1.5).clamp(0.0018, 0.0040);
+    let speech_threshold = (noise_floor * 1.2).clamp(0.0008, 0.0025);
 
     // Identify first and last frame containing genuine user speech
     let first_speech_frame = frame_rms.iter().position(|&r| r >= speech_threshold);
@@ -317,8 +317,8 @@ pub fn isolate_voice_and_suppress_noise(samples: &[f32], sample_rate: u32) -> Ve
         }
     };
 
-    // Pad speech boundary by ~300ms (15 frames) to fully protect initial and trailing phonemes
-    let pad_frames = 15;
+    // Generous pad of ~400ms (20 frames) to fully preserve natural consonant formants (e.g. "W", "Th")
+    let pad_frames = 20;
     let safe_start_frame = start_frame.saturating_sub(pad_frames);
     let safe_end_frame = (end_frame + pad_frames + 1).min(num_frames);
 
@@ -326,27 +326,13 @@ pub fn isolate_voice_and_suppress_noise(samples: &[f32], sample_rate: u32) -> Ve
     let end_sample = (safe_end_frame * frame_size).min(hp_samples.len());
     let speech_samples = hp_samples[start_sample..end_sample].to_vec();
 
-    // 3. Speech-aware controlled normalization (gain up to 15x for quiet laptop mics)
+    // 3. Gentle peak normalization (up to 4x) for quiet laptop mics without clipping distortion
     let peak = speech_samples.iter().copied().fold(0.0f32, |m, s| m.max(s.abs()));
-    let normalized_samples: Vec<f32> = if peak > 1e-4 && peak < 0.35 {
-        let gain = (0.50 / peak).clamp(1.0, 15.0);
+    if peak > 1e-4 && peak < 0.25 {
+        let gain = (0.50 / peak).clamp(1.0, 4.0);
         speech_samples.iter().map(|&s| (s * gain).clamp(-1.0, 1.0)).collect()
     } else {
         speech_samples
-    };
-
-    // 4. Gentle high-frequency pre-emphasis filter for fast speech clarity (boosts weak unvoiced consonant formants)
-    if normalized_samples.len() > 1 {
-        let mut out = Vec::with_capacity(normalized_samples.len());
-        out.push(normalized_samples[0]);
-        for i in 1..normalized_samples.len() {
-            // Gentle alpha = 0.15 flattens vocal tract roll-off and sharpens consonant transitions
-            let y = normalized_samples[i] - 0.15 * normalized_samples[i - 1];
-            out.push(y);
-        }
-        out
-    } else {
-        normalized_samples
     }
 }
 
