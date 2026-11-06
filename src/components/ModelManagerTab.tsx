@@ -44,6 +44,20 @@ export const ModelManagerTab: React.FC<ModelManagerProps> = ({
           icon: Globe,
           desc: 'Deep multilingual comprehension across 99+ languages, regional accents, mixed speech (e.g. Hinglish), and rich documentation.',
         };
+      case 'whisper-tiny-q5_1':
+        return {
+          title: 'Ultra-Low Power (Battery Saver)',
+          tag: '32MB • Lowest Battery & RAM',
+          icon: Zap,
+          desc: 'Ultra-quantized Q5_1 engine (~120 MB RAM). Consumes minimal CPU power, perfect for long battery life, mobile devices, and instant messaging.',
+        };
+      case 'whisper-base-q5_1':
+        return {
+          title: 'Everyday Balanced (Low RAM)',
+          tag: '59MB • High Efficiency',
+          icon: BookOpen,
+          desc: 'Compact Q5_1 quantization (~180 MB RAM). Combines high document transcription quality with ultra-low power consumption.',
+        };
       case 'whisper-base':
         return {
           title: 'Balanced Everyday Writing',

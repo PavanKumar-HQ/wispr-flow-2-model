@@ -20,7 +20,6 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
   onCopyLast,
   compact = false,
 }) => {
-  const [liveLevel, setLiveLevel] = useState<number>(0);
   const [copied, setCopied] = useState<boolean>(false);
   const [isEnhancing, setIsEnhancing] = useState<boolean>(false);
   const [enhancedText, setEnhancedText] = useState<string | null>(null);
@@ -71,20 +70,6 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
       setEnhanced(false);
     }
   }, [status.session_id, status.state]);
-
-  // Listen to live microphone volume stream
-  useEffect(() => {
-    let unlisten: (() => void) | undefined;
-    safeListen<number>('audio-level', (e) => {
-      setLiveLevel(e.payload);
-    }).then((fn) => {
-      unlisten = fn;
-    });
-
-    return () => {
-      if (unlisten) unlisten();
-    };
-  }, []);
 
   const formatSeconds = (sec: number) => {
     const m = Math.floor(sec / 60);
@@ -287,7 +272,6 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
           <AudioWaveform
             isRecording={isRecording}
             isTranscribing={isTranscribing}
-            liveLevel={liveLevel}
             barCount={isRecording ? 10 : 8}
             theme="light"
           />

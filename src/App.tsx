@@ -69,33 +69,53 @@ export default function App() {
   }, [session.state]);
 
   useEffect(() => {
-    loadAllData();
-
-    // Listen to native download events
-    const progPromise = safeListen<{ model_id: string; downloaded: number; total: number; percent: number }>('model-download-progress', (e) => {
-      setDownloadProgress((prev) => ({
-        ...prev,
-        [e.payload.model_id]: {
-          percent: e.payload.percent,
-          downloaded: e.payload.downloaded,
-          total: e.payload.total,
-        },
-      }));
-    });
-
-    const compPromise = safeListen<{ model_id: string; path: string }>('model-download-complete', (e) => {
-      setDownloadProgress((prev) => {
-        const next = { ...prev };
-        delete next[e.payload.model_id];
-        return next;
+    if (isPillOnlyWindow) {
+      // Pill window: lightweight initialization, strictly event-driven (zero polling)
+      safeInvoke<SessionSnapshot>('get_session_snapshot').then((snap) => {
+        if (snap) setSession(snap);
       });
-      loadModels();
-    });
+    } else {
+      // Main dashboard window: load full persistence and analytics
+      loadAllData();
+    }
 
-    // Authoritative backend session state changes
+    // Listen to native download events (main window only)
+    let progPromise: Promise<(() => void) | undefined> = Promise.resolve(undefined);
+    let compPromise: Promise<(() => void) | undefined> = Promise.resolve(undefined);
+    let destSyncPromise: Promise<(() => void) | undefined> = Promise.resolve(undefined);
+
+    if (!isPillOnlyWindow) {
+      progPromise = safeListen<{ model_id: string; downloaded: number; total: number; percent: number }>('model-download-progress', (e) => {
+        setDownloadProgress((prev) => ({
+          ...prev,
+          [e.payload.model_id]: {
+            percent: e.payload.percent,
+            downloaded: e.payload.downloaded,
+            total: e.payload.total,
+          },
+        }));
+      });
+
+      compPromise = safeListen<{ model_id: string; path: string }>('model-download-complete', (e) => {
+        setDownloadProgress((prev) => {
+          const next = { ...prev };
+          delete next[e.payload.model_id];
+          return next;
+        });
+        loadModels();
+      });
+
+      // Listen for automatic external edits synced back from destination apps (e.g. TextEdit)
+      destSyncPromise = safeListen<{ history_id: number; app_name: string; updated_text: string }>('destination-edit-synced', (_e) => {
+        loadHistory();
+        loadInsights();
+      });
+    }
+
+    // Authoritative backend session state changes (event-driven across all windows)
     const sessionPromise = safeListen<SessionSnapshot>('dictation-session-changed', (e) => {
       setSession(e.payload);
-      if (e.payload.state === 'completed' || e.payload.state === 'recovery_required') {
+      if (!isPillOnlyWindow && (e.payload.state === 'completed' || e.payload.state === 'recovery_required')) {
         loadHistory();
         loadInsights();
       }
@@ -112,48 +132,17 @@ export default function App() {
             }
             return prev;
           });
-        }, 8000);
+        }, 2000);
       }
     });
-
-    // Listen for automatic external edits synced back from destination apps (e.g. TextEdit)
-    const destSyncPromise = safeListen<{ history_id: number; app_name: string; updated_text: string }>('destination-edit-synced', (_e) => {
-      loadHistory();
-      loadInsights();
-    });
-
-    // In floating pill window, aggressively poll session snapshot every 150ms to ensure 0-latency status sync
-    let syncInterval: ReturnType<typeof setInterval> | null = null;
-    if (isPillOnlyWindow) {
-      syncInterval = setInterval(async () => {
-        try {
-          const snap = await safeInvoke<SessionSnapshot>('get_session_snapshot');
-          if (snap) {
-            setSession((prev) => {
-              if (
-                prev.state !== snap.state ||
-                prev.sequence !== snap.sequence ||
-                prev.last_transcript !== snap.last_transcript
-              ) {
-                return snap;
-              }
-              return prev;
-            });
-          }
-        } catch {
-          // ignore in browser mode
-        }
-      }, 150);
-    }
 
     return () => {
       progPromise.then((fn) => fn && fn());
       compPromise.then((fn) => fn && fn());
       sessionPromise.then((fn) => fn && fn());
       destSyncPromise.then((fn) => fn && fn());
-      if (syncInterval) clearInterval(syncInterval);
     };
-  }, []);
+  }, [isPillOnlyWindow]);
 
   const loadAllData = async () => {
     const loadedSettings = await loadSettings();

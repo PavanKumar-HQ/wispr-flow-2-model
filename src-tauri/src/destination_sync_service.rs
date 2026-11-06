@@ -69,7 +69,7 @@ impl DestinationSyncService {
 
         // Spawn bounded async observation task using Tauri's global runtime
         tauri::async_runtime::spawn(async move {
-            let poll_interval = Duration::from_millis(650);
+            let poll_interval = Duration::from_millis(2000);
             let debounce_threshold = Duration::from_millis(1200);
 
             loop {

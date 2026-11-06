@@ -486,7 +486,7 @@ pub fn start_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Ses
         let active_session_ref = Arc::clone(&state.active_session);
 
         tauri::async_runtime::spawn(async move {
-            let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(35));
+            let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(60));
             loop {
                 interval.tick().await;
                 let is_rec = {
@@ -568,6 +568,38 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
     };
     let t_audio_done = Instant::now();
 
+    // High-Efficiency Pre-Inference VAD Gate:
+    // If the captured audio has zero speech frames, is under 200ms, or is pure background room silence,
+    // immediately complete session and bypass model resolution, disk I/O, SQLite biasing queries, and neural compute.
+    if audio_samples.is_empty() || crate::audio_service::is_audio_silent_or_too_short(&audio_samples) {
+        let mut session_lock = state.active_session.lock().unwrap();
+        session_lock.sequence += 1;
+        session_lock.timestamp_ms = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_millis() as u64;
+        session_lock.state = SessionState::Completed;
+        session_lock.message = Some("No speech detected. Ready to dictate.".to_string());
+        session_lock.last_transcript = None;
+        let snap = session_lock.clone();
+        let _ = app.emit("dictation-session-changed", &snap);
+        let app_hide = app.clone();
+        let target_id = session_lock.session_id.clone();
+        tauri::async_runtime::spawn(async move {
+            tokio::time::sleep(tokio::time::Duration::from_millis(1200)).await;
+            if let Some(state) = app_hide.try_state::<AppState>() {
+                let sess = state.active_session.lock().unwrap();
+                if sess.session_id != target_id || sess.state.is_active() {
+                    return;
+                }
+            }
+            crate::run_on_main_thread(move || {
+                if let Some(w) = app_hide.get_webview_window("floating-indicator") {
+                    let _ = w.hide();
+                }
+            });
+        });
+        return Ok(snap);
+    }
+
     // Feature 017: Speech Reliability Monitor
     let audio_reliability = crate::audio_service::analyze_speech_reliability(&audio_samples, 16000);
 
@@ -610,7 +642,7 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
 
         if prefers_high_precision {
             // Find highest-tier downloaded model: Large-v3-Turbo -> Small -> Base -> Tiny
-            let candidate_ids = ["whisper-large-v3-turbo", "whisper-small", "whisper-base", "whisper-tiny"];
+            let candidate_ids = ["whisper-large-v3-turbo", "whisper-small", "whisper-base-q5_1", "whisper-base", "whisper-tiny-q5_1", "whisper-tiny"];
             candidate_ids
                 .iter()
                 .filter_map(|id| manifest.iter().find(|m| &m.id == id))
@@ -620,7 +652,7 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
                 .ok_or_else(|| "No model manifest found".to_string())?
         } else {
             // Instant/Everyday: Base -> Tiny -> Small -> Large-v3-Turbo
-            let candidate_ids = ["whisper-base", "whisper-tiny", "whisper-small", "whisper-large-v3-turbo"];
+            let candidate_ids = ["whisper-base-q5_1", "whisper-base", "whisper-tiny-q5_1", "whisper-tiny", "whisper-small", "whisper-large-v3-turbo"];
             candidate_ids
                 .iter()
                 .filter_map(|id| manifest.iter().find(|m| &m.id == id))
@@ -639,7 +671,7 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
 
     // Robust fallback: If selected model file is not downloaded, safely fallback to highest-tier downloaded model
     let current_info = if !models_dir.join(&current_info.filename).exists() {
-        let fallback_candidates = ["whisper-small", "whisper-base", "whisper-tiny", "whisper-large-v3-turbo"];
+        let fallback_candidates = ["whisper-small", "whisper-base-q5_1", "whisper-base", "whisper-tiny-q5_1", "whisper-tiny", "whisper-large-v3-turbo"];
         fallback_candidates
             .iter()
             .filter_map(|id| manifest.iter().find(|m| &m.id == id))
@@ -675,13 +707,9 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
 
     let dict_prompt = state.history.get_active_biasing_prompt().ok();
 
-    // Audio energy and duration pre-checks to eliminate silence hallucinations & useless inference
-    let is_silent = crate::audio_service::is_audio_silent_or_too_short(&audio_samples);
-
-    let raw_transcript = if is_silent {
-        String::new()
-    } else {
-        let trimmed_samples = crate::audio_service::trim_audio_silence(&audio_samples, 16000);
+    // Audio energy and duration pre-checks: trim silence to save compute operations
+    let trimmed_samples = crate::audio_service::trim_audio_silence(&audio_samples, 16000);
+    let raw_transcript = {
         let mut engine = state.whisper.lock().unwrap();
         let lang = if settings.language == "auto" { None } else { Some(settings.language.as_str()) };
         engine.transcribe(&trimmed_samples, lang, dict_prompt.as_deref())?
@@ -710,7 +738,7 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
         let app_hide = app.clone();
         let target_id = session_lock.session_id.clone();
         tauri::async_runtime::spawn(async move {
-            tokio::time::sleep(tokio::time::Duration::from_millis(2000)).await;
+            tokio::time::sleep(tokio::time::Duration::from_millis(1200)).await;
             if let Some(state) = app_hide.try_state::<AppState>() {
                 let sess = state.active_session.lock().unwrap();
                 if sess.session_id != target_id || sess.state.is_active() {
@@ -1131,12 +1159,13 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
     let final_snap = session_lock.clone();
     let _ = app.emit("dictation-session-changed", &final_snap);
 
-    // Keep pill visible after dictation so user can Polish or Enhance Prompt
+    // Auto-dismiss pill after dictation: in push-to-talk, dismiss swiftly (1.5s) after text delivery
     if final_snap.state == SessionState::Completed {
         let app_pill = app.clone();
         let target_id = final_snap.session_id.clone();
+        let dismiss_delay_ms = if settings.interaction_mode == "push_to_talk" { 1500 } else { 6000 };
         tauri::async_runtime::spawn(async move {
-            tokio::time::sleep(tokio::time::Duration::from_millis(8000)).await;
+            tokio::time::sleep(tokio::time::Duration::from_millis(dismiss_delay_ms)).await;
             if let Some(state) = app_pill.try_state::<AppState>() {
                 let sess = state.active_session.lock().unwrap();
                 if sess.session_id != target_id || sess.state.is_active() {
@@ -1904,7 +1933,7 @@ pub fn switch_speech_profile(
 
     let target_model_id = match profile.to_lowercase().as_str() {
         "developer" | "dev" | "tech" | "technical" => {
-            let candidate_ids = ["whisper-large-v3-turbo", "whisper-small", "whisper-base", "whisper-tiny"];
+            let candidate_ids = ["whisper-large-v3-turbo", "whisper-small", "whisper-base-q5_1", "whisper-base", "whisper-tiny-q5_1", "whisper-tiny"];
             candidate_ids
                 .iter()
                 .filter_map(|id| manifest.iter().find(|m| &m.id == id))
@@ -1915,11 +1944,27 @@ pub fn switch_speech_profile(
         "multilingual" | "dialects" => {
             if models_dir.join("ggml-small.bin").exists() { "whisper-small" } else { "whisper-base" }
         }
-        "general" | "instant" | "fast" => {
-            if models_dir.join("ggml-tiny.bin").exists() { "whisper-tiny" } else { "whisper-base" }
+        "general" | "instant" | "fast" | "battery" | "low_power" => {
+            if models_dir.join("ggml-tiny-q5_1.bin").exists() {
+                "whisper-tiny-q5_1"
+            } else if models_dir.join("ggml-tiny.bin").exists() {
+                "whisper-tiny"
+            } else if models_dir.join("ggml-base-q5_1.bin").exists() {
+                "whisper-base-q5_1"
+            } else {
+                "whisper-base"
+            }
         }
         "balanced" | "everyday" => {
-            if models_dir.join("ggml-base.bin").exists() { "whisper-base" } else { "whisper-tiny" }
+            if models_dir.join("ggml-base-q5_1.bin").exists() {
+                "whisper-base-q5_1"
+            } else if models_dir.join("ggml-base.bin").exists() {
+                "whisper-base"
+            } else if models_dir.join("ggml-tiny-q5_1.bin").exists() {
+                "whisper-tiny-q5_1"
+            } else {
+                "whisper-tiny"
+            }
         }
         _ => {
             return Err(format!("Unknown speech profile: {}", profile));

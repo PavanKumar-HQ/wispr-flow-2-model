@@ -611,4 +611,51 @@ mod tests {
         assert_eq!(report.status, "too_short");
         assert!(report.advisory.contains("very brief"));
     }
+
+    #[test]
+    fn test_is_audio_silent_or_too_short() {
+        // 1. Empty buffer
+        assert!(is_audio_silent_or_too_short(&[]));
+
+        // 2. Too short (< 3200 samples = 200ms)
+        let short_audio = vec![0.3f32; 1600];
+        assert!(is_audio_silent_or_too_short(&short_audio));
+
+        // 3. Ambient room silence (1 second of zeroes / near-zero noise)
+        let silence = vec![0.0001f32; 16000];
+        assert!(is_audio_silent_or_too_short(&silence));
+
+        // 4. Genuine speech signal (1 second of 400Hz speech at 0.25 amplitude)
+        let mut speech = Vec::with_capacity(16000);
+        for i in 0..16000 {
+            let t = i as f32 / 16000.0;
+            speech.push(0.25 * (2.0 * std::f32::consts::PI * 400.0 * t).sin());
+        }
+        assert!(!is_audio_silent_or_too_short(&speech));
+    }
+
+    #[test]
+    fn test_trim_audio_silence() {
+        let sample_rate = 16000;
+        let mut audio = Vec::new();
+
+        // 1 second of silence
+        audio.extend(vec![0.0f32; sample_rate]);
+
+        // 1 second of speech (0.3 amplitude)
+        for i in 0..sample_rate {
+            let t = i as f32 / sample_rate as f32;
+            audio.push(0.3 * (2.0 * std::f32::consts::PI * 300.0 * t).sin());
+        }
+
+        // 1 second of silence
+        audio.extend(vec![0.0f32; sample_rate]);
+
+        assert_eq!(audio.len(), sample_rate * 3);
+
+        let trimmed = trim_audio_silence(&audio, sample_rate as u32);
+        // Trimmed audio should be significantly shorter than 3 seconds but contain speech
+        assert!(trimmed.len() < audio.len());
+        assert!(trimmed.len() >= sample_rate);
+    }
 }

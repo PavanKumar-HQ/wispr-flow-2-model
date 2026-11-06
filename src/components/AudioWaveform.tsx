@@ -1,9 +1,10 @@
 import React, { useEffect, useRef } from 'react';
+import { safeListen } from '../lib/ipc';
 
 interface AudioWaveformProps {
   isRecording: boolean;
   isTranscribing: boolean;
-  liveLevel: number; // 0.0 to 1.0
+  liveLevel?: number; // 0.0 to 1.0 (optional, listens natively if omitted)
   barCount?: number;
   theme?: 'dark' | 'light';
 }
@@ -11,7 +12,7 @@ interface AudioWaveformProps {
 export const AudioWaveform: React.FC<AudioWaveformProps> = ({
   isRecording,
   isTranscribing,
-  liveLevel,
+  liveLevel = 0,
   barCount = 11,
   theme = 'light',
 }) => {
@@ -26,10 +27,30 @@ export const AudioWaveform: React.FC<AudioWaveformProps> = ({
   const liveLevelRef = useRef<number>(liveLevel);
   const heightsRef = useRef<number[]>(weights.slice(0, count).map((w) => 4 + w * 6));
 
-  // Sync liveLevel ref without recreating the animation frame loop
+  // Sync liveLevel if passed as prop
   useEffect(() => {
-    liveLevelRef.current = liveLevel;
+    if (liveLevel > 0) {
+      liveLevelRef.current = liveLevel;
+    }
   }, [liveLevel]);
+
+  // High-efficiency direct audio-level listener: updates ref without triggering React component re-renders
+  useEffect(() => {
+    if (!isRecording) {
+      liveLevelRef.current = 0;
+      return;
+    }
+    let unlisten: (() => void) | undefined;
+    safeListen<number>('audio-level', (e) => {
+      liveLevelRef.current = e.payload;
+    }).then((fn) => {
+      unlisten = fn;
+    });
+
+    return () => {
+      if (unlisten) unlisten();
+    };
+  }, [isRecording]);
 
   useEffect(() => {
     // Zero-overhead idle guard: pause animation loop completely when idle

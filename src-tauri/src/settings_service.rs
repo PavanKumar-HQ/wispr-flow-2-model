@@ -61,8 +61,8 @@ impl Default for AppSettings {
             enable_correction_learning: true,
             auto_approve_corrections: false,
             enhancement_default_mode: "improve_clarity".to_string(),
-            enable_destination_sync: true,
-            destination_sync_duration_secs: 90,
+            enable_destination_sync: false,
+            destination_sync_duration_secs: 15,
             enable_auto_model_routing: true,
             enable_speech_repair: true,
         }

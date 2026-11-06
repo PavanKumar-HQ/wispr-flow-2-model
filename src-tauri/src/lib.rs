@@ -4,7 +4,8 @@ use tauri::{AppHandle, Manager, WebviewWindowBuilder, WebviewUrl};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
 #[cfg(target_os = "macos")]
-use objc::{msg_send, sel, sel_impl};
+use objc::{sel, sel_impl};
+
 
 #[cfg(target_os = "macos")]
 pub fn run_on_main_thread<F: FnOnce() + Send + 'static>(f: F) {

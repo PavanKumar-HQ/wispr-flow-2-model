@@ -66,7 +66,8 @@ impl WhisperEngine {
         params.set_no_speech_thold(0.85);
         params.set_temperature(0.0);
         params.set_temperature_inc(0.0);
-        let n_threads = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(8).clamp(2, 8);
+        // Energy-efficient multi-threading: clamp to 2..=4 threads to prevent thermal spikes and battery drain on mobile/laptops
+        let n_threads = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4).clamp(2, 4);
         params.set_n_threads(n_threads as i32);
 
         if let Some(prompt) = initial_prompt {

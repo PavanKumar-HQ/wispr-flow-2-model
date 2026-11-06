@@ -17,6 +17,18 @@ pub struct ModelInfo {
 pub fn get_official_manifest() -> Vec<ModelInfo> {
     vec![
         ModelInfo {
+            id: "whisper-tiny-q5_1".to_string(),
+            name: "Ultra-Low Power (Battery Saver)".to_string(),
+            filename: "ggml-tiny-q5_1.bin".to_string(),
+            size_bytes: 32152673,
+            sha256: "818710568da3ca15689e31a743197b520007872ff9576237bda97bd1b469c3d7".to_string(),
+            download_url: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny-q5_1.bin".to_string(),
+            description: "32 MB ultra-quantized Q5_1 model. Lowest battery and RAM footprint (~120 MB RAM), ideal for mobile, battery-saver mode, and ultra-fast typing.".to_string(),
+            ram_estimate_mb: 120,
+            recommended: false,
+            is_downloaded: false,
+        },
+        ModelInfo {
             id: "whisper-tiny".to_string(),
             name: "General & Instant Speed".to_string(),
             filename: "ggml-tiny.bin".to_string(),
@@ -25,6 +37,18 @@ pub fn get_official_manifest() -> Vec<ModelInfo> {
             download_url: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin".to_string(),
             description: "Ultra-fast response with near-zero latency. Perfect for quick messages, Slack chats, emails, and daily tasks with minimal battery usage.".to_string(),
             ram_estimate_mb: 390,
+            recommended: false,
+            is_downloaded: false,
+        },
+        ModelInfo {
+            id: "whisper-base-q5_1".to_string(),
+            name: "Everyday Balanced (Low RAM)".to_string(),
+            filename: "ggml-base-q5_1.bin".to_string(),
+            size_bytes: 59707625,
+            sha256: "422f1ae452ade6f30a004d7e5c6a43195e4433bc370bf23fac9cc591f01a8898".to_string(),
+            download_url: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base-q5_1.bin".to_string(),
+            description: "59 MB compact Q5_1 model. High transcription precision with minimal memory overhead (~180 MB RAM), perfect for everyday typing on laptops and mobile.".to_string(),
+            ram_estimate_mb: 180,
             recommended: false,
             is_downloaded: false,
         },
