@@ -24,6 +24,10 @@ impl WhisperEngine {
             }
         }
 
+        // Explicitly release previous state and context first to prevent Metal GPU and RAM leak
+        self.state = None;
+        self.context = None;
+
         let params = WhisperContextParameters::default();
         let ctx = WhisperContext::new_with_params(&p_str, params)
             .map_err(|e| format!("Whisper.cpp native model initialization failed: {:?}", e))?;

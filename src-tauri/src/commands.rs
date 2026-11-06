@@ -564,7 +564,20 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
 
     let audio_samples = {
         let mut audio = state.audio.lock().unwrap();
-        audio.stop_recording()?
+        match audio.stop_recording() {
+            Ok(samples) => samples,
+            Err(e) => {
+                let mut session_lock = state.active_session.lock().unwrap();
+                session_lock.state = SessionState::Failed;
+                session_lock.sequence += 1;
+                session_lock.timestamp_ms = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_millis() as u64;
+                session_lock.message = Some(format!("Audio capture error: {}", e));
+                let snap = session_lock.clone();
+                let _ = app.emit("dictation-session-changed", &snap);
+                return Err(e);
+            }
+        }
     };
     let t_audio_done = Instant::now();
 
