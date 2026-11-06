@@ -92,6 +92,9 @@ pub fn format_transcript_with_metadata(raw: &str, config: &FormattingConfig) -> 
         meta.stages_run.push("spoken_punctuation".to_string());
     }
 
+    // Stage 2.3: Spoken Emojis (e.g. "crying emoji" -> 😭, "slapping emoji" -> 🤦, "fire emoji" -> 🔥)
+    text = format_spoken_emojis(&text);
+
     // Stage 2.5: Automatic Spoken Lists (Numbered & Bulleted Lists)
     text = format_spoken_lists(&text);
 
@@ -1236,6 +1239,158 @@ fn remove_conservative_fillers_audited(input: &str) -> (String, usize) {
     (kept.join(" "), removed_count)
 }
 
+fn lookup_emoji(name: &str) -> Option<&'static str> {
+    match name.to_lowercase().as_str() {
+        "crying" | "cry" | "sob" | "sobbing" | "loudly crying" | "crying face" => Some("😭"),
+        "slapping" | "slap" | "facepalm" | "face palm" | "head slap" | "headslap" => Some("🤦"),
+        "laughing" | "laugh" | "lol" | "rofl" | "laughing crying" | "crying laughing" => Some("😂"),
+        "fire" | "lit" | "flame" => Some("🔥"),
+        "heart" | "red heart" | "love" => Some("❤️"),
+        "thumbs up" | "thumbsup" | "thumb up" => Some("👍"),
+        "thumbs down" | "thumbsdown" | "thumb down" => Some("👎"),
+        "skull" | "dead" => Some("💀"),
+        "thinking" | "think" => Some("🤔"),
+        "smiling" | "smile" | "smiley" | "happy" => Some("😊"),
+        "clap" | "clapping" | "applause" => Some("👏"),
+        "party" | "celebrate" | "celebration" | "party face" => Some("🥳"),
+        "eyes" | "eye" => Some("👀"),
+        "rocket" => Some("🚀"),
+        "100" | "hundred" => Some("💯"),
+        "check" | "checkmark" | "check mark" => Some("✅"),
+        "cross" | "cross mark" | "x" => Some("❌"),
+        "sparkles" | "sparkle" | "magic" => Some("✨"),
+        "pray" | "praying" | "hands folded" | "namaste" => Some("🙏"),
+        "sad" | "unhappy" => Some("😢"),
+        "angry" | "mad" | "rage" => Some("😡"),
+        "wink" | "winking" => Some("😉"),
+        "cool" | "sunglasses" => Some("😎"),
+        "mind blown" | "mindblown" | "exploding head" => Some("🤯"),
+        "sweat smile" | "nervous laugh" => Some("😅"),
+        "rolling eyes" | "eye roll" => Some("🙄"),
+        "shrug" | "shrugging" => Some("🤷"),
+        "handshake" => Some("🤝"),
+        "star" => Some("⭐"),
+        "coffee" => Some("☕"),
+        "muscle" | "flex" | "strong" => Some("💪"),
+        "poop" => Some("💩"),
+        "wave" | "waving" => Some("👋"),
+        "salute" => Some("🫡"),
+        _ => None,
+    }
+}
+
+/// Formats spoken emoji names into native Unicode emojis
+/// Examples:
+/// - "slapping emoji" -> "🤦"
+/// - "crying emoji" -> "😭"
+/// - "fire emoji" -> "🔥"
+/// - "thumbs up emoji" -> "👍"
+pub fn format_spoken_emojis(input: &str) -> String {
+    let lines: Vec<&str> = input.split('\n').collect();
+    let processed_lines: Vec<String> = lines.into_iter().map(format_spoken_emojis_line).collect();
+    processed_lines.join("\n")
+}
+
+fn format_spoken_emojis_line(input: &str) -> String {
+    let words: Vec<&str> = input.split_whitespace().collect();
+    if words.is_empty() {
+        return input.to_string();
+    }
+
+    let mut out: Vec<String> = words.iter().map(|s| s.to_string()).collect();
+    let mut i = 0;
+
+    while i < out.len() {
+        let (curr_clean, trailing_punct) = {
+            let s = &out[i];
+            let clean = clean_word_for_matching(s);
+            let punct: String = s.chars().rev().take_while(|c| !c.is_alphanumeric()).collect();
+            let punct: String = punct.chars().rev().collect();
+            (clean, punct)
+        };
+
+        // Pattern 1: "<descriptor> emoji" or "<two-word descriptor> emoji"
+        if curr_clean == "emoji" || curr_clean == "emojis" {
+            let mut replaced = false;
+
+            // Try 2-word descriptor before: e.g. "thumbs up emoji"
+            if i >= 2 {
+                let two_words = format!("{} {}", clean_word_for_matching(&out[i - 2]), clean_word_for_matching(&out[i - 1]));
+                if let Some(emoji) = lookup_emoji(&two_words) {
+                    let mut replacement = emoji.to_string();
+                    replacement.push_str(&trailing_punct);
+                    out.splice(i - 2..=i, vec![replacement]);
+                    i = i - 1;
+                    replaced = true;
+                }
+            }
+
+            // Try 1-word descriptor before: e.g. "crying emoji", "slapping emoji", "fire emoji"
+            if !replaced && i >= 1 {
+                let one_word = clean_word_for_matching(&out[i - 1]);
+                if let Some(emoji) = lookup_emoji(&one_word) {
+                    let mut replacement = emoji.to_string();
+                    replacement.push_str(&trailing_punct);
+                    out.splice(i - 1..=i, vec![replacement]);
+                    replaced = true;
+                }
+            }
+
+            if replaced {
+                continue;
+            }
+        }
+
+        // Pattern 2: "emoji <descriptor>" or "emoji <two-word descriptor>"
+        if (curr_clean == "emoji" || curr_clean == "emojis") && i + 1 < out.len() {
+            let mut replaced = false;
+
+            // Try 2-word descriptor after: "emoji thumbs up"
+            if i + 2 < out.len() {
+                let (next2_clean, next2_punct) = {
+                    let s = &out[i + 2];
+                    let clean = clean_word_for_matching(s);
+                    let punct: String = s.chars().rev().take_while(|c| !c.is_alphanumeric()).collect();
+                    let punct: String = punct.chars().rev().collect();
+                    (clean, punct)
+                };
+                let two_words = format!("{} {}", clean_word_for_matching(&out[i + 1]), next2_clean);
+                if let Some(emoji) = lookup_emoji(&two_words) {
+                    let mut replacement = emoji.to_string();
+                    replacement.push_str(&next2_punct);
+                    out.splice(i..=i + 2, vec![replacement]);
+                    replaced = true;
+                }
+            }
+
+            // Try 1-word descriptor after: "emoji crying", "emoji fire"
+            if !replaced {
+                let (next_clean, next_punct) = {
+                    let s = &out[i + 1];
+                    let clean = clean_word_for_matching(s);
+                    let punct: String = s.chars().rev().take_while(|c| !c.is_alphanumeric()).collect();
+                    let punct: String = punct.chars().rev().collect();
+                    (clean, punct)
+                };
+                if let Some(emoji) = lookup_emoji(&next_clean) {
+                    let mut replacement = emoji.to_string();
+                    replacement.push_str(&next_punct);
+                    out.splice(i..=i + 1, vec![replacement]);
+                    replaced = true;
+                }
+            }
+
+            if replaced {
+                continue;
+            }
+        }
+
+        i += 1;
+    }
+
+    out.join(" ")
+}
+
 #[derive(Debug, Clone, PartialEq)]
 enum ListMarkerType {
     Numbered(usize),
@@ -1269,6 +1424,15 @@ fn capitalize_first_char(s: &str) -> String {
 /// Automatically detects spoken numbered lists (e.g. "point 1 this must be done point 2 this must be done", "1 this must be done 2 this must be done")
 /// and bullet lists (e.g. "bullet point buy milk bullet point call mom") and formats them with line breaks and prefixes.
 pub fn format_spoken_lists(input: &str) -> String {
+    if input.contains('\n') {
+        let lines: Vec<&str> = input.split('\n').collect();
+        let formatted: Vec<String> = lines.into_iter().map(format_spoken_lists_inner).collect();
+        return formatted.join("\n");
+    }
+    format_spoken_lists_inner(input)
+}
+
+fn format_spoken_lists_inner(input: &str) -> String {
     let words: Vec<&str> = input.split_whitespace().collect();
     if words.len() < 3 {
         return input.to_string();
@@ -2447,5 +2611,32 @@ mod tests {
         // 5. Normal prose with counting must NOT turn into a list:
         let res5 = format_transcript("I have 1 apple and 2 oranges.", &cfg);
         assert_eq!(res5, "I have 1 apple and 2 oranges.");
+    }
+
+    #[test]
+    fn test_spoken_emojis() {
+        let cfg = FormattingConfig::default();
+
+        // 1. User's exact examples: "slapping emoji" -> 🤦 and "crying emoji" -> 😭
+        let res1 = format_transcript("I can't believe this slapping emoji.", &cfg);
+        assert_eq!(res1, "I can't believe this 🤦.");
+
+        let res2 = format_transcript("That is hilarious crying emoji!", &cfg);
+        assert_eq!(res2, "That is hilarious 😭!");
+
+        // 2. Multi-word emoji descriptor: "thumbs up emoji" -> 👍
+        let res3 = format_transcript("Send me the document thumbs up emoji.", &cfg);
+        assert_eq!(res3, "Send me the document 👍.");
+
+        // 3. Fire and heart:
+        let res4 = format_transcript("This new track is fire emoji", &cfg);
+        assert_eq!(res4, "This new track is 🔥");
+
+        let res5 = format_transcript("Love you heart emoji", &cfg);
+        assert_eq!(res5, "Love you ❤️");
+
+        // 4. Literal word emoji without descriptor:
+        let res6 = format_transcript("I like using this emoji.", &cfg);
+        assert_eq!(res6, "I like using this emoji.");
     }
 }
