@@ -113,8 +113,10 @@ impl DestinationSyncService {
                     }
                 };
 
-                // 2. Check maximum observation window (bounded monitoring)
-                if current_state.start_time.elapsed() > current_state.max_duration {
+                // 2. Check maximum observation window (bounded monitoring: 12s max, or 8s if no edits)
+                let max_window = current_state.max_duration.min(Duration::from_secs(12));
+                let elapsed = current_state.start_time.elapsed();
+                if elapsed > max_window || (current_state.last_edit_seen.is_none() && elapsed > Duration::from_secs(8)) {
                     let mut lock = active_sess_arc.lock().unwrap();
                     if let Some(s) = lock.as_ref() {
                         if s.session_id == session.session_id {

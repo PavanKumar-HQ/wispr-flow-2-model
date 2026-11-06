@@ -92,10 +92,10 @@ pub fn load_settings() -> AppSettings {
     let path = get_settings_path();
     if let Ok(content) = fs::read_to_string(path) {
         if let Ok(mut settings) = serde_json::from_str::<AppSettings>(&content) {
-            // Ensure destination sync is enabled with a healthy observation window
+            // Ensure destination sync is enabled with a battery-friendly observation window (max 12s)
             settings.enable_destination_sync = true;
-            if settings.destination_sync_duration_secs < 30 {
-                settings.destination_sync_duration_secs = 45;
+            if settings.destination_sync_duration_secs > 12 {
+                settings.destination_sync_duration_secs = 12;
             }
             return settings;
         }

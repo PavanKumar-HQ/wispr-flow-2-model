@@ -122,7 +122,7 @@ export default function App() {
       loadInsights();
     });
 
-    // In floating pill window, aggressively poll session snapshot every 150ms to ensure 0-latency status sync
+    // In floating pill window, fallback sync at 1000ms (push events handle instant 0ms state transitions)
     let syncInterval: ReturnType<typeof setInterval> | null = null;
     if (isPillOnlyWindow) {
       syncInterval = setInterval(async () => {
@@ -143,7 +143,7 @@ export default function App() {
         } catch {
           // ignore in browser mode
         }
-      }, 150);
+      }, 1000);
     }
 
     return () => {
