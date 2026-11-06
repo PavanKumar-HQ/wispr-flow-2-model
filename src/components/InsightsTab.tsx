@@ -30,9 +30,11 @@ export const InsightsTab: React.FC<InsightsTabProps> = ({
     : 0);
 
   // Real time saved (Manual typing is ~40 WPM)
-  const timeSavedMinutes = insights?.time_saved_minutes ?? (totalWords > 0 && avgWpm > 0
-    ? Math.max(0, Math.round(totalWords / 40 - totalWords / avgWpm))
-    : 0);
+  const timeSavedMinutes = Math.round(
+    insights?.time_saved_minutes ?? (totalWords > 0 && avgWpm > 0
+      ? Math.max(0, totalWords / 40 - totalWords / avgWpm)
+      : 0)
+  );
 
   // Real app usage breakdown from insights or fallback to history
   const appUsage = (insights?.app_usage && insights.app_usage.length > 0)
@@ -158,7 +160,7 @@ export const InsightsTab: React.FC<InsightsTabProps> = ({
           <div>
             <div className="flex items-center justify-between mb-1">
               <span className="text-3xl font-extrabold text-charcoal tracking-tight font-mono">
-                {timeSavedMinutes} <span className="text-base font-normal">mins</span>
+                {timeSavedMinutes.toLocaleString()} <span className="text-base font-normal">mins</span>
               </span>
               <div className="p-2 rounded-xl bg-sage/30 border border-charcoal/20">
                 <Clock className="w-5 h-5 text-darkTeal" />
@@ -169,7 +171,7 @@ export const InsightsTab: React.FC<InsightsTabProps> = ({
             </div>
             <p className="text-xs text-charcoal/60 leading-relaxed mb-4">
               {timeSavedMinutes > 0
-                ? `Saved ~${timeSavedMinutes} minutes compared to manual typing.`
+                ? `Saved ~${timeSavedMinutes.toLocaleString()} minutes compared to manual typing.`
                 : 'Speaking saves ~60% of physical typing time.'}
             </p>
           </div>
@@ -177,7 +179,7 @@ export const InsightsTab: React.FC<InsightsTabProps> = ({
           <div className="space-y-1.5 pt-2 border-t border-charcoal/10">
             <div className="flex items-center justify-between text-[11px] text-charcoal/70 font-medium">
               <span>Time saved</span>
-              <span className="font-bold text-darkTeal">{timeSavedMinutes}m</span>
+              <span className="font-bold text-darkTeal">{timeSavedMinutes.toLocaleString()}m</span>
             </div>
             <div className="w-full h-2 rounded-full bg-stone-100 overflow-hidden">
               <div
