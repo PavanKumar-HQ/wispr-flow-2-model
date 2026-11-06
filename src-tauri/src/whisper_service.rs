@@ -69,7 +69,8 @@ impl WhisperEngine {
         params.set_print_realtime(false);
         params.set_print_timestamps(false);
         params.set_translate(false);
-        params.set_no_context(true);
+        // Maintain cross-segment linguistic context for natural grammar in multi-clause sentences
+        params.set_no_context(false);
         params.set_single_segment(false);
         params.set_suppress_blank(true);
         params.set_suppress_nst(true);

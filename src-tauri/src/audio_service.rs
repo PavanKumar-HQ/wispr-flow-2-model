@@ -411,15 +411,15 @@ pub fn trim_audio_silence(samples: &[f32], sample_rate: u32) -> Vec<f32> {
     }
 
     let frame_size = (sample_rate as usize * 20) / 1000; // 20ms frames
-    let pad_frames = (sample_rate as usize * 120) / 1000; // 120ms safety pad
+    let pad_frames = (sample_rate as usize * 320) / 1000; // 320ms generous safety pad (preserves soft initial consonants like W/Th)
 
     let mut start_idx = 0;
     let mut end_idx = samples.len();
 
-    // Find speech onset
+    // Find speech onset with sensitive threshold for soft consonants
     for (i, chunk) in samples.chunks(frame_size).enumerate() {
         let rms = (chunk.iter().map(|&s| s * s).sum::<f32>() / chunk.len() as f32).sqrt();
-        if rms > 0.0012 {
+        if rms > 0.0008 {
             start_idx = (i * frame_size).saturating_sub(pad_frames);
             break;
         }
