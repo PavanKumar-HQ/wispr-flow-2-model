@@ -1,10 +1,9 @@
 import React, { useEffect, useRef } from 'react';
-import { safeListen } from '../lib/ipc';
 
 interface AudioWaveformProps {
   isRecording: boolean;
   isTranscribing: boolean;
-  liveLevel?: number; // 0.0 to 1.0 (optional, listens natively if omitted)
+  liveLevel: number; // 0.0 to 1.0
   barCount?: number;
   theme?: 'dark' | 'light';
 }
@@ -12,7 +11,7 @@ interface AudioWaveformProps {
 export const AudioWaveform: React.FC<AudioWaveformProps> = ({
   isRecording,
   isTranscribing,
-  liveLevel = 0,
+  liveLevel,
   barCount = 11,
   theme = 'light',
 }) => {
@@ -27,51 +26,12 @@ export const AudioWaveform: React.FC<AudioWaveformProps> = ({
   const liveLevelRef = useRef<number>(liveLevel);
   const heightsRef = useRef<number[]>(weights.slice(0, count).map((w) => 4 + w * 6));
 
-  // Sync liveLevel if passed as prop
+  // Sync liveLevel ref without recreating the animation frame loop
   useEffect(() => {
-    if (liveLevel > 0) {
-      liveLevelRef.current = liveLevel;
-    }
+    liveLevelRef.current = liveLevel;
   }, [liveLevel]);
 
-  // High-efficiency direct audio-level listener: updates ref without triggering React component re-renders
   useEffect(() => {
-    if (!isRecording) {
-      liveLevelRef.current = 0;
-      return;
-    }
-    let unlisten: (() => void) | undefined;
-    safeListen<number>('audio-level', (e) => {
-      liveLevelRef.current = e.payload;
-    }).then((fn) => {
-      unlisten = fn;
-    });
-
-    return () => {
-      if (unlisten) unlisten();
-    };
-  }, [isRecording]);
-
-  useEffect(() => {
-    // Zero-overhead idle guard: pause animation loop completely when idle
-    if (!isRecording && !isTranscribing) {
-      if (animFrameRef.current) {
-        cancelAnimationFrame(animFrameRef.current);
-        animFrameRef.current = null;
-      }
-      for (let i = 0; i < count; i++) {
-        const barEl = barsRef.current[i];
-        if (barEl) {
-          const w = weights[i] || 0.5;
-          barEl.style.height = `${(3.5 + w * 4).toFixed(1)}px`;
-          barEl.style.backgroundColor = theme === 'dark' ? 'rgba(255, 255, 255, 0.45)' : '#0F5B57';
-          barEl.style.opacity = '0.5';
-          barEl.style.boxShadow = 'none';
-        }
-      }
-      return;
-    }
-
     let running = true;
 
     const render = () => {

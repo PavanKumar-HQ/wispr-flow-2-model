@@ -486,7 +486,7 @@ pub fn start_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Ses
         let active_session_ref = Arc::clone(&state.active_session);
 
         tauri::async_runtime::spawn(async move {
-            let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(60));
+            let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(35));
             loop {
                 interval.tick().await;
                 let is_rec = {
