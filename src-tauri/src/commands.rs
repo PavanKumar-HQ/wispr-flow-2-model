@@ -594,6 +594,22 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
         session_lock.last_transcript = None;
         let snap = session_lock.clone();
         let _ = app.emit("dictation-session-changed", &snap);
+        let app_hide = app.clone();
+        let target_id = session_lock.session_id.clone();
+        tauri::async_runtime::spawn(async move {
+            tokio::time::sleep(tokio::time::Duration::from_millis(1200)).await;
+            if let Some(state) = app_hide.try_state::<AppState>() {
+                let sess = state.active_session.lock().unwrap();
+                if sess.session_id != target_id || sess.state.is_active() {
+                    return;
+                }
+            }
+            crate::run_on_main_thread(move || {
+                if let Some(w) = app_hide.get_webview_window("floating-indicator") {
+                    let _ = w.hide();
+                }
+            });
+        });
         return Ok(snap);
     }
 
@@ -763,6 +779,22 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
         session_lock.last_transcript = None;
         let snap = session_lock.clone();
         let _ = app.emit("dictation-session-changed", &snap);
+        let app_hide = app.clone();
+        let target_id = session_lock.session_id.clone();
+        tauri::async_runtime::spawn(async move {
+            tokio::time::sleep(tokio::time::Duration::from_millis(1200)).await;
+            if let Some(state) = app_hide.try_state::<AppState>() {
+                let sess = state.active_session.lock().unwrap();
+                if sess.session_id != target_id || sess.state.is_active() {
+                    return;
+                }
+            }
+            crate::run_on_main_thread(move || {
+                if let Some(w) = app_hide.get_webview_window("floating-indicator") {
+                    let _ = w.hide();
+                }
+            });
+        });
         return Ok(snap);
     }
 
@@ -1174,6 +1206,26 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
         let _ = app.emit("dictionary-updated", ());
     }
 
+    // Auto-dismiss floating pill after transcription and text delivery completes
+    if final_snap.state == SessionState::Completed {
+        let app_pill = app.clone();
+        let target_id = final_snap.session_id.clone();
+        tauri::async_runtime::spawn(async move {
+            tokio::time::sleep(tokio::time::Duration::from_millis(1500)).await;
+            if let Some(state) = app_pill.try_state::<AppState>() {
+                let sess = state.active_session.lock().unwrap();
+                if sess.session_id != target_id || sess.state.is_active() {
+                    return;
+                }
+            }
+            crate::run_on_main_thread(move || {
+                if let Some(w) = app_pill.get_webview_window("floating-indicator") {
+                    let _ = w.hide();
+                }
+            });
+        });
+    }
+
     Ok(final_snap)
 }
 
@@ -1203,6 +1255,22 @@ pub fn cancel_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Se
 
         let snap = session_lock.clone();
         let _ = app.emit("dictation-session-changed", &snap);
+        let app_hide = app.clone();
+        let target_id = session_lock.session_id.clone();
+        tauri::async_runtime::spawn(async move {
+            tokio::time::sleep(tokio::time::Duration::from_millis(1200)).await;
+            if let Some(state) = app_hide.try_state::<AppState>() {
+                let sess = state.active_session.lock().unwrap();
+                if sess.session_id != target_id || sess.state.is_active() {
+                    return;
+                }
+            }
+            crate::run_on_main_thread(move || {
+                if let Some(w) = app_hide.get_webview_window("floating-indicator") {
+                    let _ = w.hide();
+                }
+            });
+        });
         return Ok(snap);
     }
 
