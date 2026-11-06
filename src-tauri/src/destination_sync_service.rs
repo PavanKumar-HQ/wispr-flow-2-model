@@ -69,8 +69,8 @@ impl DestinationSyncService {
 
         // Spawn bounded async observation task using Tauri's global runtime
         tauri::async_runtime::spawn(async move {
-            let poll_interval = Duration::from_millis(2000);
-            let debounce_threshold = Duration::from_millis(1200);
+            let poll_interval = Duration::from_millis(400);
+            let debounce_threshold = Duration::from_millis(500);
 
             loop {
                 tokio::time::sleep(poll_interval).await;
@@ -108,14 +108,15 @@ impl DestinationSyncService {
                         break;
                     }
 
-                    // Optional: If user switched away from the destination app, we pause without canceling
-                    let frontmost = crate::safety_service::get_frontmost_app_name();
-                    if let Some(ref front) = frontmost {
-                        let front_lower = front.to_lowercase();
-                        let target_lower = current_state.target_app_name.to_lowercase();
-                        // If front is not the target app and not VoxQuest, wait
-                        if !front_lower.contains(&target_lower) && !target_lower.contains(&front_lower) && !front_lower.contains("voxquest") {
-                            continue;
+                    // If user temporarily switched away from the destination app, pause without canceling
+                    let front_pid = crate::safety_service::get_frontmost_app_pid();
+                    if let Some(f_pid) = front_pid {
+                        if f_pid != pid {
+                            let frontmost = crate::safety_service::get_frontmost_app_name();
+                            let front_lower = frontmost.as_deref().unwrap_or("").to_lowercase();
+                            if !front_lower.contains("voxquest") && !front_lower.contains("tauri") {
+                                continue;
+                            }
                         }
                     }
                 }

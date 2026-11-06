@@ -1175,8 +1175,19 @@ pub fn get_frontmost_app_name() -> Option<String> {
     name
 }
 
+#[cfg(target_os = "macos")]
+pub fn get_frontmost_app_pid() -> Option<u32> {
+    let (_, _, pid, _, _, _) = get_active_app_metadata();
+    pid
+}
+
 #[cfg(not(target_os = "macos"))]
 pub fn get_frontmost_app_name() -> Option<String> {
+    None
+}
+
+#[cfg(not(target_os = "macos"))]
+pub fn get_frontmost_app_pid() -> Option<u32> {
     None
 }
 

@@ -67,8 +67,8 @@ impl Default for AppSettings {
             enable_correction_learning: true,
             auto_approve_corrections: false,
             enhancement_default_mode: "improve_clarity".to_string(),
-            enable_destination_sync: false,
-            destination_sync_duration_secs: 15,
+            enable_destination_sync: true,
+            destination_sync_duration_secs: 45,
             enable_auto_model_routing: true,
             enable_speech_repair: true,
             speech_engine: "local".to_string(),
@@ -91,7 +91,12 @@ pub fn get_settings_path() -> PathBuf {
 pub fn load_settings() -> AppSettings {
     let path = get_settings_path();
     if let Ok(content) = fs::read_to_string(path) {
-        if let Ok(settings) = serde_json::from_str(&content) {
+        if let Ok(mut settings) = serde_json::from_str::<AppSettings>(&content) {
+            // Ensure destination sync is enabled with a healthy observation window
+            settings.enable_destination_sync = true;
+            if settings.destination_sync_duration_secs < 30 {
+                settings.destination_sync_duration_secs = 45;
+            }
             return settings;
         }
     }

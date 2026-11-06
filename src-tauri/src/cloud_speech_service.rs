@@ -111,3 +111,4 @@ pub fn transcribe_cloud(
         Err("Response JSON did not contain 'text' field".to_string())
     }
 }
+
