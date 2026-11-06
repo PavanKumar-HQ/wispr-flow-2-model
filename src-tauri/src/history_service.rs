@@ -469,7 +469,7 @@ impl HistoryDatabase {
         let time_saved_minutes = if total_words > 0 && average_wpm > 0 {
             let typing_mins = total_words as f32 / 40.0;
             let voice_mins = total_words as f32 / (average_wpm as f32);
-            ((typing_mins - voice_mins).max(0.0) * 10.0).round() / 10.0
+            ((typing_mins - voice_mins).max(0.0)).round()
         } else {
             0.0
         };

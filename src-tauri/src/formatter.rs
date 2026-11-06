@@ -64,7 +64,17 @@ pub fn format_transcript_with_metadata(raw: &str, config: &FormattingConfig) -> 
         stages_run: Vec::new(),
     };
 
-    // Stage 0: Conversational Speech Self-Correction & Repair (e.g. "at 4pm, oh no, 5pm" -> "at 5pm")
+    // Stage 0: Conservative Filler Word Removal (purges disfluencies like "um", "uh", "haa" early)
+    if config.conservative_filler_removal {
+        let (no_filler_text, count) = remove_conservative_fillers_audited(&text);
+        text = no_filler_text;
+        meta.fillers_removed = count;
+        if count > 0 {
+            meta.stages_run.push("filler_removal".to_string());
+        }
+    }
+
+    // Stage 1: Conversational Speech Self-Correction & Repair (e.g. "at 4pm, oh no, 5pm" -> "at 5pm")
     if config.speech_repair {
         let (repaired_text, count) = repair_speech_self_corrections(&text);
         text = repaired_text;
@@ -74,20 +84,12 @@ pub fn format_transcript_with_metadata(raw: &str, config: &FormattingConfig) -> 
         }
     }
 
-    // Stage 1: Spoken Punctuation and Formatting Phrases (Context-Aware)
+    // Stage 2: Spoken Punctuation and Formatting Phrases (Context-Aware)
     if config.spoken_punctuation {
         let (punct_text, count) = apply_spoken_punctuation_conservative(&text);
         text = punct_text;
         meta.punctuation_applied = count;
         meta.stages_run.push("spoken_punctuation".to_string());
-    }
-
-    // Stage 2: Conservative Filler Word Removal (strictly opt-in, disabled by default)
-    if config.conservative_filler_removal {
-        let (no_filler_text, count) = remove_conservative_fillers_audited(&text);
-        text = no_filler_text;
-        meta.fillers_removed = count;
-        meta.stages_run.push("filler_removal".to_string());
     }
 
     // Stage 3: Conservative Sentence Capitalization
@@ -405,6 +407,53 @@ fn is_day_token(s: &str) -> bool {
     matches!(clean.as_str(), "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday")
 }
 
+fn is_retraction_cue(w_curr: &str, prev_tok: &str, next_tok: &str, has_comma: bool) -> bool {
+    let prev_clean = clean_word_for_matching(prev_tok);
+    let next_clean = clean_word_for_matching(next_tok);
+
+    if has_comma {
+        return matches!(w_curr, "no" | "wait" | "actually" | "sorry" | "correction");
+    }
+
+    if matches!(w_curr, "actually" | "sorry" | "correction") {
+        return true;
+    }
+
+    if w_curr == "wait" {
+        let command_prev = matches!(
+            prev_clean.as_str(),
+            "please" | "can" | "could" | "will" | "would" | "to" | "just" | "dont" | "don't" | "and" | "you"
+        );
+        let command_next = matches!(
+            next_clean.as_str(),
+            "for" | "here" | "there" | "until" | "a" | "an" | "the" | "minute" | "moment" | "second" | "patiently"
+        );
+        if command_prev || command_next {
+            return false;
+        }
+        return true;
+    }
+
+    if w_curr == "no" {
+        let determiner_prev = matches!(
+            prev_clean.as_str(),
+            "have" | "has" | "had" | "there" | "is" | "are" | "was" | "were"
+            | "with" | "without" | "see" | "saw" | "got" | "contains" | "contain"
+        );
+        let determiner_next = matches!(
+            next_clean.as_str(),
+            "problem" | "worries" | "doubt" | "idea" | "clue" | "way" | "matter"
+            | "reason" | "chance" | "longer" | "one" | "other" | "more"
+        );
+        if determiner_prev || determiner_next {
+            return false;
+        }
+        return true;
+    }
+
+    false
+}
+
 /// Automatically detects and resolves conversational self-corrections (speech repair)
 /// Examples:
 /// - "A meeting was there at 4pm, oh no, 5pm." -> "A meeting was there at 5pm."
@@ -414,6 +463,8 @@ fn is_day_token(s: &str) -> bool {
 /// - "We have 10 users, sorry, 20 users." -> "We have 20 users."
 /// - "Send to Sarah, wait, Alex." -> "Send to Alex."
 /// - "Deploy to test, scratch that, deploy to production." -> "Deploy to production."
+/// - "I want red no blue" -> "I want blue"
+/// - "Call at 3 wait 4" -> "Call at 4"
 pub fn repair_speech_self_corrections(input: &str) -> (String, usize) {
     let words: Vec<&str> = input.split_whitespace().collect();
     if words.len() < 3 {
@@ -430,6 +481,7 @@ pub fn repair_speech_self_corrections(input: &str) -> (String, usize) {
 
         let mut cue_len = 0;
         let mut starts_with_its = false;
+        let has_comma = out[i].contains(',') || out[i].ends_with(',') || (i > 0 && out[i - 1].ends_with(','));
 
         if (w_curr == "oh" && w_next == "no")
             || (w_curr == "no" && w_next == "wait")
@@ -437,14 +489,15 @@ pub fn repair_speech_self_corrections(input: &str) -> (String, usize) {
             || (w_curr == "scratch" && w_next == "that")
             || (w_curr == "i" && w_next == "mean")
             || (w_curr == "or" && w_next == "rather")
+            || (w_curr == "make" && w_next == "that")
+            || (w_curr == "my" && w_next == "bad")
+            || (w_curr == "i" && w_next == "meant")
         {
             cue_len = 2;
         } else if w_curr == "no" && (w_next == "its" || w_next == "it's" || w_next == "it") {
             cue_len = 2;
             starts_with_its = true;
-        } else if w_curr == "actually" || w_curr == "sorry" || (w_curr == "wait" && (out[i].contains(',') || (i > 0 && out[i - 1].contains(',')))) {
-            cue_len = 1;
-        } else if w_curr == "no" && (out[i].contains(',') || out[i].ends_with(',') || (i > 0 && out[i - 1].ends_with(','))) {
+        } else if is_retraction_cue(&w_curr, &out[i - 1], &w_next, has_comma) {
             cue_len = 1;
         }
 
@@ -509,8 +562,21 @@ pub fn repair_speech_self_corrections(input: &str) -> (String, usize) {
 
         if let Some(m_start) = matched_idx {
             let reparandum_start = m_start;
-            let repair_slice: Vec<String> = out[i + cue_len..i + cue_len + k].to_vec();
-            let delete_end = i + cue_len + k;
+            let repair_k = if rem_tokens.len() > 1 && (is_preposition_token(&clean_word_for_matching(&rem_tokens[1])) || matches!(rem_tokens[1].to_lowercase().as_str(), "and" | "or" | "but" | "so" | "because" | "since" | "then" | "for")) {
+                1
+            } else {
+                k
+            };
+            let mut repair_slice: Vec<String> = out[i + cue_len..i + cue_len + repair_k].to_vec();
+            let delete_end = i + cue_len + repair_k;
+            if reparandum_start == 0 && !repair_slice.is_empty() {
+                if let Some(first) = repair_slice.first_mut() {
+                    let mut chars = first.chars();
+                    if let Some(c) = chars.next() {
+                        *first = c.to_uppercase().collect::<String>() + chars.as_str();
+                    }
+                }
+            }
             out.splice(reparandum_start..delete_end, repair_slice);
             total_repairs += 1;
 
@@ -520,7 +586,7 @@ pub fn repair_speech_self_corrections(input: &str) -> (String, usize) {
                     prev.pop();
                 }
             }
-            i = reparandum_start + k;
+            i = reparandum_start + repair_k;
         } else {
             // False start or hesitation after subject (e.g. "The meeting no, it's at 5 PM." or "The meeting no, 5 PM.")
             if starts_with_its || first_rem_clean == "its" || first_rem_clean == "it's" {
@@ -532,18 +598,31 @@ pub fn repair_speech_self_corrections(input: &str) -> (String, usize) {
                 out.splice(i..delete_end, vec!["is".to_string()]);
                 total_repairs += 1;
                 i += 1;
-            } else if is_time_or_number_token(&first_rem_clean) || is_preposition_token(&first_rem_clean) {
+            } else if (w_curr == "no" && has_comma) && (is_time_or_number_token(&first_rem_clean) || is_preposition_token(&first_rem_clean)) {
                 out.splice(i..i + cue_len, vec!["is".to_string()]);
                 total_repairs += 1;
                 i += 1;
             } else {
-                let m_len = k.min(i);
-                let reparandum_start = if i <= 2 { i } else { i - m_len };
-                let repair_slice: Vec<String> = out[i + cue_len..i + cue_len + k].to_vec();
-                let delete_end = i + cue_len + k;
+                let repair_k = if rem_tokens.len() > 1 && (is_preposition_token(&clean_word_for_matching(&rem_tokens[1])) || matches!(rem_tokens[1].to_lowercase().as_str(), "and" | "or" | "but" | "so" | "because" | "since" | "then" | "for")) {
+                    1
+                } else {
+                    k
+                };
+                let m_len = repair_k.min(i);
+                let reparandum_start = i.saturating_sub(m_len);
+                let mut repair_slice: Vec<String> = out[i + cue_len..i + cue_len + repair_k].to_vec();
+                let delete_end = i + cue_len + repair_k;
+                if reparandum_start == 0 && !repair_slice.is_empty() {
+                    if let Some(first) = repair_slice.first_mut() {
+                        let mut chars = first.chars();
+                        if let Some(c) = chars.next() {
+                            *first = c.to_uppercase().collect::<String>() + chars.as_str();
+                        }
+                    }
+                }
                 out.splice(reparandum_start..delete_end, repair_slice);
                 total_repairs += 1;
-                i = reparandum_start + k;
+                i = reparandum_start + repair_k;
             }
 
             if i > 0 && i - 1 < out.len() && out[i - 1].ends_with(',') {
@@ -1117,16 +1196,24 @@ fn is_literal_parenthesis_context(words: &[&str], idx: usize) -> bool {
     false
 }
 
+fn is_disfluent_filler_token(clean: &str) -> bool {
+    matches!(
+        clean,
+        "um" | "uh" | "ah" | "er" | "erm" | "umm" | "uhh" | "ahh" | "err"
+        | "haa" | "haan" | "haaa" | "ha" | "hmm" | "hmmm" | "hm"
+    )
+}
+
 /// Removes standalone disfluent hesitation tokens only when conservative filler removal is enabled
 fn remove_conservative_fillers_audited(input: &str) -> (String, usize) {
-    let tokens = input.split(' ');
+    let tokens: Vec<&str> = input.split_whitespace().collect();
     let mut kept: Vec<String> = Vec::new();
     let mut removed_count = 0;
 
     for token in tokens {
         let clean = token.trim_matches(|c: char| !c.is_alphabetic()).to_lowercase();
         // Standalone hesitation tokens only
-        if clean == "um" || clean == "uh" || clean == "ah" || clean == "er" {
+        if is_disfluent_filler_token(&clean) {
             // Check if there is attached punctuation we need to preserve
             let trailing_punct: String = token.chars().rev().take_while(|c| !c.is_alphanumeric()).collect();
             let trailing_punct: String = trailing_punct.chars().rev().collect();
@@ -2040,7 +2127,8 @@ mod tests {
 
     #[test]
     fn test_speech_self_correction_and_repair() {
-        let cfg = FormattingConfig::default();
+        let mut cfg = FormattingConfig::default();
+        cfg.conservative_filler_removal = true;
 
         // 1. User's exact example: "meeting was there at 4pm, oh no, 5pm" -> "Meeting was there at 5pm"
         let res1 = format_transcript("a meeting was there at 4pm, oh no, 5pm.", &cfg);
@@ -2077,6 +2165,34 @@ mod tests {
         // 9. Scratch that: "cancel the flight, scratch that, confirm the flight."
         let res6 = format_transcript("cancel the flight, scratch that, confirm the flight.", &cfg);
         assert_eq!(res6, "Confirm the flight.");
+
+        // 10. Direct contradiction overlap: "I want red no blue" -> "I want blue"
+        let res7 = format_transcript("I want red no blue.", &cfg);
+        assert_eq!(res7, "I want blue.");
+
+        // 11. Single word replacement with "wait": "send email to Alice wait Bob" -> "Send email to Bob."
+        let res8 = format_transcript("send email to Alice wait Bob.", &cfg);
+        assert_eq!(res8, "Send email to Bob.");
+
+        // 12. Retraction overlap at start of sentence: "Red no blue" -> "Blue."
+        let res9 = format_transcript("Red no blue.", &cfg);
+        assert_eq!(res9, "Blue.");
+
+        // 13. Time correction with "wait": "call at 3 wait 4" -> "Call at 4."
+        let res10 = format_transcript("call at 3 wait 4.", &cfg);
+        assert_eq!(res10, "Call at 4.");
+
+        // 14. "or rather" contradiction overlap: "let's meet Monday or rather Tuesday."
+        let res11 = format_transcript("let's meet Monday or rather Tuesday.", &cfg);
+        assert_eq!(res11, "Let's meet Tuesday.");
+
+        // 15. Disfluent filler removal including "haa": "I was thinking haa we should go" -> "I was thinking we should go."
+        let res12 = format_transcript("I was thinking haa we should go.", &cfg);
+        assert_eq!(res12, "I was thinking we should go.");
+
+        // 16. Filler removal before speech repair: "Haa call at 3 wait 4" -> "Call at 4."
+        let res13 = format_transcript("Haa call at 3 wait 4.", &cfg);
+        assert_eq!(res13, "Call at 4.");
     }
 
     #[test]

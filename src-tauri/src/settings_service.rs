@@ -75,7 +75,7 @@ impl Default for AppSettings {
             cloud_provider: "groq".to_string(),
             cloud_api_key: String::new(),
             cloud_api_endpoint: String::new(),
-            max_cpu_threads: 2,
+            max_cpu_threads: 4,
             power_save_mode: true,
         }
     }

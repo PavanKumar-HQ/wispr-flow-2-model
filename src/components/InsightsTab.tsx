@@ -30,9 +30,10 @@ export const InsightsTab: React.FC<InsightsTabProps> = ({
     : 0);
 
   // Real time saved (Manual typing is ~40 WPM)
-  const timeSavedMinutes = insights?.time_saved_minutes ?? (totalWords > 0 && avgWpm > 0
-    ? Math.max(0, Math.round(totalWords / 40 - totalWords / avgWpm))
+  const rawTimeSaved = insights?.time_saved_minutes ?? (totalWords > 0 && avgWpm > 0
+    ? Math.max(0, totalWords / 40 - totalWords / avgWpm)
     : 0);
+  const timeSavedMinutes = Math.round(Number(rawTimeSaved) || 0);
 
   // Real app usage breakdown from insights or fallback to history
   const appUsage = (insights?.app_usage && insights.app_usage.length > 0)

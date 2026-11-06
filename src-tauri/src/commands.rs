@@ -750,7 +750,7 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
             if !engine.is_loaded() || engine.current_model_path() != Some(&path_str) {
                 engine.load_model(&model_path)?;
             }
-            engine.set_max_threads(settings.max_cpu_threads.clamp(1, 2));
+            engine.set_max_threads(settings.max_cpu_threads.clamp(2, 4));
         }
 
         let dict_prompt = state.history.get_active_biasing_prompt().ok();
