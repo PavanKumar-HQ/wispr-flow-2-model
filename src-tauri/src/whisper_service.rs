@@ -5,6 +5,7 @@ pub struct WhisperEngine {
     context: Option<WhisperContext>,
     state: Option<WhisperState>,
     current_model_path: Option<String>,
+    max_threads: Option<u32>,
 }
 
 impl WhisperEngine {
@@ -13,7 +14,12 @@ impl WhisperEngine {
             context: None,
             state: None,
             current_model_path: None,
+            max_threads: Some(2),
         }
+    }
+
+    pub fn set_max_threads(&mut self, threads: u32) {
+        self.max_threads = Some(threads.clamp(1, 2));
     }
 
     pub fn load_model<P: AsRef<Path>>(&mut self, model_path: P) -> Result<(), String> {
@@ -70,8 +76,8 @@ impl WhisperEngine {
         params.set_no_speech_thold(0.85);
         params.set_temperature(0.0);
         params.set_temperature_inc(0.0);
-        // Energy-efficient multi-threading: clamp to 2..=4 threads to prevent thermal spikes and battery drain on mobile/laptops
-        let n_threads = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4).clamp(2, 4);
+        // Hard Power Governor: clamp to 2 threads max to prevent thermal boost spikes and keep CPU cold across Mac, Windows, Linux, Android
+        let n_threads = self.max_threads.unwrap_or(2).clamp(1, 2);
         params.set_n_threads(n_threads as i32);
 
         if let Some(prompt) = initial_prompt {

@@ -26,6 +26,12 @@ pub struct AppSettings {
     pub destination_sync_duration_secs: u32,
     pub enable_auto_model_routing: bool,
     pub enable_speech_repair: bool,
+    pub speech_engine: String, // "local", "cloud", "hybrid"
+    pub cloud_provider: String, // "groq", "openai", "custom"
+    pub cloud_api_key: String,
+    pub cloud_api_endpoint: String,
+    pub max_cpu_threads: u32,
+    pub power_save_mode: bool,
 }
 
 impl Default for AppSettings {
@@ -65,6 +71,12 @@ impl Default for AppSettings {
             destination_sync_duration_secs: 15,
             enable_auto_model_routing: true,
             enable_speech_repair: true,
+            speech_engine: "local".to_string(),
+            cloud_provider: "groq".to_string(),
+            cloud_api_key: String::new(),
+            cloud_api_endpoint: String::new(),
+            max_cpu_threads: 2,
+            power_save_mode: true,
         }
     }
 }

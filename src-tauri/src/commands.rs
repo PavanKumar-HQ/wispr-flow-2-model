@@ -695,38 +695,69 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
         current_info
     };
 
-    let model_path = models_dir.join(&current_info.filename);
-    if !model_path.exists() {
-        let mut session_lock = state.active_session.lock().unwrap();
-        session_lock.state = SessionState::Failed;
-        session_lock.sequence += 1;
-        session_lock.active_model_name = Some(current_info.name.clone());
-        session_lock.technical_suggestion = None;
-        session_lock.timestamp_ms = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_millis() as u64;
-        session_lock.message = Some(format!("Model {} is not downloaded. Please install it in Model Settings.", current_info.name));
-        let snap = session_lock.clone();
-        let _ = app.emit("dictation-session-changed", &snap);
-        return Err(format!("Model {} is not installed", current_info.name));
-    }
+    // Audio energy and duration pre-checks: trim silence to save compute operations
+    let trimmed_samples = crate::audio_service::trim_audio_silence(&audio_samples, 16000);
 
-    {
-        let mut engine = state.whisper.lock().unwrap();
-        let path_str = model_path.to_string_lossy().to_string();
-        if !engine.is_loaded() || engine.current_model_path() != Some(&path_str) {
-            engine.load_model(&model_path)?;
+    let use_cloud = (settings.speech_engine == "cloud" || settings.speech_engine == "hybrid")
+        && !settings.cloud_api_key.trim().is_empty();
+
+    let mut cloud_attempt_failed = false;
+    let mut raw_transcript = String::new();
+
+    if use_cloud {
+        let cloud_cfg = crate::cloud_speech_service::CloudSpeechConfig {
+            provider: settings.cloud_provider.clone(),
+            api_key: settings.cloud_api_key.clone(),
+            custom_endpoint: if settings.cloud_api_endpoint.trim().is_empty() {
+                None
+            } else {
+                Some(settings.cloud_api_endpoint.clone())
+            },
+        };
+        let lang = if settings.language == "auto" { None } else { Some(settings.language.as_str()) };
+        let dict_prompt = state.history.get_active_biasing_prompt().ok();
+
+        match crate::cloud_speech_service::transcribe_cloud(&trimmed_samples, &cloud_cfg, lang, dict_prompt.as_deref()) {
+            Ok(text) => {
+                raw_transcript = text;
+            }
+            Err(e) => {
+                eprintln!("[VoxQuest] Cloud transcription fallback ({})", e);
+                cloud_attempt_failed = true;
+            }
         }
     }
 
-    let dict_prompt = state.history.get_active_biasing_prompt().ok();
+    if !use_cloud || cloud_attempt_failed {
+        let model_path = models_dir.join(&current_info.filename);
+        if !model_path.exists() {
+            let mut session_lock = state.active_session.lock().unwrap();
+            session_lock.state = SessionState::Failed;
+            session_lock.sequence += 1;
+            session_lock.active_model_name = Some(current_info.name.clone());
+            session_lock.technical_suggestion = None;
+            session_lock.timestamp_ms = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_millis() as u64;
+            session_lock.message = Some(format!("Model {} is not downloaded. Please install it in Model Settings.", current_info.name));
+            let snap = session_lock.clone();
+            let _ = app.emit("dictation-session-changed", &snap);
+            return Err(format!("Model {} is not installed", current_info.name));
+        }
 
-    // Audio energy and duration pre-checks: trim silence to save compute operations
-    let trimmed_samples = crate::audio_service::trim_audio_silence(&audio_samples, 16000);
-    let raw_transcript = {
-        let mut engine = state.whisper.lock().unwrap();
+        {
+            let mut engine = state.whisper.lock().unwrap();
+            let path_str = model_path.to_string_lossy().to_string();
+            if !engine.is_loaded() || engine.current_model_path() != Some(&path_str) {
+                engine.load_model(&model_path)?;
+            }
+            engine.set_max_threads(settings.max_cpu_threads.clamp(1, 2));
+        }
+
+        let dict_prompt = state.history.get_active_biasing_prompt().ok();
         let lang = if settings.language == "auto" { None } else { Some(settings.language.as_str()) };
-        engine.transcribe(&trimmed_samples, lang, dict_prompt.as_deref())?
-    };
+        let mut engine = state.whisper.lock().unwrap();
+        raw_transcript = engine.transcribe(&trimmed_samples, lang, dict_prompt.as_deref())?;
+    }
     let t_whisper_done = Instant::now();
 
     let cleaned_transcript = clean_whisper_transcript(&raw_transcript);

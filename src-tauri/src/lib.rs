@@ -49,6 +49,7 @@ pub mod personalization_service;
 pub mod prompt_service;
 pub mod enhancement_service;
 pub mod destination_sync_service;
+pub mod cloud_speech_service;
 pub mod settings_service;
 pub mod commands;
 #[cfg(test)]
