@@ -189,7 +189,11 @@ impl AudioCaptureService {
             *rec_lock = false;
         }
 
-        self.stream = None;
+        if let Some(stream) = self.stream.take() {
+            let _ = stream.pause();
+            drop(stream);
+        }
+        self.latest_level.store(0, std::sync::atomic::Ordering::Relaxed);
 
         let raw_samples = {
             let mut buf = self.buffer.lock().unwrap();

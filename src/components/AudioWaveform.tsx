@@ -83,12 +83,18 @@ export const AudioWaveform: React.FC<AudioWaveformProps> = ({
           }
         }
       } else {
-        // Ambient resting breathing pulse
+        // Ambient resting breathing pulse: smoothly settle bars to exact resting heights, then pause animation loop to achieve 0.0% idle CPU
+        let allSettled = true;
         for (let i = 0; i < count; i++) {
           const w = weights[i] || 0.5;
-          const breathing = Math.sin(t * 1.4 + i * 0.25) * 1.5;
-          const resting = 3.5 + w * 5 + breathing;
-          heights[i] += (resting - heights[i]) * 0.2;
+          const resting = 3.5 + w * 5;
+          const diff = Math.abs(resting - heights[i]);
+          if (diff > 0.05) {
+            heights[i] += (resting - heights[i]) * 0.25;
+            allSettled = false;
+          } else {
+            heights[i] = resting;
+          }
 
           const barEl = barsRef.current[i];
           if (barEl) {
@@ -97,6 +103,12 @@ export const AudioWaveform: React.FC<AudioWaveformProps> = ({
             barEl.style.opacity = '0.65';
             barEl.style.boxShadow = 'none';
           }
+        }
+
+        if (allSettled) {
+          // All waveform bars have settled to resting state; halt rAF so WindowServer and GPU use 0% CPU
+          running = false;
+          return;
         }
       }
 

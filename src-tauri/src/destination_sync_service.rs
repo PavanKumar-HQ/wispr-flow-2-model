@@ -69,10 +69,35 @@ impl DestinationSyncService {
 
         // Spawn bounded async observation task using Tauri's global runtime
         tauri::async_runtime::spawn(async move {
-            let poll_interval = Duration::from_millis(400);
             let debounce_threshold = Duration::from_millis(500);
 
             loop {
+                // Adaptive power-conserving sleep duration:
+                // - If an edit is actively being typed (debounce pending), sleep 350ms to stay responsive
+                // - In the first 6s after insertion, sleep 600ms
+                // - Between 6s and 18s, sleep 1200ms
+                // - Beyond 18s, sleep 2500ms
+                let poll_interval = {
+                    let lock = active_sess_arc.lock().unwrap();
+                    match lock.as_ref() {
+                        Some(s) if s.session_id == session.session_id => {
+                            if s.last_edit_seen.is_some() {
+                                Duration::from_millis(350)
+                            } else {
+                                let elapsed = s.start_time.elapsed();
+                                if elapsed < Duration::from_secs(6) {
+                                    Duration::from_millis(600)
+                                } else if elapsed < Duration::from_secs(18) {
+                                    Duration::from_millis(1200)
+                                } else {
+                                    Duration::from_millis(2500)
+                                }
+                            }
+                        }
+                        _ => Duration::from_millis(400),
+                    }
+                };
+
                 tokio::time::sleep(poll_interval).await;
 
                 // 1. Check if this session is still the active one
@@ -115,6 +140,7 @@ impl DestinationSyncService {
                             let frontmost = crate::safety_service::get_frontmost_app_name();
                             let front_lower = frontmost.as_deref().unwrap_or("").to_lowercase();
                             if !front_lower.contains("voxquest") && !front_lower.contains("tauri") {
+                                tokio::time::sleep(Duration::from_millis(2000)).await;
                                 continue;
                             }
                         }
