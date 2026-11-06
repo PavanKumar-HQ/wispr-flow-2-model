@@ -32,6 +32,25 @@ export const AudioWaveform: React.FC<AudioWaveformProps> = ({
   }, [liveLevel]);
 
   useEffect(() => {
+    // Zero-overhead idle guard: pause animation loop completely when idle
+    if (!isRecording && !isTranscribing) {
+      if (animFrameRef.current) {
+        cancelAnimationFrame(animFrameRef.current);
+        animFrameRef.current = null;
+      }
+      for (let i = 0; i < count; i++) {
+        const barEl = barsRef.current[i];
+        if (barEl) {
+          const w = weights[i] || 0.5;
+          barEl.style.height = `${(3.5 + w * 4).toFixed(1)}px`;
+          barEl.style.backgroundColor = theme === 'dark' ? 'rgba(255, 255, 255, 0.45)' : '#0F5B57';
+          barEl.style.opacity = '0.5';
+          barEl.style.boxShadow = 'none';
+        }
+      }
+      return;
+    }
+
     let running = true;
 
     const render = () => {

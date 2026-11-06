@@ -300,13 +300,6 @@ pub fn run() {
                             let () = objc::msg_send![ns_win, setHidesOnDeactivate: 0u8];
                             let () = objc::msg_send![ns_win, setMovableByWindowBackground: 1u8];
                             let () = objc::msg_send![ns_win, setMovable: 1u8];
-                            let () = objc::msg_send![ns_win, setPreventsActivation: 1u8];
-
-                            // NSWindowStyleMaskNonactivatingPanel = 128
-                            // Tells macOS: clicks on this panel NEVER steal key focus or deactivate WhatsApp/target app
-                            let current_mask: usize = objc::msg_send![ns_win, styleMask];
-                            let non_activating_mask: usize = current_mask | 128;
-                            let () = objc::msg_send![ns_win, setStyleMask: non_activating_mask];
                         }
                     }
                 }
