@@ -56,11 +56,14 @@ impl WhisperEngine {
     }
 
     pub fn transcribe(&mut self, audio_data: &[f32], language: Option<&str>, initial_prompt: Option<&str>) -> Result<String, String> {
-        if self.context.is_none() || self.state.is_none() {
+        if self.context.is_none() {
             return Err("Speech engine not initialized. Please install/load a model first.".to_string());
         }
 
-        let state = self.state.as_mut().unwrap();
+        let ctx = self.context.as_ref().unwrap();
+        // Create fresh clean state for this dictation to guarantee ZERO prompt bleed from past sessions
+        let mut state = ctx.create_state()
+            .map_err(|e| format!("Whisper clean state creation failed: {:?}", e))?;
 
         // Ultra-snappy low-latency greedy decoding with 0.0 temperature for instant word capture
         let mut params = FullParams::new(SamplingStrategy::Greedy { best_of: 1 });
@@ -69,8 +72,8 @@ impl WhisperEngine {
         params.set_print_realtime(false);
         params.set_print_timestamps(false);
         params.set_translate(false);
-        // Maintain cross-segment linguistic context for natural grammar in multi-clause sentences
-        params.set_no_context(false);
+        // Single isolated dictation session: do not accumulate historical session tokens
+        params.set_no_context(true);
         params.set_single_segment(false);
         params.set_suppress_blank(true);
         params.set_suppress_nst(true);

@@ -1035,47 +1035,12 @@ impl HistoryDatabase {
     }
 
     pub fn get_active_biasing_prompt(&self) -> Result<String, String> {
-        let mut terms = Vec::new();
-
-        // 1. User's custom dictionary replacement phrases come FIRST
-        if let Ok(entries) = self.list_dictionary_entries() {
-            for e in entries {
-                let repl = e.replacement_phrase.trim().to_string();
-                if !repl.is_empty() && !terms.contains(&repl) {
-                    terms.push(repl);
-                }
-                if terms.len() >= 15 {
-                    break;
-                }
-            }
-        }
-
-        // 2. User's active personal vocabulary entries (learned, taught, and approved)
-        if let Ok(vocab) = self.list_personal_vocabulary(Some("active")) {
-            for entry in vocab {
-                let term = entry.preferred_text.trim().to_string();
-                if !term.is_empty() && !terms.contains(&term) {
-                    terms.push(term);
-                }
-                if terms.len() >= 20 {
-                    break;
-                }
-            }
-        }
-
-        // 3. Core conversational keywords
-        let core_terms = ["dictionary"];
-        for c in core_terms {
-            if !terms.iter().any(|t| t.eq_ignore_ascii_case(c)) {
-                terms.push(c.to_string());
-            }
-        }
-
-        if terms.is_empty() {
-            Ok(String::new())
-        } else {
-            Ok(format!("Dictation vocabulary: {}.", terms.join(", ")))
-        }
+        // High-priority brand terms only to prevent prompt biasing from overriding
+        // common English vocabulary (e.g. preventing proper names like 'Abhinav' from overriding 'happiness').
+        // User dictionary replacements and learned personal vocabulary are safely and deterministically
+        // applied in the post-processing personalization pipeline.
+        let core_terms = ["VoxQuest", "Wispr Flow"];
+        Ok(format!("{}.", core_terms.join(", ")))
     }
 
     pub fn record_vocabulary_application(&self, rule_ids: &[i64]) -> Result<(), String> {
