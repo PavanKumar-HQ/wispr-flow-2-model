@@ -1215,11 +1215,16 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
         let app_pill = app.clone();
         let target_id = final_snap.session_id.clone();
         tauri::async_runtime::spawn(async move {
-            tokio::time::sleep(tokio::time::Duration::from_millis(1500)).await;
+            tokio::time::sleep(tokio::time::Duration::from_millis(1200)).await;
             if let Some(state) = app_pill.try_state::<AppState>() {
-                let sess = state.active_session.lock().unwrap();
-                if sess.session_id != target_id || sess.state.is_active() {
-                    return;
+                let mut sess = state.active_session.lock().unwrap();
+                if sess.session_id == target_id && !sess.state.is_active() {
+                    sess.state = SessionState::Idle;
+                    sess.message = Some("Ready to dictate. Press shortcut or click pill.".to_string());
+                    sess.last_transcript = None;
+                    sess.sequence += 1;
+                    let snap = sess.clone();
+                    let _ = app_pill.emit("dictation-session-changed", &snap);
                 }
             }
             crate::run_on_main_thread(move || {
@@ -1465,13 +1470,13 @@ pub fn toggle_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Se
 
     match current_state {
         SessionState::Recording => {
-            // Guard against accidental double-press / key-repeat stopping immediately (< 600ms)
+            // Guard against accidental double-press / key-repeat stopping immediately (< 200ms)
             let elapsed_ms = {
                 let start_lock = state.recording_start.lock().unwrap();
                 start_lock.map(|s| s.elapsed().as_millis()).unwrap_or(1000)
             };
-            if elapsed_ms < 600 {
-                // Ignore stop request if recording started less than 600ms ago
+            if elapsed_ms < 200 {
+                // Ignore stop request if recording started less than 200ms ago
                 let session_lock = state.active_session.lock().unwrap();
                 return Ok(session_lock.clone());
             }

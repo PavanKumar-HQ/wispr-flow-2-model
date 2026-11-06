@@ -112,7 +112,7 @@ export default function App() {
             }
             return prev;
           });
-        }, 8000);
+        }, 1200);
       }
     });
 
