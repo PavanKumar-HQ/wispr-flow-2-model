@@ -14,6 +14,7 @@ pub struct AppUsageStat {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct InsightsData {
     pub total_words: u64,
+    pub total_characters: u64,
     pub total_sessions: u64,
     pub average_wpm: u32,
     pub total_duration_seconds: f32,
@@ -432,6 +433,7 @@ impl HistoryDatabase {
         ).map_err(|e| format!("DB prepare failed: {}", e))?;
 
         let mut total_words: u64 = 0;
+        let mut total_characters: u64 = 0;
         let mut total_duration_seconds: f32 = 0.0;
         let mut total_sessions: u64 = 0;
         let mut app_counts: std::collections::HashMap<String, u64> = std::collections::HashMap::new();
@@ -449,6 +451,7 @@ impl HistoryDatabase {
             if let Ok((text, dur, ts, app)) = r {
                 let wc = text.split_whitespace().count() as u64;
                 total_words += wc;
+                total_characters += text.chars().count() as u64;
                 total_duration_seconds += dur;
                 total_sessions += 1;
 
@@ -494,6 +497,7 @@ impl HistoryDatabase {
 
         Ok(InsightsData {
             total_words,
+            total_characters,
             total_sessions,
             average_wpm,
             total_duration_seconds,

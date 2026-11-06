@@ -155,6 +155,12 @@ export default function App() {
     };
   }, []);
 
+  useEffect(() => {
+    if (activeTab === 'insights') {
+      loadInsights();
+    }
+  }, [activeTab]);
+
   const loadAllData = async () => {
     const loadedSettings = await loadSettings();
     await loadModels(loadedSettings);

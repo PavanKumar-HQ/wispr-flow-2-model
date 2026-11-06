@@ -42,6 +42,7 @@ export interface AppUsageStat {
 
 export interface InsightsData {
   total_words: number;
+  total_characters?: number;
   total_sessions: number;
   average_wpm: number;
   total_duration_seconds: number;

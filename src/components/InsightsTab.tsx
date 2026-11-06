@@ -21,7 +21,7 @@ export const InsightsTab: React.FC<InsightsTabProps> = ({
     return sum + h.formatted_text.trim().split(/\s+/).filter(Boolean).length;
   }, 0);
 
-  const totalChars = history.reduce((sum, h) => sum + h.formatted_text.length, 0);
+  const totalChars = insights?.total_characters ?? history.reduce((sum, h) => sum + h.formatted_text.length, 0);
   const totalDurationSecs = insights?.total_duration_seconds ?? history.reduce((sum, h) => sum + (h.duration_seconds || 0), 0);
   const totalSessions = insights?.total_sessions ?? history.length;
 
