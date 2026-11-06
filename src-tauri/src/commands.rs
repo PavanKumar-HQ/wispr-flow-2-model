@@ -651,7 +651,11 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
     let had_recent_tech = LAST_TECHNICAL_JARGON_TIME.lock().ok().and_then(|t| *t).map(|t| t.elapsed().as_secs() < 600).unwrap_or(false);
 
     let current_info = if settings.enable_auto_model_routing || settings.default_model_id == "auto" {
-        let prefers_high_precision = is_dev_app || had_recent_tech || duration_sec >= 4.0;
+        let prefers_high_precision = if settings.power_save_mode {
+            false
+        } else {
+            (is_dev_app && had_recent_tech) || duration_sec >= 30.0
+        };
 
         if prefers_high_precision {
             // Find highest-tier downloaded model: Large-v3-Turbo -> Small -> Base -> Tiny

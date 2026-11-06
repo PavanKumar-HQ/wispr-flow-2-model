@@ -112,6 +112,42 @@ pub fn extract_correction_candidates(original: &str, edited: &str) -> Vec<Extrac
         return Vec::new();
     }
 
+    // Targeted single or double word edit (e.g. user selected one word from the dictation in an external app and edited it)
+    if edit_tokens.len() <= 2 && orig_tokens.len() > edit_tokens.len() {
+        let edit_word = &edit_tokens[0];
+        let mut best_match: Option<(&String, usize)> = None;
+
+        for orig_tok in &orig_tokens {
+            let dist = edit_distance(&orig_tok.to_lowercase(), &edit_word.to_lowercase());
+            let max_l = orig_tok.len().max(edit_word.len());
+            // If identical except casing, or close typo/spelling edit distance
+            if orig_tok.eq_ignore_ascii_case(edit_word) || (max_l >= 4 && dist <= 2) || (max_l >= 6 && dist <= 3) {
+                if let Some((_, best_dist)) = best_match {
+                    if dist < best_dist {
+                        best_match = Some((orig_tok, dist));
+                    }
+                } else {
+                    best_match = Some((orig_tok, dist));
+                }
+            }
+        }
+
+        if let Some((matched_orig, _)) = best_match {
+            if matched_orig != edit_word {
+                let is_casing = matched_orig.eq_ignore_ascii_case(edit_word);
+                return vec![ExtractedCandidate {
+                    original_span: matched_orig.clone(),
+                    preferred_span: edit_word.clone(),
+                    entry_type: if is_casing { "spelling".to_string() } else { "general".to_string() },
+                    context_left: None,
+                    context_right: None,
+                    confidence: 0.95,
+                    is_unambiguous: true,
+                }];
+            }
+        }
+    }
+
     // Safeguard: If length difference is drastic (>60% token delta),
     // this is a semantic rewrite / total replacement, NOT a vocabulary correction.
     let len_diff = (orig_tokens.len() as isize - edit_tokens.len() as isize).abs() as usize;
@@ -490,6 +526,17 @@ mod tests {
 
         // Because length and tokens diverge drastically, no bogus dictionary candidates are generated!
         assert!(candidates.is_empty());
+    }
+
+    #[test]
+    fn test_targeted_selected_word_correction_extraction() {
+        let orig = "I love working with wisper flow on my mac";
+        let edit = "Wispr";
+        let candidates = extract_correction_candidates(orig, edit);
+
+        assert_eq!(candidates.len(), 1);
+        assert_eq!(candidates[0].original_span, "wisper");
+        assert_eq!(candidates[0].preferred_span, "Wispr");
     }
 
     #[test]

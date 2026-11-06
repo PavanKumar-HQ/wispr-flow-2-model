@@ -1152,12 +1152,33 @@ pub fn read_focused_element_text_for_pid(pid: u32) -> Result<Option<String>, Str
         let mut val_ref: CFTypeRef = std::ptr::null();
         let val_err = AXUIElementCopyAttributeValue(target_elem as AXUIElementRef, ax_value_key, &mut val_ref);
         CFRelease(ax_value_key);
-        CFRelease(target_elem);
 
         if val_err == 0 && !val_ref.is_null() {
             let s = cf_or_ns_to_string(val_ref);
             CFRelease(val_ref);
-            return Ok(s);
+            if let Some(ref text) = s {
+                if !text.trim().is_empty() {
+                    CFRelease(target_elem);
+                    return Ok(s);
+                }
+            }
+        }
+
+        // Fallback: Read selected text from AXSelectedText (for apps like Slack, Chrome, VS Code when user selects a word)
+        let ax_selected_key = str_to_cfstring("AXSelectedText");
+        let mut sel_ref: CFTypeRef = std::ptr::null();
+        let sel_err = AXUIElementCopyAttributeValue(target_elem as AXUIElementRef, ax_selected_key, &mut sel_ref);
+        CFRelease(ax_selected_key);
+        CFRelease(target_elem);
+
+        if sel_err == 0 && !sel_ref.is_null() {
+            let s = cf_or_ns_to_string(sel_ref);
+            CFRelease(sel_ref);
+            if let Some(ref text) = s {
+                if !text.trim().is_empty() {
+                    return Ok(s);
+                }
+            }
         }
 
         Ok(None)

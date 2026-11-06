@@ -70,6 +70,7 @@ impl DestinationSyncService {
         // Spawn bounded async observation task using Tauri's global runtime
         tauri::async_runtime::spawn(async move {
             let debounce_threshold = Duration::from_millis(500);
+            let mut consecutive_none_count = 0;
 
             loop {
                 // Adaptive power-conserving sleep duration:
@@ -150,8 +151,20 @@ impl DestinationSyncService {
                 // 4. Read current text from target element via native Accessibility
                 let read_res = crate::safety_service::read_focused_element_text_for_pid(pid);
                 let current_field_text = match read_res {
-                    Ok(Some(text)) => text,
-                    Ok(None) => continue, // Element momentarily busy or focus shifted
+                    Ok(Some(text)) => {
+                        consecutive_none_count = 0;
+                        text
+                    }
+                    Ok(None) => {
+                        consecutive_none_count += 1;
+                        if consecutive_none_count >= 5 {
+                            // Target application element does not expose AX accessibility text; exit to preserve battery!
+                            let mut lock = active_sess_arc.lock().unwrap();
+                            *lock = None;
+                            break;
+                        }
+                        continue;
+                    }
                     Err(_) => {
                         // Secure field or permission revoked -> stop immediately
                         let mut lock = active_sess_arc.lock().unwrap();

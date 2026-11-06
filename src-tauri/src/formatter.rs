@@ -92,6 +92,9 @@ pub fn format_transcript_with_metadata(raw: &str, config: &FormattingConfig) -> 
         meta.stages_run.push("spoken_punctuation".to_string());
     }
 
+    // Stage 2.5: Automatic Spoken Lists (Numbered & Bulleted Lists)
+    text = format_spoken_lists(&text);
+
     // Stage 3: Conservative Sentence Capitalization
     if config.auto_capitalization {
         let (cap_text, count) = capitalize_sentences_conservative(&text);
@@ -1233,6 +1236,166 @@ fn remove_conservative_fillers_audited(input: &str) -> (String, usize) {
     (kept.join(" "), removed_count)
 }
 
+#[derive(Debug, Clone, PartialEq)]
+enum ListMarkerType {
+    Numbered(usize),
+    Bullet,
+}
+
+fn word_to_list_number(clean: &str) -> Option<usize> {
+    match clean {
+        "1" | "one" => Some(1),
+        "2" | "two" => Some(2),
+        "3" | "three" => Some(3),
+        "4" | "four" => Some(4),
+        "5" | "five" => Some(5),
+        "6" | "six" => Some(6),
+        "7" | "seven" => Some(7),
+        "8" | "eight" => Some(8),
+        "9" | "nine" => Some(9),
+        "10" | "ten" => Some(10),
+        _ => None,
+    }
+}
+
+fn capitalize_first_char(s: &str) -> String {
+    let mut chars = s.chars();
+    match chars.next() {
+        None => String::new(),
+        Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
+    }
+}
+
+/// Automatically detects spoken numbered lists (e.g. "point 1 this must be done point 2 this must be done", "1 this must be done 2 this must be done")
+/// and bullet lists (e.g. "bullet point buy milk bullet point call mom") and formats them with line breaks and prefixes.
+pub fn format_spoken_lists(input: &str) -> String {
+    let words: Vec<&str> = input.split_whitespace().collect();
+    if words.len() < 3 {
+        return input.to_string();
+    }
+
+    let mut detected_markers: Vec<(usize, usize, ListMarkerType)> = Vec::new();
+    let mut i = 0;
+
+    while i < words.len() {
+        let curr_clean = clean_word_for_matching(words[i]);
+        let next_clean = if i + 1 < words.len() { clean_word_for_matching(words[i + 1]) } else { String::new() };
+
+        // Pattern A: "bullet point" or existing bullet "•"
+        if curr_clean == "bullet" && next_clean == "point" {
+            detected_markers.push((i, 2, ListMarkerType::Bullet));
+            i += 2;
+            continue;
+        } else if curr_clean == "•" || words[i] == "•" {
+            detected_markers.push((i, 1, ListMarkerType::Bullet));
+            i += 1;
+            continue;
+        }
+
+        // Pattern B: "point N", "number N", "item N"
+        if (curr_clean == "point" || curr_clean == "number" || curr_clean == "item") && !next_clean.is_empty() {
+            if let Some(num) = word_to_list_number(&next_clean) {
+                detected_markers.push((i, 2, ListMarkerType::Numbered(num)));
+                i += 2;
+                continue;
+            }
+        }
+
+        // Pattern C: standalone digit "1", "2", "3" (or "1.", "2.", "1,", "2,")
+        let digit_str = words[i].trim_matches(|c: char| !c.is_alphanumeric());
+        if let Some(num) = word_to_list_number(digit_str) {
+            let prev_clean = if i > 0 { clean_word_for_matching(words[i - 1]) } else { String::new() };
+            let is_conjunction = matches!(prev_clean.as_str(), "and" | "or" | "have" | "has" | "had" | "with" | "plus" | "minus" | "than" | "about" | "around");
+
+            let expected_num = match detected_markers.last() {
+                Some((_, _, ListMarkerType::Numbered(prev_n))) => prev_n + 1,
+                _ => 1,
+            };
+
+            if !is_conjunction && (num == expected_num) && (i == 0 || words[i - 1].ends_with('.') || words[i - 1].ends_with(':') || words[i - 1].ends_with(';') || words[i - 1].ends_with(',') || !detected_markers.is_empty()) {
+                detected_markers.push((i, 1, ListMarkerType::Numbered(num)));
+                i += 1;
+                continue;
+            }
+        }
+
+        i += 1;
+    }
+
+    if detected_markers.len() < 2 {
+        return input.to_string();
+    }
+
+    // Verify sequential integrity
+    let mut is_valid_sequence = true;
+    let mut prev_num = 0;
+    for (_, _, marker) in &detected_markers {
+        match marker {
+            ListMarkerType::Numbered(n) => {
+                if prev_num == 0 {
+                    if *n != 1 {
+                        is_valid_sequence = false;
+                        break;
+                    }
+                } else if *n != prev_num + 1 {
+                    is_valid_sequence = false;
+                    break;
+                }
+                prev_num = *n;
+            }
+            ListMarkerType::Bullet => {}
+        }
+    }
+
+    if !is_valid_sequence {
+        return input.to_string();
+    }
+
+    let mut result_parts: Vec<String> = Vec::new();
+    let first_marker_idx = detected_markers[0].0;
+
+    // Optional preamble before first item (e.g. "Here are the tasks:")
+    if first_marker_idx > 0 {
+        let preamble = words[0..first_marker_idx].join(" ");
+        let mut preamble_clean = preamble.trim().to_string();
+        if !preamble_clean.ends_with(':') && !preamble_clean.ends_with('.') && !preamble_clean.ends_with('?') {
+            preamble_clean.push(':');
+        }
+        result_parts.push(preamble_clean);
+    }
+
+    for (k, (start_idx, marker_len, marker_type)) in detected_markers.iter().enumerate() {
+        let content_start = start_idx + marker_len;
+        let content_end = if k + 1 < detected_markers.len() {
+            detected_markers[k + 1].0
+        } else {
+            words.len()
+        };
+
+        if content_start >= content_end {
+            continue;
+        }
+
+        let item_content = words[content_start..content_end].join(" ");
+        let mut item_trimmed = item_content.trim();
+        if item_trimmed.starts_with(':') || item_trimmed.starts_with('-') || item_trimmed.starts_with(',') {
+            item_trimmed = item_trimmed[1..].trim();
+        }
+
+        let capitalized = capitalize_first_char(item_trimmed);
+        match marker_type {
+            ListMarkerType::Numbered(n) => {
+                result_parts.push(format!("{}. {}", n, capitalized));
+            }
+            ListMarkerType::Bullet => {
+                result_parts.push(format!("• {}", capitalized));
+            }
+        }
+    }
+
+    result_parts.join("\n")
+}
+
 /// Capitalizes sentence starts following recognized sentence-ending punctuation and paragraph breaks,
 /// while protecting abbreviations (Mr., Dr., e.g., i.e.), decimals (3.14), and acronyms.
 fn capitalize_sentences_conservative(input: &str) -> (String, usize) {
@@ -2259,5 +2422,30 @@ mod tests {
         // 5. Normal prose should not strip period: "I like using git for version control."
         let res5 = format_transcript("I like using git for version control.", &cfg);
         assert_eq!(res5, "I like using git for version control.");
+    }
+
+    #[test]
+    fn test_spoken_lists_and_bullet_points() {
+        let cfg = FormattingConfig::default();
+
+        // 1. Point 1, Point 2 list:
+        let res1 = format_transcript("point 1 this must be done point 2 this must be done", &cfg);
+        assert_eq!(res1, "1. This must be done\n2. This must be done");
+
+        // 2. Direct numbered list: "1 this must be done 2 this must be done"
+        let res2 = format_transcript("1 this must be done 2 this must be done", &cfg);
+        assert_eq!(res2, "1. This must be done\n2. This must be done");
+
+        // 3. Word numbers: "point one this must be done point two this must be done"
+        let res3 = format_transcript("point one this must be done point two this must be done", &cfg);
+        assert_eq!(res3, "1. This must be done\n2. This must be done");
+
+        // 4. Multiple bullet points:
+        let res4 = format_transcript("bullet point buy milk bullet point call mom", &cfg);
+        assert_eq!(res4, "• Buy milk\n• Call mom");
+
+        // 5. Normal prose with counting must NOT turn into a list:
+        let res5 = format_transcript("I have 1 apple and 2 oranges.", &cfg);
+        assert_eq!(res5, "I have 1 apple and 2 oranges.");
     }
 }
