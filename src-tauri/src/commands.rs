@@ -1171,6 +1171,9 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
 
     let final_snap = session_lock.clone();
     let _ = app.emit("dictation-session-changed", &final_snap);
+    if final_snap.state == SessionState::Completed {
+        let _ = app.emit("dictionary-updated", ());
+    }
 
     // Auto-dismiss pill after dictation: in push-to-talk, dismiss swiftly (1.5s) after text delivery
     if final_snap.state == SessionState::Completed {
@@ -1554,13 +1557,17 @@ pub fn get_dictionary_entries(state: State<'_, AppState>) -> Result<Vec<crate::h
 }
 
 #[tauri::command]
-pub fn add_dictionary_entry(state: State<'_, AppState>, original: String, replacement: String, category: String) -> Result<i64, String> {
-    state.history.add_dictionary_entry(&original, &replacement, &category)
+pub fn add_dictionary_entry(state: State<'_, AppState>, app: AppHandle, original: String, replacement: String, category: String) -> Result<i64, String> {
+    let id = state.history.add_dictionary_entry(&original, &replacement, &category)?;
+    let _ = app.emit("dictionary-updated", ());
+    Ok(id)
 }
 
 #[tauri::command]
-pub fn delete_dictionary_entry(state: State<'_, AppState>, id: i64) -> Result<(), String> {
-    state.history.delete_dictionary_entry(id)
+pub fn delete_dictionary_entry(state: State<'_, AppState>, app: AppHandle, id: i64) -> Result<(), String> {
+    state.history.delete_dictionary_entry(id)?;
+    let _ = app.emit("dictionary-updated", ());
+    Ok(())
 }
 
 #[tauri::command]
@@ -1841,6 +1848,7 @@ pub fn get_personal_vocabulary(
 #[allow(non_snake_case)]
 pub fn add_personal_vocabulary_entry(
     state: State<'_, AppState>,
+    app: AppHandle,
     original: String,
     preferred: String,
     entry_type: Option<String>,
@@ -1849,22 +1857,27 @@ pub fn add_personal_vocabulary_entry(
     source: Option<String>,
 ) -> Result<crate::personalization_service::PersonalVocabularyEntry, String> {
     let cat = entry_type.or(entryType).unwrap_or_else(|| "name".to_string());
-    state.history.add_personal_vocabulary(
+    let entry = state.history.add_personal_vocabulary(
         &original,
         &preferred,
         &cat,
         status.as_deref().unwrap_or("active"),
         source.as_deref(),
-    )
+    )?;
+    let _ = app.emit("dictionary-updated", ());
+    Ok(entry)
 }
 
 #[tauri::command]
 pub fn toggle_personal_vocabulary_entry(
     state: State<'_, AppState>,
+    app: AppHandle,
     id: i64,
     active: bool,
 ) -> Result<(), String> {
-    state.history.toggle_personal_vocabulary(id, active)
+    state.history.toggle_personal_vocabulary(id, active)?;
+    let _ = app.emit("dictionary-updated", ());
+    Ok(())
 }
 
 #[tauri::command]
@@ -1886,6 +1899,7 @@ pub fn propose_correction_rules(
 #[allow(non_snake_case)]
 pub fn update_personal_vocabulary_entry(
     state: State<'_, AppState>,
+    app: AppHandle,
     id: i64,
     original_text: Option<String>,
     originalText: Option<String>,
@@ -1905,32 +1919,43 @@ pub fn update_personal_vocabulary_entry(
         pref.as_deref(),
         cat.as_deref(),
         Some(&stat),
-    )
+    )?;
+    let _ = app.emit("dictionary-updated", ());
+    Ok(())
 }
 
 #[tauri::command]
 pub fn delete_personal_vocabulary_entry(
     state: State<'_, AppState>,
+    app: AppHandle,
     id: i64,
 ) -> Result<(), String> {
-    state.history.delete_personal_vocabulary(id)
+    state.history.delete_personal_vocabulary(id)?;
+    let _ = app.emit("dictionary-updated", ());
+    Ok(())
 }
 
 #[tauri::command]
 pub fn reset_personalization(
     state: State<'_, AppState>,
+    app: AppHandle,
 ) -> Result<(), String> {
-    state.history.reset_personalization()
+    state.history.reset_personalization()?;
+    let _ = app.emit("dictionary-updated", ());
+    Ok(())
 }
 
 #[tauri::command]
 pub fn submit_transcript_correction(
     state: State<'_, AppState>,
+    app: AppHandle,
     session_id: Option<String>,
     original_text: String,
     final_text: String,
 ) -> Result<Vec<crate::personalization_service::PersonalVocabularyEntry>, String> {
-    state.history.record_correction_event(session_id.as_deref(), &original_text, &final_text)
+    let entries = state.history.record_correction_event(session_id.as_deref(), &original_text, &final_text)?;
+    let _ = app.emit("dictionary-updated", ());
+    Ok(entries)
 }
 
 #[tauri::command]
@@ -2048,6 +2073,7 @@ pub fn compose_thought_to_spec_cmd(text: String) -> Result<crate::prompt_service
 #[tauri::command]
 pub fn ingest_project_context_capsule_cmd(
     state: State<'_, AppState>,
+    app: AppHandle,
     project_name: String,
     project_path: Option<String>,
 ) -> Result<IngestCapsuleResult, String> {
@@ -2118,6 +2144,10 @@ pub fn ingest_project_context_capsule_cmd(
         if state.history.add_personal_vocabulary(&term.to_lowercase(), term, "tech", "active", Some("capsule")).is_ok() {
             count += 1;
         }
+    }
+
+    if count > 0 {
+        let _ = app.emit("dictionary-updated", ());
     }
 
     Ok(IngestCapsuleResult {

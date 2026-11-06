@@ -655,6 +655,7 @@ impl HistoryDatabase {
         );
 
         let candidates = crate::personalization_service::extract_correction_candidates(orig_clean, final_clean);
+        let mut affected_entries = Vec::new();
 
         for cand in candidates {
             let cand_orig = cand.original_span.trim();
@@ -673,65 +674,69 @@ impl HistoryDatabase {
                 |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?, row.get(5)?, row.get(6)?)),
             ).ok();
 
-            if let Some((id, _orig, prev_pref, _conf, pos, neg, status)) = existing {
-                if prev_pref.trim().eq_ignore_ascii_case(cand_pref) {
-                    // Confirmed preferred spelling
-                    let new_pos = pos + 1;
-                    let new_conf = ((new_pos as f32 + 1.0) / (new_pos as f32 + neg as f32 + 2.0)).min(1.0);
-                    let new_status = if new_pos >= 2 && status == "candidate" {
-                        "active"
-                    } else {
-                        &status
-                    };
+            let entry_id = if let Some((id, _orig, _prev_pref, _conf, pos, _neg, _status)) = existing {
+                // Direct user correction: immediately promote to active with confirmed preference
+                let new_pos = pos + 1;
+                let new_conf: f32 = 0.95;
+                let new_status = "active";
 
-                    let _ = conn.execute(
-                        "UPDATE personal_vocabulary SET positive_count = ?1, confidence = ?2, status = ?3, preferred_text = ?4, correction_count = correction_count + 1, updated_at = ?5 WHERE id = ?6",
-                        params![new_pos, new_conf, new_status, cand_pref, now, id],
-                    );
-
-                    // Also mirror into custom_dictionary so the user sees a direct record in their Dictionary
-                    let _ = conn.execute(
-                        "INSERT OR REPLACE INTO custom_dictionary (original_phrase, replacement_phrase, category, created_at) VALUES (?1, ?2, ?3, ?4)",
-                        params![cand_orig, cand_pref, cand.entry_type, now],
-                    );
-                } else {
-                    // Contradiction / Reversion / Alternative
-                    let new_neg = neg + 1;
-                    let new_conf = ((pos as f32 + 1.0) / (pos as f32 + new_neg as f32 + 2.0)).min(1.0);
-                    let new_status = if new_conf < 0.40 { "disabled" } else { &status };
-
-                    let _ = conn.execute(
-                        "UPDATE personal_vocabulary SET negative_count = ?1, confidence = ?2, status = ?3, updated_at = ?4 WHERE id = ?5",
-                        params![new_neg, new_conf, new_status, now, id],
-                    );
-
-                    // Insert the new candidate
-                    let _ = conn.execute(
-                        "INSERT INTO personal_vocabulary (original_text, preferred_text, entry_type, confidence, positive_count, negative_count, status, recognition_count, correction_count, application_count, last_used_at, created_at, updated_at, source)
-                         VALUES (?1, ?2, ?3, 0.55, 1, 0, 'candidate', 0, 1, 0, NULL, ?4, ?4, 'learned')",
-                        params![cand_orig, cand_pref, cand.entry_type, now],
-                    );
-                }
+                let _ = conn.execute(
+                    "UPDATE personal_vocabulary SET positive_count = ?1, confidence = ?2, status = ?3, preferred_text = ?4, correction_count = correction_count + 1, updated_at = ?5 WHERE id = ?6",
+                    params![new_pos, new_conf, new_status, cand_pref, now, id],
+                );
+                id
             } else {
                 // New candidate from user's direct edit:
                 // Automatically set to 'active' with high confidence so subsequent dictations use it immediately
                 let initial_status = "active";
-                let initial_conf: f32 = 0.85;
+                let initial_conf: f32 = 0.95;
                 let _ = conn.execute(
                     "INSERT INTO personal_vocabulary (original_text, preferred_text, entry_type, confidence, positive_count, negative_count, status, recognition_count, correction_count, application_count, last_used_at, created_at, updated_at, source)
                      VALUES (?1, ?2, ?3, ?4, 1, 0, ?5, 0, 1, 0, NULL, ?6, ?6, 'learned')",
                     params![cand_orig, cand_pref, cand.entry_type, initial_conf, initial_status, now],
                 );
+                conn.last_insert_rowid()
+            };
 
-                // Mirror into custom_dictionary so the user sees a direct record in their Dictionary
-                let _ = conn.execute(
-                    "INSERT OR REPLACE INTO custom_dictionary (original_phrase, replacement_phrase, category, created_at) VALUES (?1, ?2, ?3, ?4)",
-                    params![cand_orig, cand_pref, cand.entry_type, now],
-                );
+            // Synchronize with custom_dictionary so the user sees a direct record in their Dictionary
+            let _ = conn.execute(
+                "DELETE FROM custom_dictionary WHERE LOWER(TRIM(original_phrase)) = LOWER(TRIM(?1))",
+                params![cand_orig],
+            );
+            let _ = conn.execute(
+                "INSERT INTO custom_dictionary (original_phrase, replacement_phrase, category, created_at) VALUES (?1, ?2, ?3, ?4)",
+                params![cand_orig, cand_pref, cand.entry_type, now],
+            );
+
+            // Fetch the updated/inserted entry to return in affected_entries
+            if let Ok(entry) = conn.query_row(
+                "SELECT id, original_text, preferred_text, entry_type, context_domain, confidence, positive_count, negative_count, status, recognition_count, correction_count, application_count, last_used_at, created_at, updated_at, source
+                 FROM personal_vocabulary WHERE id = ?1",
+                params![entry_id],
+                |row| Ok(crate::personalization_service::PersonalVocabularyEntry {
+                    id: row.get(0)?,
+                    original_text: row.get(1)?,
+                    preferred_text: row.get(2)?,
+                    entry_type: row.get(3)?,
+                    context_domain: row.get(4)?,
+                    confidence: row.get(5)?,
+                    positive_count: row.get(6)?,
+                    negative_count: row.get(7)?,
+                    status: row.get(8)?,
+                    recognition_count: row.get(9).unwrap_or(0),
+                    correction_count: row.get(10).unwrap_or(0),
+                    application_count: row.get(11).unwrap_or(0),
+                    last_used_at: row.get(12).ok(),
+                    created_at: row.get(13)?,
+                    updated_at: row.get(14)?,
+                    source: row.get(15).unwrap_or_else(|_| "learned".to_string()),
+                }),
+            ) {
+                affected_entries.push(entry);
             }
         }
 
-        self.list_personal_vocabulary(None)
+        Ok(affected_entries)
     }
 
     pub fn list_personal_vocabulary(

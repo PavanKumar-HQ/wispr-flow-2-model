@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BookA, Plus, Trash2, Search, Tag, Check, Info, CheckCircle2, XCircle, RotateCcw, Download, Mail, Phone, Link2, Zap, Box, FolderCode, RefreshCw, Pencil } from 'lucide-react';
-import { safeInvoke } from '../lib/ipc';
+import { safeInvoke, safeListen } from '../lib/ipc';
 import { DictionaryEntry, PersonalVocabularyEntry, IngestCapsuleResult } from '../types';
 
 export const DictionaryTab: React.FC = () => {
@@ -76,9 +76,9 @@ export const DictionaryTab: React.FC = () => {
     }
   };
 
-  const loadAll = async () => {
+  const loadAll = async (isInitial = false) => {
     try {
-      setLoading(true);
+      if (isInitial) setLoading(true);
       const [dictData, vocabData] = await Promise.all([
         safeInvoke<DictionaryEntry[]>('get_dictionary_entries'),
         safeInvoke<PersonalVocabularyEntry[]>('get_personal_vocabulary'),
@@ -146,7 +146,18 @@ export const DictionaryTab: React.FC = () => {
   };
 
   useEffect(() => {
-    loadAll();
+    loadAll(true);
+
+    let unlisten: (() => void) | undefined;
+    safeListen('dictionary-updated', () => {
+      loadAll(false);
+    }).then((fn) => {
+      unlisten = fn;
+    });
+
+    return () => {
+      if (unlisten) unlisten();
+    };
   }, []);
 
   const handleAdd = async (e: React.FormEvent) => {

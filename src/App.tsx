@@ -122,6 +122,10 @@ export default function App() {
       loadInsights();
     });
 
+    const dictSyncPromise = safeListen('dictionary-updated', () => {
+      loadInsights();
+    });
+
     // In floating pill window, aggressively poll session snapshot every 150ms to ensure 0-latency status sync
     let syncInterval: ReturnType<typeof setInterval> | null = null;
     if (isPillOnlyWindow) {
@@ -151,6 +155,7 @@ export default function App() {
       compPromise.then((fn) => fn && fn());
       sessionPromise.then((fn) => fn && fn());
       destSyncPromise.then((fn) => fn && fn());
+      dictSyncPromise.then((fn) => fn && fn());
       if (syncInterval) clearInterval(syncInterval);
     };
   }, []);
