@@ -667,6 +667,9 @@ impl HistoryDatabase {
             if cand_orig.is_empty() || cand_pref.is_empty() || (cand_orig.eq_ignore_ascii_case(cand_pref) && cand_orig == cand_pref) {
                 continue;
             }
+            if crate::personalization_service::is_blacklisted_common_word(cand_orig) || crate::personalization_service::is_blacklisted_common_word(cand_pref) {
+                continue;
+            }
 
             // Look up existing entries for this original phrase (case-insensitive)
             let existing: Option<(i64, String, String, f32, i32, i32, String)> = conn.query_row(

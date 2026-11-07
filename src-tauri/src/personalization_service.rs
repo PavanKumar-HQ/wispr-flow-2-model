@@ -96,6 +96,22 @@ fn compute_lcs(a: &[String], b: &[String]) -> Vec<Vec<usize>> {
 
 /// Deterministically extracts conservative vocabulary and spelling correction candidates
 /// from a comparison between original transcription and user-finalized edited text.
+pub fn is_blacklisted_common_word(word: &str) -> bool {
+    let w = word.trim().to_lowercase();
+    matches!(
+        w.as_str(),
+        "it" | "its" | "is" | "was" | "are" | "were" | "the" | "a" | "an" | "and" | "or" | "but"
+            | "in" | "on" | "at" | "to" | "for" | "of" | "with" | "by" | "from" | "that" | "this"
+            | "these" | "those" | "so" | "if" | "not" | "no" | "yes" | "do" | "does" | "did"
+            | "have" | "has" | "had" | "can" | "could" | "will" | "would" | "shall" | "should"
+            | "may" | "might" | "must" | "be" | "been" | "being" | "he" | "she" | "they" | "we"
+            | "you" | "i" | "me" | "him" | "her" | "us" | "them" | "my" | "your" | "his"
+            | "their" | "our" | "what" | "which" | "who" | "whom" | "whose" | "when" | "where"
+            | "why" | "how" | "all" | "any" | "both" | "each" | "few" | "more" | "most" | "other"
+            | "some" | "such" | "than" | "too" | "very" | "just" | "see" | "like" | "properly"
+    )
+}
+
 pub fn extract_correction_candidates(original: &str, edited: &str) -> Vec<ExtractedCandidate> {
     let orig_clean = original.trim();
     let edit_clean = edited.trim();
@@ -135,6 +151,10 @@ pub fn extract_correction_candidates(original: &str, edited: &str) -> Vec<Extrac
         if let Some((matched_orig, _)) = best_match {
             if matched_orig != edit_word {
                 let is_casing = matched_orig.eq_ignore_ascii_case(edit_word);
+                // Never learn casing or substitutions for common stop words (e.g. "it" -> "It")
+                if is_blacklisted_common_word(matched_orig) || is_blacklisted_common_word(edit_word) {
+                    return Vec::new();
+                }
                 return vec![ExtractedCandidate {
                     original_span: matched_orig.clone(),
                     preferred_span: edit_word.clone(),
@@ -233,12 +253,11 @@ pub fn extract_correction_candidates(original: &str, edited: &str) -> Vec<Extrac
             continue;
         }
 
-        // Avoid creating dictionary rules from ordinary English stopword swaps (e.g. "a" <-> "the", "in" <-> "at")
-        let stopwords = ["a", "an", "the", "in", "on", "at", "to", "for", "of", "with", "by", "is", "are", "was", "were"];
+        // Avoid creating dictionary rules from ordinary English stopword swaps (e.g. "a" <-> "the", "it" <-> "It")
         if orig_words.len() == 1 && edit_words.len() == 1 {
             let w1 = orig_words[0].to_lowercase();
             let w2 = edit_words[0].to_lowercase();
-            if stopwords.contains(&w1.as_str()) && stopwords.contains(&w2.as_str()) {
+            if is_blacklisted_common_word(&w1) || is_blacklisted_common_word(&w2) {
                 continue;
             }
         }
