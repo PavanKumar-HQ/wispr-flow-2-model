@@ -109,6 +109,7 @@ pub fn is_blacklisted_common_word(word: &str) -> bool {
             | "their" | "our" | "what" | "which" | "who" | "whom" | "whose" | "when" | "where"
             | "why" | "how" | "all" | "any" | "both" | "each" | "few" | "more" | "most" | "other"
             | "some" | "such" | "than" | "too" | "very" | "just" | "see" | "like" | "properly"
+            | "words" | "word" | "sure" | "okay" | "ok"
     )
 }
 
@@ -250,6 +251,11 @@ pub fn extract_correction_candidates(original: &str, edited: &str) -> Vec<Extrac
         }
 
         if orig_str == edit_str {
+            continue;
+        }
+
+        // Never learn replacements that are purely numbers or punctuation (e.g. "Okay sure" -> "'4'")
+        if edit_str.trim().chars().all(|c| c.is_ascii_digit() || c.is_ascii_punctuation()) {
             continue;
         }
 

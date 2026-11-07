@@ -76,6 +76,7 @@ pub fn format_transcript_with_metadata(raw: &str, config: &FormattingConfig) -> 
 
     // Stage 1: Conversational Speech Self-Correction & Repair (e.g. "at 4pm, oh no, 5pm" -> "at 5pm")
     if config.speech_repair {
+        text = repair_phonetic_speech_confusions(&text);
         let (repaired_text, count) = repair_speech_self_corrections(&text);
         text = repaired_text;
         meta.repairs_applied = count;
@@ -458,6 +459,91 @@ fn is_retraction_cue(w_curr: &str, prev_tok: &str, next_tok: &str, has_comma: bo
     }
 
     false
+}
+
+/// Automatically repairs high-frequency phonetic acoustic confusions and decompositions
+/// from Whisper (e.g. "charge her beauty" -> "ChatGPT", "picking the vats" -> "picking the words").
+pub fn repair_phonetic_speech_confusions(input: &str) -> String {
+    let mut text = input.to_string();
+
+    // 1. ChatGPT phonetic decompositions
+    let chatgpt_patterns = [
+        ("charge her beauty", "ChatGPT"),
+        ("Charge her beauty", "ChatGPT"),
+        ("charge her beat", "ChatGPT"),
+        ("Charge her beat", "ChatGPT"),
+        ("chatgot", "ChatGPT"),
+        ("Chatgot", "ChatGPT"),
+        ("chat got", "ChatGPT"),
+        ("Chat got", "ChatGPT"),
+        ("chai gpt", "ChatGPT"),
+        ("Chai GPT", "ChatGPT"),
+        ("chat, Pritik", "ChatGPT"),
+        ("chat, pritik", "ChatGPT"),
+    ];
+    for (pat, rep) in chatgpt_patterns {
+        if text.contains(pat) {
+            text = text.replace(pat, rep);
+        }
+    }
+
+    // 2. Accented / fast speech Indian English substitutions for "words" (e.g. [ʋəːdz] heard as "vats" or "volts")
+    let word_patterns = [
+        ("picking the vats", "picking the words"),
+        ("Picking the vats", "Picking the words"),
+        ("pick the vats", "pick the words"),
+        ("Pick the vats", "Pick the words"),
+        ("picking the volts", "picking the words"),
+        ("Picking the volts", "Picking the words"),
+        ("pick the volts", "pick the words"),
+        ("Pick the volts", "Pick the words"),
+        ("even the vats", "even the words"),
+        ("Even the vats", "Even the words"),
+        ("even the volts", "even the words"),
+        ("Even the volts", "Even the words"),
+        ("the vats like", "the words like"),
+        ("The vats like", "The words like"),
+        ("the volts like", "the words like"),
+        ("The volts like", "The words like"),
+        ("basic vats", "basic words"),
+        ("Basic vats", "Basic words"),
+        ("basic volts", "basic words"),
+        ("Basic volts", "Basic words"),
+        ("wrong vats", "wrong words"),
+        ("Wrong vats", "Wrong words"),
+        ("wrong volts", "wrong words"),
+        ("Wrong volts", "Wrong words"),
+        ("these vats", "these words"),
+        ("These vats", "These words"),
+        ("these volts", "these words"),
+        ("These volts", "These words"),
+        ("speaking vats", "speaking words"),
+        ("Speaking vats", "Speaking words"),
+        ("speaking volts", "speaking words"),
+        ("Speaking volts", "Speaking words"),
+        ("spoke vats", "spoke words"),
+        ("spoke volts", "spoke words"),
+    ];
+    for (pat, rep) in word_patterns {
+        if text.contains(pat) {
+            text = text.replace(pat, rep);
+        }
+    }
+
+    // 3. Gemini technical context
+    let gemini_patterns = [
+        ("so that the Germany can generate", "so that Gemini can generate"),
+        ("so that Germany can generate", "so that Gemini can generate"),
+        ("ask Germany to", "ask Gemini to"),
+        ("the Germany model", "the Gemini model"),
+    ];
+    for (pat, rep) in gemini_patterns {
+        if text.contains(pat) {
+            text = text.replace(pat, rep);
+        }
+    }
+
+    text
 }
 
 /// Automatically detects and resolves conversational self-corrections (speech repair)
@@ -2638,5 +2724,23 @@ mod tests {
         // 4. Literal word emoji without descriptor:
         let res6 = format_transcript("I like using this emoji.", &cfg);
         assert_eq!(res6, "I like using this emoji.");
+    }
+
+    #[test]
+    fn test_repair_phonetic_speech_confusions() {
+        let cfg = FormattingConfig::default();
+
+        // 1. User's exact prompt: "picking the vats" -> "picking the words" and "charge her beauty" -> "ChatGPT"
+        let res1 = format_transcript("The efficiency of picking the vats is drastically gone and it's not able to pick even the vats like charge her beauty those things", &cfg);
+        assert!(res1.contains("picking the words"), "Expected 'picking the words', got: {}", res1);
+        assert!(res1.contains("even the words like ChatGPT"), "Expected 'even the words like ChatGPT', got: {}", res1);
+
+        // 2. Chatgot / Chai GPT
+        let res2 = format_transcript("its chatgot not something else", &cfg);
+        assert!(res2.contains("ChatGPT"));
+
+        // 3. Volts confusion
+        let res3 = format_transcript("not able to pick the basic volts itself", &cfg);
+        assert!(res3.contains("basic words"));
     }
 }

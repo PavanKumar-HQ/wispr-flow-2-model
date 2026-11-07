@@ -1038,11 +1038,28 @@ impl HistoryDatabase {
     }
 
     pub fn get_active_biasing_prompt(&self) -> Result<String, String> {
-        // High-priority brand terms only to prevent prompt biasing from overriding
-        // common English vocabulary (e.g. preventing proper names like 'Abhinav' from overriding 'happiness').
-        // User dictionary replacements and learned personal vocabulary are safely and deterministically
-        // applied in the post-processing personalization pipeline.
-        let core_terms = ["VoxQuest", "Wispr Flow"];
+        // High-priority modern technical terminology, AI assistants, and core speech terms
+        // to guide Whisper's acoustic decoder and prevent pre-2022 phonetic decompositions
+        // (e.g. preventing 'ChatGPT' from decomposing into 'charge her beauty', 'Gemini' into 'Germany',
+        // and 'words' into 'vats' or 'volts' in fast or accented speech).
+        let core_terms = [
+            "ChatGPT",
+            "GPT-4",
+            "OpenAI",
+            "Claude",
+            "Gemini",
+            "Anthropic",
+            "AI",
+            "UI",
+            "UX",
+            "API",
+            "PR",
+            "words",
+            "dictation",
+            "speech recognition",
+            "VoxQuest",
+            "Wispr Flow",
+        ];
         Ok(format!("{}.", core_terms.join(", ")))
     }
 
