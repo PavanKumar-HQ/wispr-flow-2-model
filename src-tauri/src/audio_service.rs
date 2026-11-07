@@ -302,8 +302,8 @@ pub fn isolate_voice_and_suppress_noise(samples: &[f32], sample_rate: u32) -> Ve
     let noise_floor_idx = (sorted_rms.len() as f32 * 0.25).floor() as usize;
     let noise_floor = sorted_rms.get(noise_floor_idx).copied().unwrap_or(0.001).min(0.003);
 
-    // Adaptive threshold: sensitive to preserve weak consonants, soft accents, and fast transitions
-    let speech_threshold = (noise_floor * 1.2).clamp(0.0008, 0.0025);
+    // Sensitive adaptive threshold for soft, quiet, or whispered speech (down to 0.0004 RMS)
+    let speech_threshold = (noise_floor * 1.15).clamp(0.0004, 0.0022);
 
     // Identify first and last frame containing genuine user speech
     let first_speech_frame = frame_rms.iter().position(|&r| r >= speech_threshold);
@@ -326,11 +326,21 @@ pub fn isolate_voice_and_suppress_noise(samples: &[f32], sample_rate: u32) -> Ve
     let end_sample = (safe_end_frame * frame_size).min(hp_samples.len());
     let speech_samples = hp_samples[start_sample..end_sample].to_vec();
 
-    // 3. Gentle peak normalization (up to 4x) for quiet laptop mics without clipping distortion
+    // 3. Dynamic Speech AGC: automatically normalizes quiet/whispered speech into Whisper's optimal range (-16 to -22 dBFS)
     let peak = speech_samples.iter().copied().fold(0.0f32, |m, s| m.max(s.abs()));
-    if peak > 1e-4 && peak < 0.25 {
-        let gain = (0.50 / peak).clamp(1.0, 4.0);
-        speech_samples.iter().map(|&s| (s * gain).clamp(-1.0, 1.0)).collect()
+    if peak > 1e-4 && peak < 0.40 {
+        let speech_rms = (speech_samples.iter().map(|&s| s * s).sum::<f32>() / speech_samples.len() as f32).sqrt();
+        let target_gain = if speech_rms > 1e-4 {
+            (0.09 / speech_rms).min(0.65 / peak)
+        } else {
+            0.50 / peak
+        };
+        let gain = target_gain.clamp(1.0, 9.0);
+        if gain > 1.05 {
+            speech_samples.iter().map(|&s| (s * gain).clamp(-0.95, 0.95)).collect()
+        } else {
+            speech_samples
+        }
     } else {
         speech_samples
     }
