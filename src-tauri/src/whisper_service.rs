@@ -65,8 +65,8 @@ impl WhisperEngine {
         let mut state = ctx.create_state()
             .map_err(|e| format!("Whisper clean state creation failed: {:?}", e))?;
 
-        // Multi-hypothesis beam search decoding (beam_size: 2, patience: 1.0) to accurately disambiguate fast speech & blended words
-        let mut params = FullParams::new(SamplingStrategy::BeamSearch { beam_size: 2, patience: 1.0 });
+        // Multi-hypothesis beam search decoding (beam_size: 4, patience: 1.0) to accurately disambiguate fast speech & blended words
+        let mut params = FullParams::new(SamplingStrategy::BeamSearch { beam_size: 4, patience: 1.0 });
         params.set_print_progress(false);
         params.set_print_special(false);
         params.set_print_realtime(false);
@@ -78,7 +78,7 @@ impl WhisperEngine {
         params.set_suppress_blank(true);
         params.set_suppress_nst(true);
         params.set_no_speech_thold(0.85);
-        params.set_logprob_thold(-1.25);
+        params.set_logprob_thold(-1.50);
         params.set_temperature(0.0);
         params.set_temperature_inc(0.0);
         // Energy-efficient multi-threading: clamp to 2..=4 threads to prevent thermal spikes and battery drain

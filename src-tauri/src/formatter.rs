@@ -557,8 +557,26 @@ pub fn repair_phonetic_speech_confusions(input: &str) -> String {
         ("Baddi constraint", "Battery constraint"),
         ("baddi", "battery"),
         ("Baddi", "Battery"),
+        ("UI constant in battery constraint", "UI constraint and battery constraint"),
+        ("UI constant and battery constraint", "UI constraint and battery constraint"),
+        ("UI constant", "UI constraint"),
+        ("UI constants", "UI constraints"),
+        ("battery constant", "battery constraint"),
+        ("battery constants", "battery constraints"),
     ];
     for (pat, rep) in battery_patterns {
+        if text.contains(pat) {
+            text = text.replace(pat, rep);
+        }
+    }
+
+    // 5. Fast-speech elisions
+    let fast_speech_patterns = [
+        ("speak of faster", "speak faster"),
+        ("speaks of faster", "speaks faster"),
+        ("speaking of faster", "speaking faster"),
+    ];
+    for (pat, rep) in fast_speech_patterns {
         if text.contains(pat) {
             text = text.replace(pat, rep);
         }
@@ -2763,5 +2781,10 @@ mod tests {
         // 3. Volts confusion
         let res3 = format_transcript("not able to pick the basic volts itself", &cfg);
         assert!(res3.contains("basic words"));
+
+        // 4. Fast speech and UI constraint repair
+        let res4 = format_transcript("I mean the words are not picking when we speak of faster, so please check it and ensure that UI constant in battery constraint are considered.", &cfg);
+        assert!(res4.contains("when we speak faster"), "Expected 'when we speak faster', got: {}", res4);
+        assert!(res4.contains("UI constraint and battery constraint"), "Expected 'UI constraint and battery constraint', got: {}", res4);
     }
 }

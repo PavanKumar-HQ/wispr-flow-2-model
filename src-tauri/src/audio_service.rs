@@ -302,8 +302,8 @@ pub fn isolate_voice_and_suppress_noise(samples: &[f32], sample_rate: u32) -> Ve
     let noise_floor_idx = (sorted_rms.len() as f32 * 0.25).floor() as usize;
     let noise_floor = sorted_rms.get(noise_floor_idx).copied().unwrap_or(0.001).min(0.003);
 
-    // Sensitive adaptive threshold for soft, quiet, or whispered speech (down to 0.0004 RMS)
-    let speech_threshold = (noise_floor * 1.15).clamp(0.0004, 0.0022);
+    // Sensitive adaptive threshold for fast, soft, or continuous speech (down to 0.0003 RMS)
+    let speech_threshold = (noise_floor * 1.10).clamp(0.0003, 0.0012);
 
     // Identify first and last frame containing genuine user speech
     let first_speech_frame = frame_rms.iter().position(|&r| r >= speech_threshold);
@@ -317,8 +317,8 @@ pub fn isolate_voice_and_suppress_noise(samples: &[f32], sample_rate: u32) -> Ve
         }
     };
 
-    // Generous pad of ~400ms (20 frames) to fully preserve natural consonant formants (e.g. "W", "Th")
-    let pad_frames = 20;
+    // Generous pad of ~500ms (25 frames) to fully preserve rapid word boundaries and consonant transients
+    let pad_frames = 25;
     let safe_start_frame = start_frame.saturating_sub(pad_frames);
     let safe_end_frame = (end_frame + pad_frames + 1).min(num_frames);
 
