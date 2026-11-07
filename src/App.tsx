@@ -53,7 +53,7 @@ export default function App() {
   // Elapsed timer ticker during recording
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | null = null;
-    if (session.state === 'recording') {
+    if (session.state === 'recording' && session.session_id && session.session_id.length > 0) {
       interval = setInterval(() => {
         setSession((prev) => {
           if (prev.state === 'recording') {
@@ -66,7 +66,7 @@ export default function App() {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [session.state]);
+  }, [session.state, session.session_id]);
 
   useEffect(() => {
     loadAllData();
@@ -273,6 +273,14 @@ export default function App() {
   };
 
   const handleToggleDictation = async () => {
+    if (session.state === 'idle' || session.state === 'completed') {
+      setSession((prev) => ({
+        ...prev,
+        state: 'recording',
+        message: 'Listening naturally across all windows... Press shortcut or click pill to finish.',
+        elapsed_seconds: 0.0,
+      }));
+    }
     try {
       const snap = await safeInvoke<SessionSnapshot>('toggle_dictation');
       if (snap) setSession(snap);

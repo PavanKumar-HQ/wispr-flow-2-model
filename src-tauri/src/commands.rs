@@ -461,6 +461,7 @@ pub fn start_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Ses
 
     // Make floating indicator visible immediately on main thread without stealing key focus from target app
     let app_show = app.clone();
+    let snap_for_pill = snap.clone();
     crate::run_on_main_thread(move || {
         if let Some(w) = app_show.get_webview_window("floating-indicator") {
             #[cfg(target_os = "macos")]
@@ -475,6 +476,7 @@ pub fn start_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Ses
             }
             #[cfg(not(target_os = "macos"))]
             let _ = w.show();
+            let _ = w.emit("dictation-session-changed", &snap_for_pill);
         }
     });
 
@@ -1216,6 +1218,12 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
         let target_id = final_snap.session_id.clone();
         tauri::async_runtime::spawn(async move {
             tokio::time::sleep(tokio::time::Duration::from_millis(1200)).await;
+            let app_pill_hide = app_pill.clone();
+            crate::run_on_main_thread(move || {
+                if let Some(w) = app_pill_hide.get_webview_window("floating-indicator") {
+                    let _ = w.hide();
+                }
+            });
             if let Some(state) = app_pill.try_state::<AppState>() {
                 let mut sess = state.active_session.lock().unwrap();
                 if sess.session_id == target_id && !sess.state.is_active() {
@@ -1227,11 +1235,6 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
                     let _ = app_pill.emit("dictation-session-changed", &snap);
                 }
             }
-            crate::run_on_main_thread(move || {
-                if let Some(w) = app_pill.get_webview_window("floating-indicator") {
-                    let _ = w.hide();
-                }
-            });
         });
     }
 

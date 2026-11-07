@@ -45,7 +45,8 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
     };
   }, []);
 
-  const isRecording = status.state === 'recording' || status.state === 'starting';
+  const isPillOnly = typeof window !== 'undefined' && window.location.hash.includes('pill');
+  const isRecording = status.state === 'recording' || status.state === 'starting' || (isPillOnly && status.state === 'idle');
   const isTranscribing =
     status.state === 'transcribing' ||
     status.state === 'formatting' ||
