@@ -1055,6 +1055,8 @@ impl HistoryDatabase {
             "API",
             "PR",
             "words",
+            "battery",
+            "constraint",
             "dictation",
             "speech recognition",
             "VoxQuest",

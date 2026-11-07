@@ -543,6 +543,27 @@ pub fn repair_phonetic_speech_confusions(input: &str) -> String {
         }
     }
 
+    // 4. Acoustic confusions for battery (e.g. retroflex "battery connection / consumption" heard as "baddi collection")
+    let battery_patterns = [
+        ("the baddi collection in UI", "the battery consumption in UI"),
+        ("The baddi collection in UI", "The battery consumption in UI"),
+        ("baddi collection", "battery consumption"),
+        ("Baddi collection", "Battery consumption"),
+        ("baddi consumption", "battery consumption"),
+        ("Baddi consumption", "Battery consumption"),
+        ("baddi condition", "battery condition"),
+        ("Baddi condition", "Battery condition"),
+        ("baddi constraint", "battery constraint"),
+        ("Baddi constraint", "Battery constraint"),
+        ("baddi", "battery"),
+        ("Baddi", "Battery"),
+    ];
+    for (pat, rep) in battery_patterns {
+        if text.contains(pat) {
+            text = text.replace(pat, rep);
+        }
+    }
+
     text
 }
 
