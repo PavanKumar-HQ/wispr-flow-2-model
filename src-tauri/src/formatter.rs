@@ -575,8 +575,52 @@ pub fn repair_phonetic_speech_confusions(input: &str) -> String {
         ("speak of faster", "speak faster"),
         ("speaks of faster", "speaks faster"),
         ("speaking of faster", "speaking faster"),
+        ("words are not picking", "words are not being picked"),
+        ("words are not picking when", "words are not being picked when"),
+        ("words efficiencies improve", "word efficiency has improved"),
+        ("words efficiency improve", "word efficiency has improved"),
+        ("words efficiencies", "word efficiency"),
+        ("words efficiency", "word efficiency"),
+        ("There is no much", "There is not much"),
+        ("there is no much", "there is not much"),
     ];
     for (pat, rep) in fast_speech_patterns {
+        if text.contains(pat) {
+            text = text.replace(pat, rep);
+        }
+    }
+
+    // 6. UI terminology acoustic repair (e.g. "dictionary modal" decomposed as "dictionary, mold, or")
+    let ui_modal_patterns = [
+        ("dictionary, mold, or", "dictionary modal"),
+        ("Dictionary, mold, or", "Dictionary modal"),
+        ("dictionary, mold or", "dictionary modal"),
+        ("Dictionary, mold or", "Dictionary modal"),
+        ("dictionary mold, or", "dictionary modal"),
+        ("Dictionary mold, or", "Dictionary modal"),
+        ("dictionary mold or", "dictionary modal"),
+        ("Dictionary mold or", "Dictionary modal"),
+        ("dictionary, mold", "dictionary modal"),
+        ("Dictionary, mold", "Dictionary modal"),
+        ("dictionary mold", "dictionary modal"),
+        ("Dictionary mold", "Dictionary modal"),
+        ("dictation, mold, or", "dictation mode"),
+        ("Dictation, mold, or", "Dictation mode"),
+        ("dictation, mold or", "dictation mode"),
+        ("Dictation, mold or", "Dictation mode"),
+        ("dictation mold, or", "dictation mode"),
+        ("Dictation mold, or", "Dictation mode"),
+        ("dictation mold or", "dictation mode"),
+        ("Dictation mold or", "Dictation mode"),
+        ("dictation, mold", "dictation mode"),
+        ("Dictation, mold", "Dictation mode"),
+        ("dictation mold", "dictation mode"),
+        ("Dictation mold", "Dictation mode"),
+        ("dictionary modal is being blank", "dictionary modal is blank"),
+        ("dictionary mode is being blank", "dictionary mode is blank"),
+        ("dictation mode is being blank", "dictation mode is blank"),
+    ];
+    for (pat, rep) in ui_modal_patterns {
         if text.contains(pat) {
             text = text.replace(pat, rep);
         }
@@ -2786,5 +2830,10 @@ mod tests {
         let res4 = format_transcript("I mean the words are not picking when we speak of faster, so please check it and ensure that UI constant in battery constraint are considered.", &cfg);
         assert!(res4.contains("when we speak faster"), "Expected 'when we speak faster', got: {}", res4);
         assert!(res4.contains("UI constraint and battery constraint"), "Expected 'UI constraint and battery constraint', got: {}", res4);
+
+        // 5. Dictionary modal repair
+        let res5 = format_transcript("The words are not being picked properly, and the dictionary, mold, or is being blank if I click, and apart from that, the words efficiencies improve, but you need it much more, so please check it out and make sure that you remember the battery constraint and UI constraint.", &cfg);
+        assert!(res5.contains("dictionary modal is blank"), "Expected 'dictionary modal is blank', got: {}", res5);
+        assert!(res5.contains("word efficiency has improved"), "Expected 'word efficiency has improved', got: {}", res5);
     }
 }

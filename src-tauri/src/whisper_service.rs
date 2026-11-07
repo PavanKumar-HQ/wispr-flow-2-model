@@ -77,8 +77,9 @@ impl WhisperEngine {
         params.set_single_segment(false);
         params.set_suppress_blank(true);
         params.set_suppress_nst(true);
-        params.set_no_speech_thold(0.85);
+        params.set_no_speech_thold(0.92);
         params.set_logprob_thold(-1.50);
+        params.set_entropy_thold(2.80);
         params.set_temperature(0.0);
         params.set_temperature_inc(0.0);
         // Energy-efficient multi-threading: clamp to 2..=4 threads to prevent thermal spikes and battery drain

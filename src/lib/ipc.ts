@@ -84,7 +84,52 @@ let mockSettings: AppSettings = {
 
 let mockHistory: HistoryRecord[] = [];
 
-let mockDictionary: any[] = [];
+let mockDictionary: any[] = [
+  { id: 1, original: 'vox quest', replacement: 'VoxQuest', category: 'name', created_at: Date.now() },
+  { id: 2, original: 'whisper flow', replacement: 'Wispr Flow', category: 'name', created_at: Date.now() },
+  { id: 3, original: 'anti gravity', replacement: 'Antigravity', category: 'tech', created_at: Date.now() },
+  { id: 4, original: 'wpm', replacement: 'WPM', category: 'acronym', created_at: Date.now() },
+  { id: 5, original: 'dishtary', replacement: 'dictionary', category: 'spelling', created_at: Date.now() },
+];
+
+let mockPersonalVocab: any[] = [
+  {
+    id: 101,
+    original_text: 'chatgot',
+    preferred_text: 'ChatGPT',
+    entry_type: 'tech',
+    context_domain: null,
+    confidence: 1.0,
+    positive_count: 5,
+    negative_count: 0,
+    status: 'active',
+    recognition_count: 12,
+    correction_count: 0,
+    application_count: 12,
+    last_used_at: Date.now(),
+    source: 'learned',
+    created_at: Date.now(),
+    updated_at: Date.now(),
+  },
+  {
+    id: 102,
+    original_text: 'dishtary',
+    preferred_text: 'dictionary',
+    entry_type: 'spelling',
+    context_domain: null,
+    confidence: 1.0,
+    positive_count: 3,
+    negative_count: 0,
+    status: 'active',
+    recognition_count: 8,
+    correction_count: 0,
+    application_count: 8,
+    last_used_at: Date.now(),
+    source: 'learned',
+    created_at: Date.now(),
+    updated_at: Date.now(),
+  },
+];
 
 export async function safeInvoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
   if (isNativeTauri()) {
@@ -212,7 +257,7 @@ export async function safeInvoke<T>(cmd: string, args?: Record<string, unknown>)
       return undefined as unknown as T;
     }
     case 'get_personal_vocabulary': {
-      return [] as unknown as T;
+      return mockPersonalVocab as unknown as T;
     }
     case 'add_personal_vocabulary_entry': {
       return {

@@ -181,8 +181,8 @@ impl AudioCaptureService {
             }
         }
 
-        // Allow final hardware audio buffer (80ms) to drain so trailing word syllables are not truncated
-        std::thread::sleep(std::time::Duration::from_millis(80));
+        // Allow final hardware audio buffer (100ms) to drain so trailing word syllables are not truncated
+        std::thread::sleep(std::time::Duration::from_millis(100));
 
         {
             let mut rec_lock = self.is_recording.lock().unwrap();
@@ -328,14 +328,14 @@ pub fn isolate_voice_and_suppress_noise(samples: &[f32], sample_rate: u32) -> Ve
 
     // 3. Dynamic Speech AGC: automatically normalizes quiet/whispered speech into Whisper's optimal range (-16 to -22 dBFS)
     let peak = speech_samples.iter().copied().fold(0.0f32, |m, s| m.max(s.abs()));
-    if peak > 1e-4 && peak < 0.40 {
-        let speech_rms = (speech_samples.iter().map(|&s| s * s).sum::<f32>() / speech_samples.len() as f32).sqrt();
-        let target_gain = if speech_rms > 1e-4 {
-            (0.09 / speech_rms).min(0.65 / peak)
-        } else {
-            0.50 / peak
-        };
-        let gain = target_gain.clamp(1.0, 9.0);
+    let speech_rms = if !speech_samples.is_empty() {
+        (speech_samples.iter().map(|&s| s * s).sum::<f32>() / speech_samples.len() as f32).sqrt()
+    } else {
+        0.0
+    };
+    if speech_rms > 1e-4 && speech_rms < 0.06 && peak > 1e-4 {
+        let target_gain = (0.085 / speech_rms).min(0.85 / peak);
+        let gain = target_gain.clamp(1.0, 8.0);
         if gain > 1.05 {
             speech_samples.iter().map(|&s| (s * gain).clamp(-0.95, 0.95)).collect()
         } else {

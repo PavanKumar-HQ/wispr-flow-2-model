@@ -1041,27 +1041,53 @@ impl HistoryDatabase {
         // High-priority modern technical terminology, AI assistants, and core speech terms
         // to guide Whisper's acoustic decoder and prevent pre-2022 phonetic decompositions
         // (e.g. preventing 'ChatGPT' from decomposing into 'charge her beauty', 'Gemini' into 'Germany',
-        // and 'words' into 'vats' or 'volts' in fast or accented speech).
-        let core_terms = [
-            "ChatGPT",
-            "GPT-4",
-            "OpenAI",
-            "Claude",
-            "Gemini",
-            "Anthropic",
-            "AI",
-            "UI",
-            "UX",
-            "API",
-            "PR",
-            "words",
-            "battery",
-            "constraint",
-            "dictation",
-            "speech recognition",
-            "VoxQuest",
-            "Wispr Flow",
+        // 'words' into 'vats' or 'volts', and 'dictionary modal' into 'dictionary, mold, or').
+        let mut core_terms = vec![
+            "ChatGPT".to_string(),
+            "GPT-4".to_string(),
+            "OpenAI".to_string(),
+            "Claude".to_string(),
+            "Gemini".to_string(),
+            "Anthropic".to_string(),
+            "AI".to_string(),
+            "UI".to_string(),
+            "UX".to_string(),
+            "API".to_string(),
+            "PR".to_string(),
+            "words".to_string(),
+            "battery".to_string(),
+            "constraint".to_string(),
+            "modal".to_string(),
+            "mode".to_string(),
+            "dictionary modal".to_string(),
+            "dictation mode".to_string(),
+            "efficiency".to_string(),
+            "accurately".to_string(),
+            "properly".to_string(),
+            "dictation".to_string(),
+            "speech recognition".to_string(),
+            "VoxQuest".to_string(),
+            "Wispr Flow".to_string(),
         ];
+
+        // Dynamically inject user's active personal vocabulary & custom dictionary terms
+        if let Ok(vocab) = self.list_personal_vocabulary(Some("active")) {
+            for v in vocab.iter().take(20) {
+                let term = v.preferred_text.trim();
+                if !term.is_empty() && !core_terms.iter().any(|c| c.eq_ignore_ascii_case(term)) {
+                    core_terms.push(term.to_string());
+                }
+            }
+        }
+        if let Ok(dict) = self.list_dictionary_entries() {
+            for d in dict.iter().take(20) {
+                let term = d.replacement_phrase.trim();
+                if !term.is_empty() && !core_terms.iter().any(|c| c.eq_ignore_ascii_case(term)) {
+                    core_terms.push(term.to_string());
+                }
+            }
+        }
+
         Ok(format!("{}.", core_terms.join(", ")))
     }
 
