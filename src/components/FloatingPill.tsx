@@ -20,6 +20,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
   onCopyLast,
   compact = false,
 }) => {
+  const [internalStatus, setInternalStatus] = useState<SessionSnapshot>(status);
   const [liveLevel, setLiveLevel] = useState<number>(0);
   const [copied, setCopied] = useState<boolean>(false);
   const [isEnhancing, setIsEnhancing] = useState<boolean>(false);
@@ -34,6 +35,39 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
   const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
   const recordingStartTimeRef = useRef<number | null>(null);
   const lastSessionIdRef = useRef<string | null>(null);
+
+  // Sync internalStatus whenever status prop changes
+  useEffect(() => {
+    if (status) {
+      setInternalStatus(status);
+    }
+  }, [status]);
+
+  // Direct backend session synchronization: guaranteed native event reception in all windows
+  useEffect(() => {
+    let unlistenSession: (() => void) | undefined;
+    safeListen<SessionSnapshot>('dictation-session-changed', (e) => {
+      if (e.payload) {
+        setInternalStatus(e.payload);
+      }
+    }).then((fn) => {
+      unlistenSession = fn;
+    });
+
+    const refresh = async () => {
+      try {
+        const snap = await safeInvoke<SessionSnapshot>('get_session_snapshot');
+        if (snap) setInternalStatus(snap);
+      } catch {}
+    };
+    refresh();
+
+    return () => {
+      if (unlistenSession) unlistenSession();
+    };
+  }, []);
+
+  const activeStatus = internalStatus || status;
 
   useEffect(() => {
     let unlisten: (() => void) | undefined;
@@ -50,33 +84,44 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
   }, []);
 
   useEffect(() => {
-    if (status.state === 'recording') {
+    if (activeStatus.state === 'recording') {
       setOptimisticRecording(false);
     }
     if (
-      status.state === 'transcribing' ||
-      status.state === 'completed' ||
-      status.state === 'idle' ||
-      status.state === 'failed'
+      activeStatus.state === 'transcribing' ||
+      activeStatus.state === 'completed' ||
+      activeStatus.state === 'idle' ||
+      activeStatus.state === 'failed'
     ) {
       setOptimisticStopping(false);
       setOptimisticRecording(false);
     }
-  }, [status.state]);
+  }, [activeStatus.state]);
 
   const isTranscribing =
-    status.state === 'transcribing' ||
-    status.state === 'formatting' ||
-    status.state === 'validating_target' ||
-    status.state === 'inserting' ||
-    status.state === 'stopping' ||
+    activeStatus.state === 'transcribing' ||
+    activeStatus.state === 'formatting' ||
+    activeStatus.state === 'validating_target' ||
+    activeStatus.state === 'inserting' ||
+    activeStatus.state === 'stopping' ||
     optimisticStopping;
 
   const isRecording =
-    (status.state === 'recording' || status.state === 'starting' || optimisticRecording) &&
+    (activeStatus.state === 'recording' || activeStatus.state === 'starting' || optimisticRecording) &&
     !isTranscribing;
-  const hasTranscript = Boolean(status.last_transcript && status.last_transcript.trim().length > 0);
-  const isDone = (status.state === 'completed' || status.state === 'recovery_required') && hasTranscript;
+  const hasTranscript = Boolean(activeStatus.last_transcript && activeStatus.last_transcript.trim().length > 0);
+  const isDone = (activeStatus.state === 'completed' || activeStatus.state === 'recovery_required') && hasTranscript;
+
+  // Auto-dismiss pill 1.5s after transcription is completed and pasted
+  useEffect(() => {
+    if (isDone && !isDismissed) {
+      const timer = setTimeout(() => {
+        setIsDismissed(true);
+        safeInvoke('hide_pill_window');
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [isDone, isDismissed, activeStatus.timestamp_ms]);
 
   // Monotonic session timer: strictly starts from 00:00 on every recording start
   useEffect(() => {
@@ -100,24 +145,24 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isRecording, status.session_id]);
+  }, [isRecording, activeStatus.session_id]);
 
-  const currentActiveText = enhancedText || status.last_transcript || '';
+  const currentActiveText = enhancedText || activeStatus.last_transcript || '';
 
   // Reset enhancement state ONLY when a genuinely NEW session begins or records
   // Never reset on 150ms snapshot poll ticks of timestamp_ms or last_transcript!
   useEffect(() => {
-    if (status.state === 'recording') {
+    if (activeStatus.state === 'recording') {
       setIsDismissed(false);
       setEnhancedText(null);
       setEnhanced(false);
-    } else if (status.session_id && status.session_id !== lastSessionIdRef.current) {
-      lastSessionIdRef.current = status.session_id;
+    } else if (activeStatus.session_id && activeStatus.session_id !== lastSessionIdRef.current) {
+      lastSessionIdRef.current = activeStatus.session_id;
       setIsDismissed(false);
       setEnhancedText(null);
       setEnhanced(false);
     }
-  }, [status.session_id, status.state]);
+  }, [activeStatus.session_id, activeStatus.state]);
 
   // Listen to live microphone volume stream
   useEffect(() => {
@@ -191,7 +236,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
       const effectiveMode: EnhancementMode = targetMode === 'light_correction' && isPromptLike ? 'prompt' : targetMode;
 
       const req: EnhancementRequest = {
-        session_id: status.session_id || null,
+        session_id: activeStatus.session_id || null,
         text: raw,
         mode: effectiveMode,
         auto_replace: true,
@@ -205,7 +250,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
         // Immediately paste/insert the enhanced text into the active cursor
         try {
           await safeInvoke('insert_into_selected_field', {
-            id: status.recovery_id || 0,
+            id: activeStatus.recovery_id || 0,
             text: res.enhanced_text,
           });
           setInserted(true);
@@ -230,7 +275,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
   };
 
   const handleRestoreOriginal = async () => {
-    const orig = (status.last_transcript || '').trim();
+    const orig = (activeStatus.last_transcript || '').trim();
     setEnhancedText(null);
     setEnhanced(false);
     if (orig) {
@@ -244,9 +289,9 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
     if (!textToInsert) return;
 
     try {
-      if (status.recovery_id) {
+      if (activeStatus.recovery_id) {
         await safeInvoke('insert_into_selected_field', {
-          id: status.recovery_id,
+          id: activeStatus.recovery_id,
           text: textToInsert,
         });
       } else {
@@ -283,7 +328,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
             : isTranscribing
             ? 'border-emerald-500 ring-2 ring-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.25)] bg-emerald-50/50'
             : isDone && !isDismissed
-            ? status.state === 'recovery_required'
+            ? activeStatus.state === 'recovery_required'
               ? 'border-amber ring-2 ring-amber/30 bg-cream'
               : 'border-deepTeal ring-2 ring-deepTeal/20 bg-cream'
             : 'border-charcoal/30 hover:border-darkTeal bg-cream'
@@ -315,15 +360,15 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
               </span>
             </div>
           ) : isDone && !isDismissed ? (
-            status.action_type === 'app_launch' ? (
+            activeStatus.action_type === 'app_launch' ? (
               <div className="flex items-center gap-1.5 animate-fadeIn">
                 <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-600 shadow-sm" />
                 <span className="text-[11px] font-bold text-darkTeal flex items-center gap-1">
                   <ExternalLink className="w-3 h-3 text-terracotta" />
-                  <span>{status.action_target || 'App'} Opened</span>
+                  <span>{activeStatus.action_target || 'App'} Opened</span>
                 </span>
               </div>
-            ) : status.state === 'recovery_required' ? (
+            ) : activeStatus.state === 'recovery_required' ? (
               <div className="flex items-center gap-1.5">
                 <span className="flex h-2.5 w-2.5 rounded-full bg-vq-amber shadow-sm" />
                 <span className="text-[11px] font-bold text-vq-charcoal">
@@ -338,7 +383,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
                 </span>
               </div>
             )
-          ) : status.message && status.message.toLowerCase().includes('no speech') ? (
+          ) : activeStatus.message && activeStatus.message.toLowerCase().includes('no speech') ? (
             <div className="flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full bg-vq-amber" />
               <span className="text-[11px] font-bold text-vq-charcoal">No speech heard</span>
@@ -383,20 +428,20 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
           ) : isDone && !isDismissed ? (
             <>
               {/* Proactive Adaptive Model Switch Badge */}
-              {(modelShiftNotice || status.technical_suggestion) && (
+              {(modelShiftNotice || activeStatus.technical_suggestion) && (
                 <button
                   onClick={async (e) => {
                     e.stopPropagation();
-                    const text = modelShiftNotice || status.technical_suggestion || '';
+                    const text = modelShiftNotice || activeStatus.technical_suggestion || '';
                     const targetProfile = text.includes('Developer') ? 'developer' : 'balanced';
                     await safeInvoke('switch_speech_profile', { profile: targetProfile });
                   }}
                   className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber text-charcoal hover:bg-amber/90 transition-all border border-amber/40 shadow-xs flex items-center gap-1 active:scale-95 shrink-0 cursor-pointer animate-pulse outline-none focus:outline-none focus:ring-0"
-                  title={modelShiftNotice || status.technical_suggestion || ''}
+                  title={modelShiftNotice || activeStatus.technical_suggestion || ''}
                   aria-label="Model shifted notification"
                 >
                   <Zap className="w-3 h-3 text-darkTeal" />
-                  <span>{(modelShiftNotice || status.technical_suggestion)?.includes('Toggled') ? '⚡ Shifted to Dev' : '⚡ Dev Active'}</span>
+                  <span>{(modelShiftNotice || activeStatus.technical_suggestion)?.includes('Toggled') ? '⚡ Shifted to Dev' : '⚡ Dev Active'}</span>
                 </button>
               )}
 
