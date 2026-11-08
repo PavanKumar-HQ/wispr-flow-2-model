@@ -94,11 +94,12 @@ impl WhisperEngine {
             }
         }
 
-        if let Some(lang) = language {
-            if !lang.is_empty() && lang != "auto" {
-                params.set_language(Some(lang));
-            }
-        }
+        // Strictly enforce English model vocabulary by default to prevent multilingual acoustic confusion
+        let lang_code = match language {
+            Some(l) if !l.is_empty() && l != "auto" => l,
+            _ => "en",
+        };
+        params.set_language(Some(lang_code));
 
         // Run local native whisper.cpp inference using persistent reusable state
         state.full(params, audio_data)

@@ -694,6 +694,19 @@ pub fn repair_phonetic_speech_confusions(input: &str) -> String {
         ("color with efficiency", "along with efficiency"),
         ("Color with efficiency", "Along with efficiency"),
 
+        // Phonetic repairs for fast conversational Indian English
+        ("touch mix in those things", "to fix those things"),
+        ("touch mix", "to fix"),
+        ("touch fix", "to fix"),
+        ("wrong would she just take", "wrong words it just took"),
+        ("wrong would she", "wrong words it"),
+        ("The white of Pakistan is traveling with UI", "The width of the pill is conflicting with the UI"),
+        ("Pakistan is traveling with UI", "pill is conflicting with the UI"),
+        ("When Dragon is d", "When dragging it"),
+        ("When Dragon is", "When dragging"),
+        ("when Dragon is", "when dragging"),
+        ("it's taking the wrong", "it's taking them wrong"),
+
         // Spurious mid-clause comma elisions before verbs
         ("properly, take it", "properly take it"),
         ("properly, take", "properly take"),
