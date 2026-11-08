@@ -122,7 +122,8 @@ export default function App() {
       loadInsights();
     });
 
-    // In floating pill window, fallback sync at 1000ms (push events handle instant 0ms state transitions)
+    // Zero battery drain: Push events handle instant 0ms state transitions.
+    // Fallback sync runs at a relaxed 15000ms interval only to strictly prevent idle CPU wakeups.
     let syncInterval: ReturnType<typeof setInterval> | null = null;
     if (isPillOnlyWindow) {
       syncInterval = setInterval(async () => {
@@ -143,7 +144,7 @@ export default function App() {
         } catch {
           // ignore in browser mode
         }
-      }, 1000);
+      }, 15000);
     }
 
     return () => {
