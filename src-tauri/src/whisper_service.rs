@@ -8,13 +8,25 @@ pub struct WhisperEngine {
     max_threads: Option<u32>,
 }
 
+unsafe extern "C" fn silence_whisper_log(
+    _level: whisper_rs_sys::ggml_log_level,
+    _text: *const std::os::raw::c_char,
+    _user_data: *mut std::os::raw::c_void,
+) {}
+
 impl WhisperEngine {
     pub fn new() -> Self {
+        // Silence verbose internal Whisper.cpp token/progress dumps to stderr
+        // to strictly prevent terminal log flooding and IDE thread exhaustion
+        unsafe {
+            whisper_rs_sys::whisper_log_set(Some(silence_whisper_log), std::ptr::null_mut());
+        }
+
         Self {
             context: None,
             state: None,
             current_model_path: None,
-            max_threads: Some(4),
+            max_threads: Some(2),
         }
     }
 
