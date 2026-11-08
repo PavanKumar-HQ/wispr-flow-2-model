@@ -29,6 +29,10 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
   const [inserted, setInserted] = useState<boolean>(false);
   const [isDismissed, setIsDismissed] = useState<boolean>(false);
   const [modelShiftNotice, setModelShiftNotice] = useState<string | null>(null);
+  const [optimisticRecording, setOptimisticRecording] = useState<boolean>(false);
+  const [optimisticStopping, setOptimisticStopping] = useState<boolean>(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
+  const recordingStartTimeRef = useRef<number | null>(null);
   const lastSessionIdRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -45,15 +49,58 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
     };
   }, []);
 
-  const isRecording = status.state === 'recording' || status.state === 'starting';
+  useEffect(() => {
+    if (status.state === 'recording') {
+      setOptimisticRecording(false);
+    }
+    if (
+      status.state === 'transcribing' ||
+      status.state === 'completed' ||
+      status.state === 'idle' ||
+      status.state === 'failed'
+    ) {
+      setOptimisticStopping(false);
+      setOptimisticRecording(false);
+    }
+  }, [status.state]);
+
   const isTranscribing =
     status.state === 'transcribing' ||
     status.state === 'formatting' ||
     status.state === 'validating_target' ||
     status.state === 'inserting' ||
-    status.state === 'stopping';
+    status.state === 'stopping' ||
+    optimisticStopping;
+
+  const isRecording =
+    (status.state === 'recording' || status.state === 'starting' || optimisticRecording) &&
+    !isTranscribing;
   const hasTranscript = Boolean(status.last_transcript && status.last_transcript.trim().length > 0);
   const isDone = (status.state === 'completed' || status.state === 'recovery_required') && hasTranscript;
+
+  // Monotonic session timer: strictly starts from 00:00 on every recording start
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval> | null = null;
+    if (isRecording) {
+      const now = Date.now();
+      recordingStartTimeRef.current = now;
+      setElapsedSeconds(0);
+      const tick = () => {
+        if (recordingStartTimeRef.current) {
+          const diff = Math.floor((Date.now() - recordingStartTimeRef.current) / 1000);
+          setElapsedSeconds(diff);
+        }
+      };
+      tick();
+      interval = setInterval(tick, 200);
+    } else {
+      recordingStartTimeRef.current = null;
+      setElapsedSeconds(0);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isRecording, status.session_id]);
 
   const currentActiveText = enhancedText || status.last_transcript || '';
 
@@ -226,35 +273,35 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
         compact ? 'w-full h-full' : 'fixed bottom-8 left-1/2 -translate-x-1/2 z-50'
       } flex items-center justify-center select-none p-1`}
     >
-      {/* Pill Capsule styled with exact platform tokens: #DFDFD4 cream, #07514C dark teal, #DA6C4C terracotta */}
+      {/* Pill Capsule styled with exact theme: Light red when listening, Emerald when transcribing, Linen cream when idle/done */}
       <div
         data-tauri-drag-region
         onMouseDown={handleMouseDown}
-        className={`flex items-center gap-2 px-3 py-1.5 rounded-full border bg-cream text-charcoal shadow-md backdrop-blur-sm transition-all duration-200 cursor-grab active:cursor-grabbing ${
+        className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-charcoal shadow-md backdrop-blur-sm transition-all duration-200 cursor-grab active:cursor-grabbing ${
           isRecording
-            ? 'border-terracotta ring-2 ring-terracotta/30'
+            ? 'border-red-500 ring-2 ring-red-500/40 shadow-[0_0_15px_rgba(239,68,68,0.25)] bg-red-50/95'
             : isTranscribing
-            ? 'border-emerald-500 ring-2 ring-emerald-500/30'
+            ? 'border-emerald-500 ring-2 ring-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.25)] bg-emerald-50/50'
             : isDone && !isDismissed
             ? status.state === 'recovery_required'
-              ? 'border-amber ring-2 ring-amber/30'
-              : 'border-deepTeal ring-2 ring-deepTeal/20'
-            : 'border-charcoal/30 hover:border-darkTeal'
+              ? 'border-amber ring-2 ring-amber/30 bg-cream'
+              : 'border-deepTeal ring-2 ring-deepTeal/20 bg-cream'
+            : 'border-charcoal/30 hover:border-darkTeal bg-cream'
         } h-[42px] max-w-[430px]`}
       >
         {/* Left: Dynamic State Badge */}
         <div className="shrink-0 flex items-center gap-2 pl-0.5 font-sans">
           {isRecording ? (
-            <div className="flex items-center gap-1.5">
-              <span className="relative flex h-3 w-3 items-center justify-center">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-vq-terracotta opacity-75" />
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-vq-terracotta shadow-sm" />
-              </span>
-              <span className="text-[11px] font-extrabold tracking-wide text-vq-terracotta uppercase">
+            <div className="flex items-center gap-2">
+              <div className="relative flex items-center justify-center">
+                <span className="animate-ping absolute inline-flex h-4 w-4 rounded-full bg-red-500 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-600 shadow-xs" />
+              </div>
+              <span className="text-[11px] font-black tracking-widest text-red-600 uppercase font-mono">
                 Listening
               </span>
-              <span className="text-[11px] font-mono font-bold text-vq-terracotta bg-vq-terracotta/10 px-1.5 py-0.5 rounded border border-vq-terracotta/20">
-                {formatSeconds(status.elapsed_seconds)}
+              <span className="text-[11px] font-mono font-bold text-red-700 bg-red-100/90 px-2 py-0.5 rounded-full border border-red-300 shadow-xs">
+                {formatSeconds(elapsedSeconds)}
               </span>
             </div>
           ) : isTranscribing ? (
@@ -324,9 +371,10 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
             <button
               onClick={(e) => {
                 e.stopPropagation();
+                setOptimisticStopping(true);
                 onToggle();
               }}
-              className="p-1.5 rounded-full bg-vq-terracotta text-white hover:bg-vq-terracotta/90 shadow-xs transition-all active:scale-95 outline-none focus:outline-none focus:ring-0"
+              className="p-1.5 rounded-full bg-red-600 hover:bg-red-700 text-white shadow-[0_0_10px_rgba(220,38,38,0.45)] transition-all active:scale-90 animate-pulse outline-none focus:outline-none focus:ring-0"
               title="Stop recording"
               aria-label="Stop recording"
             >
@@ -445,6 +493,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
             <button
               onClick={(e) => {
                 e.stopPropagation();
+                setOptimisticRecording(true);
                 onToggle();
               }}
               className="p-1.5 rounded-full bg-vq-tealDark text-vq-cream hover:bg-vq-tealDeep shadow-xs transition-all active:scale-95 outline-none focus:outline-none focus:ring-0"

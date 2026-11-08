@@ -72,12 +72,10 @@ export const AudioWaveform: React.FC<AudioWaveformProps> = ({
           const barEl = barsRef.current[i];
           if (barEl) {
             barEl.style.height = `${heights[i].toFixed(1)}px`;
-            barEl.style.backgroundColor = theme === 'dark' ? '#DDA44D' : '#DA6C4C';
-            barEl.style.opacity = `${(0.75 + amp * 0.25).toFixed(2)}`;
-            if (amp > 0.3) {
-              barEl.style.boxShadow = theme === 'dark'
-                ? '0 0 5px rgba(221, 164, 77, 0.5)'
-                : '0 0 6px rgba(218, 108, 76, 0.45)';
+            barEl.style.backgroundColor = '#DC2626';
+            barEl.style.opacity = `${(0.8 + amp * 0.2).toFixed(2)}`;
+            if (amp > 0.2) {
+              barEl.style.boxShadow = '0 0 6px rgba(220, 38, 38, 0.55)';
             } else {
               barEl.style.boxShadow = 'none';
             }
@@ -94,9 +92,9 @@ export const AudioWaveform: React.FC<AudioWaveformProps> = ({
           const barEl = barsRef.current[i];
           if (barEl) {
             barEl.style.height = `${heights[i].toFixed(1)}px`;
-            barEl.style.backgroundColor = theme === 'dark' ? '#B8CBC3' : '#07514C';
-            barEl.style.opacity = `${(0.6 + wave * 0.4).toFixed(2)}`;
-            barEl.style.boxShadow = 'none';
+            barEl.style.backgroundColor = '#10B981';
+            barEl.style.opacity = `${(0.65 + wave * 0.35).toFixed(2)}`;
+            barEl.style.boxShadow = '0 0 6px rgba(16, 185, 129, 0.45)';
           }
         }
       } else {
