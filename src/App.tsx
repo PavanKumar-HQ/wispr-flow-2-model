@@ -163,16 +163,17 @@ export default function App() {
   }, [activeTab]);
 
   const loadAllData = async () => {
+    // If floating pill window, query session snapshot immediately with 0 delay
+    safeInvoke<SessionSnapshot>('get_session_snapshot').then((snap) => {
+      if (snap) setSession(snap);
+    }).catch(() => {});
+
     const loadedSettings = await loadSettings();
     await loadModels(loadedSettings);
-    await loadHistory();
-    await loadInsights();
-    await loadDevices();
-    try {
-      const snap = await safeInvoke<SessionSnapshot>('get_session_snapshot');
-      if (snap) setSession(snap);
-    } catch {
-      // Ignored in browser preview
+    if (!isPillOnlyWindow) {
+      await loadHistory();
+      await loadInsights();
+      await loadDevices();
     }
   };
 

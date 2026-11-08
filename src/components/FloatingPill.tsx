@@ -29,7 +29,14 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
   const [inserted, setInserted] = useState<boolean>(false);
   const [isDismissed, setIsDismissed] = useState<boolean>(false);
   const [modelShiftNotice, setModelShiftNotice] = useState<string | null>(null);
+  const [optimisticRecording, setOptimisticRecording] = useState<boolean>(false);
   const lastSessionIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (status.state === 'recording' || status.state === 'completed' || status.state === 'failed') {
+      setOptimisticRecording(false);
+    }
+  }, [status.state]);
 
   useEffect(() => {
     let unlisten: (() => void) | undefined;
@@ -45,7 +52,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
     };
   }, []);
 
-  const isRecording = status.state === 'recording' || status.state === 'starting';
+  const isRecording = status.state === 'recording' || status.state === 'starting' || optimisticRecording;
   const isTranscribing =
     status.state === 'transcribing' ||
     status.state === 'formatting' ||
@@ -419,6 +426,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
             <button
               onClick={(e) => {
                 e.stopPropagation();
+                setOptimisticRecording(true);
                 onToggle();
               }}
               className="p-1.5 rounded-full bg-vq-tealDark text-vq-cream hover:bg-vq-tealDeep shadow-xs transition-all active:scale-95"
