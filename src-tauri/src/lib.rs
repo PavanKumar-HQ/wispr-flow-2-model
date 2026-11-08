@@ -275,7 +275,7 @@ pub fn run() {
                 .transparent(true)
                 .skip_taskbar(true)
                 .focused(false)
-                .visible(false);
+                .visible(true);
 
                 if let Ok(pill_win) = pill_builder.build() {
                     // Position at bottom-center of the primary display
@@ -289,6 +289,7 @@ pub fn run() {
                         let _ = pill_win.set_position(tauri::Position::Logical(tauri::LogicalPosition::new(x, y)));
                     }
 
+                    let _ = pill_win.show();
                     #[cfg(target_os = "macos")]
                     if let Ok(ns_win) = pill_win.ns_window() {
                         use cocoa::base::id;
@@ -302,6 +303,7 @@ pub fn run() {
                             let () = objc::msg_send![ns_win, setHidesOnDeactivate: 0u8];
                             let () = objc::msg_send![ns_win, setMovableByWindowBackground: 1u8];
                             let () = objc::msg_send![ns_win, setMovable: 1u8];
+                            let () = objc::msg_send![ns_win, orderFrontRegardless];
                         }
                     }
                 }

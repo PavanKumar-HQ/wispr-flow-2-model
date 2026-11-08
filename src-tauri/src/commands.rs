@@ -464,6 +464,7 @@ pub fn start_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Ses
     let snap_for_pill = snap.clone();
     crate::run_on_main_thread(move || {
         if let Some(w) = app_show.get_webview_window("floating-indicator") {
+            let _ = w.show();
             #[cfg(target_os = "macos")]
             if let Ok(ns_win) = w.ns_window() {
                 use cocoa::base::id;
@@ -471,11 +472,7 @@ pub fn start_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Ses
                 unsafe {
                     let () = objc::msg_send![ns_win, orderFrontRegardless];
                 }
-            } else {
-                let _ = w.show();
             }
-            #[cfg(not(target_os = "macos"))]
-            let _ = w.show();
             let _ = w.emit("dictation-session-changed", &snap_for_pill);
         }
     });
@@ -1633,6 +1630,7 @@ pub fn show_pill_window(app: AppHandle) -> Result<(), String> {
     let app_handle = app.clone();
     crate::run_on_main_thread(move || {
         if let Some(w) = app_handle.get_webview_window("floating-indicator") {
+            let _ = w.show();
             #[cfg(target_os = "macos")]
             if let Ok(ns_win) = w.ns_window() {
                 use cocoa::base::id;
@@ -1640,11 +1638,7 @@ pub fn show_pill_window(app: AppHandle) -> Result<(), String> {
                 unsafe {
                     let () = objc::msg_send![ns_win, orderFrontRegardless];
                 }
-            } else {
-                let _ = w.show();
             }
-            #[cfg(not(target_os = "macos"))]
-            let _ = w.show();
         }
     });
     Ok(())
