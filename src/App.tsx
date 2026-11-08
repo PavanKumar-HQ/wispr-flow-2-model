@@ -122,8 +122,7 @@ export default function App() {
       loadInsights();
     });
 
-    // Zero battery drain: Push events handle instant 0ms state transitions.
-    // Fallback sync runs at a relaxed 15000ms interval only to strictly prevent idle CPU wakeups.
+    // In floating pill window, fallback sync at 1000ms (push events handle instant 0ms state transitions)
     let syncInterval: ReturnType<typeof setInterval> | null = null;
     if (isPillOnlyWindow) {
       syncInterval = setInterval(async () => {
@@ -144,7 +143,7 @@ export default function App() {
         } catch {
           // ignore in browser mode
         }
-      }, 15000);
+      }, 1000);
     }
 
     return () => {
@@ -163,17 +162,16 @@ export default function App() {
   }, [activeTab]);
 
   const loadAllData = async () => {
-    // If floating pill window, query session snapshot immediately with 0 delay
-    safeInvoke<SessionSnapshot>('get_session_snapshot').then((snap) => {
-      if (snap) setSession(snap);
-    }).catch(() => {});
-
     const loadedSettings = await loadSettings();
     await loadModels(loadedSettings);
-    if (!isPillOnlyWindow) {
-      await loadHistory();
-      await loadInsights();
-      await loadDevices();
+    await loadHistory();
+    await loadInsights();
+    await loadDevices();
+    try {
+      const snap = await safeInvoke<SessionSnapshot>('get_session_snapshot');
+      if (snap) setSession(snap);
+    } catch {
+      // Ignored in browser preview
     }
   };
 
@@ -275,13 +273,7 @@ export default function App() {
   };
 
   const handleToggleDictation = async () => {
-    if (session.state === 'recording') {
-      setSession((prev) => ({
-        ...prev,
-        state: 'transcribing',
-        message: 'Transcribing...',
-      }));
-    } else if (session.state === 'idle' || session.state === 'completed') {
+    if (session.state === 'idle' || session.state === 'completed') {
       setSession((prev) => ({
         ...prev,
         state: 'recording',

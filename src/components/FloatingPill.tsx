@@ -29,19 +29,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
   const [inserted, setInserted] = useState<boolean>(false);
   const [isDismissed, setIsDismissed] = useState<boolean>(false);
   const [modelShiftNotice, setModelShiftNotice] = useState<string | null>(null);
-  const [optimisticRecording, setOptimisticRecording] = useState<boolean>(false);
-  const [optimisticStopping, setOptimisticStopping] = useState<boolean>(false);
   const lastSessionIdRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (status.state === 'recording') {
-      setOptimisticRecording(false);
-    }
-    if (status.state === 'transcribing' || status.state === 'completed' || status.state === 'idle' || status.state === 'failed') {
-      setOptimisticStopping(false);
-      setOptimisticRecording(false);
-    }
-  }, [status.state]);
 
   useEffect(() => {
     let unlisten: (() => void) | undefined;
@@ -57,15 +45,14 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
     };
   }, []);
 
+  const isPillOnly = typeof window !== 'undefined' && window.location.hash.includes('pill');
+  const isRecording = status.state === 'recording' || status.state === 'starting' || (isPillOnly && status.state === 'idle');
   const isTranscribing =
     status.state === 'transcribing' ||
     status.state === 'formatting' ||
     status.state === 'validating_target' ||
     status.state === 'inserting' ||
-    status.state === 'stopping' ||
-    optimisticStopping;
-
-  const isRecording = (status.state === 'recording' || status.state === 'starting' || optimisticRecording) && !isTranscribing;
+    status.state === 'stopping';
   const hasTranscript = Boolean(status.last_transcript && status.last_transcript.trim().length > 0);
   const isDone = (status.state === 'completed' || status.state === 'recovery_required') && hasTranscript;
 
@@ -313,7 +300,6 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                setOptimisticStopping(true);
                 onToggle();
               }}
               className="p-1.5 rounded-full bg-vq-terracotta text-white hover:bg-vq-terracotta/90 shadow-xs transition-all active:scale-95"
@@ -434,7 +420,6 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                setOptimisticRecording(true);
                 onToggle();
               }}
               className="p-1.5 rounded-full bg-vq-tealDark text-vq-cream hover:bg-vq-tealDeep shadow-xs transition-all active:scale-95"
