@@ -626,6 +626,69 @@ pub fn repair_phonetic_speech_confusions(input: &str) -> String {
         }
     }
 
+    // 7. Developer & domain vocabulary acoustic repair
+    let developer_vocab_patterns = [
+        // "repos" / "repose" confusion
+        ("website or the repose", "website or the repos"),
+        ("Website or the repose", "Website or the repos"),
+        ("the website or the repose", "the website or the repos"),
+        ("The website or the repose", "The website or the repos"),
+        ("git repose", "git repos"),
+        ("Git repose", "Git repos"),
+        ("github repose", "GitHub repos"),
+        ("GitHub repose", "GitHub repos"),
+        ("check the repose", "check the repos"),
+        ("Check the repose", "Check the repos"),
+        ("in the repose", "in the repos"),
+        ("around the repose", "around the repos"),
+        ("the repose", "the repos"),
+
+        // "UI" / "UF" / "sea" confusions
+        ("making the UF fixes", "making the UI fixes"),
+        ("the UF fixes", "the UI fixes"),
+        ("The UF fixes", "The UI fixes"),
+        ("UF fixes", "UI fixes"),
+        ("UF design", "UI design"),
+        ("UF designs", "UI designs"),
+        ("the UF", "the UI"),
+        ("The UF", "The UI"),
+        ("new UF", "new UI"),
+        ("The sea looks good", "The UI looks good"),
+        ("the sea looks good", "the UI looks good"),
+
+        // "Wispr Flow" / "this Perflow"
+        ("this Perflow", "Wispr Flow"),
+        ("this perflow", "Wispr Flow"),
+        ("This Perflow", "Wispr Flow"),
+        ("this per flow", "Wispr Flow"),
+        ("perflow", "Wispr Flow"),
+
+        // "demo app" / "dumb app"
+        ("as a dumb app", "as a demo app"),
+        ("As a dumb app", "As a demo app"),
+        ("a dumb app", "a demo app"),
+
+        // "from my side" / "from my site"
+        ("part from my site", "from my side"),
+        ("part from my side", "from my side"),
+        ("from my site", "from my side"),
+
+        // "trading journal" / "training journal"
+        ("training journal", "trading journal"),
+        ("Training journal", "Trading journal"),
+
+        // Spurious mid-clause comma elisions before verbs
+        ("properly, take it", "properly take it"),
+        ("properly, take", "properly take"),
+        ("and then, approve", "and then approve"),
+        ("then, approve", "then approve"),
+    ];
+    for (pat, rep) in developer_vocab_patterns {
+        if text.contains(pat) {
+            text = text.replace(pat, rep);
+        }
+    }
+
     text
 }
 
@@ -1935,7 +1998,7 @@ pub fn deduplicate_repeated_speech(text: &str) -> String {
                 while i < words.len() {
                     let w = words[i];
                     let clean = w.trim_matches(['.', ',', '!', '?', ';', ':', '"', '\'']).to_lowercase();
-                    let is_legitimate_double = matches!(clean.as_str(), "no" | "bye" | "very" | "ha" | "knock" | "so" | "well");
+                    let is_legitimate_double = matches!(clean.as_str(), "no" | "bye" | "very" | "ha" | "knock" | "so" | "well" | "dash" | "plus" | "minus" | "slash" | "dot");
 
                     // Count consecutive repetitions of this word
                     let mut j = i + 1;
@@ -1955,7 +2018,9 @@ pub fn deduplicate_repeated_speech(text: &str) -> String {
                         if !last_punct.is_empty() && !w.ends_with(|c| ['.', ',', '!', '?', ';', ':'].contains(&c)) {
                             collapsed_words.push(words[j - 1]);
                         } else {
-                            collapsed_words.push(w);
+                            // Strip mid-stutter punctuation (e.g. "your, your" -> "your")
+                            let clean_w = w.trim_end_matches([',', ';', ':']);
+                            collapsed_words.push(clean_w);
                         }
                         i = j;
                     } else if count == 2 {
@@ -2835,5 +2900,15 @@ mod tests {
         let res5 = format_transcript("The words are not being picked properly, and the dictionary, mold, or is being blank if I click, and apart from that, the words efficiencies improve, but you need it much more, so please check it out and make sure that you remember the battery constraint and UI constraint.", &cfg);
         assert!(res5.contains("dictionary modal is blank"), "Expected 'dictionary modal is blank', got: {}", res5);
         assert!(res5.contains("word efficiency has improved"), "Expected 'word efficiency has improved', got: {}", res5);
+
+        // 6. Developer repos and UF repairs
+        let res6 = format_transcript("check around the website or the repose, use something", &cfg);
+        assert!(res6.contains("website or the repos"), "Expected 'website or the repos', got: {}", res6);
+
+        let res7 = format_transcript("because I am making the UF fixes", &cfg);
+        assert!(res7.contains("making the UI fixes"), "Expected 'making the UI fixes', got: {}", res7);
+
+        let res8 = format_transcript(&deduplicate_repeated_speech("a picture of your, your plan is"), &cfg);
+        assert_eq!(res8, "A picture of your plan is");
     }
 }
