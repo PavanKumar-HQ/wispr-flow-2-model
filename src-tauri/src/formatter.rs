@@ -878,6 +878,14 @@ pub fn repair_speech_self_corrections(input: &str) -> (String, usize) {
                 out.splice(reparandum_start..delete_end, repair_slice);
                 total_repairs += 1;
                 i = reparandum_start + repair_k;
+            } else if (w_curr == "no" || w_curr == "wait" || w_curr == "sorry" || w_curr == "actually") && k == 1 && i > 0 {
+                // Immediate single-token substitution (e.g. "Send email to Sarah, wait, Alex." -> "Send email to Alex.", "I want red no blue." -> "I want blue.")
+                let reparandum_start = i - 1;
+                let repair_slice: Vec<String> = out[i + cue_len..i + cue_len + 1].to_vec();
+                let delete_end = i + cue_len + 1;
+                out.splice(reparandum_start..delete_end, repair_slice);
+                total_repairs += 1;
+                i = reparandum_start + 1;
             } else {
                 // If there is no explicit matched reparandum, do NOT delete preceding words!
                 i += 1;
