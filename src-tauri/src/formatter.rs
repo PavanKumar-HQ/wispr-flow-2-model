@@ -856,27 +856,18 @@ pub fn repair_speech_self_corrections(input: &str) -> (String, usize) {
                 out.splice(i..i + cue_len, vec!["is".to_string()]);
                 total_repairs += 1;
                 i += 1;
-            } else {
-                let repair_k = if rem_tokens.len() > 1 && (is_preposition_token(&clean_word_for_matching(&rem_tokens[1])) || matches!(rem_tokens[1].to_lowercase().as_str(), "and" | "or" | "but" | "so" | "because" | "since" | "then" | "for")) {
-                    1
-                } else {
-                    k
-                };
+            } else if cue_len == 2 && (w_curr == "scratch" || w_curr == "my" || w_curr == "make") {
+                let repair_k = k;
                 let m_len = repair_k.min(i);
                 let reparandum_start = i.saturating_sub(m_len);
-                let mut repair_slice: Vec<String> = out[i + cue_len..i + cue_len + repair_k].to_vec();
+                let repair_slice: Vec<String> = out[i + cue_len..i + cue_len + repair_k].to_vec();
                 let delete_end = i + cue_len + repair_k;
-                if reparandum_start == 0 && !repair_slice.is_empty() {
-                    if let Some(first) = repair_slice.first_mut() {
-                        let mut chars = first.chars();
-                        if let Some(c) = chars.next() {
-                            *first = c.to_uppercase().collect::<String>() + chars.as_str();
-                        }
-                    }
-                }
                 out.splice(reparandum_start..delete_end, repair_slice);
                 total_repairs += 1;
                 i = reparandum_start + repair_k;
+            } else {
+                // If there is no explicit matched reparandum, do NOT delete preceding words!
+                i += 1;
             }
 
             if i > 0 && i - 1 < out.len() && out[i - 1].ends_with(',') {
@@ -2332,8 +2323,6 @@ fn fix_common_grammar_and_contractions(input: &str) -> String {
         .replace("They is ", "They are ")
         .replace("we is ", "we are ")
         .replace("We is ", "We are ")
-        .replace("i is ", "I am ")
-        .replace("I is ", "I am ")
         .replace("he don't", "he doesn't")
         .replace("He don't", "He doesn't")
         .replace("she don't", "she doesn't")
@@ -2926,5 +2915,19 @@ mod tests {
 
         let res8 = format_transcript(&deduplicate_repeated_speech("a picture of your, your plan is"), &cfg);
         assert_eq!(res8, "A picture of your plan is");
+
+        // 7. UI is so bad must NEVER turn into "UI am so bad"
+        let res9 = format_transcript("The UI is so bad and the dark and light theme has been conflicting", &cfg);
+        assert!(res9.contains("The UI is so bad"), "Expected 'The UI is so bad', got: {}", res9);
+        assert!(!res9.contains("UI am"), "Must not contain 'UI am': {}", res9);
+
+        // 8. Conversational sentences with 'wrong. I mean check' must retain full text
+        let res10 = format_transcript("This prompt was being built using the same tool, but see what it's been going wrong. I mean check for what's the issue, so if you want to see other models,", &cfg);
+        assert!(res10.contains("going wrong"), "Expected 'going wrong' preserved, got: {}", res10);
+        assert!(res10.contains("check for what's the issue"), "Expected 'check for what's the issue' preserved, got: {}", res10);
+
+        // 9. 'best model and suitable one. I mean, this is creating' must retain 'best model'
+        let res11 = format_transcript("So, we'll use whatever is the best model and suitable one. I mean, this is creating lot of issues and spreading word, mistake, not detecting properly.", &cfg);
+        assert!(res11.contains("best model and suitable one"), "Expected 'best model and suitable one' preserved, got: {}", res11);
     }
 }

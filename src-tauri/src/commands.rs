@@ -909,7 +909,14 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
 
         let app_name = anchor.platform_app_id.clone().unwrap_or_else(|| "active app".to_string());
         
-        let insert_res = insert_text_safely(&formatted_transcript, &anchor);
+        // Append a trailing space to dictated text (Handy & Wispr Flow standard)
+        // so consecutive dictation utterances never fuse adjacent words together (e.g. "modelsI", "it.So,")
+        let text_to_paste = if !formatted_transcript.ends_with(' ') && !formatted_transcript.ends_with('\n') && !formatted_transcript.ends_with('\t') {
+            format!("{} ", formatted_transcript)
+        } else {
+            formatted_transcript.clone()
+        };
+        let insert_res = insert_text_safely(&text_to_paste, &anchor);
         insertion_method = insert_res.method_used.clone();
 
         match insert_res.status {
