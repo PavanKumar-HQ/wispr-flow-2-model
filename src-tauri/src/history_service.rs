@@ -1038,23 +1038,13 @@ impl HistoryDatabase {
     }
 
     pub fn get_active_biasing_prompt(&self) -> Result<String, String> {
-        // Natural context sentences to guide Whisper's acoustic decoder without inducing
-        // comma-overfitting or hallucinations (unlike raw keyword lists).
+        // Natural context sentences providing semantic priors without comma-overfitting
         let base_prompt = "In VoxQuest and Wispr Flow, we discuss software development, trading journals, git repos, websites, demo apps, and user interfaces. Using ChatGPT, Claude, and Gemini, dictation accuracy and word efficiency are tested while following UI and battery constraints properly.";
 
         let mut custom_terms = Vec::new();
-        // Dynamically inject user's active personal vocabulary & custom dictionary terms
         if let Ok(vocab) = self.list_personal_vocabulary(Some("active")) {
-            for v in vocab.iter().take(15) {
+            for v in vocab.iter().take(10) {
                 let term = v.preferred_text.trim();
-                if !term.is_empty() && !base_prompt.contains(term) && !custom_terms.iter().any(|c: &String| c.eq_ignore_ascii_case(term)) {
-                    custom_terms.push(term.to_string());
-                }
-            }
-        }
-        if let Ok(dict) = self.list_dictionary_entries() {
-            for d in dict.iter().take(15) {
-                let term = d.replacement_phrase.trim();
                 if !term.is_empty() && !base_prompt.contains(term) && !custom_terms.iter().any(|c: &String| c.eq_ignore_ascii_case(term)) {
                     custom_terms.push(term.to_string());
                 }
@@ -1064,7 +1054,7 @@ impl HistoryDatabase {
         if custom_terms.is_empty() {
             Ok(base_prompt.to_string())
         } else {
-            Ok(format!("{} Custom terminology includes: {}.", base_prompt, custom_terms.join(", ")))
+            Ok(format!("{} Vocabulary: {}.", base_prompt, custom_terms.join(", ")))
         }
     }
 

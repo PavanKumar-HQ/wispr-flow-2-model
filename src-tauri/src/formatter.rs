@@ -677,6 +677,23 @@ pub fn repair_phonetic_speech_confusions(input: &str) -> String {
         ("training journal", "trading journal"),
         ("Training journal", "Trading journal"),
 
+        // "being generated" phonetic decomposition repair
+        ("This is Bing.Gentreter", "This is being generated"),
+        ("This is Bing. Gentreter", "This is being generated"),
+        ("this is Bing.Gentreter", "this is being generated"),
+        ("it's Bing.Gentreter", "it's being generated"),
+        ("it's Bing. Gentreter", "it's being generated"),
+        ("Bing.Gentreter", "being generated"),
+        ("Bing. Gentreter", "being generated"),
+        ("Bing Gentreter", "being generated"),
+        ("bing gentreter", "being generated"),
+        ("raw, what's it", "wrong words"),
+        ("raw what's it", "wrong words"),
+
+        // "along with efficiency" acoustic confusion
+        ("color with efficiency", "along with efficiency"),
+        ("Color with efficiency", "Along with efficiency"),
+
         // Spurious mid-clause comma elisions before verbs
         ("properly, take it", "properly take it"),
         ("properly, take", "properly take"),
@@ -725,7 +742,6 @@ pub fn repair_speech_self_corrections(input: &str) -> (String, usize) {
             || (w_curr == "no" && w_next == "wait")
             || (w_curr == "wait" && w_next == "no")
             || (w_curr == "scratch" && w_next == "that")
-            || (w_curr == "i" && w_next == "mean")
             || (w_curr == "or" && w_next == "rather")
             || (w_curr == "make" && w_next == "that")
             || (w_curr == "my" && w_next == "bad")
