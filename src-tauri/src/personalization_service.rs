@@ -259,13 +259,12 @@ pub fn extract_correction_candidates(original: &str, edited: &str) -> Vec<Extrac
             continue;
         }
 
-        // Avoid creating dictionary rules from ordinary English stopword swaps (e.g. "a" <-> "the", "it" <-> "It")
-        if orig_words.len() == 1 && edit_words.len() == 1 {
-            let w1 = orig_words[0].to_lowercase();
-            let w2 = edit_words[0].to_lowercase();
-            if is_blacklisted_common_word(&w1) || is_blacklisted_common_word(&w2) {
-                continue;
-            }
+        // Avoid creating dictionary rules that replace ordinary English stop words (e.g. "your website" -> "Qshalawebsite")
+        // unless it is purely a casing/capitalization change (e.g. "vox flow" -> "VoxFlow")
+        if (orig_words.iter().any(|w| is_blacklisted_common_word(w)) || edit_words.iter().any(|w| is_blacklisted_common_word(w)))
+            && !orig_str.eq_ignore_ascii_case(&edit_str)
+        {
+            continue;
         }
 
         // Determine entry type heuristically
