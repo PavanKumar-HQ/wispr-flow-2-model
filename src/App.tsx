@@ -275,7 +275,13 @@ export default function App() {
   };
 
   const handleToggleDictation = async () => {
-    if (session.state === 'idle' || session.state === 'completed') {
+    if (session.state === 'recording') {
+      setSession((prev) => ({
+        ...prev,
+        state: 'transcribing',
+        message: 'Transcribing...',
+      }));
+    } else if (session.state === 'idle' || session.state === 'completed') {
       setSession((prev) => ({
         ...prev,
         state: 'recording',

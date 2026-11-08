@@ -561,6 +561,9 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
         session_lock.message = Some("Transcribing...".to_string());
         let snap = session_lock.clone();
         let _ = app.emit("dictation-session-changed", &snap);
+        if let Some(w) = app.get_webview_window("floating-indicator") {
+            let _ = w.emit("dictation-session-changed", &snap);
+        }
         session_lock.session_id.clone()
     };
 

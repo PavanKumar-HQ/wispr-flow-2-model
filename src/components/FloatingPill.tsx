@@ -30,10 +30,15 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
   const [isDismissed, setIsDismissed] = useState<boolean>(false);
   const [modelShiftNotice, setModelShiftNotice] = useState<string | null>(null);
   const [optimisticRecording, setOptimisticRecording] = useState<boolean>(false);
+  const [optimisticStopping, setOptimisticStopping] = useState<boolean>(false);
   const lastSessionIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (status.state === 'recording' || status.state === 'completed' || status.state === 'failed') {
+    if (status.state === 'recording') {
+      setOptimisticRecording(false);
+    }
+    if (status.state === 'transcribing' || status.state === 'completed' || status.state === 'idle' || status.state === 'failed') {
+      setOptimisticStopping(false);
       setOptimisticRecording(false);
     }
   }, [status.state]);
@@ -52,13 +57,15 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
     };
   }, []);
 
-  const isRecording = status.state === 'recording' || status.state === 'starting' || optimisticRecording;
   const isTranscribing =
     status.state === 'transcribing' ||
     status.state === 'formatting' ||
     status.state === 'validating_target' ||
     status.state === 'inserting' ||
-    status.state === 'stopping';
+    status.state === 'stopping' ||
+    optimisticStopping;
+
+  const isRecording = (status.state === 'recording' || status.state === 'starting' || optimisticRecording) && !isTranscribing;
   const hasTranscript = Boolean(status.last_transcript && status.last_transcript.trim().length > 0);
   const isDone = (status.state === 'completed' || status.state === 'recovery_required') && hasTranscript;
 
@@ -306,6 +313,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
             <button
               onClick={(e) => {
                 e.stopPropagation();
+                setOptimisticStopping(true);
                 onToggle();
               }}
               className="p-1.5 rounded-full bg-vq-terracotta text-white hover:bg-vq-terracotta/90 shadow-xs transition-all active:scale-95"
