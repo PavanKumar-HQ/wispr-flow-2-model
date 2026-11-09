@@ -5373,7 +5373,6 @@ dependencies = [
  "tokio",
  "uuid",
  "whisper-rs",
- "whisper-rs-sys",
 ]
 
 [[package]]

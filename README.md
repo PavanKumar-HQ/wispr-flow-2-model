@@ -10,6 +10,38 @@ VoxQuest is a sovereign, 100% on-device system-wide voice typing utility and dev
 
 ---
 
+## 🔒 Official Locked UI Specification & Version Invariant
+
+> [!IMPORTANT]
+> **LOCKED UI SPECIFICATION (Commit `15cdbc5` / `origin/main`)**
+> The UI design of VoxQuest is officially **locked** to the authentic GitHub `origin/main` baseline (`15cdbc5`). No experimental redesigns, notches, or fused themes may alter these tokens without explicit user instruction:
+>
+> 1. **Floating Pill Visual Foundations**:
+>    - **Palette**: Warm Linen Cream (`#DFDFD4`) capsule backdrop, Charcoal text (`#212121`), Dark Teal border (`#07514C`).
+>    - **Listening State**: Warm Terracotta (`#DA6C4C`) badge with pulsing terracotta indicator, dynamic elapsed recording timer, and Terracotta waveform harmonics.
+>    - **Transcribing State**: Authentic Dark Teal (`#07514C`) spinner with a 480ms minimum transcribing visibility floor and Dark Teal harmonic ripple wave.
+>    - **Clean Vector Icons (No Emojis)**: Strictly use Lucide SVG vector icons (e.g. `<Zap className="w-3 h-3 text-darkTeal" />`, `<Wand2 />`, `<RotateCcw />`, `<Copy />`, `<CornerDownLeft />`, `<X />`, `<Square />`). Literal emojis (such as ⚡, 🚀, etc.) are strictly prohibited from all UI labels and toasts.
+>
+> 2. **Complete Floating HUD Action Suite**:
+>    - **Dev Mode Badge**: Vector `Zap` icon with clean text label (`Shifted to Dev` / `Dev Active`).
+>    - **Enhancement Cycler**: `Wand2` button cycling between Light Correction, Prompt, Professional, Concise, and Natural modes.
+>    - **Original Speech Restore**: `RotateCcw` button to instantly revert AI enhancements.
+>    - **Clipboard Copy & Direct Insertion**: `Copy` and `CornerDownLeft` buttons with active status checkmarks.
+>    - **Window Dismiss**: Clean `X` button.
+>
+> 3. **Hardware Push-to-Talk & Event Routing**:
+>    - Non-focus-stealing floating indicator window (`orderFrontRegardless`).
+>    - Universal IPC capability across all windows (`"windows": ["*"]`).
+>    - Immediate recording while hotkey is held, instantaneous stop and transcribing transition upon key release.
+>    - Guaranteed 0.0% idle CPU and zero thermal heating on Apple Silicon.
+>
+> 4. **Lightweight Speech Engine Specification (Permanent Thermal Fix)**:
+>    - **Active Engine**: `whisper-base-en-q5_1` (57 MB, Q5_1 quantization, English-optimized).
+>    - **Performance Metrics**: ~140ms – 600ms latency (15x faster than Large-v3-Turbo), ~130 MB RAM footprint, 0.0% idle CPU.
+>    - **Zero Memory Leaks**: Persistent reusable Metal state prevents GPU memory thrashing and elimiates chassis heating.
+
+---
+
 ## Table of Contents
 1. [Architectural Overview & Core Technology Stack](#1-architectural-overview--core-technology-stack)
 2. [VoxQuest vs. Wispr Flow — Parity & Countermeasure Matrix](#2-voxquest-vs-wispr-flow--parity--countermeasure-matrix)

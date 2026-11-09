@@ -65,14 +65,131 @@ pub mod noisy_speech_benchmark;
 
 static LAST_SHORTCUT_EVENT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 static IS_SHORTCUT_HELD: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+static SESSION_STARTED_BY_HOTKEY: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 static SHORTCUT_PRESS_TIME: Mutex<Option<Instant>> = Mutex::new(None);
+
+#[cfg(target_os = "macos")]
+#[link(name = "CoreGraphics", kind = "framework")]
+extern "C" {
+    fn CGEventSourceKeyState(state_id: i32, key: u16) -> bool;
+    fn CGEventSourceFlagsState(state_id: i32) -> u64;
+}
+
+#[cfg(target_os = "macos")]
+pub fn is_key_physically_pressed(key_code: u16) -> bool {
+    unsafe {
+        CGEventSourceKeyState(1, key_code) || CGEventSourceKeyState(0, key_code)
+    }
+}
+
+#[cfg(target_os = "macos")]
+pub fn get_modifier_flags() -> u64 {
+    unsafe {
+        CGEventSourceFlagsState(1) | CGEventSourceFlagsState(0)
+    }
+}
+
+pub fn is_session_started_by_hotkey() -> bool {
+    SESSION_STARTED_BY_HOTKEY.load(std::sync::atomic::Ordering::SeqCst)
+}
+
+/// Checks whether the user is physically holding the shortcut key combination down right now.
+pub fn is_shortcut_physically_held(shortcut_str: &str) -> bool {
+    #[cfg(target_os = "macos")]
+    {
+        let lower = shortcut_str.to_lowercase();
+        let flags = get_modifier_flags();
+
+        // Check if shortcut uses Command / Cmd (including CommandOrControl on macOS)
+        let needs_cmd = lower.contains("commandorcontrol")
+            || lower.contains("command")
+            || lower.contains("cmd")
+            || lower.contains("super");
+
+        let cmd_held = if needs_cmd {
+            (flags & 0x00100000 != 0) || is_key_physically_pressed(55) || is_key_physically_pressed(54)
+        } else {
+            false
+        };
+
+        // Check Shift
+        let needs_shift = lower.contains("shift");
+        let shift_held = if needs_shift {
+            (flags & 0x00020000 != 0) || is_key_physically_pressed(56) || is_key_physically_pressed(60)
+        } else {
+            false
+        };
+
+        // Check Alt / Option
+        let needs_alt = lower.contains("alt") || lower.contains("option");
+        let alt_held = if needs_alt {
+            (flags & 0x00080000 != 0) || is_key_physically_pressed(58) || is_key_physically_pressed(61)
+        } else {
+            false
+        };
+
+        // Check Control ONLY if explicitly specified without "commandorcontrol"
+        let stripped_of_coc = lower.replace("commandorcontrol", "");
+        let needs_ctrl = stripped_of_coc.contains("control") || stripped_of_coc.contains("ctrl");
+        let ctrl_held = if needs_ctrl {
+            (flags & 0x00040000 != 0) || is_key_physically_pressed(59) || is_key_physically_pressed(62)
+        } else {
+            false
+        };
+
+        // Check primary key
+        let key_code = if lower.ends_with("+k") || lower.ends_with(" k") || lower == "k" {
+            Some(40) // K
+        } else if lower.ends_with("+space") || lower.ends_with(" space") || lower == "space" {
+            Some(49) // Space
+        } else if lower.ends_with("+d") || lower.ends_with(" d") || lower == "d" {
+            Some(2) // D
+        } else if lower.ends_with("+j") || lower.ends_with(" j") || lower == "j" {
+            Some(38) // J
+        } else if lower.ends_with("+f") || lower.ends_with(" f") || lower == "f" {
+            Some(3) // F
+        } else if lower.ends_with("+r") || lower.ends_with(" r") || lower == "r" {
+            Some(15) // R
+        } else {
+            None
+        };
+
+        let key_held = if let Some(code) = key_code {
+            is_key_physically_pressed(code)
+        } else {
+            false
+        };
+
+        let has_modifiers = needs_cmd || needs_shift || needs_alt || needs_ctrl;
+
+        if has_modifiers {
+            // As long as ANY configured modifier (e.g. Command) or the primary key is physically held,
+            // the user is holding the push-to-talk hotkey!
+            // Dictation only stops when all components have been physically released.
+            cmd_held || shift_held || alt_held || ctrl_held || key_held
+        } else if let Some(_) = key_code {
+            key_held
+        } else {
+            is_shortcut_held()
+        }
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        is_shortcut_held()
+    }
+}
 
 pub fn is_shortcut_held() -> bool {
     IS_SHORTCUT_HELD.load(std::sync::atomic::Ordering::SeqCst)
 }
 
+pub fn is_shortcut_active() -> bool {
+    SHORTCUT_PRESS_TIME.lock().ok().and_then(|t| *t).is_some()
+}
+
 pub fn reset_shortcut_held() {
     IS_SHORTCUT_HELD.store(false, std::sync::atomic::Ordering::SeqCst);
+    SESSION_STARTED_BY_HOTKEY.store(false, std::sync::atomic::Ordering::SeqCst);
     if let Ok(mut t) = SHORTCUT_PRESS_TIME.lock() {
         *t = None;
     }
@@ -141,6 +258,7 @@ pub fn run() {
                     // 2. Ignore key auto-repeat while key is held down.
                     // 3. Tapping also supported in toggle mode.
                     if event.state == ShortcutState::Pressed {
+                        SESSION_STARTED_BY_HOTKEY.store(true, std::sync::atomic::Ordering::SeqCst);
                         let was_held = IS_SHORTCUT_HELD.swap(true, std::sync::atomic::Ordering::SeqCst);
                         if was_held {
                             // macOS keyboard auto-repeat: key is already held down and recording is running.
@@ -203,22 +321,20 @@ pub fn run() {
                             "push_to_talk".to_string()
                         };
 
-                        // When in push-to-talk mode, always stop on key release.
-                        // When in toggle mode, strictly ignore key release so the user can speak hands-free until re-triggered.
                         let press_duration = held_start.map(|t| t.elapsed()).unwrap_or_default();
                         let should_stop_on_release = mode == "push_to_talk";
 
                         if should_stop_on_release {
                             tauri::async_runtime::spawn_blocking(move || {
                                 if let Some(state) = app_handle.try_state::<AppState>() {
-                                    // Wait up to 350ms if audio initialization is still in 'Starting' state
-                                    for _ in 0..7 {
+                                    // Wait up to 500ms if audio initialization is still in 'Starting' state
+                                    for _ in 0..10 {
                                         let sess_state = {
                                             let sess = state.active_session.lock().unwrap();
                                             sess.state
                                         };
                                         if sess_state == SessionState::Recording {
-                                            println!("[VoxQuest Hotkey] Key released after {:?} -> stopping and auto-inserting", press_duration);
+                                            println!("[VoxQuest Hotkey] Key released after {:?} -> stopping and transcribing", press_duration);
                                             let _ = commands::stop_dictation(state, app_handle_inner);
                                             break;
                                         } else if sess_state == SessionState::Starting {
@@ -275,7 +391,7 @@ pub fn run() {
                 .transparent(true)
                 .skip_taskbar(true)
                 .focused(false)
-                .visible(true);
+                .visible(false);
 
                 if let Ok(pill_win) = pill_builder.build() {
                     // Position at bottom-center of the primary display
@@ -289,7 +405,6 @@ pub fn run() {
                         let _ = pill_win.set_position(tauri::Position::Logical(tauri::LogicalPosition::new(x, y)));
                     }
 
-                    let _ = pill_win.show();
                     #[cfg(target_os = "macos")]
                     if let Ok(ns_win) = pill_win.ns_window() {
                         use cocoa::base::id;
@@ -303,7 +418,6 @@ pub fn run() {
                             let () = objc::msg_send![ns_win, setHidesOnDeactivate: 0u8];
                             let () = objc::msg_send![ns_win, setMovableByWindowBackground: 1u8];
                             let () = objc::msg_send![ns_win, setMovable: 1u8];
-                            let () = objc::msg_send![ns_win, orderFrontRegardless];
                         }
                     }
                 }

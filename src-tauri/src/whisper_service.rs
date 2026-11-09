@@ -8,25 +8,13 @@ pub struct WhisperEngine {
     max_threads: Option<u32>,
 }
 
-unsafe extern "C" fn silence_whisper_log(
-    _level: whisper_rs_sys::ggml_log_level,
-    _text: *const std::os::raw::c_char,
-    _user_data: *mut std::os::raw::c_void,
-) {}
-
 impl WhisperEngine {
     pub fn new() -> Self {
-        // Silence verbose internal Whisper.cpp token/progress dumps to stderr
-        // to strictly prevent terminal log flooding and IDE thread exhaustion
-        unsafe {
-            whisper_rs_sys::whisper_log_set(Some(silence_whisper_log), std::ptr::null_mut());
-        }
-
         Self {
             context: None,
             state: None,
             current_model_path: None,
-            max_threads: Some(2),
+            max_threads: Some(4),
         }
     }
 
@@ -72,13 +60,19 @@ impl WhisperEngine {
             return Err("Speech engine not initialized. Please install/load a model first.".to_string());
         }
 
-        let ctx = self.context.as_ref().unwrap();
-        // Create fresh clean state for this dictation to guarantee ZERO prompt bleed from past sessions
-        let mut state = ctx.create_state()
-            .map_err(|e| format!("Whisper clean state creation failed: {:?}", e))?;
+        // Reuse persistent state to keep Metal GPU shaders and buffers warm across sessions
+        let state = if let Some(ref mut s) = self.state {
+            s
+        } else {
+            let ctx = self.context.as_ref().unwrap();
+            let new_state = ctx.create_state()
+                .map_err(|e| format!("Whisper state creation failed: {:?}", e))?;
+            self.state = Some(new_state);
+            self.state.as_mut().unwrap()
+        };
 
-        // Ultra-low thermal greedy decoding for 809M Large-v3-Turbo
-        // Avoids doubling decoder matrix forward-passes, keeping Apple Silicon cool (<30°C) with ~180ms latency
+        // Ultra-low thermal greedy decoding
+        // Avoids doubling decoder matrix forward-passes, keeping Apple Silicon cool (<30°C)
         let mut params = FullParams::new(SamplingStrategy::Greedy { best_of: 1 });
         params.set_print_progress(false);
         params.set_print_special(false);
@@ -95,9 +89,9 @@ impl WhisperEngine {
         params.set_entropy_thold(2.80);
         params.set_temperature(0.0);
         params.set_temperature_inc(0.0);
-        // Energy-efficient multi-threading: clamp to 2 threads max to strictly prevent thermal spikes and battery drain
-        let avail = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(2);
-        let n_threads = self.max_threads.unwrap_or(2).min(avail as u32).clamp(1, 2);
+        // "Race to sleep" threading: use optimal cores (up to 4) so inference finishes rapidly and returns CPU/GPU to low-power idle
+        let avail = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4);
+        let n_threads = self.max_threads.unwrap_or(4).min(avail as u32).clamp(2, 4);
         params.set_n_threads(n_threads as i32);
 
         if let Some(prompt) = initial_prompt {

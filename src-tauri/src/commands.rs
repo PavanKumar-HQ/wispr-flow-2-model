@@ -464,7 +464,6 @@ pub fn start_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Ses
     let snap_for_pill = snap.clone();
     crate::run_on_main_thread(move || {
         if let Some(w) = app_show.get_webview_window("floating-indicator") {
-            let _ = w.show();
             #[cfg(target_os = "macos")]
             if let Ok(ns_win) = w.ns_window() {
                 use cocoa::base::id;
@@ -472,7 +471,11 @@ pub fn start_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Ses
                 unsafe {
                     let () = objc::msg_send![ns_win, orderFrontRegardless];
                 }
+            } else {
+                let _ = w.show();
             }
+            #[cfg(not(target_os = "macos"))]
+            let _ = w.show();
             let _ = w.emit("dictation-session-changed", &snap_for_pill);
         }
     });
@@ -485,7 +488,7 @@ pub fn start_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Ses
         let active_session_ref = Arc::clone(&state.active_session);
 
         tauri::async_runtime::spawn(async move {
-            let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(35));
+            let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(50));
             loop {
                 interval.tick().await;
                 let is_rec = {
@@ -527,14 +530,66 @@ pub fn start_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Ses
         });
     }
 
-    // In push-to-talk mode, if user already released the shortcut key while audio initialization was in flight,
-    // immediately transition to stop_dictation so recording does not get stuck in background!
+    // In push-to-talk mode, spawn a native hardware key release watcher
+    // to detect when the physical shortcut key is left, independent of frontmost app or Carbon hotkey events!
     let mode = {
         let s = state.settings.lock().unwrap();
         s.interaction_mode.clone()
     };
-    if mode == "push_to_talk" && !crate::is_shortcut_held() {
-        println!("VoxQuest: Shortcut was released during initialization -> immediately stopping dictation");
+    if mode == "push_to_talk" && crate::is_session_started_by_hotkey() {
+        let app_release_watcher = app.clone();
+        let sess_release_check = session_id.clone();
+        let shortcut_str = {
+            let s = state.settings.lock().unwrap();
+            s.shortcut.clone()
+        };
+        tauri::async_runtime::spawn(async move {
+            // Initial grace period: allow 200ms for physical key press to settle
+            tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
+
+            let mut consecutive_unpressed = 0;
+            // Poll at 25ms intervals to guarantee smooth, jitter-free detection
+            for _ in 0..4000 {
+                tokio::time::sleep(tokio::time::Duration::from_millis(25)).await;
+
+                if let Some(state_w) = app_release_watcher.try_state::<AppState>() {
+                    let sess_state = {
+                        let sess = state_w.active_session.lock().unwrap();
+                        if sess.session_id != sess_release_check {
+                            break;
+                        }
+                        sess.state
+                    };
+
+                    if sess_state != SessionState::Recording && sess_state != SessionState::Starting {
+                        break;
+                    }
+
+                    if !crate::is_shortcut_physically_held(&shortcut_str) {
+                        consecutive_unpressed += 1;
+                        if consecutive_unpressed >= 3 {
+                            println!("[VoxQuest Hardware Watcher] Shortcut physically released in external app -> auto-stopping dictation");
+                            crate::reset_shortcut_held();
+                            let app_to_stop = app_release_watcher.clone();
+                            let _ = stop_dictation(state_w, app_to_stop);
+                            break;
+                        }
+                    } else {
+                        consecutive_unpressed = 0;
+                    }
+                } else {
+                    break;
+                }
+            }
+        });
+    }
+
+    let shortcut_str = {
+        let s = state.settings.lock().unwrap();
+        s.shortcut.clone()
+    };
+    if mode == "push_to_talk" && crate::is_session_started_by_hotkey() && !crate::is_shortcut_physically_held(&shortcut_str) {
+        println!("VoxQuest: Shortcut was physically released during initialization -> stopping dictation");
         return stop_dictation(state, app);
     }
 
@@ -596,6 +651,9 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
         session_lock.last_transcript = None;
         let snap = session_lock.clone();
         let _ = app.emit("dictation-session-changed", &snap);
+        if let Some(w) = app.get_webview_window("floating-indicator") {
+            let _ = w.emit("dictation-session-changed", &snap);
+        }
         let app_hide = app.clone();
         let target_id = session_lock.session_id.clone();
         tauri::async_runtime::spawn(async move {
@@ -660,8 +718,8 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
         };
 
         if prefers_high_precision {
-            // Find highest-tier downloaded model: Large-v3-Turbo -> Small -> Base -> Tiny
-            let candidate_ids = ["whisper-large-v3-turbo", "whisper-small", "whisper-base-q5_1", "whisper-base", "whisper-tiny-q5_1", "whisper-tiny"];
+            // High-precision: Base-en-q5_1 -> Base-q5_1 -> Tiny-q5_1
+            let candidate_ids = ["whisper-base-en-q5_1", "whisper-base-q5_1", "whisper-tiny-q5_1"];
             candidate_ids
                 .iter()
                 .filter_map(|id| manifest.iter().find(|m| &m.id == id))
@@ -670,8 +728,8 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
                 .or_else(|| manifest.iter().find(|m| m.recommended).cloned())
                 .ok_or_else(|| "No model manifest found".to_string())?
         } else {
-            // Instant/Everyday: Base -> Tiny -> Small -> Large-v3-Turbo
-            let candidate_ids = ["whisper-base-q5_1", "whisper-base", "whisper-tiny-q5_1", "whisper-tiny", "whisper-small", "whisper-large-v3-turbo"];
+            // Instant/Everyday: Base-en-q5_1 -> Base-q5_1 -> Tiny-q5_1
+            let candidate_ids = ["whisper-base-en-q5_1", "whisper-base-q5_1", "whisper-tiny-q5_1"];
             candidate_ids
                 .iter()
                 .filter_map(|id| manifest.iter().find(|m| &m.id == id))
@@ -690,7 +748,7 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
 
     // Robust fallback: If selected model file is not downloaded, safely fallback to highest-tier downloaded model
     let current_info = if !models_dir.join(&current_info.filename).exists() {
-        let fallback_candidates = ["whisper-small", "whisper-base-q5_1", "whisper-base", "whisper-tiny-q5_1", "whisper-tiny", "whisper-large-v3-turbo"];
+        let fallback_candidates = ["whisper-base-en-q5_1", "whisper-base-q5_1", "whisper-tiny-q5_1"];
         fallback_candidates
             .iter()
             .filter_map(|id| manifest.iter().find(|m| &m.id == id))
@@ -1153,7 +1211,7 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
             "Code syntax".to_string()
         };
 
-        let dev_candidate = ["whisper-large-v3-turbo", "whisper-small", "whisper-base", "whisper-tiny"]
+        let dev_candidate = ["whisper-base-en-q5_1", "whisper-base-q5_1", "whisper-tiny-q5_1"]
             .iter()
             .filter_map(|id| manifest.iter().find(|m| &m.id == id))
             .find(|m| models_dir.join(&m.filename).exists())
@@ -1180,10 +1238,6 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
         } else {
             None
         }
-    } else if current_info.id == "whisper-large-v3-turbo" && !is_dev_app && duration_sec < 4.0 {
-        Some(
-            "General conversational speech detected. Switch to Balanced Everyday profile for faster response?".to_string()
-        )
     } else {
         None
     };
@@ -1213,8 +1267,18 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
     println!("  TOTAL TURNAROUND:    {:>6.2} ms", ms_total);
     println!("================================================\n");
 
+    // Ensure the transcribing animation remains clearly visible for at least 480ms
+    // so the user perceives the emerald/teal spinner and wave ripple before it transitions to Pasted
+    let transcribing_duration_ms = (Instant::now() - t_stop_requested).as_millis();
+    if transcribing_duration_ms < 480 {
+        std::thread::sleep(std::time::Duration::from_millis((480 - transcribing_duration_ms) as u64));
+    }
+
     let final_snap = session_lock.clone();
     let _ = app.emit("dictation-session-changed", &final_snap);
+    if let Some(w) = app.get_webview_window("floating-indicator") {
+        let _ = w.emit("dictation-session-changed", &final_snap);
+    }
     if final_snap.state == SessionState::Completed {
         let _ = app.emit("dictionary-updated", ());
     }
@@ -1495,7 +1559,22 @@ pub fn toggle_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Se
         SessionState::Idle | SessionState::Completed | SessionState::RecoveryRequired | SessionState::Cancelled | SessionState::Failed => {
             start_dictation(state, app)
         }
-        SessionState::Starting | SessionState::Stopping | SessionState::Transcribing | SessionState::Formatting | SessionState::ValidatingTarget | SessionState::Inserting => {
+        SessionState::Starting => {
+            // If starting is in flight, wait briefly up to 300ms for it to enter Recording, then stop smoothly
+            for _ in 0..6 {
+                std::thread::sleep(std::time::Duration::from_millis(50));
+                let s = {
+                    let lock = state.active_session.lock().unwrap();
+                    lock.state
+                };
+                if s == SessionState::Recording {
+                    return stop_dictation(state, app);
+                }
+            }
+            let session_lock = state.active_session.lock().unwrap();
+            Ok(session_lock.clone())
+        }
+        SessionState::Stopping | SessionState::Transcribing | SessionState::Formatting | SessionState::ValidatingTarget | SessionState::Inserting => {
             let session_lock = state.active_session.lock().unwrap();
             Ok(session_lock.clone())
         }
@@ -1630,7 +1709,6 @@ pub fn show_pill_window(app: AppHandle) -> Result<(), String> {
     let app_handle = app.clone();
     crate::run_on_main_thread(move || {
         if let Some(w) = app_handle.get_webview_window("floating-indicator") {
-            let _ = w.show();
             #[cfg(target_os = "macos")]
             if let Ok(ns_win) = w.ns_window() {
                 use cocoa::base::id;
@@ -1638,7 +1716,11 @@ pub fn show_pill_window(app: AppHandle) -> Result<(), String> {
                 unsafe {
                     let () = objc::msg_send![ns_win, orderFrontRegardless];
                 }
+            } else {
+                let _ = w.show();
             }
+            #[cfg(not(target_os = "macos"))]
+            let _ = w.show();
         }
     });
     Ok(())
@@ -2017,37 +2099,25 @@ pub fn switch_speech_profile(
 
     let target_model_id = match profile.to_lowercase().as_str() {
         "developer" | "dev" | "tech" | "technical" => {
-            let candidate_ids = ["whisper-large-v3-turbo", "whisper-small", "whisper-base-q5_1", "whisper-base", "whisper-tiny-q5_1", "whisper-tiny"];
+            let candidate_ids = ["whisper-base-en-q5_1", "whisper-base-q5_1", "whisper-tiny-q5_1"];
             candidate_ids
                 .iter()
                 .filter_map(|id| manifest.iter().find(|m| &m.id == id))
                 .find(|m| models_dir.join(&m.filename).exists())
                 .map(|m| m.id.as_str())
-                .unwrap_or("whisper-small")
+                .unwrap_or("whisper-base-en-q5_1")
         }
         "multilingual" | "dialects" => {
-            if models_dir.join("ggml-small.bin").exists() { "whisper-small" } else { "whisper-base" }
+            "whisper-base-q5_1"
         }
         "general" | "instant" | "fast" | "battery" | "low_power" => {
-            if models_dir.join("ggml-tiny-q5_1.bin").exists() {
-                "whisper-tiny-q5_1"
-            } else if models_dir.join("ggml-tiny.bin").exists() {
-                "whisper-tiny"
-            } else if models_dir.join("ggml-base-q5_1.bin").exists() {
-                "whisper-base-q5_1"
-            } else {
-                "whisper-base"
-            }
+            "whisper-tiny-q5_1"
         }
         "balanced" | "everyday" => {
-            if models_dir.join("ggml-base-q5_1.bin").exists() {
-                "whisper-base-q5_1"
-            } else if models_dir.join("ggml-base.bin").exists() {
-                "whisper-base"
-            } else if models_dir.join("ggml-tiny-q5_1.bin").exists() {
-                "whisper-tiny-q5_1"
+            if models_dir.join("ggml-base.en-q5_1.bin").exists() {
+                "whisper-base-en-q5_1"
             } else {
-                "whisper-tiny"
+                "whisper-base-q5_1"
             }
         }
         _ => {
@@ -2063,10 +2133,6 @@ pub fn switch_speech_profile(
     {
         let mut settings = state.settings.lock().unwrap();
         settings.default_model_id = target_info.id.clone();
-        if target_info.id == "whisper-large-v3-turbo" || target_info.id == "whisper-small" {
-            settings.spoken_punctuation = true;
-            settings.enable_speech_repair = true;
-        }
         crate::settings_service::save_settings(&settings)?;
         let _ = app.emit("settings-updated", &*settings);
     }

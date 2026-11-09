@@ -17,7 +17,7 @@ export default function App() {
   const [insights, setInsights] = useState<InsightsData | null>(null);
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [settings, setSettings] = useState<AppSettings>({
-    default_model_id: 'whisper-small',
+    default_model_id: 'whisper-base-en-q5_1',
     language: 'auto',
     shortcut: 'CommandOrControl+Shift+Space',
     insertion_policy: 'original_destination',
@@ -69,6 +69,16 @@ export default function App() {
   }, [session.state, session.session_id]);
 
   useEffect(() => {
+    if (isPillOnlyWindow) {
+      // In dedicated floating indicator window, only listen to push session updates
+      const sessionPromise = safeListen<SessionSnapshot>('dictation-session-changed', (e) => {
+        setSession(e.payload);
+      });
+      return () => {
+        sessionPromise.then((fn) => fn && fn());
+      };
+    }
+
     loadAllData();
 
     // Listen to native download events
@@ -122,38 +132,13 @@ export default function App() {
       loadInsights();
     });
 
-    // In floating pill window, fallback sync at 1000ms (push events handle instant 0ms state transitions)
-    let syncInterval: ReturnType<typeof setInterval> | null = null;
-    if (isPillOnlyWindow) {
-      syncInterval = setInterval(async () => {
-        try {
-          const snap = await safeInvoke<SessionSnapshot>('get_session_snapshot');
-          if (snap) {
-            setSession((prev) => {
-              if (
-                prev.state !== snap.state ||
-                prev.sequence !== snap.sequence ||
-                prev.last_transcript !== snap.last_transcript
-              ) {
-                return snap;
-              }
-              return prev;
-            });
-          }
-        } catch {
-          // ignore in browser mode
-        }
-      }, 1000);
-    }
-
     return () => {
       progPromise.then((fn) => fn && fn());
       compPromise.then((fn) => fn && fn());
       sessionPromise.then((fn) => fn && fn());
       destSyncPromise.then((fn) => fn && fn());
-      if (syncInterval) clearInterval(syncInterval);
     };
-  }, []);
+  }, [isPillOnlyWindow]);
 
   useEffect(() => {
     if (activeTab === 'insights') {
@@ -193,7 +178,7 @@ export default function App() {
       const activeSettings = currentSettings || settings;
       const downloaded = res.filter(m => m.is_downloaded);
       if (downloaded.length > 0 && !res.find(m => m.id === activeSettings.default_model_id)?.is_downloaded) {
-        const fallback = downloaded.find(m => m.id === 'whisper-small') || downloaded[0];
+        const fallback = downloaded.find(m => m.id === 'whisper-base-en-q5_1') || downloaded[0];
         if (fallback) {
           handleSelectActiveModel(fallback.id);
         }
@@ -395,11 +380,10 @@ export default function App() {
                   key={item.id}
                   onClick={() => setActiveTab(item.id as any)}
                   title={item.label}
-                  className={`w-full flex items-center justify-center md:justify-between px-2.5 md:px-3 py-2.5 rounded-xl text-xs font-semibold transition-all relative ${
-                    isActive
-                      ? 'bg-darkTeal text-white shadow-sm'
-                      : 'text-charcoal/70 hover:text-charcoal hover:bg-black/5'
-                  }`}
+                  className={`w-full flex items-center justify-center md:justify-between px-2.5 md:px-3 py-2.5 rounded-xl text-xs font-semibold transition-all relative ${isActive
+                    ? 'bg-darkTeal text-white shadow-sm'
+                    : 'text-charcoal/70 hover:text-charcoal hover:bg-black/5'
+                    }`}
                 >
                   <div className="flex items-center gap-2.5">
                     <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-amber' : 'text-charcoal/60'}`} />

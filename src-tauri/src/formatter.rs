@@ -878,8 +878,10 @@ pub fn repair_speech_self_corrections(input: &str) -> (String, usize) {
                 out.splice(reparandum_start..delete_end, repair_slice);
                 total_repairs += 1;
                 i = reparandum_start + repair_k;
-            } else if (w_curr == "no" || w_curr == "wait" || w_curr == "sorry" || w_curr == "actually") && k == 1 && i > 0 {
-                // Immediate single-token substitution (e.g. "Send email to Sarah, wait, Alex." -> "Send email to Alex.", "I want red no blue." -> "I want blue.")
+            } else if (w_curr == "wait" || w_curr == "sorry" || w_curr == "actually" || w_curr == "no") && k == 1 && i > 0 {
+                // Single token correction with explicit retraction marker:
+                // e.g. "send email to Sarah, wait, Alex." -> "send email to Alex."
+                // e.g. "send email to Alice wait Bob" -> "send email to Bob."
                 let reparandum_start = i - 1;
                 let repair_slice: Vec<String> = out[i + cue_len..i + cue_len + 1].to_vec();
                 let delete_end = i + cue_len + 1;

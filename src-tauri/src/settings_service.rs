@@ -40,14 +40,14 @@ impl Default for AppSettings {
             .map(|d| d.join("VoxQuest").join("models"))
             .unwrap_or_else(|| PathBuf::from("."));
 
-        let initial_model = if installed.join("ggml-base.bin").exists() {
-            "whisper-base".to_string()
-        } else if installed.join("ggml-tiny.bin").exists() {
-            "whisper-tiny".to_string()
-        } else if installed.join("ggml-small.bin").exists() {
-            "whisper-small".to_string()
+        let initial_model = if installed.join("ggml-base.en-q5_1.bin").exists() {
+            "whisper-base-en-q5_1".to_string()
+        } else if installed.join("ggml-base-q5_1.bin").exists() {
+            "whisper-base-q5_1".to_string()
+        } else if installed.join("ggml-tiny-q5_1.bin").exists() {
+            "whisper-tiny-q5_1".to_string()
         } else {
-            "whisper-base".to_string()
+            "whisper-base-en-q5_1".to_string()
         };
 
         Self {

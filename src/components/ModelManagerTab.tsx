@@ -1,5 +1,5 @@
 import React from 'react';
-import { Download, Check, Zap, Globe, BookOpen, ShieldCheck, Play, X, Cpu, Shield, CheckCircle2 } from 'lucide-react';
+import { Download, Check, Zap, Globe, ShieldCheck, Play, X, Cpu, Shield, CheckCircle2 } from 'lucide-react';
 import { ModelInfo } from '../types';
 
 interface ModelManagerProps {
@@ -30,33 +30,26 @@ export const ModelManagerTab: React.FC<ModelManagerProps> = ({
   // Purpose-driven speech profile presentation (Zero internal model names in UI)
   const getProfileMeta = (id: string) => {
     switch (id) {
-      case 'whisper-large-v3-turbo':
+      case 'whisper-base-en-q5_1':
         return {
-          title: 'Developer & Technical Precision',
-          tag: 'Coding • Terminal • Engineering',
-          icon: Cpu,
-          desc: 'Specialized for software development, code identifiers, terminal syntax, rapid speech, Indian accents, and deep engineering vocabulary.',
-        };
-      case 'whisper-small':
-        return {
-          title: 'Multilingual & Dialects',
-          tag: '99+ Languages • Accents',
-          icon: Globe,
-          desc: 'Deep multilingual comprehension across 99+ languages, regional accents, mixed speech (e.g. Hinglish), and rich documentation.',
-        };
-      case 'whisper-base':
-        return {
-          title: 'Balanced Everyday Writing',
-          tag: 'Balanced • Documents',
-          icon: BookOpen,
-          desc: 'Optimal balance of transcription accuracy and speed for writing documents, emails, meeting summaries, and daily tasks.',
-        };
-      case 'whisper-tiny':
-        return {
-          title: 'General & Instant Speed',
-          tag: 'Instant • Chat & Notes',
+          title: 'Instant English (Lightweight)',
+          tag: 'English • 57 MB • Instant',
           icon: Zap,
-          desc: 'Ultra-fast response with near-zero latency. Perfect for quick messages, Slack chats, emails, and daily thoughts with minimal battery usage.',
+          desc: 'Ultra-lightweight English model. Instant response (~140ms latency), lowest battery consumption, and zero MacBook heat.',
+        };
+      case 'whisper-base-q5_1':
+        return {
+          title: 'Everyday Multilingual (Low RAM)',
+          tag: 'Multilingual • 59 MB',
+          icon: Globe,
+          desc: 'Compact Q5_1 multilingual model. High transcription precision with minimal memory overhead (~180 MB RAM).',
+        };
+      case 'whisper-tiny-q5_1':
+        return {
+          title: 'Ultra-Low Power (Battery Saver)',
+          tag: 'Battery Saver • 32 MB',
+          icon: Zap,
+          desc: 'Ultra-quantized Q5_1 model. Lowest battery and RAM footprint (~120 MB RAM), ideal for maximum battery life.',
         };
       default:
         return {
