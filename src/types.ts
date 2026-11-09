@@ -91,8 +91,6 @@ export interface SessionSnapshot {
   timestamp_ms?: number;
   technical_suggestion?: string | null;
   active_model_name?: string | null;
-  action_type?: string | null;
-  action_target?: string | null;
 }
 
 export interface SystemCapabilities {

@@ -348,23 +348,3 @@ body {
   transition: width 0.3s ease;
 }
 
-@keyframes transcribingShimmer {
-  0% {
-    background-position: -200% center;
-  }
-  100% {
-    background-position: 200% center;
-  }
-}
-
-.transcribing-shimmer {
-  background: linear-gradient(90deg, #059669 0%, #34D399 50%, #059669 100%);
-  background-size: 200% auto;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent !important;
-  color: transparent !important;
-  display: inline-block;
-  animation: transcribingShimmer 1.8s linear infinite;
-}
-
-

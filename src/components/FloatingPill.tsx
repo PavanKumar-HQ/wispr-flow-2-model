@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, Square, Check, Copy, Wand2, RotateCcw, X, CornerDownLeft, RefreshCw, Zap, ExternalLink } from 'lucide-react';
+import { Mic, Square, Check, Copy, Wand2, RotateCcw, X, CornerDownLeft, RefreshCw, Zap } from 'lucide-react';
 import { SessionSnapshot, EnhancementResponse, EnhancementRequest, EnhancementMode } from '../types';
 import { AudioWaveform } from './AudioWaveform';
 import { safeListen, safeInvoke, isNativeTauri } from '../lib/ipc';
@@ -20,7 +20,6 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
   onCopyLast,
   compact = false,
 }) => {
-  const [internalStatus, setInternalStatus] = useState<SessionSnapshot>(status);
   const [liveLevel, setLiveLevel] = useState<number>(0);
   const [copied, setCopied] = useState<boolean>(false);
   const [isEnhancing, setIsEnhancing] = useState<boolean>(false);
@@ -30,44 +29,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
   const [inserted, setInserted] = useState<boolean>(false);
   const [isDismissed, setIsDismissed] = useState<boolean>(false);
   const [modelShiftNotice, setModelShiftNotice] = useState<string | null>(null);
-  const [optimisticRecording, setOptimisticRecording] = useState<boolean>(false);
-  const [optimisticStopping, setOptimisticStopping] = useState<boolean>(false);
-  const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
-  const recordingStartTimeRef = useRef<number | null>(null);
   const lastSessionIdRef = useRef<string | null>(null);
-
-  // Sync internalStatus whenever status prop changes
-  useEffect(() => {
-    if (status) {
-      setInternalStatus(status);
-    }
-  }, [status]);
-
-  // Direct backend session synchronization: guaranteed native event reception in all windows
-  useEffect(() => {
-    let unlistenSession: (() => void) | undefined;
-    safeListen<SessionSnapshot>('dictation-session-changed', (e) => {
-      if (e.payload) {
-        setInternalStatus(e.payload);
-      }
-    }).then((fn) => {
-      unlistenSession = fn;
-    });
-
-    const refresh = async () => {
-      try {
-        const snap = await safeInvoke<SessionSnapshot>('get_session_snapshot');
-        if (snap) setInternalStatus(snap);
-      } catch {}
-    };
-    refresh();
-
-    return () => {
-      if (unlistenSession) unlistenSession();
-    };
-  }, []);
-
-  const activeStatus = internalStatus || status;
 
   useEffect(() => {
     let unlisten: (() => void) | undefined;
@@ -83,86 +45,33 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
     };
   }, []);
 
-  useEffect(() => {
-    if (activeStatus.state === 'recording') {
-      setOptimisticRecording(false);
-    }
-    if (
-      activeStatus.state === 'transcribing' ||
-      activeStatus.state === 'completed' ||
-      activeStatus.state === 'idle' ||
-      activeStatus.state === 'failed'
-    ) {
-      setOptimisticStopping(false);
-      setOptimisticRecording(false);
-    }
-  }, [activeStatus.state]);
-
+  const isPillOnly = typeof window !== 'undefined' && window.location.hash.includes('pill');
+  const isRecording = status.state === 'recording' || status.state === 'starting' || (isPillOnly && status.state === 'idle');
   const isTranscribing =
-    activeStatus.state === 'transcribing' ||
-    activeStatus.state === 'formatting' ||
-    activeStatus.state === 'validating_target' ||
-    activeStatus.state === 'inserting' ||
-    activeStatus.state === 'stopping' ||
-    optimisticStopping;
+    status.state === 'transcribing' ||
+    status.state === 'formatting' ||
+    status.state === 'validating_target' ||
+    status.state === 'inserting' ||
+    status.state === 'stopping';
+  const hasTranscript = Boolean(status.last_transcript && status.last_transcript.trim().length > 0);
+  const isDone = (status.state === 'completed' || status.state === 'recovery_required') && hasTranscript;
 
-  const isRecording =
-    (activeStatus.state === 'recording' || activeStatus.state === 'starting' || optimisticRecording) &&
-    !isTranscribing;
-  const hasTranscript = Boolean(activeStatus.last_transcript && activeStatus.last_transcript.trim().length > 0);
-  const isDone = (activeStatus.state === 'completed' || activeStatus.state === 'recovery_required') && hasTranscript;
-
-  // Auto-dismiss pill 1.5s after transcription is completed and pasted
-  useEffect(() => {
-    if (isDone && !isDismissed) {
-      const timer = setTimeout(() => {
-        setIsDismissed(true);
-        safeInvoke('hide_pill_window');
-      }, 1500);
-      return () => clearTimeout(timer);
-    }
-  }, [isDone, isDismissed, activeStatus.timestamp_ms]);
-
-  // Monotonic session timer: strictly starts from 00:00 on every recording start
-  useEffect(() => {
-    let interval: ReturnType<typeof setInterval> | null = null;
-    if (isRecording) {
-      const now = Date.now();
-      recordingStartTimeRef.current = now;
-      setElapsedSeconds(0);
-      const tick = () => {
-        if (recordingStartTimeRef.current) {
-          const diff = Math.floor((Date.now() - recordingStartTimeRef.current) / 1000);
-          setElapsedSeconds(diff);
-        }
-      };
-      tick();
-      interval = setInterval(tick, 200);
-    } else {
-      recordingStartTimeRef.current = null;
-      setElapsedSeconds(0);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isRecording, activeStatus.session_id]);
-
-  const currentActiveText = enhancedText || activeStatus.last_transcript || '';
+  const currentActiveText = enhancedText || status.last_transcript || '';
 
   // Reset enhancement state ONLY when a genuinely NEW session begins or records
   // Never reset on 150ms snapshot poll ticks of timestamp_ms or last_transcript!
   useEffect(() => {
-    if (activeStatus.state === 'recording') {
+    if (status.state === 'recording') {
       setIsDismissed(false);
       setEnhancedText(null);
       setEnhanced(false);
-    } else if (activeStatus.session_id && activeStatus.session_id !== lastSessionIdRef.current) {
-      lastSessionIdRef.current = activeStatus.session_id;
+    } else if (status.session_id && status.session_id !== lastSessionIdRef.current) {
+      lastSessionIdRef.current = status.session_id;
       setIsDismissed(false);
       setEnhancedText(null);
       setEnhanced(false);
     }
-  }, [activeStatus.session_id, activeStatus.state]);
+  }, [status.session_id, status.state]);
 
   // Listen to live microphone volume stream
   useEffect(() => {
@@ -176,18 +85,6 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
     return () => {
       if (unlisten) unlisten();
     };
-  }, []);
-
-  // Escape key dismisses the floating pill window immediately
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setIsDismissed(true);
-        safeInvoke('hide_pill_window');
-      }
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
   const formatSeconds = (sec: number) => {
@@ -236,7 +133,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
       const effectiveMode: EnhancementMode = targetMode === 'light_correction' && isPromptLike ? 'prompt' : targetMode;
 
       const req: EnhancementRequest = {
-        session_id: activeStatus.session_id || null,
+        session_id: status.session_id || null,
         text: raw,
         mode: effectiveMode,
         auto_replace: true,
@@ -250,7 +147,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
         // Immediately paste/insert the enhanced text into the active cursor
         try {
           await safeInvoke('insert_into_selected_field', {
-            id: activeStatus.recovery_id || 0,
+            id: status.recovery_id || 0,
             text: res.enhanced_text,
           });
           setInserted(true);
@@ -275,7 +172,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
   };
 
   const handleRestoreOriginal = async () => {
-    const orig = (activeStatus.last_transcript || '').trim();
+    const orig = (status.last_transcript || '').trim();
     setEnhancedText(null);
     setEnhanced(false);
     if (orig) {
@@ -289,9 +186,9 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
     if (!textToInsert) return;
 
     try {
-      if (activeStatus.recovery_id) {
+      if (status.recovery_id) {
         await safeInvoke('insert_into_selected_field', {
-          id: activeStatus.recovery_id,
+          id: status.recovery_id,
           text: textToInsert,
         });
       } else {
@@ -318,57 +215,44 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
         compact ? 'w-full h-full' : 'fixed bottom-8 left-1/2 -translate-x-1/2 z-50'
       } flex items-center justify-center select-none p-1`}
     >
-      {/* Pill Capsule styled with exact theme: Light red when listening, Emerald when transcribing, Linen cream when idle/done */}
+      {/* Pill Capsule styled with exact platform tokens: #DFDFD4 cream, #07514C dark teal, #DA6C4C terracotta */}
       <div
         data-tauri-drag-region
         onMouseDown={handleMouseDown}
-        className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-charcoal shadow-md backdrop-blur-sm transition-all duration-200 cursor-grab active:cursor-grabbing ${
+        className={`flex items-center gap-2 px-3 py-1.5 rounded-full border bg-cream text-charcoal shadow-md backdrop-blur-sm transition-all duration-200 cursor-grab active:cursor-grabbing ${
           isRecording
-            ? 'border-red-500 ring-2 ring-red-500/40 shadow-[0_0_15px_rgba(239,68,68,0.25)] bg-red-50/95'
+            ? 'border-terracotta ring-2 ring-terracotta/30'
             : isTranscribing
-            ? 'border-emerald-500 ring-2 ring-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.25)] bg-emerald-50/50'
+            ? 'border-darkTeal ring-2 ring-darkTeal/20'
             : isDone && !isDismissed
-            ? activeStatus.state === 'recovery_required'
-              ? 'border-amber ring-2 ring-amber/30 bg-cream'
-              : 'border-deepTeal ring-2 ring-deepTeal/20 bg-cream'
-            : 'border-charcoal/30 hover:border-darkTeal bg-cream'
+            ? status.state === 'recovery_required'
+              ? 'border-amber ring-2 ring-amber/30'
+              : 'border-deepTeal ring-2 ring-deepTeal/20'
+            : 'border-charcoal/30 hover:border-darkTeal'
         } h-[42px] max-w-[430px]`}
       >
         {/* Left: Dynamic State Badge */}
         <div className="shrink-0 flex items-center gap-2 pl-0.5 font-sans">
           {isRecording ? (
-            <div className="flex items-center gap-2">
-              <div className="relative flex items-center justify-center">
-                <span className="animate-ping absolute inline-flex h-4 w-4 rounded-full bg-red-500 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-600 shadow-xs" />
-              </div>
-              <span className="text-[11px] font-black tracking-widest text-red-600 uppercase font-mono">
+            <div className="flex items-center gap-1.5">
+              <span className="relative flex h-3 w-3 items-center justify-center">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-vq-terracotta opacity-75" />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-vq-terracotta shadow-sm" />
+              </span>
+              <span className="text-[11px] font-extrabold tracking-wide text-vq-terracotta uppercase">
                 Listening
               </span>
-              <span className="text-[11px] font-mono font-bold text-red-700 bg-red-100/90 px-2 py-0.5 rounded-full border border-red-300 shadow-xs">
-                {formatSeconds(elapsedSeconds)}
+              <span className="text-[11px] font-mono font-bold text-vq-terracotta bg-vq-terracotta/10 px-1.5 py-0.5 rounded border border-vq-terracotta/20">
+                {formatSeconds(status.elapsed_seconds)}
               </span>
             </div>
           ) : isTranscribing ? (
-            <div className="flex items-center gap-2">
-              <div className="relative flex items-center justify-center w-4 h-4 shrink-0">
-                <span className="absolute w-4 h-4 rounded-full border-2 border-emerald-200" />
-                <span className="w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
-              </div>
-              <span className="text-[11px] font-bold text-emerald-600 font-mono tracking-wide transcribing-shimmer shrink-0">
-                Transcribing...
-              </span>
+            <div className="flex items-center gap-1.5">
+              <span className="w-3 h-3 border-2 border-vq-tealDark border-t-transparent rounded-full animate-spin" />
+              <span className="text-[11px] font-bold text-vq-tealDark">Transcribing...</span>
             </div>
           ) : isDone && !isDismissed ? (
-            activeStatus.action_type === 'app_launch' ? (
-              <div className="flex items-center gap-1.5 animate-fadeIn">
-                <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-600 shadow-sm" />
-                <span className="text-[11px] font-bold text-darkTeal flex items-center gap-1">
-                  <ExternalLink className="w-3 h-3 text-terracotta" />
-                  <span>{activeStatus.action_target || 'App'} Opened</span>
-                </span>
-              </div>
-            ) : activeStatus.state === 'recovery_required' ? (
+            status.state === 'recovery_required' ? (
               <div className="flex items-center gap-1.5">
                 <span className="flex h-2.5 w-2.5 rounded-full bg-vq-amber shadow-sm" />
                 <span className="text-[11px] font-bold text-vq-charcoal">
@@ -383,7 +267,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
                 </span>
               </div>
             )
-          ) : activeStatus.message && activeStatus.message.toLowerCase().includes('no speech') ? (
+          ) : status.message && status.message.toLowerCase().includes('no speech') ? (
             <div className="flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full bg-vq-amber" />
               <span className="text-[11px] font-bold text-vq-charcoal">No speech heard</span>
@@ -416,10 +300,9 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                setOptimisticStopping(true);
                 onToggle();
               }}
-              className="p-1.5 rounded-full bg-red-600 hover:bg-red-700 text-white shadow-[0_0_10px_rgba(220,38,38,0.45)] transition-all active:scale-90 animate-pulse outline-none focus:outline-none focus:ring-0"
+              className="p-1.5 rounded-full bg-vq-terracotta text-white hover:bg-vq-terracotta/90 shadow-xs transition-all active:scale-95"
               title="Stop recording"
               aria-label="Stop recording"
             >
@@ -428,20 +311,20 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
           ) : isDone && !isDismissed ? (
             <>
               {/* Proactive Adaptive Model Switch Badge */}
-              {(modelShiftNotice || activeStatus.technical_suggestion) && (
+              {(modelShiftNotice || status.technical_suggestion) && (
                 <button
                   onClick={async (e) => {
                     e.stopPropagation();
-                    const text = modelShiftNotice || activeStatus.technical_suggestion || '';
+                    const text = modelShiftNotice || status.technical_suggestion || '';
                     const targetProfile = text.includes('Developer') ? 'developer' : 'balanced';
                     await safeInvoke('switch_speech_profile', { profile: targetProfile });
                   }}
-                  className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber text-charcoal hover:bg-amber/90 transition-all border border-amber/40 shadow-xs flex items-center gap-1 active:scale-95 shrink-0 cursor-pointer animate-pulse outline-none focus:outline-none focus:ring-0"
-                  title={modelShiftNotice || activeStatus.technical_suggestion || ''}
+                  className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber text-charcoal hover:bg-amber/90 transition-all border border-amber/40 shadow-xs flex items-center gap-1 active:scale-95 shrink-0 cursor-pointer animate-pulse"
+                  title={modelShiftNotice || status.technical_suggestion || ''}
                   aria-label="Model shifted notification"
                 >
                   <Zap className="w-3 h-3 text-darkTeal" />
-                  <span>{(modelShiftNotice || activeStatus.technical_suggestion)?.includes('Toggled') ? '⚡ Shifted to Dev' : '⚡ Dev Active'}</span>
+                  <span>{(modelShiftNotice || status.technical_suggestion)?.includes('Toggled') ? '⚡ Shifted to Dev' : '⚡ Dev Active'}</span>
                 </button>
               )}
 
@@ -456,7 +339,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
                   }
                 }}
                 disabled={isEnhancing}
-                className={`p-1.5 rounded-full transition-all border shadow-xs outline-none focus:outline-none focus:ring-0 ${
+                className={`p-1.5 rounded-full transition-all border shadow-xs ${
                   enhanced
                     ? 'bg-vq-tealDark text-amber border-vq-borderDark'
                     : 'bg-white text-amber-700 border-vq-borderDark/40 hover:bg-amber/10 active:scale-95'
@@ -478,7 +361,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
                     e.stopPropagation();
                     handleRestoreOriginal();
                   }}
-                  className="p-1.5 rounded-full text-vq-charcoal/70 hover:text-vq-charcoal hover:bg-vq-surface transition-all border border-vq-borderDark/30 active:scale-95 outline-none focus:outline-none focus:ring-0"
+                  className="p-1.5 rounded-full text-vq-charcoal/70 hover:text-vq-charcoal hover:bg-vq-surface transition-all border border-vq-borderDark/30 active:scale-95"
                   title="Restore original recognized speech"
                   aria-label="Restore original"
                 >
@@ -492,7 +375,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
                   e.stopPropagation();
                   handleCopy();
                 }}
-                className={`p-1.5 rounded-full transition-all border outline-none focus:outline-none focus:ring-0 ${
+                className={`p-1.5 rounded-full transition-all border ${
                   copied
                     ? 'bg-vq-sage text-vq-tealDark border-vq-sage'
                     : 'bg-white text-vq-charcoal border-vq-borderDark/30 hover:bg-vq-surface active:scale-95'
@@ -509,7 +392,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
                   e.stopPropagation();
                   handleInsert();
                 }}
-                className={`p-1.5 rounded-full transition-all border outline-none focus:outline-none focus:ring-0 ${
+                className={`p-1.5 rounded-full transition-all border ${
                   inserted
                     ? 'bg-vq-tealDark text-vq-cream border-vq-borderDark'
                     : 'bg-white text-vq-charcoal border-vq-borderDark/30 hover:bg-vq-surface active:scale-95'
@@ -525,9 +408,8 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
                 onClick={(e) => {
                   e.stopPropagation();
                   setIsDismissed(true);
-                  safeInvoke('hide_pill_window');
                 }}
-                className="p-1.5 rounded-full text-vq-charcoal/40 hover:text-vq-terracotta hover:bg-vq-terracotta/10 transition-all ml-0.5 active:scale-95 outline-none focus:outline-none focus:ring-0"
+                className="p-1.5 rounded-full text-vq-charcoal/40 hover:text-vq-terracotta hover:bg-vq-terracotta/10 transition-all ml-0.5 active:scale-95"
                 title="Dismiss pill"
                 aria-label="Dismiss pill"
               >
@@ -538,10 +420,9 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                setOptimisticRecording(true);
                 onToggle();
               }}
-              className="p-1.5 rounded-full bg-vq-tealDark text-vq-cream hover:bg-vq-tealDeep shadow-xs transition-all active:scale-95 outline-none focus:outline-none focus:ring-0"
+              className="p-1.5 rounded-full bg-vq-tealDark text-vq-cream hover:bg-vq-tealDeep shadow-xs transition-all active:scale-95"
               title="Click to dictate"
               aria-label="Start dictation"
             >

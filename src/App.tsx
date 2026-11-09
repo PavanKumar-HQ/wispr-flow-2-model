@@ -53,7 +53,7 @@ export default function App() {
   // Elapsed timer ticker during recording
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | null = null;
-    if (session.state === 'recording') {
+    if (session.state === 'recording' && session.session_id && session.session_id.length > 0) {
       interval = setInterval(() => {
         setSession((prev) => {
           if (prev.state === 'recording') {
@@ -66,56 +66,36 @@ export default function App() {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [session.state]);
+  }, [session.state, session.session_id]);
 
   useEffect(() => {
-    if (isPillOnlyWindow) {
-      // Pill window: lightweight initialization, strictly event-driven (zero polling)
-      safeInvoke<SessionSnapshot>('get_session_snapshot').then((snap) => {
-        if (snap) setSession(snap);
+    loadAllData();
+
+    // Listen to native download events
+    const progPromise = safeListen<{ model_id: string; downloaded: number; total: number; percent: number }>('model-download-progress', (e) => {
+      setDownloadProgress((prev) => ({
+        ...prev,
+        [e.payload.model_id]: {
+          percent: e.payload.percent,
+          downloaded: e.payload.downloaded,
+          total: e.payload.total,
+        },
+      }));
+    });
+
+    const compPromise = safeListen<{ model_id: string; path: string }>('model-download-complete', (e) => {
+      setDownloadProgress((prev) => {
+        const next = { ...prev };
+        delete next[e.payload.model_id];
+        return next;
       });
-    } else {
-      // Main dashboard window: load full persistence and analytics
-      loadAllData();
-    }
+      loadModels();
+    });
 
-    // Listen to native download events (main window only)
-    let progPromise: Promise<(() => void) | undefined> = Promise.resolve(undefined);
-    let compPromise: Promise<(() => void) | undefined> = Promise.resolve(undefined);
-    let destSyncPromise: Promise<(() => void) | undefined> = Promise.resolve(undefined);
-
-    if (!isPillOnlyWindow) {
-      progPromise = safeListen<{ model_id: string; downloaded: number; total: number; percent: number }>('model-download-progress', (e) => {
-        setDownloadProgress((prev) => ({
-          ...prev,
-          [e.payload.model_id]: {
-            percent: e.payload.percent,
-            downloaded: e.payload.downloaded,
-            total: e.payload.total,
-          },
-        }));
-      });
-
-      compPromise = safeListen<{ model_id: string; path: string }>('model-download-complete', (e) => {
-        setDownloadProgress((prev) => {
-          const next = { ...prev };
-          delete next[e.payload.model_id];
-          return next;
-        });
-        loadModels();
-      });
-
-      // Listen for automatic external edits synced back from destination apps (e.g. TextEdit)
-      destSyncPromise = safeListen<{ history_id: number; app_name: string; updated_text: string }>('destination-edit-synced', (_e) => {
-        loadHistory();
-        loadInsights();
-      });
-    }
-
-    // Authoritative backend session state changes (event-driven across all windows)
+    // Authoritative backend session state changes
     const sessionPromise = safeListen<SessionSnapshot>('dictation-session-changed', (e) => {
       setSession(e.payload);
-      if (!isPillOnlyWindow && (e.payload.state === 'completed' || e.payload.state === 'recovery_required')) {
+      if (e.payload.state === 'completed' || e.payload.state === 'recovery_required') {
         loadHistory();
         loadInsights();
       }
@@ -132,17 +112,54 @@ export default function App() {
             }
             return prev;
           });
-        }, 2000);
+        }, 1200);
       }
     });
+
+    // Listen for automatic external edits synced back from destination apps (e.g. TextEdit)
+    const destSyncPromise = safeListen<{ history_id: number; app_name: string; updated_text: string }>('destination-edit-synced', (_e) => {
+      loadHistory();
+      loadInsights();
+    });
+
+    // In floating pill window, fallback sync at 1000ms (push events handle instant 0ms state transitions)
+    let syncInterval: ReturnType<typeof setInterval> | null = null;
+    if (isPillOnlyWindow) {
+      syncInterval = setInterval(async () => {
+        try {
+          const snap = await safeInvoke<SessionSnapshot>('get_session_snapshot');
+          if (snap) {
+            setSession((prev) => {
+              if (
+                prev.state !== snap.state ||
+                prev.sequence !== snap.sequence ||
+                prev.last_transcript !== snap.last_transcript
+              ) {
+                return snap;
+              }
+              return prev;
+            });
+          }
+        } catch {
+          // ignore in browser mode
+        }
+      }, 1000);
+    }
 
     return () => {
       progPromise.then((fn) => fn && fn());
       compPromise.then((fn) => fn && fn());
       sessionPromise.then((fn) => fn && fn());
       destSyncPromise.then((fn) => fn && fn());
+      if (syncInterval) clearInterval(syncInterval);
     };
-  }, [isPillOnlyWindow]);
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'insights') {
+      loadInsights();
+    }
+  }, [activeTab]);
 
   const loadAllData = async () => {
     const loadedSettings = await loadSettings();
@@ -256,6 +273,14 @@ export default function App() {
   };
 
   const handleToggleDictation = async () => {
+    if (session.state === 'idle' || session.state === 'completed') {
+      setSession((prev) => ({
+        ...prev,
+        state: 'recording',
+        message: 'Listening naturally across all windows... Press shortcut or click pill to finish.',
+        elapsed_seconds: 0.0,
+      }));
+    }
     try {
       const snap = await safeInvoke<SessionSnapshot>('toggle_dictation');
       if (snap) setSession(snap);
@@ -370,10 +395,11 @@ export default function App() {
                   key={item.id}
                   onClick={() => setActiveTab(item.id as any)}
                   title={item.label}
-                  className={`w-full flex items-center justify-center md:justify-between px-2.5 md:px-3 py-2.5 rounded-xl text-xs font-semibold transition-all relative ${isActive
+                  className={`w-full flex items-center justify-center md:justify-between px-2.5 md:px-3 py-2.5 rounded-xl text-xs font-semibold transition-all relative ${
+                    isActive
                       ? 'bg-darkTeal text-white shadow-sm'
                       : 'text-charcoal/70 hover:text-charcoal hover:bg-black/5'
-                    }`}
+                  }`}
                 >
                   <div className="flex items-center gap-2.5">
                     <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-amber' : 'text-charcoal/60'}`} />
