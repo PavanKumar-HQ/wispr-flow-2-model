@@ -210,14 +210,14 @@ export const ModelManagerTab: React.FC<ModelManagerProps> = ({
               <div>
                 <div className="flex items-center gap-2">
                   <span className="text-base font-bold text-darkTeal tracking-tight leading-none">
-                    100% Offline
+                    Local Speech Engine
                   </span>
                   <span className="text-[10px] font-bold bg-darkTeal/10 text-darkTeal border border-darkTeal/20 px-2 py-0.5 rounded-full">
                     READY
                   </span>
                 </div>
                 <p className="text-xs font-medium text-charcoal/60 mt-0.5">
-                  Zero Cloud • On-Device Engine
+                  On-device neural inference
                 </p>
               </div>
             </div>

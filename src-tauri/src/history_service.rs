@@ -37,6 +37,211 @@ pub struct DictionaryEntry {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TrainingSample {
+    pub id: i64,
+    pub session_id: String,
+    pub speaker_id: String,
+    pub audio_path: Option<String>,
+    pub raw_transcript: String,
+    pub corrected_transcript: String,
+    pub accent_tag: String,
+    pub duration_ms: i64,
+    pub is_exported: bool,
+    pub created_at: i64,
+}
+
+pub static BUNDLED_INDIAN_TECH_LEXICON: &[(&str, &str, &str)] = &[
+    // Cloud, Containers & Infrastructure
+    ("cooper net ease", "Kubernetes", "tech"),
+    ("cooper netis", "Kubernetes", "tech"),
+    ("kubernetis", "Kubernetes", "tech"),
+    ("k eight s", "K8s", "tech"),
+    ("k 8 s", "K8s", "tech"),
+    ("docker compose", "Docker Compose", "tech"),
+    ("docker file", "Dockerfile", "tech"),
+    ("postgre", "PostgreSQL", "tech"),
+    ("postgress", "PostgreSQL", "tech"),
+    ("post grass", "PostgreSQL", "tech"),
+    ("pi g admin", "pgAdmin", "tech"),
+    ("pg admin", "pgAdmin", "tech"),
+    ("ci cd", "CI/CD", "tech"),
+    ("c i c d", "CI/CD", "tech"),
+    ("aws", "AWS", "tech"),
+    ("a w s", "AWS", "tech"),
+    ("gcp", "GCP", "tech"),
+    ("g c p", "GCP", "tech"),
+    ("s three", "S3", "tech"),
+    ("s 3", "S3", "tech"),
+    ("ec two", "EC2", "tech"),
+    ("ec 2", "EC2", "tech"),
+    ("lambda function", "Lambda function", "tech"),
+    ("serverless", "serverless", "tech"),
+    ("microservice", "microservice", "tech"),
+    ("micro services", "microservices", "tech"),
+    ("monorepo", "monorepo", "tech"),
+    ("grpc", "gRPC", "tech"),
+    ("g r p c", "gRPC", "tech"),
+    ("protobuf", "Protobuf", "tech"),
+    ("web socket", "WebSocket", "tech"),
+    ("websockets", "WebSockets", "tech"),
+
+    // Programming Languages, Frameworks & Common Mishearings
+    ("skima", "schema", "tech"),
+    ("toople", "tuple", "tech"),
+    ("rooter", "router", "tech"),
+    ("sequel", "SQL", "tech"),
+    ("s q l", "SQL", "tech"),
+    ("no sequel", "NoSQL", "tech"),
+    ("fast api", "FastAPI", "tech"),
+    ("next js", "Next.js", "tech"),
+    ("node js", "Node.js", "tech"),
+    ("react js", "React", "tech"),
+    ("vue js", "Vue.js", "tech"),
+    ("taiwind", "Tailwind CSS", "tech"),
+    ("tail wind", "Tailwind CSS", "tech"),
+    ("tauri", "Tauri", "tech"),
+    ("towry", "Tauri", "tech"),
+    ("rust lang", "Rust", "tech"),
+    ("tokio", "Tokio", "tech"),
+    ("tokyo runtime", "Tokio", "tech"),
+    ("mongo db", "MongoDB", "tech"),
+    ("redis", "Redis", "tech"),
+    ("j son", "JSON", "tech"),
+    ("yaml", "YAML", "tech"),
+    ("yammel", "YAML", "tech"),
+    ("graphql", "GraphQL", "tech"),
+    ("graph q l", "GraphQL", "tech"),
+    ("rest api", "REST API", "tech"),
+    ("jwt", "JWT", "tech"),
+    ("jot token", "JWT", "tech"),
+    ("oauth", "OAuth", "tech"),
+    ("regex", "RegEx", "tech"),
+    ("crud", "CRUD", "tech"),
+    ("sdk", "SDK", "tech"),
+    ("cli", "CLI", "tech"),
+    ("devops", "DevOps", "tech"),
+    ("async await", "async/await", "tech"),
+    ("middleware", "middleware", "tech"),
+    ("frontend", "frontend", "tech"),
+    ("backend", "backend", "tech"),
+    ("fullstack", "fullstack", "tech"),
+
+    // Developer Workflows & Git
+    ("pr", "PR", "tech"),
+    ("p r", "PR", "tech"),
+    ("pull req", "pull request", "tech"),
+    ("git hub", "GitHub", "tech"),
+    ("git lab", "GitLab", "tech"),
+    ("git commit", "git commit", "tech"),
+    ("git push", "git push", "tech"),
+    ("git pull", "git pull", "tech"),
+    ("git merge", "git merge", "tech"),
+    ("git rebase", "git rebase", "tech"),
+    ("git stash", "git stash", "tech"),
+    ("merge conflict", "merge conflict", "tech"),
+    ("prod deployment", "production deployment", "tech"),
+    ("staging env", "staging environment", "tech"),
+
+    // Computer Science, DSA & Interview Prep (Indian Student Cohorts)
+    ("null pointer", "NullPointerException", "tech"),
+    ("null pointer exception", "NullPointerException", "tech"),
+    ("hash map", "HashMap", "tech"),
+    ("hashmap", "HashMap", "tech"),
+    ("linked list", "LinkedList", "tech"),
+    ("binary search", "binary search", "tech"),
+    ("dynamic programming", "dynamic programming", "tech"),
+    ("dp problem", "DP problem", "tech"),
+    ("dsa", "DSA", "tech"),
+    ("d s a", "DSA", "tech"),
+    ("time complexity", "time complexity", "tech"),
+    ("space complexity", "space complexity", "tech"),
+    ("big o", "Big-O", "tech"),
+    ("leetcode", "LeetCode", "tech"),
+    ("leet code", "LeetCode", "tech"),
+    ("codeforces", "Codeforces", "tech"),
+    ("code forces", "Codeforces", "tech"),
+    ("hackerrank", "HackerRank", "tech"),
+    ("hacker rank", "HackerRank", "tech"),
+
+    // Workplace, Productivity & Ecosystem Tools
+    ("antigravity", "Antigravity", "tech"),
+    ("anti gravity", "Antigravity", "tech"),
+    ("voxquest", "VoxQuest", "tech"),
+    ("vox quest", "VoxQuest", "tech"),
+    ("foxquest", "VoxQuest", "tech"),
+    ("whisper flow", "Wispr Flow", "tech"),
+    ("jira ticket", "Jira ticket", "tech"),
+    ("confluence doc", "Confluence doc", "tech"),
+    ("figma design", "Figma design", "tech"),
+
+    // Indian Professional & Workplace Idioms / Phrases
+    ("prepone", "prepone", "workplace"),
+    ("preponed", "preponed", "workplace"),
+    ("preponing", "preponing", "workplace"),
+    ("revert back", "revert back", "workplace"),
+    ("do the needful", "do the needful", "workplace"),
+    ("out of station", "out of station", "workplace"),
+    ("today itself", "today itself", "workplace"),
+    ("updation", "updation", "workplace"),
+    ("intimation", "intimation", "workplace"),
+    ("batchmate", "batchmate", "workplace"),
+    ("batchmates", "batchmates", "workplace"),
+    ("passed out of college", "graduated from college", "workplace"),
+    ("having a doubt", "having a question", "workplace"),
+    ("one of my friend", "one of my friends", "workplace"),
+    ("discuss about", "discuss", "workplace"),
+    ("firstly", "firstly", "workplace"),
+
+    // Accent Phonetic Mishearings (Empirically Harvested from Dictation)
+    ("whisper float", "Wispr Flow", "tech"),
+    ("court club", "Code Club", "workplace"),
+    ("sbro", "Yes bro", "slang"),
+    ("s bro", "Yes bro", "slang"),
+    ("show the comments", "show the commands", "tech"),
+    ("do it to guys", "do it together", "workplace"),
+    ("taking us wrong", "taking as wrong", "workplace"),
+    ("abhinavad", "Abhinav", "name"),
+    ("el one", "EL-1", "tech"),
+    ("el two", "EL-2", "tech"),
+    ("el 1", "EL-1", "tech"),
+    ("el 2", "EL-2", "tech"),
+
+    // Tribe, Community & Cohort Terminology
+    ("try members", "tribe members", "workplace"),
+    ("try member", "tribe member", "workplace"),
+    ("our try", "our tribe", "workplace"),
+    ("the try", "the tribe", "workplace"),
+    ("trive", "tribe", "workplace"),
+    ("trive members", "tribe members", "workplace"),
+    ("tribe members", "tribe members", "workplace"),
+    ("core try", "core tribe", "workplace"),
+    ("tech try", "tech tribe", "workplace"),
+
+    // Ma'am & Respectful Workplace Address
+    ("maam", "Ma'am", "workplace"),
+    ("ma am", "Ma'am", "workplace"),
+    ("yes maam", "Yes, ma'am", "workplace"),
+    ("yeah maam", "Yeah, ma'am", "workplace"),
+    ("no maam", "No, ma'am", "workplace"),
+    ("ok maam", "Okay, ma'am", "workplace"),
+    ("okay maam", "Okay, ma'am", "workplace"),
+    ("thank you maam", "Thank you, ma'am", "workplace"),
+    ("thanks maam", "Thanks, ma'am", "workplace"),
+    ("hello maam", "Hello, ma'am", "workplace"),
+    ("hi maam", "Hi, ma'am", "workplace"),
+    ("madamji", "Madam", "workplace"),
+
+    // Discourse Markers ("and all")
+    ("and all", "and all", "workplace"),
+    ("plans and all", "plans and all", "workplace"),
+    ("things and all", "things and all", "workplace"),
+    ("stuff and all", "stuff and all", "workplace"),
+    ("photos and all", "photos and all", "workplace"),
+    ("videos and all", "videos and all", "workplace"),
+    ("and all that", "and all that", "workplace"),
+];
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HistoryRecord {
     pub id: i64,
     pub timestamp_ms: i64,
@@ -235,6 +440,119 @@ impl HistoryDatabase {
                     params![now],
                 );
             }
+        }
+
+        // Migration tracking table for idempotent versioned database enhancements
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS schema_migrations (
+                migration_key TEXT PRIMARY KEY,
+                applied_at INTEGER NOT NULL
+            )",
+            [],
+        ).map_err(|e| format!("DB schema schema_migrations init failed: {}", e))?;
+
+        // Multi-speaker training dataset harvester table
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS speech_training_samples (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                session_id TEXT NOT NULL,
+                speaker_id TEXT NOT NULL DEFAULT 'student_speaker',
+                audio_path TEXT,
+                raw_transcript TEXT NOT NULL,
+                corrected_transcript TEXT NOT NULL,
+                accent_tag TEXT NOT NULL DEFAULT 'indian_tech',
+                duration_ms INTEGER NOT NULL DEFAULT 0,
+                is_exported INTEGER NOT NULL DEFAULT 0,
+                created_at INTEGER NOT NULL
+            )",
+            [],
+        ).map_err(|e| format!("DB schema speech_training_samples init failed: {}", e))?;
+
+        // Pre-bundle comprehensive Indian Technical & Developer Lexicon directly into the database on startup
+        let already_seeded_indian: bool = conn.query_row(
+            "SELECT COUNT(*) FROM schema_migrations WHERE migration_key = 'bundled_indian_tech_v1'",
+            [],
+            |r| Ok(r.get::<_, i64>(0)? > 0),
+        ).unwrap_or(false);
+
+        if !already_seeded_indian {
+            let now = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_millis() as i64;
+
+            for (orig, repl, cat) in BUNDLED_INDIAN_TECH_LEXICON {
+                // 1. Seed into custom_dictionary if not present
+                let _ = conn.execute(
+                    "INSERT OR IGNORE INTO custom_dictionary (original_phrase, replacement_phrase, category, created_at)
+                     VALUES (?1, ?2, ?3, ?4)",
+                    params![orig, repl, cat, now],
+                );
+
+                // 2. Seed into personal_vocabulary if not present
+                let exists: bool = conn.query_row(
+                    "SELECT COUNT(*) FROM personal_vocabulary WHERE LOWER(original_text) = LOWER(?1)",
+                    params![orig],
+                    |r| Ok(r.get::<_, i64>(0)? > 0),
+                ).unwrap_or(false);
+
+                if !exists {
+                    let _ = conn.execute(
+                        "INSERT INTO personal_vocabulary (original_text, preferred_text, entry_type, confidence, positive_count, negative_count, status, recognition_count, correction_count, application_count, last_used_at, created_at, updated_at, source)
+                         VALUES (?1, ?2, ?3, 1.0, 5, 0, 'active', 0, 0, 0, NULL, ?4, ?4, 'bundled_indian_tech')",
+                        params![orig, repl, cat, now],
+                    );
+                }
+            }
+
+            let _ = conn.execute(
+                "INSERT OR REPLACE INTO schema_migrations (migration_key, applied_at) VALUES ('bundled_indian_tech_v1', ?1)",
+                params![now],
+            );
+        }
+
+        // Migration v2: Seed Tribe, Ma'am, and Indian conversational discourse markers; purge toxic common word replacements
+        let already_seeded_v2: bool = conn.query_row(
+            "SELECT COUNT(*) FROM schema_migrations WHERE migration_key = 'bundled_indian_tech_v2'",
+            [],
+            |r| Ok(r.get::<_, i64>(0)? > 0),
+        ).unwrap_or(false);
+
+        if !already_seeded_v2 {
+            let now = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_millis() as i64;
+
+            // Purge toxic corruptions of high-frequency English words
+            let _ = conn.execute("DELETE FROM custom_dictionary WHERE LOWER(original_phrase) IN ('ma', 'man', 'men')", []);
+            let _ = conn.execute("DELETE FROM personal_vocabulary WHERE LOWER(original_text) IN ('ma', 'man', 'men')", []);
+
+            for (orig, repl, cat) in BUNDLED_INDIAN_TECH_LEXICON {
+                let _ = conn.execute(
+                    "INSERT OR IGNORE INTO custom_dictionary (original_phrase, replacement_phrase, category, created_at)
+                     VALUES (?1, ?2, ?3, ?4)",
+                    params![orig, repl, cat, now],
+                );
+                let exists: bool = conn.query_row(
+                    "SELECT COUNT(*) FROM personal_vocabulary WHERE LOWER(original_text) = LOWER(?1)",
+                    params![orig],
+                    |r| Ok(r.get::<_, i64>(0)? > 0),
+                ).unwrap_or(false);
+
+                if !exists {
+                    let _ = conn.execute(
+                        "INSERT INTO personal_vocabulary (original_text, preferred_text, entry_type, confidence, positive_count, negative_count, status, recognition_count, correction_count, application_count, last_used_at, created_at, updated_at, source)
+                         VALUES (?1, ?2, ?3, 1.0, 5, 0, 'active', 0, 0, 0, NULL, ?4, ?4, 'bundled_indian_tech')",
+                        params![orig, repl, cat, now],
+                    );
+                }
+            }
+
+            let _ = conn.execute(
+                "INSERT OR REPLACE INTO schema_migrations (migration_key, applied_at) VALUES ('bundled_indian_tech_v2', ?1)",
+                params![now],
+            );
         }
 
         Ok(Self { db_path })
@@ -1037,24 +1355,71 @@ impl HistoryDatabase {
         Ok(())
     }
 
-    pub fn get_active_biasing_prompt(&self) -> Result<String, String> {
-        // Natural context sentences providing semantic priors without comma-overfitting
-        let base_prompt = "In VoxQuest and Wispr Flow, we discuss software development, trading journals, git repos, websites, demo apps, and user interfaces. Using ChatGPT, Claude, and Gemini, dictation accuracy and word efficiency are tested while following UI and battery constraints properly.";
+    pub fn get_active_biasing_prompt(&self, target_app: Option<&str>, window_title: Option<&str>) -> Result<String, String> {
+        let app_lower = target_app.unwrap_or("").to_lowercase();
+        let title_lower = window_title.unwrap_or("").to_lowercase();
+
+        let is_developer_ctx = app_lower.contains("code")
+            || app_lower.contains("xcode")
+            || app_lower.contains("term")
+            || app_lower.contains("iterm")
+            || app_lower.contains("cursor")
+            || app_lower.contains("idea")
+            || app_lower.contains("pycharm")
+            || app_lower.contains("rustrover")
+            || app_lower.contains("webstorm")
+            || app_lower.contains("sublime")
+            || title_lower.ends_with(".rs")
+            || title_lower.ends_with(".ts")
+            || title_lower.ends_with(".tsx")
+            || title_lower.ends_with(".py")
+            || title_lower.ends_with(".go")
+            || title_lower.ends_with(".cpp")
+            || title_lower.ends_with(".js")
+            || title_lower.contains("github")
+            || title_lower.contains("gitlab")
+            || title_lower.contains("localhost");
+
+        let is_browser_or_chat = app_lower.contains("chrome")
+            || app_lower.contains("safari")
+            || app_lower.contains("firefox")
+            || app_lower.contains("arc")
+            || app_lower.contains("slack")
+            || app_lower.contains("discord");
+
+        let base_context = if is_developer_ctx {
+            "In software engineering and coding workspaces, we frequently discuss Rust, TypeScript, Python, Go, API, JSON, GraphQL, PostgreSQL, Kubernetes, Docker, Tauri, Git commit, pull request, async, await, function, component, import, export, debug, refactor, Zustand, React, Vite, tribe, tribe members, ma'am, and terminal commands."
+        } else if is_browser_or_chat && (title_lower.contains("chatgpt") || title_lower.contains("claude") || title_lower.contains("gemini")) {
+            "When dictating prompts to AI assistants, we give instructions, ask to analyze, debug, explain, optimize, refactor, draft, or summarize clearly with accurate terms: ChatGPT, Codex, Claude, Gemini, API, JSON, React, Tauri, tribe, ma'am, and all."
+        } else {
+            "In everyday work, conversations, and Indian English professional dictation, clear vocabulary, proper names, entities, Bengaluru, Hyderabad, Mumbai, Delhi, lakh, crore, UPI, WhatsApp, email drafting, meeting notes, tribe, tribe members, ma'am, and all, and concise natural sentences are used."
+        };
 
         let mut custom_terms = Vec::new();
         if let Ok(vocab) = self.list_personal_vocabulary(Some("active")) {
-            for v in vocab.iter().take(10) {
+            let mut sorted = vocab;
+            sorted.sort_by(|a, b| (b.recognition_count + b.application_count).cmp(&(a.recognition_count + a.application_count)));
+            for v in sorted.iter().take(40) {
                 let term = v.preferred_text.trim();
-                if !term.is_empty() && !base_prompt.contains(term) && !custom_terms.iter().any(|c: &String| c.eq_ignore_ascii_case(term)) {
+                if !term.is_empty() && !base_context.contains(term) && !custom_terms.iter().any(|c: &String| c.eq_ignore_ascii_case(term)) {
+                    custom_terms.push(term.to_string());
+                }
+            }
+        }
+
+        if let Ok(dict) = self.list_dictionary_entries() {
+            for entry in dict.iter().take(30) {
+                let term = entry.replacement_phrase.trim();
+                if !term.is_empty() && !base_context.contains(term) && !custom_terms.iter().any(|c: &String| c.eq_ignore_ascii_case(term)) {
                     custom_terms.push(term.to_string());
                 }
             }
         }
 
         if custom_terms.is_empty() {
-            Ok(base_prompt.to_string())
+            Ok(base_context.to_string())
         } else {
-            Ok(format!("{} Vocabulary: {}.", base_prompt, custom_terms.join(", ")))
+            Ok(format!("{} Standard technical glossary: {}.", base_context, custom_terms.join(", ")))
         }
     }
 
@@ -1116,6 +1481,95 @@ impl HistoryDatabase {
         }
 
         (dict_applied, applied)
+    }
+
+    pub fn record_training_sample(
+        &self,
+        session_id: &str,
+        speaker_id: &str,
+        audio_path: Option<&str>,
+        raw_transcript: &str,
+        corrected_transcript: &str,
+        accent_tag: &str,
+        duration_ms: i64,
+    ) -> Result<i64, String> {
+        let conn = self.open_conn()?;
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis() as i64;
+
+        conn.execute(
+            "INSERT INTO speech_training_samples (session_id, speaker_id, audio_path, raw_transcript, corrected_transcript, accent_tag, duration_ms, is_exported, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 0, ?8)",
+            params![session_id, speaker_id, audio_path, raw_transcript, corrected_transcript, accent_tag, duration_ms, now],
+        ).map_err(|e| format!("Failed to record training sample: {}", e))?;
+
+        Ok(conn.last_insert_rowid())
+    }
+
+    pub fn list_training_samples(&self, limit: Option<usize>) -> Result<Vec<TrainingSample>, String> {
+        let conn = self.open_conn()?;
+        let query = if let Some(lim) = limit {
+            format!("SELECT id, session_id, speaker_id, audio_path, raw_transcript, corrected_transcript, accent_tag, duration_ms, is_exported, created_at FROM speech_training_samples ORDER BY id DESC LIMIT {}", lim)
+        } else {
+            "SELECT id, session_id, speaker_id, audio_path, raw_transcript, corrected_transcript, accent_tag, duration_ms, is_exported, created_at FROM speech_training_samples ORDER BY id DESC".to_string()
+        };
+
+        let mut stmt = conn.prepare(&query).map_err(|e| e.to_string())?;
+        let rows = stmt.query_map([], |r| {
+            Ok(TrainingSample {
+                id: r.get(0)?,
+                session_id: r.get(1)?,
+                speaker_id: r.get(2)?,
+                audio_path: r.get(3)?,
+                raw_transcript: r.get(4)?,
+                corrected_transcript: r.get(5)?,
+                accent_tag: r.get(6)?,
+                duration_ms: r.get(7)?,
+                is_exported: r.get::<_, i64>(8)? == 1,
+                created_at: r.get(9)?,
+            })
+        }).map_err(|e| e.to_string())?;
+
+        let mut samples = Vec::new();
+        for sample in rows {
+            if let Ok(s) = sample {
+                samples.push(s);
+            }
+        }
+        Ok(samples)
+    }
+
+    pub fn get_training_sample_count(&self) -> Result<i64, String> {
+        let conn = self.open_conn()?;
+        let count: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM speech_training_samples",
+            [],
+            |r| r.get(0),
+        ).unwrap_or(0);
+        Ok(count)
+    }
+
+    pub fn export_training_manifest_jsonl(&self) -> Result<String, String> {
+        let samples = self.list_training_samples(None)?;
+        let mut lines = Vec::new();
+        for s in samples {
+            let json_line = serde_json::json!({
+                "session_id": s.session_id,
+                "speaker_id": s.speaker_id,
+                "audio_path": s.audio_path,
+                "raw_whisper": s.raw_transcript,
+                "sentence": s.corrected_transcript,
+                "accent": s.accent_tag,
+                "duration_ms": s.duration_ms,
+                "timestamp": s.created_at,
+            });
+            if let Ok(line) = serde_json::to_string(&json_line) {
+                lines.push(line);
+            }
+        }
+        Ok(lines.join("\n"))
     }
 }
 
@@ -1181,5 +1635,58 @@ mod tests {
         history.delete_personal_vocabulary(v_entry.id).unwrap();
         let dict_final = history.list_dictionary_entries().unwrap();
         assert!(!dict_final.iter().any(|d| d.original == "satoshi"));
+    }
+
+    #[test]
+    fn test_bundled_indian_tech_lexicon_seeded_and_applied() {
+        let history = HistoryDatabase::new_test().expect("Failed to open test DB");
+
+        // 1. Verify that bundled Indian technical terms exist in personal vocabulary and dictionary
+        let vocab = history.list_personal_vocabulary(Some("active")).expect("Vocab list must succeed");
+        assert!(vocab.iter().any(|v| v.original_text == "skima" && v.preferred_text == "schema"), "Must pre-bundle skima -> schema");
+        assert!(vocab.iter().any(|v| v.original_text == "cooper net ease" && v.preferred_text == "Kubernetes"), "Must pre-bundle cooper net ease -> Kubernetes");
+        assert!(vocab.iter().any(|v| v.original_text == "pi g admin" && v.preferred_text == "pgAdmin"), "Must pre-bundle pi g admin -> pgAdmin");
+        assert!(vocab.iter().any(|v| v.original_text == "prepone" && v.preferred_text == "prepone"), "Must pre-bundle prepone");
+
+        // 2. Test personalization pipeline on Indian developer speech sentence
+        let raw_spoken = "we need to prepone the sprint and fix the skima on cooper net ease";
+        let (processed, applied) = history.apply_personalization_pipeline(raw_spoken);
+        assert!(processed.contains("schema"), "Must replace skima with schema");
+        assert!(processed.contains("Kubernetes"), "Must replace cooper net ease with Kubernetes");
+        assert!(processed.contains("prepone"), "Must preserve prepone");
+        assert!(!applied.is_empty(), "Must track applied terms");
+    }
+
+    #[test]
+    fn test_student_training_dataset_harvester_and_export() {
+        let history = HistoryDatabase::new_test().expect("Failed to open test DB");
+
+        let sess_id = "test-sess-student-101";
+        let speaker = "student-rohan-bengaluru";
+        let raw = "deploying on cooper netis with postgre";
+        let corrected = "deploying on Kubernetes with PostgreSQL";
+
+        let sample_id = history.record_training_sample(
+            sess_id,
+            speaker,
+            Some("/tmp/audio/sess-101.wav"),
+            raw,
+            corrected,
+            "indian_tech",
+            4200,
+        ).expect("Must record training sample");
+
+        assert!(sample_id > 0);
+        assert_eq!(history.get_training_sample_count().unwrap(), 1);
+
+        let samples = history.list_training_samples(None).unwrap();
+        assert_eq!(samples.len(), 1);
+        assert_eq!(samples[0].speaker_id, speaker);
+        assert_eq!(samples[0].corrected_transcript, corrected);
+
+        let manifest = history.export_training_manifest_jsonl().unwrap();
+        assert!(manifest.contains("student-rohan-bengaluru"));
+        assert!(manifest.contains("deploying on Kubernetes with PostgreSQL"));
+        assert!(manifest.contains("indian_tech"));
     }
 }

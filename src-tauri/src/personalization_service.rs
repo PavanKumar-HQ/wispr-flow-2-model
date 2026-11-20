@@ -98,6 +98,9 @@ fn compute_lcs(a: &[String], b: &[String]) -> Vec<Vec<usize>> {
 /// from a comparison between original transcription and user-finalized edited text.
 pub fn is_blacklisted_common_word(word: &str) -> bool {
     let w = word.trim().to_lowercase();
+    if w.len() <= 1 {
+        return true;
+    }
     matches!(
         w.as_str(),
         "it" | "its" | "is" | "was" | "are" | "were" | "the" | "a" | "an" | "and" | "or" | "but"
@@ -109,7 +112,7 @@ pub fn is_blacklisted_common_word(word: &str) -> bool {
             | "their" | "our" | "what" | "which" | "who" | "whom" | "whose" | "when" | "where"
             | "why" | "how" | "all" | "any" | "both" | "each" | "few" | "more" | "most" | "other"
             | "some" | "such" | "than" | "too" | "very" | "just" | "see" | "like" | "properly"
-            | "words" | "word" | "sure" | "okay" | "ok"
+            | "words" | "word" | "sure" | "okay" | "ok" | "man" | "men" | "ma" | "am"
     )
 }
 
@@ -261,9 +264,12 @@ pub fn extract_correction_candidates(original: &str, edited: &str) -> Vec<Extrac
 
         // Avoid creating dictionary rules that replace ordinary English stop words (e.g. "your website" -> "Qshalawebsite")
         // unless it is purely a casing/capitalization change (e.g. "vox flow" -> "VoxFlow")
-        if (orig_words.iter().any(|w| is_blacklisted_common_word(w)) || edit_words.iter().any(|w| is_blacklisted_common_word(w)))
-            && !orig_str.eq_ignore_ascii_case(&edit_str)
-        {
+        let is_stop_word_replacement = (orig_words.len() == 1 && is_blacklisted_common_word(orig_words[0]))
+            || (edit_words.len() == 1 && is_blacklisted_common_word(edit_words[0]))
+            || (orig_words.iter().all(|w| is_blacklisted_common_word(w)))
+            || (edit_words.iter().all(|w| is_blacklisted_common_word(w)));
+
+        if is_stop_word_replacement && !orig_str.eq_ignore_ascii_case(&edit_str) {
             continue;
         }
 
@@ -336,12 +342,29 @@ pub fn apply_vocabulary_rules(text: &str, rules: &[PersonalVocabularyEntry]) -> 
         let orig = rule.original_text.trim();
         let repl = rule.preferred_text.trim();
 
-        if orig.is_empty() || repl.is_empty() || orig == repl {
+        if orig.is_empty() || repl.is_empty() {
             continue;
         }
 
-        // Word-boundary aware flexible replacement
-        if let Some(new_text) = replace_phrase_flexible(&result, orig, repl) {
+        // 1. If explicit different string (e.g. "k8s" -> "Kubernetes", "cooper net ease" -> "Kubernetes")
+        if !orig.eq_ignore_ascii_case(repl) {
+            if let Some(new_text) = replace_phrase_flexible(&result, orig, repl) {
+                if new_text != result {
+                    applied_rules.push(format!("{} → {}", orig, repl));
+                    applied_ids.push(rule.id);
+                    result = new_text;
+                }
+            }
+        }
+
+        // 2. Exact word-boundary case / acronym / proper noun alignment (e.g. "chatgpt" -> "ChatGPT", "api" -> "API", "tauri" -> "Tauri")
+        if let Some(new_text) = replace_with_word_boundary(&result, repl, repl) {
+            if new_text != result {
+                applied_rules.push(format!("casing → {}", repl));
+                applied_ids.push(rule.id);
+                result = new_text;
+            }
+        } else if let Some(new_text) = replace_with_word_boundary(&result, orig, repl) {
             if new_text != result {
                 applied_rules.push(format!("{} → {}", orig, repl));
                 applied_ids.push(rule.id);
@@ -496,6 +519,54 @@ mod tests {
         assert_eq!(candidates.len(), 1);
         assert_eq!(candidates[0].original_span, "Brand X");
         assert_eq!(candidates[0].preferred_span, "Brandex");
+    }
+
+    #[test]
+    fn test_case_and_acronym_word_boundary_replacement() {
+        let rules = vec![
+            PersonalVocabularyEntry {
+                id: 10,
+                original_text: "chatgpt".to_string(),
+                preferred_text: "ChatGPT".to_string(),
+                entry_type: "tech".to_string(),
+                context_domain: None,
+                confidence: 0.95,
+                positive_count: 5,
+                negative_count: 0,
+                status: "active".to_string(),
+                recognition_count: 0,
+                correction_count: 1,
+                application_count: 0,
+                last_used_at: None,
+                created_at: 0,
+                updated_at: 0,
+                source: "manual".to_string(),
+            },
+            PersonalVocabularyEntry {
+                id: 11,
+                original_text: "api".to_string(),
+                preferred_text: "API".to_string(),
+                entry_type: "acronym".to_string(),
+                context_domain: None,
+                confidence: 0.95,
+                positive_count: 5,
+                negative_count: 0,
+                status: "active".to_string(),
+                recognition_count: 0,
+                correction_count: 1,
+                application_count: 0,
+                last_used_at: None,
+                created_at: 0,
+                updated_at: 0,
+                source: "manual".to_string(),
+            },
+        ];
+
+        let text = "I asked chatgpt to call the api endpoint.";
+        let (output, applied, ids) = apply_vocabulary_rules(text, &rules);
+        assert_eq!(output, "I asked ChatGPT to call the API endpoint.");
+        assert_eq!(applied.len(), 2);
+        assert_eq!(ids, vec![10, 11]);
     }
 
     #[test]

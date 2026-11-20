@@ -324,7 +324,7 @@ fn test_personalization_self_learning_cycle() {
     assert!(promoted.confidence >= 0.65);
 
     // 3. Verify biasing prompt includes VoxFlow
-    let prompt = history.get_active_biasing_prompt().expect("Prompt generation should succeed");
+    let prompt = history.get_active_biasing_prompt(None, None).expect("Prompt generation should succeed");
     assert!(prompt.contains("VoxFlow"), "Biasing prompt should contain active learned term VoxFlow");
 
     // 4. Verify post-processing personalization pipeline transforms speech faithfully with word-boundary safety

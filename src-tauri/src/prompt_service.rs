@@ -163,23 +163,68 @@ fn clean_conversational_filler(text: &str) -> String {
 fn elevate_directive_phrasing(text: &str) -> String {
     let lower = text.to_lowercase();
     let trimmed_lower = lower.trim().trim_end_matches('.');
+    // Normalize commas, semicolons, and consecutive whitespace for robust phrase matching
+    let normalized = trimmed_lower.replace([',', ';', ':'], " ");
+    let normalized = normalized.split_whitespace().collect::<Vec<&str>>().join(" ");
 
     // 1. Direct website prompt generation
-    if trimmed_lower == "generate prompt for website"
-        || trimmed_lower == "generate a prompt for website"
-        || trimmed_lower == "generate a prompt for a website"
-        || trimmed_lower == "generate prompt for a website"
-        || trimmed_lower == "prompt for website"
-        || trimmed_lower == "prompt for a website"
-        || trimmed_lower == "website prompt"
-        || trimmed_lower == "generate website prompt"
-        || trimmed_lower == "create website prompt"
-        || trimmed_lower == "write a prompt for a website"
-    {
+    let website_prompt_phrases = [
+        "generate prompt for website",
+        "generate a prompt for website",
+        "generate a prompt for a website",
+        "generate prompt for a website",
+        "prompt for website",
+        "prompt for a website",
+        "website prompt",
+        "a website prompt",
+        "generate website prompt",
+        "generate a website prompt",
+        "create website prompt",
+        "create a website prompt",
+        "make website prompt",
+        "make a website prompt",
+        "build website prompt",
+        "build a website prompt",
+        "write a prompt for a website",
+        "write a prompt for website",
+        "write prompt for website",
+    ];
+
+    if website_prompt_phrases.iter().any(|&p| normalized == p) {
         return "Act as an expert full-stack developer and UI/UX designer. Create a comprehensive, production-ready specification and implementation plan for a modern, responsive website, including information architecture, modern Tailwind CSS design tokens, key user flows, component hierarchy, and SEO/performance best practices.".to_string();
     }
 
-    // 2. Direct topic prompt generation ("generate prompt for [X]", "prompt for [X]")
+    // 2. Trailing prompt directives (e.g. "[Topic], prompt", "generate [Topic] prompt")
+    if normalized.ends_with(" prompt") {
+        let mut core = normalized.strip_suffix(" prompt").unwrap_or(&normalized).trim();
+        let strip_prefixes = [
+            "generate a ", "generate an ", "generate ",
+            "create a ", "create an ", "create ",
+            "build a ", "build an ", "build ",
+            "make a ", "make an ", "make ",
+            "design a ", "design an ", "design ",
+            "draft a ", "draft an ", "draft ",
+            "write a ", "write an ", "write ",
+        ];
+        for sp in &strip_prefixes {
+            if core.starts_with(sp) {
+                core = &core[sp.len()..];
+                break;
+            }
+        }
+        let topic = core.trim();
+        if !topic.is_empty() {
+            if topic == "website" || topic == "a website" {
+                return "Act as an expert full-stack developer and UI/UX designer. Create a comprehensive, production-ready specification and implementation plan for a modern, responsive website, including information architecture, modern Tailwind CSS design tokens, key user flows, component hierarchy, and SEO/performance best practices.".to_string();
+            } else if topic.contains("website") || topic.contains("web app") || topic.contains("landing page") {
+                return format!("Act as an expert full-stack developer and UI/UX designer. Create a comprehensive, production-ready specification and implementation plan for a modern, responsive {}, including information architecture, modern Tailwind CSS design tokens, key user flows, component hierarchy, and SEO/performance best practices.", topic);
+            } else {
+                return format!("Act as a principal expert on {}. Provide a detailed, production-ready prompt and step-by-step implementation guide covering core architecture, key requirements, error handling, performance considerations, and actionable code examples.", topic);
+            }
+        }
+    }
+
+    // 3. Leading topic prompt generation ("generate prompt for [X]", "prompt for [X]")
     let prompt_gen_prefixes = [
         "generate prompt for ",
         "generate a prompt for ",
@@ -200,13 +245,19 @@ fn elevate_directive_phrasing(text: &str) -> String {
     ];
 
     for prefix in &prompt_gen_prefixes {
-        if lower.starts_with(prefix) {
-            let topic = text[prefix.len()..].trim().trim_end_matches('.');
-            return format!("Act as a principal expert on {}. Provide a detailed, production-ready prompt and step-by-step implementation guide covering core architecture, key requirements, error handling, performance considerations, and actionable code examples.", topic);
+        if normalized.starts_with(prefix) {
+            let topic = normalized[prefix.len()..].trim();
+            if topic == "website" || topic == "a website" {
+                return "Act as an expert full-stack developer and UI/UX designer. Create a comprehensive, production-ready specification and implementation plan for a modern, responsive website, including information architecture, modern Tailwind CSS design tokens, key user flows, component hierarchy, and SEO/performance best practices.".to_string();
+            } else if topic.contains("website") || topic.contains("web app") || topic.contains("landing page") {
+                return format!("Act as an expert full-stack developer and UI/UX designer. Create a comprehensive, production-ready specification and implementation plan for a modern, responsive {}, including information architecture, modern Tailwind CSS design tokens, key user flows, component hierarchy, and SEO/performance best practices.", topic);
+            } else {
+                return format!("Act as a principal expert on {}. Provide a detailed, production-ready prompt and step-by-step implementation guide covering core architecture, key requirements, error handling, performance considerations, and actionable code examples.", topic);
+            }
         }
     }
 
-    // 3. Website creation directives ("make a website for [X]")
+    // 4. Website creation directives ("make a website for [X]")
     let website_prefixes = [
         "make a website for ",
         "build a website for ",
@@ -672,6 +723,15 @@ mod tests {
         assert!(is_ai_prompt("prompt for website", None));
         let p2 = enhance_ai_prompt("prompt for website");
         assert!(p2.contains("Act as an expert full-stack developer"));
+
+        // Comma-separated directive user test case
+        assert!(is_ai_prompt("Generate a website, prompt.", None));
+        let p3 = enhance_ai_prompt("Generate a website, prompt.");
+        assert!(p3.contains("Act as an expert full-stack developer"));
+        assert!(p3.contains("modern, responsive website"));
+
+        let p4 = enhance_ai_prompt("generate a website prompt");
+        assert!(p4.contains("Act as an expert full-stack developer"));
     }
 
     #[test]

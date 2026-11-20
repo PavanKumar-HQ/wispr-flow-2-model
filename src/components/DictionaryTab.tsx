@@ -610,9 +610,6 @@ export const DictionaryTab: React.FC = () => {
               <div className="flex items-center gap-2">
                 <Box className="w-5 h-5 text-darkTeal" />
                 <h3 className="text-base font-extrabold text-darkTeal">Project Context Capsules</h3>
-                <span className="text-[10px] font-bold uppercase tracking-wider bg-amber text-charcoal px-2.5 py-0.5 rounded-full border border-amber/50 shadow-xs">
-                  Zero Cloud Ingestion
-                </span>
               </div>
               <p className="text-xs text-charcoal/70 mt-1 max-w-xl">
                 Automatically harvest library names and symbols from your active codebase manifests (<code>package.json</code>, <code>Cargo.toml</code>). Project terms are isolated to project scope and bias Whisper recognition without polluting your global vocabulary.

@@ -52,6 +52,30 @@ pub fn get_official_manifest() -> Vec<ModelInfo> {
             recommended: false,
             is_downloaded: false,
         },
+        ModelInfo {
+            id: "distil-whisper-small-en".to_string(),
+            name: "Distil-Whisper Small (6x Realtime)".to_string(),
+            filename: "ggml-distil-small.en.bin".to_string(),
+            size_bytes: 336191657,
+            sha256: "e8a676964fd3f78b021a385f078a18863712ca10fdc907a685eee9c0e71d7a62".to_string(),
+            download_url: "https://huggingface.co/distil-whisper/distil-small.en/resolve/main/ggml-distil-small.en.bin".to_string(),
+            description: "336 MB Distil-Whisper model. 6x faster inference than Whisper Small, 50% lower energy draw, robust punctuation and technical accuracy.".to_string(),
+            ram_estimate_mb: 380,
+            recommended: false,
+            is_downloaded: false,
+        },
+        ModelInfo {
+            id: "distil-whisper-medium-en".to_string(),
+            name: "Distil-Whisper Medium (High Accuracy)".to_string(),
+            filename: "ggml-medium-32-2.en.bin".to_string(),
+            size_bytes: 794018180,
+            sha256: "aea6d1a10a76e368b57cc7eeebc1b62814130dc4e3d4e5b0d39332d84f88c28d".to_string(),
+            download_url: "https://huggingface.co/distil-whisper/distil-medium.en/resolve/main/ggml-medium-32-2.en.bin".to_string(),
+            description: "794 MB Distil-Whisper model. Near-zero word error rate with 4x speedup over Whisper Medium on Apple Silicon GPU.".to_string(),
+            ram_estimate_mb: 850,
+            recommended: false,
+            is_downloaded: false,
+        },
     ]
 }
 

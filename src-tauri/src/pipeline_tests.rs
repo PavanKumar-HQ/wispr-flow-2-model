@@ -42,6 +42,7 @@ mod pipeline_tests {
             recording_start,
             active_session,
             destination_sync: Arc::new(crate::destination_sync_service::DestinationSyncService::new()),
+            calibration_mode: Arc::new(Mutex::new(false)),
         };
 
         // When recording is already in progress, audio.start_recording() returns Err

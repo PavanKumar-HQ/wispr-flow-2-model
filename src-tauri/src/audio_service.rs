@@ -278,8 +278,8 @@ pub fn isolate_voice_and_suppress_noise(samples: &[f32], sample_rate: u32) -> Ve
         return Vec::new();
     }
 
-    // 1. High-pass filter (75 Hz) to kill sub-audible desk bumps and mechanical rumble while fully preserving voice fundamentals
-    let mut hpf = BiquadHpf::new(sample_rate as f32, 75.0);
+    // 1. High-pass filter (55 Hz) to kill sub-audible desk bumps while fully preserving low-tone voice fundamentals
+    let mut hpf = BiquadHpf::new(sample_rate as f32, 55.0);
     let hp_samples: Vec<f32> = samples.iter().map(|&s| hpf.process(s)).collect();
 
     // 2. Sliding frame energy profiling (20ms frames: 320 samples at 16kHz)
@@ -302,8 +302,8 @@ pub fn isolate_voice_and_suppress_noise(samples: &[f32], sample_rate: u32) -> Ve
     let noise_floor_idx = (sorted_rms.len() as f32 * 0.25).floor() as usize;
     let noise_floor = sorted_rms.get(noise_floor_idx).copied().unwrap_or(0.001).min(0.003);
 
-    // Sensitive adaptive threshold for speech (at least 25% above noise floor, min 0.0015 RMS)
-    let speech_threshold = (noise_floor * 1.25).clamp(0.0015, 0.0080);
+    // Adaptive threshold for speech (at least 35% above noise floor, min 0.0022 RMS to reject ambient room noise)
+    let speech_threshold = (noise_floor * 1.35).clamp(0.0022, 0.0085);
 
     // Identify first and last frame containing genuine user speech
     let first_speech_frame = frame_rms.iter().position(|&r| r >= speech_threshold);

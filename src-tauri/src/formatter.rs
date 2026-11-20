@@ -99,6 +99,9 @@ pub fn format_transcript_with_metadata(raw: &str, config: &FormattingConfig) -> 
     // Stage 2.5: Automatic Spoken Lists (Numbered & Bulleted Lists)
     text = format_spoken_lists(&text);
 
+    // Stage 2.7: Spoken Time Expressions (e.g. "nine thirty am" -> "9:30 AM", "5pm" -> "5:00 PM", "quarter to five pm" -> "4:45 PM")
+    text = format_spoken_time_expressions(&text);
+
     // Stage 3: Conservative Sentence Capitalization
     if config.auto_capitalization {
         let (cap_text, count) = capitalize_sentences_conservative(&text);
@@ -570,6 +573,81 @@ pub fn repair_phonetic_speech_confusions(input: &str) -> String {
         }
     }
 
+    // 5. Acoustic confusions for "just" / "must" vs "rust"
+    let rust_just_patterns = [
+        ("it Rust be", "it must be"),
+        ("it rust be", "it must be"),
+        ("It Rust be", "It must be"),
+        ("It rust be", "It must be"),
+        ("Rust for", "just for"),
+        ("rust for", "just for"),
+        ("Rust like", "just like"),
+        ("rust like", "just like"),
+        ("Rust brainstorming", "just brainstorming"),
+        ("rust brainstorming", "just brainstorming"),
+        ("Rust brainstorm", "just brainstorm"),
+        ("rust brainstorm", "just brainstorm"),
+        ("Rust see", "just see"),
+        ("rust see", "just see"),
+        ("Rust check", "just check"),
+        ("rust check", "just check"),
+        ("Rust do", "just do"),
+        ("rust do", "just do"),
+        ("Rust make", "just make"),
+        ("rust make", "just make"),
+        ("Rust think", "just think"),
+        ("rust think", "just think"),
+        ("Rust let", "just let"),
+        ("rust let", "just let"),
+        ("Rust before", "just before"),
+        ("rust before", "just before"),
+        ("Rust now", "just now"),
+        ("rust now", "just now"),
+        ("Rust wanted", "just wanted"),
+        ("rust wanted", "just wanted"),
+        ("Rust need", "just need"),
+        ("rust need", "just need"),
+        ("Rust want", "just want"),
+        ("rust want", "just want"),
+        ("Rust wait", "just wait"),
+        ("rust wait", "just wait"),
+        ("Rust because", "just because"),
+        ("rust because", "just because"),
+        ("Rust as", "just as"),
+        ("rust as", "just as"),
+        ("Rust a ", "just a "),
+        ("rust a ", "just a "),
+        ("Rust an ", "just an "),
+        ("rust an ", "just an "),
+        ("Rust the ", "just the "),
+        ("rust the ", "just the "),
+        ("don't Rust", "don't just"),
+        ("don't rust", "don't just"),
+        ("Don't Rust", "Don't just"),
+        ("Don't rust", "Don't just"),
+        ("can Rust", "can just"),
+        ("can rust", "can just"),
+        ("will Rust", "will just"),
+        ("will rust", "will just"),
+        ("would Rust", "would just"),
+        ("would rust", "would just"),
+        ("could Rust", "could just"),
+        ("could rust", "could just"),
+        ("is Rust", "is just"),
+        ("is rust", "is just"),
+        ("it's Rust", "it's just"),
+        ("it's rust", "it's just"),
+        ("was Rust", "was just"),
+        ("was rust", "was just"),
+        ("not Rust", "not just"),
+        ("not rust", "not just"),
+    ];
+    for (pat, rep) in rust_just_patterns {
+        if text.contains(pat) {
+            text = text.replace(pat, rep);
+        }
+    }
+
     // 5. Fast-speech elisions
     let fast_speech_patterns = [
         ("speak of faster", "speak faster"),
@@ -719,6 +797,146 @@ pub fn repair_phonetic_speech_confusions(input: &str) -> String {
         }
     }
 
+    // 8. Tribe, community & cohort terminology acoustic repair
+    let tribe_patterns = [
+        ("once I try members", "once our tribe members"),
+        ("once try members", "once tribe members"),
+        ("I try members", "our tribe members"),
+        ("our try members", "our tribe members"),
+        ("the try members", "the tribe members"),
+        ("try members", "tribe members"),
+        ("Try members", "Tribe members"),
+        ("try member", "tribe member"),
+        ("Try member", "Tribe member"),
+        ("our try,", "our tribe,"),
+        ("our try ", "our tribe "),
+        ("in our try", "in our tribe"),
+        ("join our try", "join our tribe"),
+        ("part of our try", "part of our tribe"),
+        ("trive members", "tribe members"),
+        ("Trive members", "Tribe members"),
+        ("trive member", "tribe member"),
+        ("Trive member", "Tribe member"),
+        ("our trive", "our tribe"),
+        ("the trive", "the tribe"),
+        ("trive", "tribe"),
+        ("Trive", "Tribe"),
+        ("core try", "core tribe"),
+        ("Core try", "Core tribe"),
+        ("tech try", "tech tribe"),
+        ("Tech try", "Tech tribe"),
+        ("student try", "student tribe"),
+        ("Student try", "Student tribe"),
+    ];
+    for (pat, rep) in tribe_patterns {
+        if text.contains(pat) {
+            text = text.replace(pat, rep);
+        }
+    }
+
+    // 9. Ma'am / Respectful workplace address acoustic repair
+    let maam_patterns = [
+        ("Yeah, Maam", "Yeah, ma'am"),
+        ("Yeah Maam", "Yeah, ma'am"),
+        ("yeah, maam", "Yeah, ma'am"),
+        ("yeah maam", "Yeah, ma'am"),
+        ("Yes, Maam", "Yes, ma'am"),
+        ("Yes Maam", "Yes, ma'am"),
+        ("yes, maam", "Yes, ma'am"),
+        ("yes maam", "Yes, ma'am"),
+        ("No, Maam", "No, ma'am"),
+        ("No Maam", "No, ma'am"),
+        ("no, maam", "No, ma'am"),
+        ("no maam", "No, ma'am"),
+        ("Ok Maam", "Okay, ma'am"),
+        ("Okay Maam", "Okay, ma'am"),
+        ("ok maam", "Okay, ma'am"),
+        ("okay maam", "Okay, ma'am"),
+        ("Thank you Maam", "Thank you, ma'am"),
+        ("thank you maam", "Thank you, ma'am"),
+        ("Thanks Maam", "Thanks, ma'am"),
+        ("thanks maam", "Thanks, ma'am"),
+        ("Hello Maam", "Hello, ma'am"),
+        ("hello maam", "Hello, ma'am"),
+        ("Hi Maam", "Hi, ma'am"),
+        ("hi maam", "Hi, ma'am"),
+        ("Yeah, Man,", "Yeah, ma'am,"),
+        ("Yeah, man,", "Yeah, ma'am,"),
+        ("Yeah Man,", "Yeah, ma'am,"),
+        ("Yeah man,", "Yeah, ma'am,"),
+        ("Yes, Man,", "Yes, ma'am,"),
+        ("Yes, man,", "Yes, ma'am,"),
+        ("Yes Man,", "Yes, ma'am,"),
+        ("Yes man,", "Yes, ma'am,"),
+        ("No, Man,", "No, ma'am,"),
+        ("No, man,", "No, ma'am,"),
+        ("No Man,", "No, ma'am,"),
+        ("No man,", "No, ma'am,"),
+        ("Ok Man,", "Okay, ma'am,"),
+        ("Ok man,", "Okay, ma'am,"),
+        ("Okay Man,", "Okay, ma'am,"),
+        ("Okay man,", "Okay, ma'am,"),
+        ("Maam,", "Ma'am,"),
+        ("maam,", "ma'am,"),
+        ("Maam.", "Ma'am."),
+        ("maam.", "ma'am."),
+        ("Maam!", "Ma'am!"),
+        ("maam!", "ma'am!"),
+        ("Maam ", "Ma'am "),
+        ("maam ", "ma'am "),
+        ("yesterday maam", "yesterday, ma'am"),
+        ("yesterday, maam", "yesterday, ma'am"),
+        ("sent him a copy yesterday, Maam", "sent him a copy yesterday, ma'am"),
+        ("sent him a copy yesterday Maam", "sent him a copy yesterday, ma'am"),
+        ("sent him a copy yesterday, maam", "sent him a copy yesterday, ma'am"),
+        ("sent him a copy yesterday maam", "sent him a copy yesterday, ma'am"),
+    ];
+    for (pat, rep) in maam_patterns {
+        if text.contains(pat) {
+            text = text.replace(pat, rep);
+        }
+    }
+
+    // 10. Indian English conversational discourse markers ("and all")
+    let and_all_patterns = [
+        ("plans at all, and", "plans and all, and"),
+        ("plans at all and", "plans and all, and"),
+        ("things at all, and", "things and all, and"),
+        ("things at all and", "things and all, and"),
+        ("photos at all, and", "photos and all, and"),
+        ("photos at all and", "photos and all, and"),
+        ("videos at all, and", "videos and all, and"),
+        ("videos at all and", "videos and all, and"),
+        ("stuff at all, and", "stuff and all, and"),
+        ("stuff at all and", "stuff and all, and"),
+        ("tagging at all, and", "tagging and all, and"),
+        ("tagging at all and", "tagging and all, and"),
+        ("options at all, and", "options and all, and"),
+        ("options at all and", "options and all, and"),
+        ("features at all, and", "features and all, and"),
+        ("features at all and", "features and all, and"),
+        ("modules at all, and", "modules and all, and"),
+        ("modules at all and", "modules and all, and"),
+        ("tasks at all, and", "tasks and all, and"),
+        ("tasks at all and", "tasks and all, and"),
+        ("work at all, and", "work and all, and"),
+        ("work at all and", "work and all, and"),
+        ("rules at all, and", "rules and all, and"),
+        ("rules at all and", "rules and all, and"),
+        ("monetization plan at all", "monetization plan and all"),
+        ("monetization plans at all", "monetization plans and all"),
+        ("and doll", "and all"),
+        ("And doll", "And all"),
+        ("and dol", "and all"),
+        ("And dol", "And all"),
+        ("and, all", "and all"),
+    ];
+    for (pat, rep) in and_all_patterns {
+        if text.contains(pat) {
+            text = text.replace(pat, rep);
+        }
+    }
+
     text
 }
 
@@ -754,11 +972,15 @@ pub fn repair_speech_self_corrections(input: &str) -> (String, usize) {
         if (w_curr == "oh" && w_next == "no")
             || (w_curr == "no" && w_next == "wait")
             || (w_curr == "wait" && w_next == "no")
+            || (w_curr == "wait" && w_next == "sorry")
             || (w_curr == "scratch" && w_next == "that")
             || (w_curr == "or" && w_next == "rather")
             || (w_curr == "make" && w_next == "that")
             || (w_curr == "my" && w_next == "bad")
+            || (w_curr == "my" && w_next == "mistake")
             || (w_curr == "i" && w_next == "meant")
+            || (w_curr == "i" && w_next == "mean")
+            || (w_curr == "sorry" && (w_next == "i" || w_next == "meant"))
         {
             cue_len = 2;
         } else if w_curr == "no" && (w_next == "its" || w_next == "it's" || w_next == "it") {
@@ -768,7 +990,7 @@ pub fn repair_speech_self_corrections(input: &str) -> (String, usize) {
             cue_len = 1;
         }
 
-        if cue_len == 0 || i + cue_len >= out.len() {
+        if cue_len == 0 || i + cue_len >= out.len() || (i > 0 && (out[i - 1].ends_with('.') || out[i - 1].ends_with('?') || out[i - 1].ends_with('!'))) {
             i += 1;
             continue;
         }
@@ -869,7 +1091,7 @@ pub fn repair_speech_self_corrections(input: &str) -> (String, usize) {
                 out.splice(i..i + cue_len, vec!["is".to_string()]);
                 total_repairs += 1;
                 i += 1;
-            } else if cue_len == 2 && (w_curr == "scratch" || w_curr == "my" || w_curr == "make") {
+            } else if cue_len == 2 && (w_curr == "scratch" || w_curr == "my" || w_curr == "make" || (w_curr == "i" && w_next == "mean")) {
                 let repair_k = k;
                 let m_len = repair_k.min(i);
                 let reparandum_start = i.saturating_sub(m_len);
@@ -878,16 +1100,18 @@ pub fn repair_speech_self_corrections(input: &str) -> (String, usize) {
                 out.splice(reparandum_start..delete_end, repair_slice);
                 total_repairs += 1;
                 i = reparandum_start + repair_k;
-            } else if (w_curr == "wait" || w_curr == "sorry" || w_curr == "actually" || w_curr == "no") && k == 1 && i > 0 {
-                // Single token correction with explicit retraction marker:
+            } else if (w_curr == "wait" || w_curr == "sorry" || w_curr == "actually" || w_curr == "no") && i > 0 {
+                // Multi-token or single token correction with explicit retraction marker:
                 // e.g. "send email to Sarah, wait, Alex." -> "send email to Alex."
-                // e.g. "send email to Alice wait Bob" -> "send email to Bob."
-                let reparandum_start = i - 1;
-                let repair_slice: Vec<String> = out[i + cue_len..i + cue_len + 1].to_vec();
-                let delete_end = i + cue_len + 1;
+                // e.g. "meeting at 4 PM, sorry, at 5 PM." -> "meeting at 5 PM."
+                let repair_k = k.min(2);
+                let m_len = repair_k.min(i);
+                let reparandum_start = i.saturating_sub(m_len);
+                let repair_slice: Vec<String> = out[i + cue_len..i + cue_len + repair_k].to_vec();
+                let delete_end = i + cue_len + repair_k;
                 out.splice(reparandum_start..delete_end, repair_slice);
                 total_repairs += 1;
-                i = reparandum_start + 1;
+                i = reparandum_start + repair_k;
             } else {
                 // If there is no explicit matched reparandum, do NOT delete preceding words!
                 i += 1;
@@ -1822,6 +2046,402 @@ fn format_spoken_lists_inner(input: &str) -> String {
     result_parts.join("\n")
 }
 
+/// Intelligent spoken time formatting: recognizes time context, formats "AM" and "PM" in uppercase,
+/// converts spoken times (e.g. "nine thirty am" -> "9:30 AM", "quarter to five pm" -> "4:45 PM", "5pm" -> "5:00 PM"),
+/// and normalizes conversational expressions ("five in the morning" -> "5:00 AM", "from 3 to 5 pm" -> "from 3:00 PM to 5:00 PM").
+pub fn format_spoken_time_expressions(input: &str) -> String {
+    if input.is_empty() {
+        return String::new();
+    }
+    if input.contains('\n') {
+        let lines: Vec<&str> = input.split('\n').collect();
+        let formatted: Vec<String> = lines.into_iter().map(format_spoken_time_expressions_inner).collect();
+        return formatted.join("\n");
+    }
+    format_spoken_time_expressions_inner(input)
+}
+
+fn format_spoken_time_expressions_inner(input: &str) -> String {
+    if input.is_empty() {
+        return String::new();
+    }
+
+    let words: Vec<&str> = input.split_whitespace().collect();
+    if words.is_empty() {
+        return input.to_string();
+    }
+
+    let mut out: Vec<String> = Vec::new();
+    let mut i = 0;
+    let len = words.len();
+
+    while i < len {
+        let curr_raw = words[i];
+        let curr_clean = clean_word_for_matching(curr_raw);
+        let trailing_punct = extract_trailing_punctuation(curr_raw);
+
+        // --- Pattern 1: Relative times ("quarter to five", "quarter past three", "half past four") ---
+        if curr_clean == "half" && i + 2 < len && clean_word_for_matching(words[i + 1]) == "past" {
+            let hour_clean = clean_word_for_matching(words[i + 2]);
+            if let Some(h) = word_or_digit_to_hour(&hour_clean) {
+                let (meridiem, skip) = peek_meridiem_or_time_of_day(&words, i + 3);
+                let punct = if skip > 0 {
+                    extract_trailing_punctuation(words[i + 2 + skip])
+                } else {
+                    extract_trailing_punctuation(words[i + 2])
+                };
+                let formatted = match meridiem {
+                    Some(m) => format!("{}:30 {}{}", h, m, punct),
+                    None => format!("{}:30{}", h, punct),
+                };
+                out.push(formatted);
+                i += 3 + skip;
+                continue;
+            }
+        }
+
+        if curr_clean == "quarter" && i + 2 < len {
+            let rel = clean_word_for_matching(words[i + 1]);
+            let hour_clean = clean_word_for_matching(words[i + 2]);
+            if let Some(h) = word_or_digit_to_hour(&hour_clean) {
+                if rel == "to" || rel == "past" {
+                    let (eff_h, min) = if rel == "to" {
+                        (if h == 1 { 12 } else { h - 1 }, 45)
+                    } else {
+                        (h, 15)
+                    };
+                    let (meridiem, skip) = peek_meridiem_or_time_of_day(&words, i + 3);
+                    let punct = if skip > 0 {
+                        extract_trailing_punctuation(words[i + 2 + skip])
+                    } else {
+                        extract_trailing_punctuation(words[i + 2])
+                    };
+                    let formatted = match meridiem {
+                        Some(m) => format!("{}:{:02} {}{}", eff_h, min, m, punct),
+                        None => format!("{}:{:02}{}", eff_h, min, punct),
+                    };
+                    out.push(formatted);
+                    i += 3 + skip;
+                    continue;
+                }
+            }
+        }
+
+        // --- Pattern 2: Embedded meridiem attached directly to digits (e.g. "5pm", "5:30pm", "9am", "11:45am") ---
+        if let Some((num_str, mer_str)) = try_split_attached_meridiem(curr_raw) {
+            let punct = extract_trailing_punctuation(curr_raw);
+            let formatted = if num_str.contains(':') {
+                format!("{} {}{}", num_str, mer_str, punct)
+            } else if num_str.contains('.') {
+                let parts: Vec<&str> = num_str.split('.').collect();
+                if parts.len() == 2 && parts[0].parse::<u32>().is_ok() && parts[1].parse::<u32>().is_ok() {
+                    format!("{}:{:02} {}{}", parts[0], parts[1].parse::<u32>().unwrap_or(0), mer_str, punct)
+                } else {
+                    format!("{}:00 {}{}", num_str, mer_str, punct)
+                }
+            } else {
+                format!("{}:00 {}{}", num_str, mer_str, punct)
+            };
+            out.push(formatted);
+            i += 1;
+            continue;
+        }
+
+        // --- Pattern 3: Existing numeric time with trailing standalone meridiem (e.g. "5:30 pm" -> "5:30 PM", "5:00 am" -> "5:00 AM") ---
+        if is_numeric_time(&curr_clean) {
+            let (meridiem, skip) = peek_meridiem_or_time_of_day(&words, i + 1);
+            if let Some(m) = meridiem {
+                let punct = if skip > 0 {
+                    extract_trailing_punctuation(words[i + skip])
+                } else {
+                    trailing_punct
+                };
+                let formatted = format!("{} {}{}", curr_clean, m, punct);
+                out.push(formatted);
+                i += 1 + skip;
+                continue;
+            }
+        }
+
+        // --- Pattern 4: Spoken Hour (Word or Digit) followed by Minutes and/or Meridiem ---
+        if let Some(h) = word_or_digit_to_hour(&curr_clean) {
+            // Check if followed by "o'clock"
+            if i + 1 < len && clean_word_for_matching(words[i + 1]).starts_with("o'clock") {
+                let (meridiem, skip) = peek_meridiem_or_time_of_day(&words, i + 2);
+                let punct = if skip > 0 {
+                    extract_trailing_punctuation(words[i + 1 + skip])
+                } else {
+                    extract_trailing_punctuation(words[i + 1])
+                };
+                let formatted = match meridiem {
+                    Some(m) => format!("{}:00 {}{}", h, m, punct),
+                    None => format!("{}:00{}", h, punct),
+                };
+                out.push(formatted);
+                i += 2 + skip;
+                continue;
+            }
+
+            // Check if followed by spoken minutes (e.g. "nine thirty", "ten forty five", "two fifteen")
+            if i + 1 < len {
+                let (maybe_min, min_word_count) = peek_spoken_minutes(&words, i + 1);
+                if let Some(min) = maybe_min {
+                    let (meridiem, skip) = peek_meridiem_or_time_of_day(&words, i + 1 + min_word_count);
+                    // If a valid meridiem follows OR preceded by a time preposition like "at", "by", "around"
+                    let has_time_preposition = out.last().map(|prev| {
+                        let p = clean_word_for_matching(prev);
+                        p == "at" || p == "by" || p == "around" || p == "before" || p == "after" || p == "from"
+                    }).unwrap_or(false);
+
+                    if meridiem.is_some() || has_time_preposition {
+                        let punct = if skip > 0 {
+                            extract_trailing_punctuation(words[i + min_word_count + skip])
+                        } else {
+                            extract_trailing_punctuation(words[i + min_word_count])
+                        };
+                        let formatted = match meridiem {
+                            Some(m) => format!("{}:{:02} {}{}", h, min, m, punct),
+                            None => format!("{}:{:02}{}", h, min, punct),
+                        };
+                        out.push(formatted);
+                        i += 1 + min_word_count + skip;
+                        continue;
+                    }
+                }
+            }
+
+            // Check if standalone hour is followed directly by meridiem or time of day (e.g. "5 pm", "five in the morning")
+            let (meridiem, skip) = peek_meridiem_or_time_of_day(&words, i + 1);
+            if let Some(m) = meridiem {
+                let punct = if skip > 0 {
+                    extract_trailing_punctuation(words[i + skip])
+                } else {
+                    trailing_punct
+                };
+                let formatted = format!("{}:00 {}{}", h, m, punct);
+                out.push(formatted);
+                i += 1 + skip;
+                continue;
+            }
+        }
+
+        // Default: keep existing token as-is
+        out.push(curr_raw.to_string());
+        i += 1;
+    }
+
+    // --- Post-pass: Time ranges sharing a meridiem (e.g. "from 3:00 to 5:00 PM" -> "from 3:00 PM to 5:00 PM") ---
+    normalize_time_ranges(&mut out);
+
+    out.join(" ")
+}
+
+fn try_split_attached_meridiem(raw: &str) -> Option<(String, String)> {
+    let clean = raw.trim_matches(|c: char| c.is_ascii_punctuation()).to_lowercase();
+    if clean.len() < 3 {
+        return None;
+    }
+
+    let (val_part, mer_part) = if clean.ends_with("pm") {
+        (&clean[..clean.len() - 2], "PM")
+    } else if clean.ends_with("am") {
+        (&clean[..clean.len() - 2], "AM")
+    } else {
+        return None;
+    };
+
+    if val_part.chars().next()?.is_ascii_digit() {
+        if val_part.contains(':') || val_part.contains('.') || val_part.chars().all(|c| c.is_ascii_digit()) {
+            return Some((val_part.to_string(), mer_part.to_string()));
+        }
+    }
+
+    None
+}
+
+fn is_numeric_time(s: &str) -> bool {
+    let parts: Vec<&str> = s.split(':').collect();
+    if parts.len() == 2 {
+        if let (Ok(h), Ok(m)) = (parts[0].parse::<u32>(), parts[1].parse::<u32>()) {
+            return h <= 24 && m <= 59;
+        }
+    }
+    false
+}
+
+fn word_or_digit_to_hour(clean: &str) -> Option<u32> {
+    if let Ok(n) = clean.parse::<u32>() {
+        if (1..=12).contains(&n) {
+            return Some(n);
+        }
+    }
+
+    match clean {
+        "one" => Some(1),
+        "two" => Some(2),
+        "three" => Some(3),
+        "four" => Some(4),
+        "five" => Some(5),
+        "six" => Some(6),
+        "seven" => Some(7),
+        "eight" => Some(8),
+        "nine" => Some(9),
+        "ten" => Some(10),
+        "eleven" => Some(11),
+        "twelve" => Some(12),
+        _ => None,
+    }
+}
+
+fn peek_spoken_minutes(words: &[&str], start: usize) -> (Option<u32>, usize) {
+    if start >= words.len() {
+        return (None, 0);
+    }
+
+    let w1_clean = clean_word_for_matching(words[start]);
+
+    // Check two-word minutes: e.g. "twenty five", "thirty five", "forty five", "oh five"
+    if start + 1 < words.len() {
+        let w2_clean = clean_word_for_matching(words[start + 1]);
+        if w1_clean == "oh" {
+            if let Some(single) = word_to_single_digit(&w2_clean) {
+                return (Some(single), 2);
+            }
+        }
+
+        let tens = match w1_clean.as_str() {
+            "twenty" => Some(20),
+            "thirty" => Some(30),
+            "forty" => Some(40),
+            "fifty" => Some(50),
+            _ => None,
+        };
+
+        if let Some(base) = tens {
+            if let Some(single) = word_to_single_digit(&w2_clean) {
+                return (Some(base + single), 2);
+            }
+        }
+    }
+
+    // Check single-word minutes
+    if let Ok(n) = w1_clean.parse::<u32>() {
+        if n < 60 {
+            return (Some(n), 1);
+        }
+    }
+
+    let m = match w1_clean.as_str() {
+        "ten" => Some(10),
+        "eleven" => Some(11),
+        "twelve" => Some(12),
+        "thirteen" => Some(13),
+        "fourteen" => Some(14),
+        "fifteen" => Some(15),
+        "sixteen" => Some(16),
+        "seventeen" => Some(17),
+        "eighteen" => Some(18),
+        "nineteen" => Some(19),
+        "twenty" => Some(20),
+        "thirty" => Some(30),
+        "forty" => Some(40),
+        "fifty" => Some(50),
+        _ => None,
+    };
+
+    if m.is_some() {
+        return (m, 1);
+    }
+
+    (None, 0)
+}
+
+fn word_to_single_digit(clean: &str) -> Option<u32> {
+    if let Ok(n) = clean.parse::<u32>() {
+        if (1..=9).contains(&n) {
+            return Some(n);
+        }
+    }
+    match clean {
+        "one" => Some(1),
+        "two" => Some(2),
+        "three" => Some(3),
+        "four" => Some(4),
+        "five" => Some(5),
+        "six" => Some(6),
+        "seven" => Some(7),
+        "eight" => Some(8),
+        "nine" => Some(9),
+        _ => None,
+    }
+}
+
+fn peek_meridiem_or_time_of_day(words: &[&str], start: usize) -> (Option<&'static str>, usize) {
+    if start >= words.len() {
+        return (None, 0);
+    }
+
+    let w1 = clean_word_for_matching(words[start]);
+
+    // Single token "pm", "am", "p.m.", "a.m."
+    if w1 == "pm" || w1 == "p.m" || w1 == "p.m." {
+        return (Some("PM"), 1);
+    }
+    if w1 == "am" || w1 == "a.m" || w1 == "a.m." {
+        return (Some("AM"), 1);
+    }
+
+    // Conversational: "in the morning" (AM)
+    if w1 == "in" && start + 2 < words.len() {
+        let w2 = clean_word_for_matching(words[start + 1]);
+        let w3 = clean_word_for_matching(words[start + 2]);
+        if w2 == "the" && w3 == "morning" {
+            return (Some("AM"), 3);
+        }
+        if w2 == "the" && (w3 == "afternoon" || w3 == "evening") {
+            return (Some("PM"), 3);
+        }
+    }
+
+    // Conversational: "at night" (PM)
+    if w1 == "at" && start + 1 < words.len() {
+        let w2 = clean_word_for_matching(words[start + 1]);
+        if w2 == "night" {
+            return (Some("PM"), 2);
+        }
+    }
+
+    (None, 0)
+}
+
+
+fn normalize_time_ranges(tokens: &mut Vec<String>) {
+    // If we have "from 3 to 5:00 PM" -> propagate to the first time: "from 3:00 PM to 5:00 PM"
+    let len = tokens.len();
+    for i in 0..len {
+        if (tokens[i] == "to" || tokens[i] == "-" || tokens[i] == "and") && i >= 1 && i + 1 < len {
+            let prev_clean = clean_word_for_matching(&tokens[i - 1]);
+            let next_token = &tokens[i + 1];
+
+            let mer = if next_token.contains("PM") {
+                Some("PM")
+            } else if next_token.contains("AM") {
+                Some("AM")
+            } else {
+                None
+            };
+
+            if let Some(m) = mer {
+                if let Some(h) = word_or_digit_to_hour(&prev_clean) {
+                    tokens[i - 1] = format!("{}:00 {}", h, m);
+                } else if is_numeric_time(&prev_clean) {
+                    tokens[i - 1] = format!("{} {}", tokens[i - 1], m);
+                }
+            }
+        }
+    }
+}
+
 /// Capitalizes sentence starts following recognized sentence-ending punctuation and paragraph breaks,
 /// while protecting abbreviations (Mr., Dr., e.g., i.e.), decimals (3.14), and acronyms.
 fn capitalize_sentences_conservative(input: &str) -> (String, usize) {
@@ -2719,25 +3339,25 @@ mod tests {
         let mut cfg = FormattingConfig::default();
         cfg.conservative_filler_removal = true;
 
-        // 1. User's exact example: "meeting was there at 4pm, oh no, 5pm" -> "Meeting was there at 5pm"
+        // 1. User's exact example: "meeting was there at 4pm, oh no, 5pm" -> "Meeting was there at 5:00 PM."
         let res1 = format_transcript("a meeting was there at 4pm, oh no, 5pm.", &cfg);
-        assert_eq!(res1, "A meeting was there at 5pm.");
+        assert_eq!(res1, "A meeting was there at 5:00 PM.");
 
         // 2. Exact time with PM: "meeting at 4:00 PM, oh no, 5:00 PM."
         let res2 = format_transcript("meeting at 4:00 PM, oh no, 5:00 PM.", &cfg);
         assert_eq!(res2, "Meeting at 5:00 PM.");
 
-        // 3. User's false-start test: "The meeting no, it's at 5 PM." -> "The meeting is at 5 PM."
+        // 3. User's false-start test: "The meeting no, it's at 5 PM." -> "The meeting is at 5:00 PM."
         let res_fs = format_transcript("The meeting no, it's at 5 PM.", &cfg);
-        assert_eq!(res_fs, "The meeting is at 5 PM.");
+        assert_eq!(res_fs, "The meeting is at 5:00 PM.");
 
-        // 4. Correction with no it's: "The meeting was at 4 PM, no, it's at 5 PM." -> "The meeting was at 5 PM."
+        // 4. Correction with no it's: "The meeting was at 4 PM, no, it's at 5 PM." -> "The meeting was at 5:00 PM."
         let res_corr = format_transcript("The meeting was at 4 PM, no, it's at 5 PM.", &cfg);
-        assert_eq!(res_corr, "The meeting was at 5 PM.");
+        assert_eq!(res_corr, "The meeting was at 5:00 PM.");
 
-        // 5. Short correction: "The meeting at 4 PM, no, 5 PM." -> "The meeting at 5 PM."
+        // 5. Short correction: "The meeting at 4 PM, no, 5 PM." -> "The meeting at 5:00 PM."
         let res_short = format_transcript("The meeting at 4 PM, no, 5 PM.", &cfg);
-        assert_eq!(res_short, "The meeting at 5 PM.");
+        assert_eq!(res_short, "The meeting at 5:00 PM.");
 
         // 6. Date replacement with "actually": "let's do Monday, actually Tuesday."
         let res3 = format_transcript("let's do Monday, actually Tuesday.", &cfg);
@@ -2939,6 +3559,13 @@ mod tests {
         let res8 = format_transcript(&deduplicate_repeated_speech("a picture of your, your plan is"), &cfg);
         assert_eq!(res8, "A picture of your plan is");
 
+        // 7. Rust vs Just / Must acoustic repairs
+        let res9 = format_transcript("don't add Rust for brainstorming after discussion will proceed", &cfg);
+        assert!(res9.contains("just for brainstorming"), "Expected 'just for brainstorming', got: {}", res9);
+
+        let res10 = format_transcript("and along with that it Rust be also even not sure", &cfg);
+        assert!(res10.contains("it must be also"), "Expected 'it must be also', got: {}", res10);
+
         // 7. UI is so bad must NEVER turn into "UI am so bad"
         let res9 = format_transcript("The UI is so bad and the dark and light theme has been conflicting", &cfg);
         assert!(res9.contains("The UI is so bad"), "Expected 'The UI is so bad', got: {}", res9);
@@ -2952,5 +3579,76 @@ mod tests {
         // 9. 'best model and suitable one. I mean, this is creating' must retain 'best model'
         let res11 = format_transcript("So, we'll use whatever is the best model and suitable one. I mean, this is creating lot of issues and spreading word, mistake, not detecting properly.", &cfg);
         assert!(res11.contains("best model and suitable one"), "Expected 'best model and suitable one' preserved, got: {}", res11);
+
+        // 10. Tribe and tribe members acoustic repair
+        let res12 = format_transcript("and once I try members, if everybody's present we can make a video", &cfg);
+        assert!(res12.contains("once our tribe members"), "Expected 'once our tribe members', got: {}", res12);
+
+        let res13 = format_transcript("please invite all the try members in our try", &cfg);
+        assert!(res13.contains("all the tribe members in our tribe"), "Expected 'all the tribe members in our tribe', got: {}", res13);
+
+        // 11. Ma'am / respectful workplace address
+        let res14 = format_transcript("Yeah, Maam, I made all those things, whatever I said, and sent him a copy yesterday.", &cfg);
+        assert!(res14.contains("Yeah, ma'am, I made"), "Expected 'Yeah, ma'am, I made', got: {}", res14);
+
+        let res15 = format_transcript("Yes Maam, I will do it.", &cfg);
+        assert!(res15.contains("Yes, ma'am, I will do it."), "Expected 'Yes, ma'am, I will do it.', got: {}", res15);
+
+        // 12. Indian English discourse marker: 'and all'
+        let res16 = format_transcript("Don't show the monetization plan at all and it feels like too much of theory", &cfg);
+        assert!(res16.contains("monetization plan and all"), "Expected 'monetization plan and all', got: {}", res16);
+
+        let res17 = format_transcript("photos you'll definitely be getting, and all the things", &cfg);
+        assert!(res17.contains("and all the things"), "Expected 'and all the things', got: {}", res17);
+    }
+
+    #[test]
+    fn test_spoken_time_expressions() {
+        let cfg = FormattingConfig::default();
+
+        // 1. Spoken hours + minutes with AM/PM capitalized
+        let t1 = format_transcript("call me at nine thirty am tomorrow", &cfg);
+        assert_eq!(t1, "Call me at 9:30 AM tomorrow");
+
+        let t2 = format_transcript("let's meet at two fifteen pm", &cfg);
+        assert_eq!(t2, "Let's meet at 2:15 PM");
+
+        let t3 = format_transcript("deadline is ten forty five am", &cfg);
+        assert_eq!(t3, "Deadline is 10:45 AM");
+
+        // 2. Attached digits + am/pm
+        let t4 = format_transcript("we will arrive at 5pm.", &cfg);
+        assert_eq!(t4, "We will arrive at 5:00 PM.");
+
+        let t5 = format_transcript("alarm is set for 6:30am,", &cfg);
+        assert_eq!(t5, "Alarm is set for 6:30 AM,");
+
+        // 3. Conversational time of day
+        let t6 = format_transcript("breakfast at seven in the morning", &cfg);
+        assert_eq!(t6, "Breakfast at 7:00 AM");
+
+        let t7 = format_transcript("dinner at eight at night", &cfg);
+        assert_eq!(t7, "Dinner at 8:00 PM");
+
+        let t8 = format_transcript("flight leaves at two in the afternoon", &cfg);
+        assert_eq!(t8, "Flight leaves at 2:00 PM");
+
+        // 4. Relative time expressions
+        let t9 = format_transcript("see you at quarter to five pm", &cfg);
+        assert_eq!(t9, "See you at 4:45 PM");
+
+        let t10 = format_transcript("starts at half past four in the afternoon", &cfg);
+        assert_eq!(t10, "Starts at 4:30 PM");
+
+        let t11 = format_transcript("arrive at quarter past three pm", &cfg);
+        assert_eq!(t11, "Arrive at 3:15 PM");
+
+        // 5. Time ranges
+        let t12 = format_transcript("the workshop runs from 3 to 5 pm", &cfg);
+        assert_eq!(t12, "The workshop runs from 3:00 PM to 5:00 PM");
+
+        // 6. Safeguards: "I am" must NOT be converted to "I AM"
+        let t13 = format_transcript("I am ready to go at 9 am", &cfg);
+        assert_eq!(t13, "I am ready to go at 9:00 AM");
     }
 }

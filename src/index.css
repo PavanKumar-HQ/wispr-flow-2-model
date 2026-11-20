@@ -27,8 +27,8 @@
   -webkit-app-region: drag;
 }
 
-button, input, textarea, a, select, [data-tauri-no-drag] {
-  -webkit-app-region: no-drag;
+button, input, textarea, a, select, [data-tauri-no-drag], [data-tauri-no-drag] * {
+  -webkit-app-region: no-drag !important;
 }
 
 body {
@@ -38,6 +38,27 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   background-color: #DFDFD4;
+}
+
+/* Dedicated styling for the floating pill / dynamic capsule window */
+body.pill-window {
+  background-color: transparent !important;
+  background: transparent !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+body.pill-window,
+body.pill-window * {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+body.pill-window ::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 #root {
@@ -346,5 +367,64 @@ body {
   background: #07514C;
   border-radius: 9999px;
   transition: width 0.3s ease;
+}
+
+@keyframes capsuleSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-fadeIn {
+  animation: capsuleSlideDown 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Invisible sleek scrollbar for capsule */
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+.no-scrollbar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+/* Living CPU Equalizer Bar Animation */
+@keyframes cpuEqualize {
+  0% {
+    transform: scaleY(0.42);
+  }
+  50% {
+    transform: scaleY(1.0);
+  }
+  100% {
+    transform: scaleY(0.58);
+  }
+}
+
+/* Original Sovereign Dark Teal Transcribing Text Shimmer */
+@keyframes transcribingShimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.transcribing-shimmer {
+  background: linear-gradient(90deg, #07514C 0%, #157E78 50%, #07514C 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent !important;
+  color: transparent !important;
+  display: inline-block;
+  animation: transcribingShimmer 2s linear infinite;
 }
 

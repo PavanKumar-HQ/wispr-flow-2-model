@@ -337,6 +337,37 @@ export async function safeInvoke<T>(cmd: string, args?: Record<string, unknown>)
     case 'dismiss_technical_suggestion': {
       return undefined as unknown as T;
     }
+    case 'get_system_telemetry_cmd': {
+      return {
+        cpu_percent: 6.2,
+        battery_percent: 85,
+        is_charging: false,
+        memory_pressure_pct: 28,
+      } as unknown as T;
+    }
+    case 'get_system_clipboard_cmd': {
+      return 'VoxQuest Sovereign Voice OS' as unknown as T;
+    }
+    case 'get_dataset_stats_cmd': {
+      return {
+        total_pairs: 18,
+        speaker_id: 'student_default',
+        enabled: true,
+        bundled_lexicon_count: 124,
+      } as unknown as T;
+    }
+    case 'set_student_speaker_id_cmd': {
+      return ((args?.speaker_id as string) || 'student_default') as unknown as T;
+    }
+    case 'export_student_dataset_cmd': {
+      return 'Exported 18 training samples to ~/Downloads/VoxQuest_Student_Dataset/' as unknown as T;
+    }
+    case 'export_bundled_lexicon_pack_cmd': {
+      return JSON.stringify({ pack_name: 'VoxQuest Indian Technical Lexicon', version: '1.0' }) as unknown as T;
+    }
+    case 'import_bundled_lexicon_pack_cmd': {
+      return 'Imported 124 vocabulary terms' as unknown as T;
+    }
     default:
       return undefined as unknown as T;
   }

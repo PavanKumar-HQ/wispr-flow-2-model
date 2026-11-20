@@ -244,18 +244,21 @@ pub fn enhance_text(
 
     // Only switch to Prompt mode if explicitly chosen or explicit prompt generation is requested
     let lower_shielded = shielded_text.to_lowercase();
-    let is_explicit_prompt_directive = lower_shielded.starts_with("generate a prompt")
-        || lower_shielded.starts_with("generate prompt")
-        || lower_shielded.starts_with("create a prompt")
-        || lower_shielded.starts_with("create prompt")
-        || lower_shielded.starts_with("write a prompt")
-        || lower_shielded.starts_with("write prompt")
-        || lower_shielded.starts_with("prompt for")
-        || lower_shielded.starts_with("prompt to")
-        || lower_shielded.starts_with("make a prompt")
-        || lower_shielded.starts_with("give me a prompt")
-        || lower_shielded.starts_with("instruction:")
-        || lower_shielded.starts_with("act as ");
+    let trimmed_lower = lower_shielded.trim().trim_end_matches('.');
+    let is_explicit_prompt_directive = trimmed_lower.starts_with("generate a prompt")
+        || trimmed_lower.starts_with("generate prompt")
+        || trimmed_lower.starts_with("create a prompt")
+        || trimmed_lower.starts_with("create prompt")
+        || trimmed_lower.starts_with("write a prompt")
+        || trimmed_lower.starts_with("write prompt")
+        || trimmed_lower.starts_with("prompt for")
+        || trimmed_lower.starts_with("prompt to")
+        || trimmed_lower.starts_with("make a prompt")
+        || trimmed_lower.starts_with("give me a prompt")
+        || trimmed_lower.starts_with("instruction:")
+        || trimmed_lower.starts_with("act as ")
+        || trimmed_lower.ends_with(", prompt")
+        || trimmed_lower.ends_with(" prompt");
 
     let effective_mode = match request.mode {
         EnhancementMode::Prompt => EnhancementMode::Prompt,
@@ -475,25 +478,61 @@ fn shield_special_tokens(
     let mut token_counter = 0;
     let mut working = input.to_string();
 
-    // 1. Apply active personal dictionary substitutions first, shielding the preferred text
-    for (orig, pref) in dict_pairs {
-        if orig.is_empty() || pref.is_empty() {
+    // 1. Apply active personal dictionary substitutions first, shielding the preferred text.
+    // Sort descending by length so longer multi-word phrases match before individual tokens.
+    let mut sorted_dict = dict_pairs.to_vec();
+    sorted_dict.sort_by(|a, b| b.0.len().cmp(&a.0.len()));
+
+    for (orig, pref) in &sorted_dict {
+        let orig_clean = orig.trim();
+        let pref_clean = pref.trim();
+        if orig_clean.is_empty() || pref_clean.is_empty() {
             continue;
         }
-        let lower_orig = orig.to_lowercase();
+        let lower_orig = orig_clean.to_lowercase();
         let lower_working = working.to_lowercase();
-        if lower_working.contains(&lower_orig) {
+        if !lower_working.contains(&lower_orig) {
+            continue;
+        }
+
+        // Collect all match occurrences that satisfy strict word boundaries
+        let mut matches = Vec::new();
+        let mut search_start = 0;
+        while let Some(rel_idx) = lower_working[search_start..].find(&lower_orig) {
+            let idx = search_start + rel_idx;
+            let end_idx = idx + lower_orig.len();
+
+            let left_ok = if idx == 0 {
+                true
+            } else {
+                let prev_ch = working[..idx].chars().last().unwrap_or(' ');
+                !prev_ch.is_alphanumeric()
+            };
+
+            let right_ok = if end_idx >= working.len() {
+                true
+            } else {
+                let next_ch = working[end_idx..].chars().next().unwrap_or(' ');
+                !next_ch.is_alphanumeric()
+            };
+
+            if left_ok && right_ok {
+                matches.push((idx, end_idx));
+            }
+            search_start = idx + lower_orig.len().max(1);
+        }
+
+        if !matches.is_empty() {
             let placeholder = format!("___TOKEN_DICT_{}___", token_counter);
             token_counter += 1;
-            token_map.insert(placeholder.clone(), pref.clone());
-            
-            // Case-insensitive replacement
+            token_map.insert(placeholder.clone(), pref_clean.to_string());
+
             let mut result = String::new();
             let mut last_idx = 0;
-            for (idx, _) in lower_working.match_indices(&lower_orig) {
+            for (idx, end_idx) in matches {
                 result.push_str(&working[last_idx..idx]);
                 result.push_str(&placeholder);
-                last_idx = idx + orig.len();
+                last_idx = end_idx;
             }
             result.push_str(&working[last_idx..]);
             working = result;
@@ -765,7 +804,7 @@ fn enhance_clarity(input: &str) -> String {
     enhance_light_correction(input)
 }
 
-fn enhance_natural(input: &str) -> String {
+pub fn enhance_natural(input: &str) -> String {
     enhance_keep_tone(input)
 }
 
@@ -773,7 +812,7 @@ fn enhance_natural(input: &str) -> String {
 // Mode: Professional (Workplace Emails, Slack, Formal)
 // ============================================================================
 
-fn enhance_professional(input: &str) -> String {
+pub fn enhance_professional(input: &str) -> String {
     let mut text = input.to_string();
 
     // 1. Elevate greetings and openings
@@ -1304,6 +1343,46 @@ mod tests {
         let res = enhance_text(&req, &dict).expect("Should succeed");
         assert!(res.enhanced_text.contains("Satvik Sharma"));
         assert!(res.enhanced_text.contains("VoxQuest Pro"));
+    }
+
+    #[test]
+    fn test_enhance_prompt_user_case_generate_website_prompt() {
+        let input = "Generate a website, prompt.";
+        let dict = vec![
+            ("pr".to_string(), "PR".to_string()),
+            ("ai".to_string(), "AI".to_string()),
+        ];
+        let req = EnhancementRequest {
+            session_id: None,
+            text: input.to_string(),
+            mode: EnhancementMode::Prompt,
+            ..Default::default()
+        };
+        let res = enhance_text(&req, &dict).expect("Should succeed");
+        assert!(!res.enhanced_text.contains("PRompt"), "Must never corrupt 'prompt' into 'PRompt'!");
+        assert!(res.enhanced_text.contains("Act as an expert full-stack developer"));
+        assert!(res.enhanced_text.contains("website"));
+        assert!(res.changes_made);
+    }
+
+    #[test]
+    fn test_enhance_dict_word_boundary_safety() {
+        let input = "Please review this pr and check the prompt without praise.";
+        let dict = vec![
+            ("pr".to_string(), "PR".to_string()),
+        ];
+        let req = EnhancementRequest {
+            session_id: None,
+            text: input.to_string(),
+            mode: EnhancementMode::LightCorrection,
+            ..Default::default()
+        };
+        let res = enhance_text(&req, &dict).expect("Should succeed");
+        assert!(res.enhanced_text.contains("review this PR"));
+        assert!(res.enhanced_text.contains("check the prompt"));
+        assert!(res.enhanced_text.contains("without praise"));
+        assert!(!res.enhanced_text.contains("PRompt"));
+        assert!(!res.enhanced_text.contains("PRaise"));
     }
 
     #[test]

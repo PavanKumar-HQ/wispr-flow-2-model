@@ -8,12 +8,27 @@ import { ModelManagerTab } from './components/ModelManagerTab';
 import { HistoryTab } from './components/HistoryTab';
 import { SettingsTab } from './components/SettingsTab';
 import { DictionaryTab } from './components/DictionaryTab';
+import { TrainModelTab } from './components/TrainModelTab';
+import { UtilitiesTab } from './components/UtilitiesTab';
 import { ModelInfo, AppSettings, HistoryRecord, SessionSnapshot, InsightsData } from './types';
-import { Home, Layers, History, Settings as SettingsIcon, BookA, BarChart2, LocateFixed } from 'lucide-react';
+import { Home, Layers, History, Settings as SettingsIcon, BookA, BarChart2, LocateFixed, GraduationCap, LayoutGrid } from 'lucide-react';
 
 export default function App() {
   const isPillOnlyWindow = typeof window !== 'undefined' && window.location.hash.includes('pill');
-  const [activeTab, setActiveTab] = useState<'home' | 'insights' | 'models' | 'dictionary' | 'history' | 'settings'>('home');
+
+  useEffect(() => {
+    if (isPillOnlyWindow) {
+      document.body.classList.add('pill-window');
+      document.body.style.backgroundColor = 'transparent';
+      if (document.documentElement) {
+        document.documentElement.style.backgroundColor = 'transparent';
+      }
+      safeInvoke('show_pill_window');
+      safeInvoke('clamp_pill_position_cmd');
+    }
+  }, [isPillOnlyWindow]);
+
+  const [activeTab, setActiveTab] = useState<'home' | 'utilities' | 'train' | 'insights' | 'models' | 'dictionary' | 'history' | 'settings'>('home');
   const [insights, setInsights] = useState<InsightsData | null>(null);
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [settings, setSettings] = useState<AppSettings>({
@@ -329,7 +344,7 @@ export default function App() {
 
   if (isPillOnlyWindow) {
     return (
-      <div data-tauri-drag-region className="w-screen h-screen flex items-center justify-center bg-transparent select-none p-1 overflow-hidden">
+      <div data-tauri-drag-region className="w-screen h-screen flex flex-col items-center justify-start bg-transparent select-none p-1 overflow-visible">
         <FloatingPill
           status={session}
           onToggle={handleToggleDictation}
@@ -367,6 +382,8 @@ export default function App() {
           <nav className="space-y-1.5">
             {[
               { id: 'home', label: 'Home', icon: Home },
+              { id: 'utilities', label: 'Utilities', icon: LayoutGrid },
+              { id: 'train', label: 'Train the Model', icon: GraduationCap },
               { id: 'insights', label: 'Insights', icon: BarChart2 },
               { id: 'history', label: 'History', icon: History, badge: pendingRecoveryCount > 0 ? `${pendingRecoveryCount}` : null },
               { id: 'dictionary', label: 'Dictionary', icon: BookA },
@@ -443,6 +460,14 @@ export default function App() {
             />
           )}
 
+          {activeTab === 'utilities' && (
+            <UtilitiesTab
+              session={session}
+              onCopy={handleCopy}
+              onSummonPill={() => safeInvoke('center_pill_window')}
+            />
+          )}
+
           {activeTab === 'insights' && (
             <InsightsTab
               insights={insights}
@@ -465,6 +490,14 @@ export default function App() {
               smokeTestLog={smokeTestLog}
               autoRoutingEnabled={settings.enable_auto_model_routing ?? true}
               onToggleAutoRouting={(val) => handleUpdateSettings({ ...settings, enable_auto_model_routing: val })}
+            />
+          )}
+
+          {activeTab === 'train' && (
+            <TrainModelTab
+              session={session}
+              onToggleDictation={handleToggleDictation}
+              onNavigateTab={(tab) => setActiveTab(tab as any)}
             />
           )}
 

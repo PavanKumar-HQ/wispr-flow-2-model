@@ -34,7 +34,7 @@ interface HomeTabProps {
   onDeleteHistory: (id: number) => void;
   onClearHistory: () => void;
   onToggleDictation: () => void;
-  onNavigateTab: (tab: 'insights' | 'history' | 'dictionary' | 'models' | 'settings') => void;
+  onNavigateTab: (tab: 'home' | 'utilities' | 'train' | 'insights' | 'history' | 'dictionary' | 'models' | 'settings') => void;
   onSummonPill: () => void;
 }
 
@@ -78,8 +78,6 @@ export const HomeTab: React.FC<HomeTabProps> = ({
       setActiveTeachId(null);
     }
   };
-  const [copiedSessionText, setCopiedSessionText] = useState(false);
-  const [showEnhanceSession, setShowEnhanceSession] = useState(false);
   const [enhanceHistoryItemId, setEnhanceHistoryItemId] = useState<number | null>(null);
 
   const isRecording = session.state === 'recording';
@@ -102,14 +100,6 @@ export const HomeTab: React.FC<HomeTabProps> = ({
     onCopy(text);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 1800);
-  };
-
-  const handleCopySessionText = () => {
-    if (session.last_transcript) {
-      onCopy(session.last_transcript);
-      setCopiedSessionText(true);
-      setTimeout(() => setCopiedSessionText(false), 1800);
-    }
   };
 
   const handleInsertHistoryItem = async (id: number, text: string) => {
@@ -309,87 +299,6 @@ export const HomeTab: React.FC<HomeTabProps> = ({
         {isRecording && (
           <div className="p-3.5 rounded-xl bg-deepTeal/70 border border-white/10 flex items-center justify-center animate-fadeIn">
             <AudioWaveform isRecording={true} isTranscribing={false} liveLevel={0.5} barCount={23} theme="dark" />
-          </div>
-        )}
-
-        {/* Recognized Transcript & Quick Polish/Prompt Superpowers */}
-        {session.last_transcript && !isRecording && (
-          <div className="pt-3 border-t border-white/10 space-y-3 animate-fadeIn">
-            <div className="flex items-center justify-between text-xs text-sage font-semibold">
-              <span className="flex items-center gap-1.5 text-amber">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                Latest Dictation
-              </span>
-              <span className="text-[11px] font-mono text-cream/70">
-                {session.last_transcript.trim().split(/\s+/).filter(Boolean).length} words
-              </span>
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-deepTeal/80 border border-sage/30 text-sm font-medium text-cream leading-relaxed select-text shadow-inner">
-              "{session.last_transcript}"
-            </div>
-
-            {/* Action Buttons: Paste to App, Enhance, Spec Builder, Copy */}
-            <div className="flex flex-wrap items-center gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => {
-                  if (session.last_transcript) {
-                    safeInvoke('insert_into_selected_field', { id: session.recovery_id || 0, text: session.last_transcript });
-                  }
-                }}
-                className="tactile-btn tactile-btn-primary px-4 py-2 text-xs font-bold"
-                title="Paste directly into your active app at your cursor position"
-              >
-                <CornerDownLeft className="w-3.5 h-3.5 text-darkTeal" />
-                <span>Paste to App</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setShowEnhanceSession(!showEnhanceSession)}
-                className={`tactile-btn px-4 py-2 text-xs font-bold ${
-                  showEnhanceSession
-                    ? 'tactile-btn-teal'
-                    : 'tactile-btn-dark-subtle'
-                }`}
-                title="Enhance clarity, grammar, and phrasing without inventing facts"
-                aria-label="Enhance dictated text"
-              >
-                <Wand2 className="w-3.5 h-3.5 text-amber shrink-0" />
-                <span>{showEnhanceSession ? 'Close Enhance' : 'Enhance Text'}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleCopySessionText}
-                className="tactile-btn tactile-btn-dark-subtle px-3.5 py-2 text-xs font-bold ml-auto"
-                title="Copy to clipboard"
-                aria-label="Copy transcript"
-              >
-                {copiedSessionText ? <Check className="w-3.5 h-3.5 text-amber" /> : <Copy className="w-3.5 h-3.5 text-cream" />}
-                <span>{copiedSessionText ? 'Copied' : 'Copy'}</span>
-              </button>
-            </div>
-
-            {/* In-place Enhancement Review Card */}
-            {showEnhanceSession && (
-              <div className="pt-2">
-                <EnhanceReviewCard
-                  originalText={session.last_transcript}
-                  sessionId={session.session_id}
-                  onAccept={(enhanced) => {
-                    setShowEnhanceSession(false);
-                    onCopy(enhanced);
-                  }}
-                  onInsert={(text) => {
-                    safeInvoke('insert_into_selected_field', { id: 0, text });
-                  }}
-                  onCopy={(text) => onCopy(text)}
-                  onDiscard={() => setShowEnhanceSession(false)}
-                />
-              </div>
-            )}
           </div>
         )}
       </div>

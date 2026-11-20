@@ -196,3 +196,23 @@ export interface IngestCapsuleResult {
 
 // Backward compatibility alias
 export type DictationStatus = SessionSnapshot;
+
+export interface NowPlayingInfo {
+  is_playing: boolean;
+  title: string;
+  source: string;
+}
+
+export interface SystemTelemetry {
+  cpu_percent: number;
+  battery_percent: number;
+  is_charging: boolean;
+  thermal_state: string;
+}
+
+export interface VoiceActionResult {
+  action_type: string;
+  feedback_message: string;
+  expanded_text?: string | null;
+  suppress_paste: boolean;
+}

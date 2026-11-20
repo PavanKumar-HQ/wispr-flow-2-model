@@ -1,9 +1,22 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, Square, Check, Copy, Wand2, RotateCcw, X, CornerDownLeft, RefreshCw, Zap } from 'lucide-react';
-import { SessionSnapshot, EnhancementResponse, EnhancementRequest, EnhancementMode } from '../types';
+import {
+  Mic,
+  Square,
+  Check,
+  Copy,
+  X,
+  CornerDownLeft,
+  LayoutGrid,
+  Pause,
+  SkipBack,
+  SkipForward,
+} from 'lucide-react';
+import { SessionSnapshot, NowPlayingInfo } from '../types';
+import { Mascot } from './Mascot';
 import { AudioWaveform } from './AudioWaveform';
-import { safeListen, safeInvoke, isNativeTauri } from '../lib/ipc';
-import { getCurrentWindow } from '@tauri-apps/api/window';
+import { CapsuleTray } from './capsule/CapsuleTray';
+import { safeInvoke, safeListen, isNativeTauri } from '../lib/ipc';
+import { getCurrentWindow, currentMonitor } from '@tauri-apps/api/window';
 
 interface FloatingPillProps {
   status: SessionSnapshot;
@@ -21,20 +34,23 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
   compact = false,
 }) => {
   const [copied, setCopied] = useState<boolean>(false);
-  const [isEnhancing, setIsEnhancing] = useState<boolean>(false);
   const [enhancedText, setEnhancedText] = useState<string | null>(null);
   const [enhanced, setEnhanced] = useState<boolean>(false);
-  const [activeEnhanceMode, setActiveEnhanceMode] = useState<EnhancementMode>('light_correction');
   const [inserted, setInserted] = useState<boolean>(false);
   const [isDismissed, setIsDismissed] = useState<boolean>(false);
-  const [modelShiftNotice, setModelShiftNotice] = useState<string | null>(null);
-  const lastSessionIdRef = useRef<string | null>(null);
+  const [noSpeechActive, setNoSpeechActive] = useState<boolean>(false);
+  const [isTrayExpanded, setIsTrayExpanded] = useState<boolean>(false);
+  const [nowPlaying, setNowPlaying] = useState<NowPlayingInfo | null>(null);
 
+  // Sync with Now Playing audio stream
   useEffect(() => {
+    safeInvoke<NowPlayingInfo | null>('get_now_playing_cmd').then((info) => {
+      if (info) setNowPlaying(info);
+    });
+
     let unlisten: (() => void) | undefined;
-    safeListen<string>('technical-model-shifted', (e) => {
-      setModelShiftNotice(e.payload);
-      setTimeout(() => setModelShiftNotice(null), 5000);
+    safeListen<NowPlayingInfo | null>('now-playing-changed', (e) => {
+      setNowPlaying(e.payload);
     }).then((fn) => {
       unlisten = fn;
     });
@@ -43,6 +59,32 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
       if (unlisten) unlisten();
     };
   }, []);
+
+  const handleMediaControl = async (action: 'playpause' | 'next' | 'previous') => {
+    try {
+      await safeInvoke('media_control_cmd', { action });
+      if (action === 'playpause') {
+        setNowPlaying((prev) => (prev ? { ...prev, is_playing: !prev.is_playing } : null));
+      }
+    } catch (e) {
+      console.warn('Media control failed:', e);
+    }
+  };
+  const [expandDirection, setExpandDirection] = useState<'down' | 'up'>('down');
+  const lastSessionIdRef = useRef<string | null>(null);
+
+  // Ensure "No speech heard" never freezes permanently
+  useEffect(() => {
+    if (status.message && status.message.toLowerCase().includes('no speech')) {
+      setNoSpeechActive(true);
+      const timer = setTimeout(() => {
+        setNoSpeechActive(false);
+      }, 2200);
+      return () => clearTimeout(timer);
+    } else {
+      setNoSpeechActive(false);
+    }
+  }, [status.message, status.session_id]);
 
   const isRecording = status.state === 'recording' || status.state === 'starting';
   const isTranscribing =
@@ -57,7 +99,6 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
   const currentActiveText = enhancedText || status.last_transcript || '';
 
   // Reset enhancement state ONLY when a genuinely NEW session begins or records
-  // Never reset on 150ms snapshot poll ticks of timestamp_ms or last_transcript!
   useEffect(() => {
     if (status.state === 'recording') {
       setIsDismissed(false);
@@ -70,6 +111,26 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
       setEnhanced(false);
     }
   }, [status.session_id, status.state]);
+
+  // Ensure pill is immediately shown and safely positioned on mount
+  useEffect(() => {
+    if (isNativeTauri()) {
+      safeInvoke('show_pill_window');
+      safeInvoke('clamp_pill_position_cmd');
+
+      let unlisten: (() => void) | undefined;
+      const appWin = getCurrentWindow();
+      appWin.onMoved(() => {
+        safeInvoke('clamp_pill_position_cmd');
+      }).then((fn) => {
+        unlisten = fn;
+      });
+
+      return () => {
+        if (unlisten) unlisten();
+      };
+    }
+  }, []);
 
   const formatSeconds = (sec: number) => {
     const m = Math.floor(sec / 60);
@@ -84,10 +145,30 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
         try {
           const appWin = getCurrentWindow();
           await appWin.startDragging();
+          // After dragging finishes, enforce strict boundary clamping above macOS Dock and below notch
+          await safeInvoke('clamp_pill_position_cmd');
         } catch (err) {
           console.warn('Native drag failed:', err);
         }
       }
+    }
+  };
+
+  const handleToggleTray = async () => {
+    const next = !isTrayExpanded;
+    setIsTrayExpanded(next);
+    try {
+      const win = getCurrentWindow();
+      const pos = await win.outerPosition();
+      const mon = await currentMonitor();
+      const scale = mon ? mon.scaleFactor : 1;
+      const screenH = mon ? mon.size.height / scale : 900;
+      const currentY = pos.y / scale;
+      const dir = currentY > (screenH / 2) ? 'up' : 'down';
+      setExpandDirection(dir);
+      await safeInvoke('resize_pill_window', { expanded: next, direction: dir });
+    } catch (err) {
+      console.warn('Resize tray failed:', err);
     }
   };
 
@@ -96,73 +177,6 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
     onCopyLast(currentActiveText);
     setCopied(true);
     setTimeout(() => setCopied(false), 1800);
-  };
-
-  const handleEnhance = async (targetMode: EnhancementMode = 'light_correction') => {
-    const raw = (status.last_transcript || currentActiveText).trim();
-    if (!raw || isEnhancing) return;
-
-    setIsEnhancing(true);
-    setActiveEnhanceMode(targetMode);
-    try {
-      const isPromptLike = raw.toLowerCase().startsWith('prompt')
-        || raw.toLowerCase().startsWith('verify')
-        || raw.toLowerCase().startsWith('write')
-        || raw.toLowerCase().startsWith('create')
-        || raw.toLowerCase().startsWith('generate')
-        || raw.toLowerCase().startsWith('explain')
-        || raw.toLowerCase().startsWith('fix')
-        || raw.toLowerCase().startsWith('debug');
-
-      const effectiveMode: EnhancementMode = targetMode === 'light_correction' && isPromptLike ? 'prompt' : targetMode;
-
-      const req: EnhancementRequest = {
-        session_id: status.session_id || null,
-        text: raw,
-        mode: effectiveMode,
-        auto_replace: true,
-      };
-      const res = await safeInvoke<EnhancementResponse>('enhance_text_cmd', { request: req });
-      if (res && res.enhanced_text) {
-        setEnhancedText(res.enhanced_text);
-        setEnhanced(true);
-        onCopyLast(res.enhanced_text);
-
-        // Immediately paste/insert the enhanced text into the active cursor
-        try {
-          await safeInvoke('insert_into_selected_field', {
-            id: status.recovery_id || 0,
-            text: res.enhanced_text,
-          });
-          setInserted(true);
-          setTimeout(() => setInserted(false), 2000);
-        } catch (insertErr) {
-          console.warn('Auto-insert enhanced text failed:', insertErr);
-        }
-      }
-    } catch (err) {
-      console.warn('Pill enhance failed:', err);
-    } finally {
-      setIsEnhancing(false);
-    }
-  };
-
-  const handleCycleMode = () => {
-    const sequence: EnhancementMode[] = ['light_correction', 'prompt', 'professional', 'concise', 'natural'];
-    const currentIdx = sequence.indexOf(activeEnhanceMode);
-    const nextMode = sequence[(currentIdx + 1) % sequence.length];
-    setActiveEnhanceMode(nextMode);
-    handleEnhance(nextMode);
-  };
-
-  const handleRestoreOriginal = async () => {
-    const orig = (status.last_transcript || '').trim();
-    setEnhancedText(null);
-    setEnhanced(false);
-    if (orig) {
-      onCopyLast(orig);
-      await safeInvoke('insert_into_selected_field', { id: 0, text: orig });
-    }
   };
 
   const handleInsert = async () => {
@@ -196,224 +210,405 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
       data-tauri-drag-region
       onMouseDown={handleMouseDown}
       className={`${
-        compact ? 'w-full h-full' : 'fixed bottom-8 left-1/2 -translate-x-1/2 z-50'
-      } flex items-center justify-center select-none p-1`}
+        compact
+          ? 'w-full flex flex-col items-center'
+          : 'fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center'
+      } select-none p-1`}
     >
       {/* Pill Capsule styled with exact platform tokens: #DFDFD4 cream, #07514C dark teal, #DA6C4C terracotta */}
       <div
         data-tauri-drag-region
         onMouseDown={handleMouseDown}
-        className={`flex items-center gap-2 px-3 py-1.5 rounded-full border bg-cream text-charcoal shadow-md backdrop-blur-sm transition-all duration-200 cursor-grab active:cursor-grabbing ${
+        className={`flex items-center justify-between gap-2 px-3.5 py-1.5 rounded-full border transition-all duration-300 ease-out cursor-grab active:cursor-grabbing ${
           isRecording
-            ? 'border-terracotta ring-2 ring-terracotta/30'
+            ? 'w-[300px] bg-cream border-terracotta shadow-md'
             : isTranscribing
-            ? 'border-darkTeal ring-2 ring-darkTeal/20'
+            ? 'w-[300px] bg-cream border-darkTeal shadow-md'
             : isDone && !isDismissed
             ? status.state === 'recovery_required'
-              ? 'border-amber ring-2 ring-amber/30'
-              : 'border-deepTeal ring-2 ring-deepTeal/20'
-            : 'border-charcoal/30 hover:border-darkTeal'
-        } h-[42px] max-w-[430px]`}
+              ? 'w-[300px] bg-cream border-amber shadow-md'
+              : 'w-[300px] bg-cream border-darkTeal shadow-md'
+            : 'w-[300px] bg-cream border-charcoal/25 hover:border-darkTeal shadow-md'
+        } h-[40px]`}
       >
-        {/* Left: Dynamic State Badge */}
-        <div className="shrink-0 flex items-center gap-2 pl-0.5 font-sans">
-          {isRecording ? (
-            <div className="flex items-center gap-1.5">
-              <span className="relative flex h-3 w-3 items-center justify-center">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-vq-terracotta opacity-75" />
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-vq-terracotta shadow-sm" />
-              </span>
-              <span className="text-[11px] font-extrabold tracking-wide text-vq-terracotta uppercase">
-                Listening
-              </span>
-              <span className="text-[11px] font-mono font-bold text-vq-terracotta bg-vq-terracotta/10 px-1.5 py-0.5 rounded border border-vq-terracotta/20">
-                {formatSeconds(status.elapsed_seconds)}
-              </span>
-            </div>
-          ) : isTranscribing ? (
-            <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 border-2 border-vq-tealDark border-t-transparent rounded-full animate-spin" />
-              <span className="text-[11px] font-bold text-vq-tealDark">Transcribing...</span>
-            </div>
-          ) : isDone && !isDismissed ? (
-            status.state === 'recovery_required' ? (
+        {isRecording ? (
+          <>
+            {/* Left: Sovereign Mascot & Recording status */}
+            <div className="shrink-0 flex items-center gap-1.5 font-sans pl-0.5">
+              <Mascot size={22} />
               <div className="flex items-center gap-1.5">
-                <span className="flex h-2.5 w-2.5 rounded-full bg-vq-amber shadow-sm" />
-                <span className="text-[11px] font-bold text-vq-charcoal">
-                  {enhanced ? 'Enhanced & Saved' : 'Saved in Recovery'}
+                <span className="relative flex h-2.5 w-2.5 items-center justify-center shrink-0">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-terracotta opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-terracotta shadow-xs" />
+                </span>
+                <span className="text-[11px] font-bold tracking-wider text-terracotta uppercase">
+                  Listening
+                </span>
+                <span className="text-[11px] font-mono font-bold text-terracotta bg-terracotta/10 px-1.5 py-0.5 rounded border border-terracotta/20">
+                  {formatSeconds(status.elapsed_seconds)}
                 </span>
               </div>
-            ) : (
-              <div className="flex items-center gap-1.5">
-                <span className={`flex h-2.5 w-2.5 rounded-full shadow-sm ${enhanced ? 'bg-amber animate-pulse' : 'bg-vq-tealDark'}`} />
-                <span className="text-[11px] font-bold text-vq-tealDark">
-                  {enhanced ? 'Enhanced & Pasted' : 'Pasted'}
-                </span>
-              </div>
-            )
-          ) : status.message && status.message.toLowerCase().includes('no speech') ? (
-            <div className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-vq-amber" />
-              <span className="text-[11px] font-bold text-vq-charcoal">No speech heard</span>
             </div>
-          ) : (
-            <div className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-vq-tealDark/50" />
-              <span className="text-[11px] font-bold text-vq-charcoal/70">Ready</span>
-            </div>
-          )}
-        </div>
-
-        {/* Center: Live Soundwave Visualizer */}
-        <div
-          data-tauri-drag-region
-          className="shrink-0 flex items-center justify-center pointer-events-none px-1"
-        >
-          <AudioWaveform
-            isRecording={isRecording}
-            isTranscribing={isTranscribing}
-            barCount={isRecording ? 10 : 8}
-            theme="light"
-          />
-        </div>
-
-        {/* Right: Actions */}
-        <div className="shrink-0 flex items-center gap-1.5 pl-1.5 border-l border-vq-borderDark/20">
-          {isRecording ? (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggle();
-              }}
-              className="p-1.5 rounded-full bg-vq-terracotta text-white hover:bg-vq-terracotta/90 shadow-xs transition-all active:scale-95"
-              title="Stop recording"
-              aria-label="Stop recording"
+            {/* Center: Live Soundwave Visualizer */}
+            <div
+              data-tauri-drag-region
+              className="shrink-0 flex items-center justify-center pointer-events-none px-1"
             >
-              <Square className="w-3.5 h-3.5 fill-current" />
-            </button>
-          ) : isDone && !isDismissed ? (
-            <>
-              {/* Proactive Adaptive Model Switch Badge */}
-              {(modelShiftNotice || status.technical_suggestion) && (
-                <button
-                  onClick={async (e) => {
-                    e.stopPropagation();
-                    const text = modelShiftNotice || status.technical_suggestion || '';
-                    const targetProfile = text.includes('Developer') ? 'developer' : 'balanced';
-                    await safeInvoke('switch_speech_profile', { profile: targetProfile });
-                  }}
-                  className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber text-charcoal hover:bg-amber/90 transition-all border border-amber/40 shadow-xs flex items-center gap-1 active:scale-95 shrink-0 cursor-pointer animate-pulse"
-                  title={modelShiftNotice || status.technical_suggestion || ''}
-                  aria-label="Model shifted notification"
-                >
-                  <Zap className="w-3 h-3 text-darkTeal" />
-                  <span>{(modelShiftNotice || status.technical_suggestion)?.includes('Toggled') ? 'Shifted to Dev' : 'Dev Active'}</span>
-                </button>
-              )}
-
-              {/* Enhance Icon Button */}
+              <AudioWaveform
+                isRecording={true}
+                isTranscribing={false}
+                barCount={10}
+                theme="light"
+              />
+            </div>
+            {/* Right: Stop Recording Button */}
+            <div className="shrink-0 flex items-center pr-0.5">
               <button
+                data-tauri-no-drag
+                onMouseDown={(e) => e.stopPropagation()}
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (enhanced) {
-                    handleCycleMode();
-                  } else {
-                    handleEnhance();
-                  }
+                  onToggle();
                 }}
-                disabled={isEnhancing}
-                className={`p-1.5 rounded-full transition-all border shadow-xs ${
-                  enhanced
-                    ? 'bg-vq-tealDark text-amber border-vq-borderDark'
-                    : 'bg-white text-amber-700 border-vq-borderDark/40 hover:bg-amber/10 active:scale-95'
-                }`}
-                title={enhanced ? `Enhanced (${activeEnhanceMode.replace('_', ' ')}). Click to cycle mode` : "Enhance grammar, clarity, or convert to prompt"}
-                aria-label="Enhance transcript"
+                className="p-1.5 rounded-full bg-terracotta text-white hover:bg-terracotta/90 shadow-xs transition-all active:scale-95 cursor-pointer"
+                title="Stop recording"
+                aria-label="Stop recording"
               >
-                {isEnhancing ? (
-                  <RefreshCw className="w-3.5 h-3.5 text-vq-tealDark animate-spin" />
-                ) : (
-                  <Wand2 className="w-3.5 h-3.5" />
-                )}
+                <Square className="w-3.5 h-3.5 fill-current" />
               </button>
-
-              {/* Restore Original Icon Button (appears when enhanced) */}
-              {enhanced && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleRestoreOriginal();
-                  }}
-                  className="p-1.5 rounded-full text-vq-charcoal/70 hover:text-vq-charcoal hover:bg-vq-surface transition-all border border-vq-borderDark/30 active:scale-95"
-                  title="Restore original recognized speech"
-                  aria-label="Restore original"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                </button>
-              )}
-
-              {/* Copy Icon Button */}
+            </div>
+          </>
+        ) : isTranscribing ? (
+          <>
+            {/* Left: Sovereign Mascot & Transcribing Spinner */}
+            <div className="shrink-0 flex items-center gap-1.5 font-sans pl-0.5">
+              <Mascot size={22} />
+              <div className="flex items-center gap-1.5">
+                <span className="w-3.5 h-3.5 border-2 border-darkTeal border-t-transparent rounded-full animate-spin shrink-0" />
+                <span className="text-[11px] font-bold tracking-wide text-darkTeal transcribing-shimmer shrink-0">
+                  Transcribing...
+                </span>
+              </div>
+            </div>
+            {/* Center: Transcribing Soundwave */}
+            <div
+              data-tauri-drag-region
+              className="shrink-0 flex items-center justify-center pointer-events-none px-1"
+            >
+              <AudioWaveform
+                isRecording={false}
+                isTranscribing={true}
+                barCount={8}
+                theme="light"
+              />
+            </div>
+            <div className="w-7 shrink-0" />
+          </>
+        ) : isDone && !isDismissed ? (
+          <>
+            {/* Left: Sovereign Mascot & Pasted Status */}
+            <div className="shrink-0 flex items-center gap-1.5 font-sans pl-0.5">
+              <Mascot size={22} />
+              <div className="flex items-center gap-1.5 pl-1 font-sans">
+                <Check className="w-3.5 h-3.5 text-darkTeal shrink-0 stroke-[2.5]" />
+                <span className="text-[11px] font-bold text-darkTeal tracking-wide">
+                  {status.message?.startsWith('Opened ')
+                    ? 'Opened'
+                    : status.message?.startsWith('Searching')
+                    ? 'Searching'
+                    : status.message?.startsWith('Playing')
+                    ? 'Playing'
+                    : status.message?.startsWith('Drafted')
+                    ? 'Drafted'
+                    : enhanced
+                    ? 'Enhanced'
+                    : 'Pasted'}
+                </span>
+              </div>
+            </div>
+            {/* Center: Ambient Soundwave */}
+            <div
+              data-tauri-drag-region
+              className="shrink-0 flex items-center justify-center pointer-events-none px-1"
+            >
+              <AudioWaveform
+                isRecording={false}
+                isTranscribing={false}
+                barCount={8}
+                theme="light"
+              />
+            </div>
+            {/* Right: Copy & Next Dictation Mic */}
+            <div className="shrink-0 flex items-center gap-1.5 pr-0.5">
               <button
+                data-tauri-no-drag
+                onMouseDown={(e) => e.stopPropagation()}
                 onClick={(e) => {
                   e.stopPropagation();
                   handleCopy();
                 }}
-                className={`p-1.5 rounded-full transition-all border ${
+                className={`p-1.5 rounded-full transition-all border cursor-pointer ${
                   copied
-                    ? 'bg-vq-sage text-vq-tealDark border-vq-sage'
-                    : 'bg-white text-vq-charcoal border-vq-borderDark/30 hover:bg-vq-surface active:scale-95'
+                    ? 'bg-darkTeal text-cream border-darkTeal'
+                    : 'bg-white text-charcoal border-charcoal/20 hover:bg-black/5 active:scale-95'
                 }`}
-                title="Copy to clipboard"
+                title="Copy transcript to clipboard"
                 aria-label="Copy transcript"
               >
-                {copied ? <Check className="w-3.5 h-3.5 text-vq-tealDark" /> : <Copy className="w-3.5 h-3.5 text-vq-charcoal" />}
+                {copied ? (
+                  <Check className="w-3.5 h-3.5 text-amber" />
+                ) : (
+                  <Copy className="w-3.5 h-3.5 text-charcoal" />
+                )}
               </button>
-
-              {/* Insert / Paste Icon Button */}
+              {status.state === 'recovery_required' && (
+                <button
+                  data-tauri-no-drag
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleInsert();
+                  }}
+                  className={`p-1.5 rounded-full transition-all border cursor-pointer ${
+                    inserted
+                      ? 'bg-darkTeal text-cream border-darkTeal'
+                      : 'bg-white text-darkTeal border-charcoal/20 hover:bg-black/5 active:scale-95'
+                  }`}
+                  title="Paste directly into your active app"
+                  aria-label="Paste to App"
+                >
+                  {inserted ? (
+                    <Check className="w-3.5 h-3.5 text-amber" />
+                  ) : (
+                    <CornerDownLeft className="w-3.5 h-3.5 text-darkTeal" />
+                  )}
+                </button>
+              )}
               <button
+                data-tauri-no-drag
+                onMouseDown={(e) => e.stopPropagation()}
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleInsert();
+                  onToggle();
                 }}
-                className={`p-1.5 rounded-full transition-all border ${
-                  inserted
-                    ? 'bg-vq-tealDark text-vq-cream border-vq-borderDark'
-                    : 'bg-white text-vq-charcoal border-vq-borderDark/30 hover:bg-vq-surface active:scale-95'
-                }`}
-                title="Paste directly into your active app at your cursor position"
-                aria-label="Paste to App"
+                className="p-1.5 rounded-full bg-darkTeal text-white hover:bg-darkTeal/90 shadow-xs transition-all active:scale-95 cursor-pointer"
+                title="Click to dictate"
+                aria-label="Start dictation"
               >
-                {inserted ? <Check className="w-3.5 h-3.5 text-amber" /> : <CornerDownLeft className="w-3.5 h-3.5 text-vq-tealDark" />}
+                <Mic className="w-3.5 h-3.5" />
               </button>
-
-              {/* Dismiss Icon Button */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsDismissed(true);
-                }}
-                className="p-1.5 rounded-full text-vq-charcoal/40 hover:text-vq-terracotta hover:bg-vq-terracotta/10 transition-all ml-0.5 active:scale-95"
-                title="Dismiss pill"
-                aria-label="Dismiss pill"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </>
-          ) : (
+            </div>
+          </>
+        ) : nowPlaying && nowPlaying.is_playing ? (
+          /* MUTUALLY EXCLUSIVE: When music is PLAYING -> Now Playing Island ONLY */
+          <>
+            {/* Left: Mascot */}
             <button
+              type="button"
+              data-tauri-no-drag
               onClick={(e) => {
                 e.stopPropagation();
-                onToggle();
+                handleToggleTray();
               }}
-              className="p-1.5 rounded-full bg-vq-tealDark text-vq-cream hover:bg-vq-tealDeep shadow-xs transition-all active:scale-95"
-              title="Click to dictate"
-              aria-label="Start dictation"
+              className="hover:scale-110 active:scale-95 transition-transform cursor-pointer shrink-0 pl-0.5"
+              title="VoxQuest Mascot • Click to open Hub"
+              aria-label="VoxQuest Mascot"
             >
-              <Mic className="w-3.5 h-3.5" />
+              <Mascot size={22} />
             </button>
-          )}
-        </div>
+
+            {/* Middle: Source Pill + Track Name */}
+            <div className="flex-1 min-w-0 flex items-center justify-between gap-1.5 px-1 font-sans">
+              <div
+                className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden"
+                title={`${nowPlaying.title} • ${nowPlaying.source}`}
+              >
+                <span
+                  className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full shrink-0 tracking-wider ${
+                    nowPlaying.source.toLowerCase().includes('youtube')
+                      ? 'bg-red-500/10 text-red-600 border border-red-500/20'
+                      : nowPlaying.source.toLowerCase().includes('spotify')
+                      ? 'bg-emerald-500/10 text-emerald-700 border border-emerald-500/20'
+                      : 'bg-rose-500/10 text-rose-700 border border-rose-500/20'
+                  }`}
+                >
+                  {nowPlaying.source}
+                </span>
+                <span className="text-[11px] font-semibold text-charcoal/90 truncate tracking-tight">
+                  {nowPlaying.title}
+                </span>
+              </div>
+
+              {/* Floating Media Controls */}
+              <div className="flex items-center gap-0.5 shrink-0 bg-black/5 rounded-full px-1 py-0.5 border border-charcoal/10">
+                <button
+                  data-tauri-no-drag
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleMediaControl('previous');
+                  }}
+                  className="p-1 rounded-full text-darkTeal hover:bg-black/10 active:scale-90 transition-transform cursor-pointer"
+                  title="Previous Track"
+                  aria-label="Previous track"
+                >
+                  <SkipBack className="w-2.5 h-2.5 fill-current" />
+                </button>
+                <button
+                  data-tauri-no-drag
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleMediaControl('playpause');
+                  }}
+                  className="p-1 rounded-full text-darkTeal hover:bg-black/10 active:scale-90 transition-transform cursor-pointer"
+                  title="Pause"
+                  aria-label="Pause"
+                >
+                  <Pause className="w-2.5 h-2.5 fill-current" />
+                </button>
+                <button
+                  data-tauri-no-drag
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleMediaControl('next');
+                  }}
+                  className="p-1 rounded-full text-darkTeal hover:bg-black/10 active:scale-90 transition-transform cursor-pointer"
+                  title="Next Track"
+                  aria-label="Next track"
+                >
+                  <SkipForward className="w-2.5 h-2.5 fill-current" />
+                </button>
+              </div>
+            </div>
+
+            {/* Right: Mic Button (Dictation always ready) */}
+            <div className="shrink-0 flex items-center pr-0.5">
+              <button
+                data-tauri-no-drag
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggle();
+                }}
+                className="p-1.5 rounded-full bg-darkTeal text-white hover:bg-darkTeal/90 shadow-xs transition-all active:scale-95 cursor-pointer"
+                title="Click to dictate (auto-pauses music)"
+                aria-label="Start dictation"
+              >
+                <Mic className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </>
+        ) : (
+          /* MUTUALLY EXCLUSIVE: When music is NOT playing -> Clean Ready State ONLY */
+          <>
+            {/* Left: Mascot & Pulsing Ready status */}
+            <div className="shrink-0 flex items-center gap-1.5 font-sans pl-0.5">
+              <button
+                type="button"
+                data-tauri-no-drag
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleToggleTray();
+                }}
+                className="hover:scale-110 active:scale-95 transition-transform cursor-pointer shrink-0"
+                title="VoxQuest Mascot • Click to open Hub"
+                aria-label="VoxQuest Mascot"
+              >
+                <Mascot size={22} />
+              </button>
+              {noSpeechActive ? (
+                <div className="flex items-center gap-1.5 animate-fadeIn">
+                  <span className="w-2 h-2 rounded-full bg-amber shrink-0" />
+                  <span className="text-[11px] font-bold text-charcoal/80">No speech</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  <span className="relative flex h-2.5 w-2.5 items-center justify-center shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-25" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.7)]" />
+                  </span>
+                  <span className="text-[11px] font-extrabold text-darkTeal tracking-wide">
+                    Ready
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Center: Live Soundwave Visualizer */}
+            <div
+              data-tauri-drag-region
+              className="shrink-0 flex items-center justify-center pointer-events-none px-1"
+            >
+              <AudioWaveform
+                isRecording={false}
+                isTranscribing={false}
+                barCount={8}
+                theme="light"
+              />
+            </div>
+
+            {/* Right: Hub Toggle & Mic Button */}
+            <div className="shrink-0 flex items-center gap-1.5 pl-1 pr-0.5">
+              <button
+                data-tauri-no-drag
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleToggleTray();
+                }}
+                className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-all flex items-center gap-1.5 active:scale-95 shrink-0 ${
+                  isTrayExpanded
+                    ? 'bg-darkTeal text-white shadow-xs cursor-pointer'
+                    : 'bg-black/5 hover:bg-darkTeal hover:text-white text-charcoal/80 cursor-pointer'
+                }`}
+                title={isTrayExpanded ? 'Close Productivity Hub' : 'Open Productivity Hub'}
+                aria-label="Toggle Hub"
+              >
+                {isTrayExpanded ? (
+                  <X className="w-3 h-3 text-amber shrink-0" />
+                ) : (
+                  <LayoutGrid className="w-3 h-3 shrink-0" />
+                )}
+                <span>{isTrayExpanded ? 'Close' : 'Hub'}</span>
+              </button>
+
+              <button
+                data-tauri-no-drag
+                disabled={isTranscribing}
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  if (isTranscribing) return;
+                  e.stopPropagation();
+                  onToggle();
+                }}
+                className={`p-1.5 rounded-full text-white shadow-xs transition-all active:scale-95 shrink-0 ${
+                  isTranscribing
+                    ? 'bg-darkTeal/30 text-white/50 cursor-wait'
+                    : 'bg-darkTeal hover:bg-darkTeal/90 cursor-pointer'
+                }`}
+                title={isTranscribing ? 'Transcribing audio...' : 'Click to dictate'}
+                aria-label="Start dictation"
+              >
+                <Mic className="w-3.5 h-3.5 shrink-0" />
+              </button>
+            </div>
+          </>
+        )}
       </div>
+
+      {/* Expandable Productivity Hub Tray */}
+      {isTrayExpanded && (
+        <div data-tauri-no-drag className="w-full flex justify-center animate-fadeIn select-auto mt-2">
+          <CapsuleTray
+            lastTranscript={currentActiveText}
+            onCopy={onCopyLast}
+            onCollapse={handleToggleTray}
+            expandDirection={expandDirection}
+          />
+        </div>
+      )}
     </div>
   );
 };

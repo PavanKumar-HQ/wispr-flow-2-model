@@ -330,7 +330,7 @@ export const EnhanceReviewCard: React.FC<EnhanceReviewCardProps> = ({
                   </span>
                 ))}
                 {result.intent_audit.preserved_negations.length === 0 && result.intent_audit.protected_terms.length === 0 && result.intent_audit.preserved_numbers.length === 0 && (
-                  <span className="text-[11px] text-charcoal/60 italic">Zero semantic inversions detected. Tone polished safely.</span>
+                  <span className="text-[11px] text-charcoal/60 italic">Semantic intent verified and preserved.</span>
                 )}
               </div>
             </div>

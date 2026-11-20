@@ -51,6 +51,10 @@ pub mod enhancement_service;
 pub mod destination_sync_service;
 pub mod cloud_speech_service;
 pub mod settings_service;
+pub mod action_engine;
+pub mod media_commands;
+pub mod telemetry_commands;
+pub mod window_commands;
 pub mod commands;
 #[cfg(test)]
 pub mod smoke_tests;
@@ -204,6 +208,7 @@ pub struct AppState {
     pub recording_start: Arc<Mutex<Option<Instant>>>,
     pub active_session: Arc<Mutex<SessionSnapshot>>,
     pub destination_sync: Arc<destination_sync_service::DestinationSyncService>,
+    pub calibration_mode: Arc<Mutex<bool>>,
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -215,6 +220,7 @@ pub fn run() {
     let active_target = Arc::new(Mutex::new(None));
     let recording_start = Arc::new(Mutex::new(None));
     let destination_sync = Arc::new(destination_sync_service::DestinationSyncService::new());
+    let calibration_mode = Arc::new(Mutex::new(false));
     let active_session = Arc::new(Mutex::new(SessionSnapshot {
         session_id: String::new(),
         sequence: 0,
@@ -239,6 +245,7 @@ pub fn run() {
         recording_start: Arc::clone(&recording_start),
         active_session: Arc::clone(&active_session),
         destination_sync: Arc::clone(&destination_sync),
+        calibration_mode: Arc::clone(&calibration_mode),
     };
 
     let initial_shortcut_str = {
@@ -385,23 +392,24 @@ pub fn run() {
                     WebviewUrl::App("index.html#pill".into())
                 )
                 .title("VoxQuest Status")
-                .inner_size(440.0, 60.0)
+                .inner_size(312.0, 48.0)
                 .decorations(false)
                 .always_on_top(true)
                 .transparent(true)
                 .skip_taskbar(true)
                 .focused(false)
-                .visible(false);
+                .visible(true);
 
                 if let Ok(pill_win) = pill_builder.build() {
-                    // Position at bottom-center of the primary display
+                    // Position bottom-center floating safely above the macOS Dock
                     if let Ok(Some(monitor)) = pill_win.primary_monitor() {
                         let size = monitor.size();
                         let scale = monitor.scale_factor();
                         let screen_w = size.width as f64 / scale;
                         let screen_h = size.height as f64 / scale;
-                        let x = (screen_w - 440.0) / 2.0;
-                        let y = screen_h - 110.0;
+                        let x = (screen_w - 312.0) / 2.0;
+                        // Placed comfortably ~165px above bottom screen edge, cleanly clearing the macOS Dock with an air gap
+                        let y = (screen_h - 165.0).max(44.0);
                         let _ = pill_win.set_position(tauri::Position::Logical(tauri::LogicalPosition::new(x, y)));
                     }
 
@@ -416,8 +424,10 @@ pub fn run() {
                             // PopUpMenuWindowLevel (101) floats above normal windows and full screen spaces
                             let () = objc::msg_send![ns_win, setLevel: 101i64];
                             let () = objc::msg_send![ns_win, setHidesOnDeactivate: 0u8];
+                            let () = objc::msg_send![ns_win, setHasShadow: 0u8];
                             let () = objc::msg_send![ns_win, setMovableByWindowBackground: 1u8];
                             let () = objc::msg_send![ns_win, setMovable: 1u8];
+                            let () = objc::msg_send![ns_win, orderFrontRegardless];
                         }
                     }
                 }
@@ -462,6 +472,7 @@ pub fn run() {
             commands::cancel_dictation,
             commands::retry_insertion,
             commands::toggle_dictation,
+            commands::set_calibration_mode,
             commands::get_session_snapshot,
             commands::get_dictation_status,
             commands::get_capabilities,
@@ -474,7 +485,25 @@ pub fn run() {
             commands::smoke_test_transcription,
             commands::get_audio_level,
             commands::show_pill_window,
+            commands::clamp_pill_position_cmd,
+            commands::resize_pill_window,
             commands::center_pill_window,
+            commands::set_pill_dock_position,
+            commands::set_pill_hovered,
+            commands::set_pill_persistent,
+            commands::get_pill_persistent,
+            commands::media_control_cmd,
+            commands::play_music_cmd,
+            commands::get_now_playing_cmd,
+            commands::set_now_playing_cmd,
+            commands::get_system_telemetry_cmd,
+            commands::get_system_clipboard_cmd,
+            commands::get_dataset_stats_cmd,
+            commands::set_student_speaker_id_cmd,
+            commands::export_student_dataset_cmd,
+            commands::export_bundled_lexicon_pack_cmd,
+            commands::import_bundled_lexicon_pack_cmd,
+            commands::launch_app_or_url_cmd,
             commands::hide_pill_window,
             commands::get_insights,
             commands::get_dictionary_entries,
@@ -505,7 +534,8 @@ pub fn run() {
             commands::switch_speech_profile,
             commands::dismiss_technical_suggestion,
             commands::compose_thought_to_spec_cmd,
-            commands::ingest_project_context_capsule_cmd
+            commands::ingest_project_context_capsule_cmd,
+            commands::send_system_notification_cmd
         ])
         .run(tauri::generate_context!())
         .expect("error while running VoxQuest application");

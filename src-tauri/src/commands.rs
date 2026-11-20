@@ -23,6 +23,9 @@ use crate::enhancement_service::{EnhancementRequest, EnhancementResponse, enhanc
 pub type DictationStatus = SessionSnapshot;
 
 pub use crate::formatter::deduplicate_repeated_speech;
+pub use crate::media_commands::*;
+pub use crate::telemetry_commands::*;
+pub use crate::window_commands::*;
 
 pub fn clean_whisper_transcript(raw: &str) -> String {
     let lower = raw.trim().to_lowercase();
@@ -94,11 +97,11 @@ pub fn clean_whisper_transcript(raw: &str) -> String {
         return String::new();
     }
 
-    // Direct matches for classic isolated Whisper silence hallucinations
+    // Direct matches for classic isolated Whisper silence hallucinations (only genuine YouTube dataset outro loops)
     let stripped = lower.trim_matches(['.', '!', '?', ',', ';', ':', '"', '\'', '-', '_', '(', ')', '[', ']', ' ']);
     if matches!(
         stripped,
-        "thank you" | "thanks" | "thanks for listening" | "thanks for watching" | "thank you for watching" | "thank you for listening" | "ooh" | "bye bye" | "bye" | "you"
+        "thank you" | "thanks" | "thanks for listening" | "thanks for watching" | "thank you for watching" | "thank you for listening" | "ooh" | "bye bye"
     ) {
         return String::new();
     }
@@ -380,6 +383,9 @@ pub fn get_session_snapshot(state: State<'_, AppState>) -> SessionSnapshot {
 
 #[tauri::command]
 pub fn start_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<SessionSnapshot, String> {
+    // Automatically pause any background music/YouTube so mic audio is crystal clear
+    pause_media_for_dictation();
+
     let mut session_lock = state.active_session.lock().unwrap();
     if session_lock.state.is_active() {
         return Err("A dictation session is already active".to_string());
@@ -464,6 +470,8 @@ pub fn start_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Ses
     let snap_for_pill = snap.clone();
     crate::run_on_main_thread(move || {
         if let Some(w) = app_show.get_webview_window("floating-indicator") {
+            let _ = w.show();
+            let _ = w.set_always_on_top(true);
             #[cfg(target_os = "macos")]
             if let Ok(ns_win) = w.ns_window() {
                 use cocoa::base::id;
@@ -654,21 +662,25 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
         if let Some(w) = app.get_webview_window("floating-indicator") {
             let _ = w.emit("dictation-session-changed", &snap);
         }
-        let app_hide = app.clone();
+        let app_idle = app.clone();
         let target_id = session_lock.session_id.clone();
         tauri::async_runtime::spawn(async move {
-            tokio::time::sleep(tokio::time::Duration::from_millis(1200)).await;
-            if let Some(state) = app_hide.try_state::<AppState>() {
-                let sess = state.active_session.lock().unwrap();
+            tokio::time::sleep(tokio::time::Duration::from_millis(1500)).await;
+            if let Some(state) = app_idle.try_state::<AppState>() {
+                let mut sess = state.active_session.lock().unwrap();
                 if sess.session_id != target_id || sess.state.is_active() {
                     return;
                 }
-            }
-            crate::run_on_main_thread(move || {
-                if let Some(w) = app_hide.get_webview_window("floating-indicator") {
-                    let _ = w.hide();
+                sess.state = SessionState::Idle;
+                sess.message = Some("Ready to dictate. Press shortcut or click pill.".to_string());
+                sess.last_transcript = None;
+                sess.sequence += 1;
+                let snap = sess.clone();
+                let _ = app_idle.emit("dictation-session-changed", &snap);
+                if let Some(w) = app_idle.get_webview_window("floating-indicator") {
+                    let _ = w.emit("dictation-session-changed", &snap);
                 }
-            });
+            }
         });
         return Ok(snap);
     }
@@ -778,8 +790,12 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
                 Some(settings.cloud_api_endpoint.clone())
             },
         };
+        let (target_app_ctx, target_win_ctx) = {
+            let sess = state.active_session.lock().unwrap();
+            (sess.target_app.clone(), sess.target_window.clone())
+        };
         let lang = if settings.language == "auto" { None } else { Some(settings.language.as_str()) };
-        let dict_prompt = state.history.get_active_biasing_prompt().ok();
+        let dict_prompt = state.history.get_active_biasing_prompt(target_app_ctx.as_deref(), target_win_ctx.as_deref()).ok();
 
         match crate::cloud_speech_service::transcribe_cloud(&trimmed_samples, &cloud_cfg, lang, dict_prompt.as_deref()) {
             Ok(text) => {
@@ -817,7 +833,11 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
             engine.set_max_threads(settings.max_cpu_threads.clamp(2, 4));
         }
 
-        let dict_prompt = state.history.get_active_biasing_prompt().ok();
+        let (target_app_ctx, target_win_ctx) = {
+            let sess = state.active_session.lock().unwrap();
+            (sess.target_app.clone(), sess.target_window.clone())
+        };
+        let dict_prompt = state.history.get_active_biasing_prompt(target_app_ctx.as_deref(), target_win_ctx.as_deref()).ok();
         let lang = if settings.language == "auto" { None } else { Some(settings.language.as_str()) };
         let mut engine = state.whisper.lock().unwrap();
         raw_transcript = engine.transcribe(&trimmed_samples, lang, dict_prompt.as_deref())?;
@@ -825,6 +845,24 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
     let t_whisper_done = Instant::now();
 
     let cleaned_transcript = clean_whisper_transcript(&raw_transcript);
+
+    // Native Voice Action Intent Router (e.g. "open YouTube", "open WhatsApp", "open Brave", "play music")
+    if let Some(action) = try_execute_voice_action(&cleaned_transcript) {
+        let mut session_lock = state.active_session.lock().unwrap();
+        session_lock.state = SessionState::Completed;
+        session_lock.sequence += 1;
+        session_lock.active_model_name = Some(current_info.name.clone());
+        session_lock.last_transcript = Some(action.description.clone());
+        session_lock.message = Some(format!("Action executed: {}", action.description));
+        session_lock.timestamp_ms = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_millis() as u64;
+        let snap = session_lock.clone();
+        let _ = app.emit("dictation-session-changed", &snap);
+        if let Some(w) = app.get_webview_window("floating-indicator") {
+            let _ = w.emit("dictation-session-changed", &snap);
+        }
+        return Ok(snap);
+    }
 
     // If audio was silence, ambient noise, or whisper non-speech token ([BLANK_AUDIO])
     if cleaned_transcript.is_empty() {
@@ -843,21 +881,25 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
         session_lock.last_transcript = None;
         let snap = session_lock.clone();
         let _ = app.emit("dictation-session-changed", &snap);
-        let app_hide = app.clone();
+        let app_idle = app.clone();
         let target_id = session_lock.session_id.clone();
         tauri::async_runtime::spawn(async move {
-            tokio::time::sleep(tokio::time::Duration::from_millis(1200)).await;
-            if let Some(state) = app_hide.try_state::<AppState>() {
-                let sess = state.active_session.lock().unwrap();
+            tokio::time::sleep(tokio::time::Duration::from_millis(1500)).await;
+            if let Some(state) = app_idle.try_state::<AppState>() {
+                let mut sess = state.active_session.lock().unwrap();
                 if sess.session_id != target_id || sess.state.is_active() {
                     return;
                 }
-            }
-            crate::run_on_main_thread(move || {
-                if let Some(w) = app_hide.get_webview_window("floating-indicator") {
-                    let _ = w.hide();
+                sess.state = SessionState::Idle;
+                sess.message = Some("Ready to dictate. Press shortcut or click pill.".to_string());
+                sess.last_transcript = None;
+                sess.sequence += 1;
+                let snap = sess.clone();
+                let _ = app_idle.emit("dictation-session-changed", &snap);
+                if let Some(w) = app_idle.get_webview_window("floating-indicator") {
+                    let _ = w.emit("dictation-session-changed", &snap);
                 }
-            });
+            }
         });
         return Ok(snap);
     }
@@ -954,11 +996,95 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
         return Err("Session was cancelled or superceded".to_string());
     }
 
+    let is_calibration = {
+        let lock = state.calibration_mode.lock().unwrap();
+        *lock
+    };
+
+    if is_calibration {
+        if settings.retain_history {
+            record_id = state.history.insert_record(
+                &raw_transcript,
+                &formatted_transcript,
+                duration_sec,
+                "calibration",
+                Some("Speech Calibration"),
+                None,
+                Some(&session_id),
+            ).ok();
+        }
+        session_lock.state = SessionState::Completed;
+        session_lock.sequence += 1;
+        session_lock.timestamp_ms = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_millis() as u64;
+        session_lock.message = Some("Speech calibration captured! Reviewing training match...".to_string());
+        session_lock.last_transcript = Some(formatted_transcript.clone());
+        session_lock.recovery_id = record_id;
+        let snap = session_lock.clone();
+        let _ = app.emit("dictation-session-changed", &snap);
+        if let Some(w) = app.get_webview_window("floating-indicator") {
+            let _ = w.emit("dictation-session-changed", &snap);
+        }
+        return Ok(snap);
+    }
+
     session_lock.sequence += 1;
     session_lock.timestamp_ms = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_millis() as u64;
 
     let t_insert_start = Instant::now();
+
+    // 1. Whisper-to-Action Engine (Voice-Triggered System Execution)
+    let voice_action = crate::action_engine::detect_voice_action(&formatted_transcript);
+
+    if let Some(ref act) = voice_action {
+        if act.suppress_paste {
+            // System command was executed natively (e.g. "open Spotify", "search ...", "play ...")
+            if settings.retain_history {
+                record_id = state.history.insert_record(
+                    &raw_transcript,
+                    &formatted_transcript,
+                    duration_sec,
+                    "action_executed",
+                    Some(&act.action_type),
+                    Some(&act.feedback_message),
+                    Some(&session_id),
+                ).ok();
+            }
+            session_lock.sequence += 1;
+            session_lock.timestamp_ms = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_millis() as u64;
+            session_lock.state = SessionState::Completed;
+            session_lock.message = Some(act.feedback_message.clone());
+            session_lock.last_transcript = Some(act.feedback_message.clone());
+            session_lock.recovery_id = record_id;
+            let snap = session_lock.clone();
+            let _ = app.emit("dictation-session-changed", &snap);
+            if let Some(w) = app.get_webview_window("floating-indicator") {
+                let _ = w.emit("dictation-session-changed", &snap);
+            }
+            return Ok(snap);
+        }
+    }
+
+    // 2. Resolve Effective Content: Snippet Expansion or Zero-Click Auto-Persona
+    let (effective_transcript, persona_label) = if let Some(ref act) = voice_action {
+        if let Some(ref exp) = act.expanded_text {
+            (exp.clone(), "Dynamic Snippet")
+        } else {
+            (formatted_transcript.clone(), "Direct Speech")
+        }
+    } else {
+        let target_id = target_anchor.as_ref().and_then(|a| a.platform_app_id.as_deref());
+        let target_name = target_anchor.as_ref().and_then(|a| a.bundle_id.as_deref());
+        crate::action_engine::apply_auto_persona(
+            &formatted_transcript,
+            target_id,
+            target_name,
+        )
+    };
+
+    let formatted_transcript = effective_transcript;
 
     if let Some(anchor) = target_anchor {
         session_lock.state = SessionState::Inserting;
@@ -1103,6 +1229,22 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
                 session_lock.last_transcript = Some(formatted_transcript.clone());
                 session_lock.recovery_id = record_id;
             }
+        }
+
+        // Student multi-speaker dataset harvester: asynchronously store audio for training pairs without stalling UI
+        if settings.enable_student_dataset_mode {
+            let sess_id = session_id.clone();
+            let samples_to_save = trimmed_samples.clone();
+            tauri::async_runtime::spawn(async move {
+                if let Some(data_dir) = dirs::data_local_dir() {
+                    let audio_dir = data_dir.join("VoxQuest").join("dataset").join("audio");
+                    let _ = std::fs::create_dir_all(&audio_dir);
+                    let wav_path = audio_dir.join(format!("{}.wav", sess_id));
+                    if let Ok(wav_bytes) = crate::cloud_speech_service::pcm_to_wav_bytes(&samples_to_save, 16000) {
+                        let _ = std::fs::write(wav_path, wav_bytes);
+                    }
+                }
+            });
         }
 
         // Bounded destination edit synchronization
@@ -1274,6 +1416,9 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
         std::thread::sleep(std::time::Duration::from_millis((480 - transcribing_duration_ms) as u64));
     }
 
+    // Resume background media if it was paused when dictation started
+    resume_media_after_dictation();
+
     let final_snap = session_lock.clone();
     let _ = app.emit("dictation-session-changed", &final_snap);
     if let Some(w) = app.get_webview_window("floating-indicator") {
@@ -1283,27 +1428,27 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
         let _ = app.emit("dictionary-updated", ());
     }
 
-    // Auto-dismiss floating pill after transcription and text delivery completes
+    // Transition to Idle ambient mode after transcription and text delivery completes (stays permanently floating)
     if final_snap.state == SessionState::Completed {
         let app_pill = app.clone();
         let target_id = final_snap.session_id.clone();
         tauri::async_runtime::spawn(async move {
-            tokio::time::sleep(tokio::time::Duration::from_millis(1200)).await;
-            let app_pill_hide = app_pill.clone();
-            crate::run_on_main_thread(move || {
-                if let Some(w) = app_pill_hide.get_webview_window("floating-indicator") {
-                    let _ = w.hide();
-                }
-            });
+            tokio::time::sleep(tokio::time::Duration::from_millis(2500)).await;
+
+            // Transition cleanly to Idle state (ambient performance wave mode, never hide window)
             if let Some(state) = app_pill.try_state::<AppState>() {
                 let mut sess = state.active_session.lock().unwrap();
-                if sess.session_id == target_id && !sess.state.is_active() {
-                    sess.state = SessionState::Idle;
-                    sess.message = Some("Ready to dictate. Press shortcut or click pill.".to_string());
-                    sess.last_transcript = None;
-                    sess.sequence += 1;
-                    let snap = sess.clone();
-                    let _ = app_pill.emit("dictation-session-changed", &snap);
+                if sess.session_id != target_id || sess.state.is_active() {
+                    return;
+                }
+                sess.state = SessionState::Idle;
+                sess.message = Some("Ready to dictate. Press shortcut or click pill.".to_string());
+                sess.last_transcript = None;
+                sess.sequence += 1;
+                let snap = sess.clone();
+                let _ = app_pill.emit("dictation-session-changed", &snap);
+                if let Some(w) = app_pill.get_webview_window("floating-indicator") {
+                    let _ = w.emit("dictation-session-changed", &snap);
                 }
             }
         });
@@ -1315,6 +1460,7 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
 #[tauri::command]
 pub fn cancel_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<SessionSnapshot, String> {
     crate::reset_shortcut_held();
+    resume_media_after_dictation();
     let mut session_lock = state.active_session.lock().unwrap();
     if session_lock.state == SessionState::Recording || session_lock.state == SessionState::Starting || session_lock.state == SessionState::Transcribing || session_lock.state == SessionState::Formatting {
         let _ = {
@@ -1338,21 +1484,25 @@ pub fn cancel_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Se
 
         let snap = session_lock.clone();
         let _ = app.emit("dictation-session-changed", &snap);
-        let app_hide = app.clone();
+        let app_idle = app.clone();
         let target_id = session_lock.session_id.clone();
         tauri::async_runtime::spawn(async move {
-            tokio::time::sleep(tokio::time::Duration::from_millis(1200)).await;
-            if let Some(state) = app_hide.try_state::<AppState>() {
-                let sess = state.active_session.lock().unwrap();
+            tokio::time::sleep(tokio::time::Duration::from_millis(1500)).await;
+            if let Some(state) = app_idle.try_state::<AppState>() {
+                let mut sess = state.active_session.lock().unwrap();
                 if sess.session_id != target_id || sess.state.is_active() {
                     return;
                 }
-            }
-            crate::run_on_main_thread(move || {
-                if let Some(w) = app_hide.get_webview_window("floating-indicator") {
-                    let _ = w.hide();
+                sess.state = SessionState::Idle;
+                sess.message = Some("Ready to dictate. Press shortcut or click pill.".to_string());
+                sess.last_transcript = None;
+                sess.sequence += 1;
+                let snap = sess.clone();
+                let _ = app_idle.emit("dictation-session-changed", &snap);
+                if let Some(w) = app_idle.get_webview_window("floating-indicator") {
+                    let _ = w.emit("dictation-session-changed", &snap);
                 }
-            });
+            }
         });
         return Ok(snap);
     }
@@ -1412,6 +1562,30 @@ pub fn update_recovery_text(app: AppHandle, state: State<'_, AppState>, id: i64,
         if base_text != record.original_text {
             let _ = state.history.record_correction_event(record.session_id.as_deref(), &record.original_text, &new_text);
         }
+
+        // Student cohort dataset harvester: pair raw whisper speech + student correction with audio
+        let (dataset_enabled, speaker_id) = {
+            let s = state.settings.lock().unwrap();
+            (s.enable_student_dataset_mode, s.student_speaker_id.clone())
+        };
+        if dataset_enabled {
+            let sess_id = record.session_id.as_deref().unwrap_or("unknown");
+            let audio_path = dirs::data_local_dir().and_then(|d| {
+                let p = d.join("VoxQuest").join("dataset").join("audio").join(format!("{}.wav", sess_id));
+                if p.exists() { Some(p.to_string_lossy().to_string()) } else { None }
+            });
+            let dur_ms = (record.duration_seconds * 1000.0) as i64;
+            let _ = state.history.record_training_sample(
+                sess_id,
+                &speaker_id,
+                audio_path.as_deref(),
+                &record.original_text,
+                &new_text,
+                "indian_tech",
+                dur_ms,
+            );
+        }
+
         let _ = app.emit("dictionary-updated", ());
     }
     state.history.update_record_text(id, &new_text)
@@ -1582,6 +1756,13 @@ pub fn toggle_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Se
 }
 
 #[tauri::command]
+pub fn set_calibration_mode(state: State<'_, AppState>, enabled: bool) -> Result<bool, String> {
+    let mut lock = state.calibration_mode.lock().unwrap();
+    *lock = enabled;
+    Ok(*lock)
+}
+
+#[tauri::command]
 pub fn get_history(state: State<'_, AppState>, limit: Option<u32>) -> Result<Vec<HistoryRecord>, String> {
     state.history.list_records(limit.unwrap_or(50))
 }
@@ -1702,61 +1883,6 @@ pub fn delete_dictionary_entry(state: State<'_, AppState>, app: AppHandle, id: i
 pub fn get_audio_level(state: State<'_, AppState>) -> f32 {
     let audio = state.audio.lock().unwrap();
     audio.get_current_audio_level()
-}
-
-#[tauri::command]
-pub fn show_pill_window(app: AppHandle) -> Result<(), String> {
-    let app_handle = app.clone();
-    crate::run_on_main_thread(move || {
-        if let Some(w) = app_handle.get_webview_window("floating-indicator") {
-            #[cfg(target_os = "macos")]
-            if let Ok(ns_win) = w.ns_window() {
-                use cocoa::base::id;
-                let ns_win = ns_win as id;
-                unsafe {
-                    let () = objc::msg_send![ns_win, orderFrontRegardless];
-                }
-            } else {
-                let _ = w.show();
-            }
-            #[cfg(not(target_os = "macos"))]
-            let _ = w.show();
-        }
-    });
-    Ok(())
-}
-
-#[tauri::command]
-pub fn center_pill_window(app: AppHandle) -> Result<(), String> {
-    let app_handle = app.clone();
-    crate::run_on_main_thread(move || {
-        if let Some(w) = app_handle.get_webview_window("floating-indicator") {
-            #[cfg(target_os = "macos")]
-            if let Ok(ns_win) = w.ns_window() {
-                use cocoa::base::id;
-                let ns_win = ns_win as id;
-                unsafe {
-                    let () = objc::msg_send![ns_win, orderFrontRegardless];
-                }
-            } else {
-                let _ = w.show();
-            }
-            #[cfg(not(target_os = "macos"))]
-            let _ = w.show();
-
-            let _ = w.set_always_on_top(true);
-            if let Ok(Some(monitor)) = w.primary_monitor() {
-                let size = monitor.size();
-                let scale = monitor.scale_factor();
-                let screen_w = size.width as f64 / scale;
-                let screen_h = size.height as f64 / scale;
-                let x = (screen_w - 460.0) / 2.0;
-                let y = screen_h - 120.0;
-                let _ = w.set_position(tauri::Position::Logical(tauri::LogicalPosition::new(x, y)));
-            }
-        }
-    });
-    Ok(())
 }
 
 #[tauri::command]
@@ -1946,17 +2072,6 @@ pub fn restore_original_history_cmd(
     id: i64,
 ) -> Result<String, String> {
     state.history.restore_record_original_text(id)
-}
-
-#[tauri::command]
-pub fn hide_pill_window(app: AppHandle) -> Result<(), String> {
-    let app_hide = app.clone();
-    crate::run_on_main_thread(move || {
-        if let Some(w) = app_hide.get_webview_window("floating-indicator") {
-            let _ = w.hide();
-        }
-    });
-    Ok(())
 }
 
 #[tauri::command]
@@ -2267,4 +2382,199 @@ pub fn ingest_project_context_capsule_cmd(
         terms_ingested: count,
         terms: detected_terms,
     })
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct VoiceActionResult {
+    pub is_action: bool,
+    pub action_type: String,
+    pub description: String,
+}
+
+pub fn try_execute_voice_action(raw_transcript: &str) -> Option<VoiceActionResult> {
+    let lower = raw_transcript.trim().to_lowercase();
+    let cleaned = lower.trim_matches(|c: char| !c.is_alphanumeric() && !c.is_whitespace());
+
+    // 1. YouTube & Media controls (Zero Apple Music or Spotify dependencies)
+    if cleaned == "play music" || cleaned == "play song" || cleaned == "play songs" || cleaned == "resume music" || cleaned == "play lofi" {
+        let _ = std::process::Command::new("open")
+            .arg("https://www.youtube.com/results?search_query=lofi+coding+music+live")
+            .spawn();
+        return Some(VoiceActionResult {
+            is_action: true,
+            action_type: "open_url".to_string(),
+            description: "Opening Lo-Fi Coding Music on YouTube".to_string(),
+        });
+    }
+
+    if cleaned == "open youtube music" || cleaned == "youtube music" {
+        let _ = std::process::Command::new("open")
+            .arg("https://music.youtube.com")
+            .spawn();
+        return Some(VoiceActionResult {
+            is_action: true,
+            action_type: "open_url".to_string(),
+            description: "Opening YouTube Music".to_string(),
+        });
+    }
+
+    if cleaned.starts_with("play ") {
+        let query = cleaned.strip_prefix("play ").unwrap_or("").trim();
+        if !query.is_empty() && query != "music" {
+            let encoded = query.replace(" ", "+");
+            let url = format!("https://www.youtube.com/results?search_query={}", encoded);
+            let _ = std::process::Command::new("open").arg(&url).spawn();
+            return Some(VoiceActionResult {
+                is_action: true,
+                action_type: "open_url".to_string(),
+                description: format!("Searching & playing \"{}\" on YouTube", query),
+            });
+        }
+    }
+
+    // 2. Open specific applications or sites
+    if cleaned.starts_with("open ") {
+        let target = cleaned.strip_prefix("open ")?.trim();
+        match target {
+            "youtube" => {
+                let _ = std::process::Command::new("open").arg("https://www.youtube.com").spawn();
+                return Some(VoiceActionResult {
+                    is_action: true,
+                    action_type: "open_url".to_string(),
+                    description: "Opening YouTube".to_string(),
+                });
+            }
+            "google" => {
+                let _ = std::process::Command::new("open").arg("https://www.google.com").spawn();
+                return Some(VoiceActionResult {
+                    is_action: true,
+                    action_type: "open_url".to_string(),
+                    description: "Opening Google".to_string(),
+                });
+            }
+            "whatsapp" => {
+                let _ = std::process::Command::new("open").arg("-a").arg("WhatsApp").spawn();
+                return Some(VoiceActionResult {
+                    is_action: true,
+                    action_type: "launch_app".to_string(),
+                    description: "Opening WhatsApp".to_string(),
+                });
+            }
+            "brave" | "brave browser" => {
+                let _ = std::process::Command::new("open").arg("-a").arg("Brave Browser").spawn();
+                return Some(VoiceActionResult {
+                    is_action: true,
+                    action_type: "launch_app".to_string(),
+                    description: "Opening Brave Browser".to_string(),
+                });
+            }
+            "chrome" | "google chrome" => {
+                let _ = std::process::Command::new("open").arg("-a").arg("Google Chrome").spawn();
+                return Some(VoiceActionResult {
+                    is_action: true,
+                    action_type: "launch_app".to_string(),
+                    description: "Opening Google Chrome".to_string(),
+                });
+            }
+            "spotify" => {
+                let _ = std::process::Command::new("open").arg("-a").arg("Spotify").spawn();
+                return Some(VoiceActionResult {
+                    is_action: true,
+                    action_type: "launch_app".to_string(),
+                    description: "Opening Spotify".to_string(),
+                });
+            }
+            "vs code" | "vscode" | "code" => {
+                let _ = std::process::Command::new("open").arg("-a").arg("Visual Studio Code").spawn();
+                return Some(VoiceActionResult {
+                    is_action: true,
+                    action_type: "launch_app".to_string(),
+                    description: "Opening Visual Studio Code".to_string(),
+                });
+            }
+            "safari" => {
+                let _ = std::process::Command::new("open").arg("-a").arg("Safari").spawn();
+                return Some(VoiceActionResult {
+                    is_action: true,
+                    action_type: "launch_app".to_string(),
+                    description: "Opening Safari".to_string(),
+                });
+            }
+            "antigravity" | "anti gravity" => {
+                let _ = std::process::Command::new("open").arg("-a").arg("Antigravity").spawn();
+                return Some(VoiceActionResult {
+                    is_action: true,
+                    action_type: "launch_app".to_string(),
+                    description: "Opening Antigravity".to_string(),
+                });
+            }
+            "pg admin" | "pgadmin" | "pgadmin 4" | "postgres admin" => {
+                let _ = std::process::Command::new("open").arg("-a").arg("pgAdmin 4").spawn();
+                return Some(VoiceActionResult {
+                    is_action: true,
+                    action_type: "launch_app".to_string(),
+                    description: "Opening pgAdmin".to_string(),
+                });
+            }
+            "slack" => {
+                let _ = std::process::Command::new("open").arg("-a").arg("Slack").spawn();
+                return Some(VoiceActionResult {
+                    is_action: true,
+                    action_type: "launch_app".to_string(),
+                    description: "Opening Slack".to_string(),
+                });
+            }
+            "finder" => {
+                let _ = std::process::Command::new("open").arg("-a").arg("Finder").spawn();
+                return Some(VoiceActionResult {
+                    is_action: true,
+                    action_type: "launch_app".to_string(),
+                    description: "Opening Finder".to_string(),
+                });
+            }
+            "terminal" | "iterm" => {
+                let _ = std::process::Command::new("open").arg("-a").arg("Terminal").spawn();
+                return Some(VoiceActionResult {
+                    is_action: true,
+                    action_type: "launch_app".to_string(),
+                    description: "Opening Terminal".to_string(),
+                });
+            }
+            other => {
+                if other.contains('.') {
+                    let url = if other.starts_with("http") { other.to_string() } else { format!("https://{}", other) };
+                    let _ = std::process::Command::new("open").arg(&url).spawn();
+                    return Some(VoiceActionResult {
+                        is_action: true,
+                        action_type: "open_url".to_string(),
+                        description: format!("Opening {}", other),
+                    });
+                } else if !other.is_empty() {
+                    let _ = std::process::Command::new("open").arg("-a").arg(other).spawn();
+                    return Some(VoiceActionResult {
+                        is_action: true,
+                        action_type: "launch_app".to_string(),
+                        description: format!("Opening {}", other),
+                    });
+                }
+            }
+        }
+    }
+
+    // 3. Search query
+    if cleaned.starts_with("search ") || cleaned.starts_with("google ") {
+        let query = cleaned.trim_start_matches("search ").trim_start_matches("google ").trim();
+        if !query.is_empty() {
+            let encoded = query.replace(' ', "+");
+            let url = format!("https://www.google.com/search?q={}", encoded);
+            let _ = std::process::Command::new("open").arg(&url).spawn();
+            return Some(VoiceActionResult {
+                is_action: true,
+                action_type: "search".to_string(),
+                description: format!("Searching Google for: {}", query),
+            });
+        }
+    }
+
+    None
 }
