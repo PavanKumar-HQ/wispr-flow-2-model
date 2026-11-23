@@ -308,32 +308,32 @@ export const HomeTab: React.FC<HomeTabProps> = ({
         {/* Words Dictated */}
         <div
           onClick={() => onNavigateTab('insights')}
-          className="bg-white hover:bg-neutral-50/80 border border-charcoal/15 rounded-xl p-3 sm:p-3.5 shadow-xs transition-all cursor-pointer flex items-center gap-3"
+          className="bg-white dark:bg-darkTealSurface hover:bg-neutral-50/80 dark:hover:bg-[#0B4A45] border border-charcoal/15 dark:border-darkTealBorder rounded-xl p-3 sm:p-3.5 shadow-xs transition-all cursor-pointer flex items-center gap-3"
         >
-          <div className="p-2 rounded-lg bg-darkTeal/10 text-darkTeal border border-darkTeal/20">
+          <div className="p-2 rounded-lg bg-darkTeal/10 dark:bg-[#0B4A45] text-darkTeal dark:text-cream border border-darkTeal/20 dark:border-darkTealBorder">
             <FileText className="w-4 h-4" />
           </div>
           <div>
-            <div className="text-lg sm:text-xl font-extrabold text-charcoal font-mono leading-none">
+            <div className="text-lg sm:text-xl font-extrabold text-charcoal dark:text-cream font-mono leading-none">
               {totalWords.toLocaleString()}
             </div>
-            <div className="text-[11px] font-bold text-charcoal/60 uppercase tracking-wider mt-1">WORDS</div>
+            <div className="text-[11px] font-bold text-charcoal/60 dark:text-sage uppercase tracking-wider mt-1">WORDS</div>
           </div>
         </div>
 
         {/* Speed */}
         <div
           onClick={() => onNavigateTab('insights')}
-          className="bg-white hover:bg-neutral-50/80 border border-charcoal/15 rounded-xl p-3 sm:p-3.5 shadow-xs transition-all cursor-pointer flex items-center gap-3"
+          className="bg-white dark:bg-darkTealSurface hover:bg-neutral-50/80 dark:hover:bg-[#0B4A45] border border-charcoal/15 dark:border-darkTealBorder rounded-xl p-3 sm:p-3.5 shadow-xs transition-all cursor-pointer flex items-center gap-3"
         >
-          <div className="p-2 rounded-lg bg-amber/20 text-charcoal border border-amber/40">
+          <div className="p-2 rounded-lg bg-amber/20 dark:bg-amber/30 text-charcoal dark:text-amber border border-amber/40">
             <Gauge className="w-4 h-4" />
           </div>
           <div>
-            <div className="text-lg sm:text-xl font-extrabold text-charcoal font-mono leading-none">
-              {avgWpm > 0 ? `${avgWpm}` : '--'} <span className="text-xs font-normal text-charcoal/60">WPM</span>
+            <div className="text-lg sm:text-xl font-extrabold text-charcoal dark:text-cream font-mono leading-none">
+              {avgWpm > 0 ? `${avgWpm}` : '--'} <span className="text-xs font-normal text-charcoal/60 dark:text-sage">WPM</span>
             </div>
-            <div className="text-[11px] font-bold text-amber-700 uppercase tracking-wider mt-1">
+            <div className="text-[11px] font-bold text-amber-700 dark:text-amber uppercase tracking-wider mt-1">
               {avgWpm > 0 ? `${(avgWpm / 38).toFixed(1)}x FASTER` : 'SPEED'}
             </div>
           </div>
@@ -342,33 +342,33 @@ export const HomeTab: React.FC<HomeTabProps> = ({
         {/* Daily Streak */}
         <div
           onClick={() => onNavigateTab('insights')}
-          className="bg-white hover:bg-neutral-50/80 border border-charcoal/15 rounded-xl p-3 sm:p-3.5 shadow-xs transition-all cursor-pointer flex items-center gap-3"
+          className="bg-white dark:bg-darkTealSurface hover:bg-neutral-50/80 dark:hover:bg-[#0B4A45] border border-charcoal/15 dark:border-darkTealBorder rounded-xl p-3 sm:p-3.5 shadow-xs transition-all cursor-pointer flex items-center gap-3"
         >
-          <div className="p-2 rounded-lg bg-terracotta/15 text-terracotta border border-terracotta/30">
+          <div className="p-2 rounded-lg bg-terracotta/15 dark:bg-terracotta/25 text-terracotta dark:text-[#FF8A65] border border-terracotta/30">
             <Flame className="w-4 h-4 fill-terracotta" />
           </div>
           <div>
-            <div className="text-lg sm:text-xl font-extrabold text-charcoal font-mono leading-none">
-              {streakDays} <span className="text-xs font-normal text-charcoal/60">Day{streakDays === 1 ? '' : 's'}</span>
+            <div className="text-lg sm:text-xl font-extrabold text-charcoal dark:text-cream font-mono leading-none">
+              {streakDays} <span className="text-xs font-normal text-charcoal/60 dark:text-sage">Day{streakDays === 1 ? '' : 's'}</span>
             </div>
-            <div className="text-[11px] font-bold text-terracotta uppercase tracking-wider mt-1">STREAK</div>
+            <div className="text-[11px] font-bold text-terracotta dark:text-[#FF8A65] uppercase tracking-wider mt-1">STREAK</div>
           </div>
         </div>
       </div>
 
       {/* 4. Recent Dictations (Clean, modern & seamless) */}
-      <div className="bg-white border border-charcoal/10 rounded-2xl p-5 shadow-xs space-y-3">
+      <div className="bg-white dark:bg-darkTealSurface border border-charcoal/10 dark:border-darkTealBorder rounded-2xl p-5 shadow-xs space-y-3">
         <div className="flex items-center justify-between pb-1">
-          <h2 className="text-sm font-bold text-charcoal">Recent Dictations</h2>
+          <h2 className="text-sm font-bold text-charcoal dark:text-cream">Recent Dictations</h2>
 
           <button
             type="button"
             onClick={() => onNavigateTab('history')}
-            className="px-3 py-1.5 rounded-xl border border-charcoal/20 bg-white hover:bg-neutral-50 hover:border-darkTeal/40 text-darkTeal font-semibold text-xs shadow-xs transition-all active:scale-95 flex items-center gap-1.5"
+            className="px-3 py-1.5 rounded-xl border border-charcoal/20 dark:border-darkTealBorder bg-white dark:bg-[#073D39] hover:bg-neutral-50 dark:hover:bg-[#0B4A45] hover:border-darkTeal/40 text-darkTeal dark:text-cream font-semibold text-xs shadow-xs transition-all active:scale-95 flex items-center gap-1.5"
             title="Open complete dictation history"
           >
             <span>View all in History</span>
-            <ArrowRight className="w-3.5 h-3.5 text-darkTeal" />
+            <ArrowRight className="w-3.5 h-3.5 text-darkTeal dark:text-cream" />
           </button>
         </div>
 
@@ -429,13 +429,13 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                         onClick={() => setEnhanceHistoryItemId(enhanceHistoryItemId === item.id ? null : item.id)}
                         className={`ghost-action-btn shrink-0 ${
                           enhanceHistoryItemId === item.id
-                            ? 'bg-amber/20 text-charcoal font-bold'
+                            ? 'bg-amber/20 dark:bg-amber/30 text-charcoal dark:text-amber font-bold border-amber/40'
                             : ''
                         }`}
                         title="Enhance grammar, clarity, or convert to prompt"
                         aria-label="Enhance dictation"
                       >
-                        <Wand2 className="w-3.5 h-3.5 text-amber-700" />
+                        <Wand2 className="w-3.5 h-3.5 text-amber-700 dark:text-amber" />
                         <span>Enhance</span>
                       </button>
 
@@ -443,11 +443,11 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                       <button
                         type="button"
                         onClick={() => handleCopyItem(item.id, item.formatted_text)}
-                        className="ghost-action-btn p-1.5 text-charcoal/70 hover:text-darkTeal shrink-0"
+                        className="ghost-action-btn p-1.5 text-charcoal/70 dark:text-[#DFDFD4] hover:text-darkTeal dark:hover:text-[#34A89E] shrink-0"
                         title={isCopied ? 'Copied to clipboard!' : 'Copy to clipboard'}
                         aria-label="Copy text"
                       >
-                        {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-darkTeal" />}
+                        {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-darkTeal dark:text-[#34A89E]" />}
                       </button>
 
                       {/* 4. Teach - Ghost action */}
@@ -463,7 +463,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                         title="Teach preferred spelling"
                         aria-label="Teach vocabulary"
                       >
-                        <Edit3 className="w-3.5 h-3.5 text-darkTeal" />
+                        <Edit3 className="w-3.5 h-3.5 text-darkTeal dark:text-[#34A89E]" />
                         <span>Teach</span>
                       </button>
 
@@ -471,7 +471,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                       <button
                         type="button"
                         onClick={() => onDeleteHistory(item.id)}
-                        className="ghost-action-btn ghost-action-btn-danger p-1 text-charcoal/40 hover:text-terracotta shrink-0"
+                        className="ghost-action-btn ghost-action-btn-danger p-1 text-charcoal/40 dark:text-sage/70 hover:text-terracotta dark:hover:text-[#FF8A65] shrink-0"
                         title="Delete item"
                         aria-label="Delete item"
                       >
@@ -481,23 +481,23 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                   </div>
 
                   {activeTeachId === item.id ? (
-                    <div className="space-y-2 mt-2 bg-stone-50 p-2.5 rounded-xl border border-charcoal/15">
+                    <div className="space-y-2 mt-2 bg-stone-50 dark:bg-[#042D2A] p-2.5 rounded-xl border border-charcoal/15 dark:border-darkTealBorder">
                       <input
                         type="text"
                         value={teachTexts[item.id] !== undefined ? teachTexts[item.id] : item.formatted_text}
                         onChange={(e) => setTeachTexts((prev) => ({ ...prev, [item.id]: e.target.value }))}
-                        className="w-full text-xs font-mono p-2 rounded-lg border border-charcoal/20 bg-white text-charcoal focus:outline-none focus:ring-2 focus:ring-darkTeal/20 focus:border-darkTeal"
+                        className="w-full text-xs font-mono p-2 rounded-lg border border-charcoal/20 dark:border-darkTealBorder bg-white dark:bg-[#073D39] text-charcoal dark:text-cream focus:outline-none focus:ring-2 focus:ring-darkTeal/20 focus:border-darkTeal"
                         placeholder="Corrected spelling or phrase..."
                       />
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] text-charcoal/70">
+                        <span className="text-[10px] text-charcoal/70 dark:text-sage">
                           Teaches VoxQuest preferred phrasing for future dictations.
                         </span>
                         <div className="flex items-center gap-2">
                           <button
                             type="button"
                             onClick={() => setActiveTeachId(null)}
-                            className="px-2.5 py-1 text-xs font-medium text-charcoal/70 hover:text-charcoal"
+                            className="px-2.5 py-1 text-xs font-medium text-charcoal/70 dark:text-sage hover:text-charcoal dark:hover:text-cream"
                           >
                             Cancel
                           </button>
@@ -513,7 +513,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                       </div>
                     </div>
                   ) : (
-                    <p className="text-[13px] font-medium text-charcoal/90 leading-relaxed select-text">
+                    <p className="text-[13px] font-medium text-charcoal/90 dark:text-cream leading-relaxed select-text">
                       "{item.formatted_text}"
                     </p>
                   )}

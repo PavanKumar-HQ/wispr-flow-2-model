@@ -12,16 +12,21 @@ import { TrainModelTab } from './components/TrainModelTab';
 import { UtilitiesTab } from './components/UtilitiesTab';
 import { ModelInfo, AppSettings, HistoryRecord, SessionSnapshot, InsightsData } from './types';
 import { Home, Layers, History, Settings as SettingsIcon, BookA, BarChart2, LocateFixed, GraduationCap, LayoutGrid } from 'lucide-react';
+import { applyTheme, initThemeListener, getStoredTheme, ThemeMode } from './lib/theme';
 
 export default function App() {
   const isPillOnlyWindow = typeof window !== 'undefined' && window.location.hash.includes('pill');
 
   useEffect(() => {
     if (isPillOnlyWindow) {
+      document.documentElement.classList.add('pill-window');
       document.body.classList.add('pill-window');
+      document.body.classList.remove('bg-vq-cream');
       document.body.style.backgroundColor = 'transparent';
+      document.body.style.background = 'transparent';
       if (document.documentElement) {
         document.documentElement.style.backgroundColor = 'transparent';
+        document.documentElement.style.background = 'transparent';
       }
       safeInvoke('show_pill_window');
       safeInvoke('clamp_pill_position_cmd');
@@ -43,7 +48,16 @@ export default function App() {
     retain_history: true,
     play_sound_effects: true,
     max_duration_secs: 180,
+    theme: getStoredTheme(),
   });
+
+  // Synchronize Sovereign theme (Warm Linen vs Dark Teal) with settings and macOS appearance
+  useEffect(() => {
+    const t = (settings.theme as ThemeMode) || getStoredTheme();
+    applyTheme(t);
+    const cleanup = initThemeListener();
+    return () => cleanup();
+  }, [settings.theme]);
   const [history, setHistory] = useState<HistoryRecord[]>([]);
   const [devices, setDevices] = useState<string[]>([]);
   const [session, setSession] = useState<SessionSnapshot>({
@@ -208,6 +222,9 @@ export default function App() {
       const res = await safeInvoke<AppSettings>('get_settings');
       if (res) {
         setSettings(res);
+        if (res.theme) {
+          applyTheme(res.theme as ThemeMode);
+        }
         return res;
       }
     } catch (e) {
@@ -255,6 +272,9 @@ export default function App() {
 
   const handleUpdateSettings = async (updated: AppSettings) => {
     setSettings(updated);
+    if (updated.theme) {
+      applyTheme(updated.theme as ThemeMode);
+    }
     try {
       await safeInvoke('save_settings_cmd', { newSettings: updated });
     } catch (e) {
@@ -344,7 +364,7 @@ export default function App() {
 
   if (isPillOnlyWindow) {
     return (
-      <div data-tauri-drag-region className="w-screen h-screen flex flex-col items-center justify-start bg-transparent select-none p-1 overflow-visible">
+      <div className="w-screen h-screen flex flex-col items-center justify-center bg-transparent select-none overflow-visible">
         <FloatingPill
           status={session}
           onToggle={handleToggleDictation}
@@ -362,19 +382,19 @@ export default function App() {
   ).length;
 
   return (
-    <div className="flex h-screen bg-cream text-charcoal overflow-hidden font-sans">
+    <div className="flex h-screen bg-cream dark:bg-darkTealCanvas text-charcoal dark:text-cream overflow-hidden font-sans">
       {/* Left Sidebar (Responsive Width: compact on small screens, full on desktop) */}
-      <aside className="w-16 sm:w-20 md:w-56 bg-[#F6F6F2] border-r border-charcoal/15 flex flex-col justify-between p-2 sm:p-3 md:p-4 select-none shrink-0 h-full transition-all">
+      <aside className="w-16 sm:w-20 md:w-56 bg-[#EBEBE4] dark:bg-[#05332F] border-r border-[#D1D1C5] dark:border-darkTealBorder flex flex-col justify-between p-2 sm:p-3 md:p-4 select-none shrink-0 h-full transition-all">
         <div className="space-y-4 md:space-y-6">
           {/* Logo / Brand Header */}
           <div className="flex items-center justify-center md:justify-start gap-2.5 px-1 md:px-2 pt-1">
             <Mascot size={32} />
             <div className="hidden md:block">
               <div className="flex items-center gap-1.5">
-                <span className="font-extrabold text-sm text-darkTeal tracking-wide">VOXQUEST</span>
+                <span className="font-extrabold text-sm text-darkTeal dark:text-white tracking-wide">VOXQUEST</span>
                 <span className="w-2 h-2 rounded-full bg-amber animate-pulse" />
               </div>
-              <p className="text-[10px] text-charcoal/60 font-sans font-medium">Sovereign Voice</p>
+              <p className="text-[10px] text-charcoal/70 dark:text-sage font-sans font-medium">Sovereign Voice</p>
             </div>
           </div>
 
@@ -398,12 +418,12 @@ export default function App() {
                   onClick={() => setActiveTab(item.id as any)}
                   title={item.label}
                   className={`w-full flex items-center justify-center md:justify-between px-2.5 md:px-3 py-2.5 rounded-xl text-xs font-semibold transition-all relative ${isActive
-                    ? 'bg-darkTeal text-white shadow-sm'
-                    : 'text-charcoal/70 hover:text-charcoal hover:bg-black/5'
+                    ? 'bg-darkTeal dark:bg-[#0D6E67] text-white shadow-sm border border-transparent dark:border-[#34A89E]/40'
+                    : 'text-charcoal hover:text-darkTeal hover:bg-black/5 dark:text-[#DFDFD4] dark:hover:text-white dark:hover:bg-white/10'
                     }`}
                 >
                   <div className="flex items-center gap-2.5">
-                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-amber' : 'text-charcoal/60'}`} />
+                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-amber' : 'text-charcoal/70 dark:text-[#DFDFD4]/70'}`} />
                     <span className="hidden md:inline">{item.label}</span>
                   </div>
                   {item.badge && (
@@ -421,19 +441,19 @@ export default function App() {
         </div>
 
         {/* Sidebar Footer */}
-        <div className="space-y-2 pt-3 border-t border-charcoal/15">
+        <div className="space-y-2 pt-3 border-t border-charcoal/15 dark:border-darkTealBorder">
           <button
             onClick={() => safeInvoke('center_pill_window')}
-            className="w-full flex items-center justify-center gap-1.5 px-2 md:px-3 py-2 text-xs font-semibold rounded-xl border border-charcoal/20 bg-white text-darkTeal hover:bg-darkTeal hover:text-white transition-all shadow-sm active:scale-95"
+            className="w-full flex items-center justify-center gap-1.5 px-2 md:px-3 py-2 text-xs font-semibold rounded-xl border border-charcoal/20 dark:border-darkTealBorder bg-white dark:bg-[#063430] text-darkTeal dark:text-cream hover:bg-darkTeal dark:hover:bg-[#0D6E67] hover:text-white transition-all shadow-sm active:scale-95"
             title="Summon the floating pill to the front of your screen"
           >
             <LocateFixed className="w-3.5 h-3.5 shrink-0" />
             <span className="hidden md:inline">Summon Pill</span>
           </button>
 
-          <div className="hidden md:flex px-1 items-center justify-between text-[10px] text-charcoal/60">
-            <span className="flex items-center gap-1 font-semibold text-darkTeal">
-              <span className="w-1.5 h-1.5 rounded-full bg-darkTeal" /> 100% Offline
+          <div className="hidden md:flex px-1 items-center justify-between text-[10px] text-charcoal/60 dark:text-sage">
+            <span className="flex items-center gap-1 font-semibold text-darkTeal dark:text-cream">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> 100% Offline
             </span>
             <span className="font-mono">v0.1.0</span>
           </div>
@@ -441,7 +461,7 @@ export default function App() {
       </aside>
 
       {/* Main Tab Content (Fluid Responsive Padding) */}
-      <main className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8 bg-cream">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8 bg-cream dark:bg-darkTealCanvas">
         <div className="max-w-5xl mx-auto w-full">
           {activeTab === 'home' && (
             <HomeTab
@@ -519,6 +539,9 @@ export default function App() {
               devices={devices}
               onUpdate={async (newSettings) => {
                 setSettings(newSettings);
+                if (newSettings.theme) {
+                  applyTheme(newSettings.theme as ThemeMode);
+                }
                 await safeInvoke('save_settings_cmd', { newSettings });
               }}
             />

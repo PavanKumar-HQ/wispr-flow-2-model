@@ -437,6 +437,13 @@ pub fn resolve_youtube_autoplay_url(query: &str) -> String {
     search_url
 }
 
+fn safe_spawn_open(url: &str) {
+    if cfg!(test) || std::env::var("VOXQUEST_SUPPRESS_AUTO_OPEN").is_ok() {
+        return;
+    }
+    let _ = std::process::Command::new("open").arg(url).spawn();
+}
+
 pub fn play_music_internal(query: Option<String>, service: Option<String>) -> Result<(String, NowPlayingInfo), String> {
     let chosen_service = service.unwrap_or_else(|| "youtube".to_string()).to_lowercase();
 
@@ -453,7 +460,7 @@ pub fn play_music_internal(query: Option<String>, service: Option<String>) -> Re
                 } else {
                     q_clean.to_string()
                 };
-                let _ = std::process::Command::new("open").arg(&stream_url).spawn();
+                safe_spawn_open(&stream_url);
                 let info = NowPlayingInfo {
                     is_playing: true,
                     title: "Audio Stream".to_string(),
@@ -478,7 +485,7 @@ pub fn play_music_internal(query: Option<String>, service: Option<String>) -> Re
 
             let (url, app_label) = match chosen_service.as_str() {
                 "spotify" => {
-                    let _ = std::process::Command::new("open").arg(format!("spotify:search:{}", encoded_url)).spawn();
+                    safe_spawn_open(&format!("spotify:search:{}", encoded_url));
                     (format!("https://open.spotify.com/search/{}", encoded_url), "Spotify")
                 }
                 "apple_music" | "apple" => {
@@ -493,7 +500,7 @@ pub fn play_music_internal(query: Option<String>, service: Option<String>) -> Re
                 }
             };
 
-            let _ = std::process::Command::new("open").arg(&url).spawn();
+            safe_spawn_open(&url);
             let info = NowPlayingInfo {
                 is_playing: true,
                 title: q_clean.to_string(),
@@ -509,7 +516,7 @@ pub fn play_music_internal(query: Option<String>, service: Option<String>) -> Re
         "youtube_music" => "https://music.youtube.com".to_string(),
         _ => resolve_youtube_autoplay_url("lofi coding music live"),
     };
-    let _ = std::process::Command::new("open").arg(&default_url).spawn();
+    safe_spawn_open(&default_url);
     let info = NowPlayingInfo {
         is_playing: true,
         title: "Flow Audio".to_string(),

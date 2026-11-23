@@ -11,6 +11,55 @@
       href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
+    <style>
+      html.pill-window, html.pill-window body, body.pill-window, body.pill-window #root {
+        background: transparent !important;
+        background-color: transparent !important;
+      }
+    </style>
+    <script>
+      (function() {
+        try {
+          var isPill = window.location.hash.includes('pill');
+          if (isPill) {
+            document.documentElement.classList.add('pill-window');
+            document.documentElement.style.setProperty('background', 'transparent', 'important');
+            document.documentElement.style.setProperty('background-color', 'transparent', 'important');
+            window.addEventListener('DOMContentLoaded', function() {
+              document.body.classList.add('pill-window');
+              document.body.style.setProperty('background', 'transparent', 'important');
+              document.body.style.setProperty('background-color', 'transparent', 'important');
+            });
+          }
+
+          var storedTheme = localStorage.getItem('voxquest_theme');
+          var isDark = false;
+          if (storedTheme === 'dark_teal') {
+            isDark = true;
+          } else if (storedTheme === 'light') {
+            isDark = false;
+          } else {
+            isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          }
+
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+            if (!isPill && document.body) {
+              document.body.style.backgroundColor = '#042D2A';
+              document.body.style.color = '#DFDFD4';
+            }
+          } else {
+            document.documentElement.classList.remove('dark');
+            if (!isPill && document.body) {
+              document.body.style.backgroundColor = '#DFDFD4';
+              document.body.style.color = '#212121';
+            }
+          }
+        } catch (e) {
+          console.warn('Theme bootloader error:', e);
+        }
+      })();
+    </script>
   </head>
   <body class="bg-vq-cream text-vq-charcoal antialiased selection:bg-vq-amber selection:text-vq-charcoal">
     <div id="root"></div>

@@ -91,13 +91,13 @@ export const AudioWaveform: React.FC<AudioWaveformProps> = ({
           const barEl = barsRef.current[i];
           if (barEl) {
             barEl.style.height = `${heights[i].toFixed(1)}px`;
-            barEl.style.backgroundColor = '#DA6C4C';
-            barEl.style.opacity = '0.9';
-            barEl.style.boxShadow = 'none';
+            barEl.style.backgroundColor = theme === 'dark' ? '#FF7A59' : '#DA6C4C';
+            barEl.style.opacity = '1.0';
+            barEl.style.boxShadow = theme === 'dark' ? '0 0 6px rgba(255, 122, 89, 0.6)' : 'none';
           }
         }
       } else if (isTranscribing) {
-        // Calm, soothing fluid ripple wave across bars in dark teal (#07514C)
+        // Fluid ripple wave across bars: Amber in dark mode, dark teal in light mode
         for (let i = 0; i < count; i++) {
           const w = weights[i] || 0.6;
           const wave = Math.sin(t * 2.6 - i * 0.5) * 0.5 + 0.5;
@@ -107,13 +107,13 @@ export const AudioWaveform: React.FC<AudioWaveformProps> = ({
           const barEl = barsRef.current[i];
           if (barEl) {
             barEl.style.height = `${heights[i].toFixed(1)}px`;
-            barEl.style.backgroundColor = '#07514C';
-            barEl.style.opacity = `${(0.6 + wave * 0.4).toFixed(2)}`;
-            barEl.style.boxShadow = 'none';
+            barEl.style.backgroundColor = theme === 'dark' ? '#DDA44D' : '#07514C';
+            barEl.style.opacity = theme === 'dark' ? `${(0.75 + wave * 0.25).toFixed(2)}` : `${(0.6 + wave * 0.4).toFixed(2)}`;
+            barEl.style.boxShadow = theme === 'dark' ? '0 0 6px rgba(221, 164, 77, 0.5)' : 'none';
           }
         }
       } else {
-        // Serene ambient breathing ripple when idle (keeps the pill alive and responsive)
+        // Serene ambient breathing ripple when idle (crisp Linen Cream in dark mode)
         for (let i = 0; i < count; i++) {
           const w = weights[i] || 0.5;
           const breathe = Math.sin(t * 1.5 + i * 0.6) * 0.5 + 0.5;
@@ -123,9 +123,9 @@ export const AudioWaveform: React.FC<AudioWaveformProps> = ({
           const barEl = barsRef.current[i];
           if (barEl) {
             barEl.style.height = `${heights[i].toFixed(1)}px`;
-            barEl.style.backgroundColor = theme === 'dark' ? '#E5E5DC' : '#07514C';
-            barEl.style.opacity = `${(0.45 + breathe * 0.35).toFixed(2)}`;
-            barEl.style.boxShadow = 'none';
+            barEl.style.backgroundColor = theme === 'dark' ? '#DFDFD4' : '#07514C';
+            barEl.style.opacity = theme === 'dark' ? `${(0.70 + breathe * 0.30).toFixed(2)}` : `${(0.45 + breathe * 0.35).toFixed(2)}`;
+            barEl.style.boxShadow = theme === 'dark' ? '0 0 4px rgba(223, 223, 212, 0.3)' : 'none';
           }
         }
       }

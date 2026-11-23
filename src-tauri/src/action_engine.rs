@@ -17,6 +17,17 @@ pub struct VoiceActionResult {
     pub suppress_paste: bool, // If true, do not paste command text into foreground app
 }
 
+fn safe_spawn_open(args: &[&str]) {
+    if cfg!(test) || std::env::var("VOXQUEST_SUPPRESS_AUTO_OPEN").is_ok() {
+        return;
+    }
+    let mut cmd = std::process::Command::new("open");
+    for arg in args {
+        cmd.arg(arg);
+    }
+    let _ = cmd.spawn();
+}
+
 /// Detects voice-triggered system actions.
 /// Returns Some(VoiceActionResult) if a command or dynamic snippet was recognized.
 pub fn detect_voice_action(input: &str) -> Option<VoiceActionResult> {
@@ -64,10 +75,7 @@ pub fn detect_voice_action(input: &str) -> Option<VoiceActionResult> {
                 other => other,
             };
 
-            let _ = std::process::Command::new("open")
-                .arg("-a")
-                .arg(resolved_app)
-                .spawn();
+            safe_spawn_open(&["-a", resolved_app]);
 
             return Some(VoiceActionResult {
                 action_type: "system_open".to_string(),
@@ -101,7 +109,7 @@ pub fn detect_voice_action(input: &str) -> Option<VoiceActionResult> {
                 .collect();
 
             let url = format!("https://www.google.com/search?q={}", encoded);
-            let _ = std::process::Command::new("open").arg(&url).spawn();
+            safe_spawn_open(&[&url]);
 
             return Some(VoiceActionResult {
                 action_type: "system_search".to_string(),
@@ -175,7 +183,7 @@ pub fn detect_voice_action(input: &str) -> Option<VoiceActionResult> {
             }).collect();
 
             let mailto = format!("mailto:{}?body={}", recipient, encoded_body);
-            let _ = std::process::Command::new("open").arg(&mailto).spawn();
+            safe_spawn_open(&[&mailto]);
 
             return Some(VoiceActionResult {
                 action_type: "system_email".to_string(),

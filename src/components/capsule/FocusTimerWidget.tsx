@@ -50,23 +50,23 @@ export const FocusTimerWidget: React.FC = () => {
   return (
     <div
       data-tauri-no-drag
-      className="bg-white rounded-2xl p-3.5 border border-charcoal/15 shadow-sm space-y-2.5"
+      className="bg-white dark:bg-darkTealSurface rounded-2xl p-3.5 border border-charcoal/15 dark:border-darkTealBorder shadow-sm space-y-2.5"
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-[#F6F6F2] border border-charcoal/15 flex items-center justify-center text-terracotta shadow-xs">
+          <div className="w-9 h-9 rounded-xl bg-[#F6F6F2] dark:bg-[#05332F] border border-charcoal/15 dark:border-darkTealBorder flex items-center justify-center text-terracotta shadow-xs">
             <Clock className="w-4 h-4" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-mono text-base font-extrabold text-charcoal tracking-tight">
+              <span className="font-mono text-base font-extrabold text-charcoal dark:text-cream tracking-tight">
                 {formatTimer(secondsLeft)}
               </span>
               <span className="text-[9px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded bg-terracotta/15 text-terracotta border border-terracotta/20">
                 {mode === 'focus' ? 'Deep Focus' : mode === 'short_break' ? 'Short Break' : 'Rest'}
               </span>
             </div>
-            <div className="text-[10px] text-charcoal/60 font-medium">
+            <div className="text-[10px] text-charcoal/60 dark:text-sage font-medium">
               Speech recognition active
             </div>
           </div>
@@ -76,7 +76,7 @@ export const FocusTimerWidget: React.FC = () => {
         <div className="flex items-center gap-1.5">
           <button
             onClick={() => setIsRunning(!isRunning)}
-            className="w-8 h-8 rounded-xl bg-darkTeal text-cream hover:bg-deepTeal flex items-center justify-center shadow-xs transition-all active:scale-95 cursor-pointer"
+            className="w-8 h-8 rounded-xl bg-darkTeal dark:bg-[#0D6E67] text-cream hover:bg-deepTeal dark:hover:bg-[#10857D] flex items-center justify-center shadow-xs transition-all active:scale-95 cursor-pointer"
             title={isRunning ? 'Pause Focus' : 'Start Focus'}
             aria-label={isRunning ? 'Pause timer' : 'Start timer'}
           >
@@ -84,7 +84,7 @@ export const FocusTimerWidget: React.FC = () => {
           </button>
           <button
             onClick={handleReset}
-            className="w-8 h-8 rounded-xl bg-[#F6F6F2] text-charcoal/70 hover:bg-white hover:text-charcoal border border-charcoal/15 flex items-center justify-center transition-all active:scale-95 cursor-pointer"
+            className="w-8 h-8 rounded-xl bg-[#F6F6F2] dark:bg-[#05332F] text-charcoal/70 dark:text-cream/80 hover:bg-white dark:hover:bg-[#0B4A45] hover:text-charcoal dark:hover:text-cream border border-charcoal/15 dark:border-darkTealBorder flex items-center justify-center transition-all active:scale-95 cursor-pointer"
             title="Reset timer"
             aria-label="Reset timer"
           >
@@ -94,7 +94,7 @@ export const FocusTimerWidget: React.FC = () => {
       </div>
 
       {/* Progress line */}
-      <div className="w-full h-1.5 bg-[#F0F0EA] rounded-full overflow-hidden">
+      <div className="w-full h-1.5 bg-[#F0F0EA] dark:bg-[#042D2A] rounded-full overflow-hidden border border-transparent dark:border-darkTealBorder/50">
         <div
           className="h-full bg-terracotta rounded-full transition-all duration-300"
           style={{ width: `${progressPercent}%` }}
@@ -102,11 +102,13 @@ export const FocusTimerWidget: React.FC = () => {
       </div>
 
       {/* Mode selectors */}
-      <div className="flex items-center justify-between gap-1 pt-0.5 border-t border-charcoal/15">
+      <div className="flex items-center justify-between gap-1 pt-0.5 border-t border-charcoal/15 dark:border-darkTealBorder">
         <button
           onClick={() => setTimerMode('focus')}
           className={`flex-1 py-1 rounded-md text-[10px] font-bold transition-all text-center cursor-pointer ${
-            mode === 'focus' ? 'text-darkTeal bg-[#F6F6F2] font-extrabold shadow-2xs' : 'text-charcoal/50 hover:text-charcoal'
+            mode === 'focus'
+              ? 'text-darkTeal dark:text-white bg-[#EBEBE4] dark:bg-[#0B4A45] border border-charcoal/20 dark:border-[#34A89E]/40 font-extrabold shadow-2xs'
+              : 'text-charcoal/70 dark:text-sage/70 hover:text-charcoal dark:hover:text-cream hover:bg-[#F6F6F2] dark:hover:bg-[#05332F]'
           }`}
         >
           25m Focus
@@ -114,7 +116,9 @@ export const FocusTimerWidget: React.FC = () => {
         <button
           onClick={() => setTimerMode('short_break')}
           className={`flex-1 py-1 rounded-md text-[10px] font-bold transition-all text-center cursor-pointer ${
-            mode === 'short_break' ? 'text-darkTeal bg-[#F6F6F2] font-extrabold shadow-2xs' : 'text-charcoal/50 hover:text-charcoal'
+            mode === 'short_break'
+              ? 'text-darkTeal dark:text-white bg-[#EBEBE4] dark:bg-[#0B4A45] border border-charcoal/20 dark:border-[#34A89E]/40 font-extrabold shadow-2xs'
+              : 'text-charcoal/70 dark:text-sage/70 hover:text-charcoal dark:hover:text-cream hover:bg-[#F6F6F2] dark:hover:bg-[#05332F]'
           }`}
         >
           5m Break
@@ -122,7 +126,9 @@ export const FocusTimerWidget: React.FC = () => {
         <button
           onClick={() => setTimerMode('long_break')}
           className={`flex-1 py-1 rounded-md text-[10px] font-bold transition-all text-center cursor-pointer ${
-            mode === 'long_break' ? 'text-darkTeal bg-[#F6F6F2] font-extrabold shadow-2xs' : 'text-charcoal/50 hover:text-charcoal'
+            mode === 'long_break'
+              ? 'text-darkTeal dark:text-white bg-[#EBEBE4] dark:bg-[#0B4A45] border border-charcoal/20 dark:border-[#34A89E]/40 font-extrabold shadow-2xs'
+              : 'text-charcoal/70 dark:text-sage/70 hover:text-charcoal dark:hover:text-cream hover:bg-[#F6F6F2] dark:hover:bg-[#05332F]'
           }`}
         >
           15m Break

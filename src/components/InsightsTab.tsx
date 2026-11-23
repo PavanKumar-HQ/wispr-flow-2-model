@@ -75,30 +75,30 @@ export const InsightsTab: React.FC<InsightsTabProps> = ({
   return (
     <div className="space-y-6 animate-fadeIn select-none">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-charcoal/15 pb-3">
+      <div className="flex items-center justify-between border-b border-charcoal/15 dark:border-darkTealBorder pb-3">
         <div>
-          <h2 className="text-xl font-bold text-darkTeal tracking-tight">Voice Analytics</h2>
-          <p className="text-xs text-charcoal/70 mt-1">Dictation speed, volume, and daily typing productivity.</p>
+          <h2 className="text-xl font-bold text-darkTeal dark:text-cream tracking-tight">Voice Analytics</h2>
+          <p className="text-xs text-charcoal/70 dark:text-cream/80 mt-1">Dictation speed, volume, and daily typing productivity.</p>
         </div>
       </div>
 
       {/* Top 3 Metric Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {/* Card 1: Words Per Minute */}
-        <div className="p-5 sm:p-6 rounded-2xl border border-charcoal/15 bg-white shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+        <div className="p-5 sm:p-6 rounded-2xl border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-1">
-              <span className="text-3xl font-extrabold text-charcoal tracking-tight font-mono">
+              <span className="text-3xl font-extrabold text-charcoal dark:text-cream tracking-tight font-mono">
                 {avgWpm > 0 ? avgWpm : '—'}
               </span>
-              <div className="p-2 rounded-xl bg-amber/20 border border-amber/30">
-                <Zap className="w-5 h-5 text-amber-700 fill-amber-400" />
+              <div className="p-2 rounded-xl bg-amber/20 dark:bg-amber/30 border border-amber/30 dark:border-amber/40">
+                <Zap className="w-5 h-5 text-amber-700 dark:text-amber fill-amber-400" />
               </div>
             </div>
-            <div className="text-xs font-semibold text-charcoal/70 mb-2">
+            <div className="text-xs font-semibold text-charcoal/70 dark:text-sage mb-2">
               Words Per Minute
             </div>
-            <p className="text-xs text-charcoal/60 leading-relaxed mb-4">
+            <p className="text-xs text-charcoal/60 dark:text-cream/80 leading-relaxed mb-4">
               {avgWpm > 0
                 ? `~${(avgWpm / 40).toFixed(1)}× faster than manual keyboard typing.`
                 : 'Dictate speech into any app to calculate your speed.'}
@@ -120,34 +120,34 @@ export const InsightsTab: React.FC<InsightsTabProps> = ({
         </div>
 
         {/* Card 2: Total Words & Characters */}
-        <div className="p-5 sm:p-6 rounded-2xl border border-charcoal/15 bg-white shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+        <div className="p-5 sm:p-6 rounded-2xl border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-1">
-              <span className="text-3xl font-extrabold text-charcoal tracking-tight font-mono">
+              <span className="text-3xl font-extrabold text-charcoal dark:text-cream tracking-tight font-mono">
                 {totalWords.toLocaleString()}
               </span>
-              <div className="p-2 rounded-xl bg-darkTeal/10 border border-darkTeal/20">
-                <FileText className="w-5 h-5 text-darkTeal" />
+              <div className="p-2 rounded-xl bg-darkTeal/10 dark:bg-[#0B4A45] border border-darkTeal/20 dark:border-darkTealBorder">
+                <FileText className="w-5 h-5 text-darkTeal dark:text-cream" />
               </div>
             </div>
-            <div className="text-xs font-semibold text-charcoal/70 mb-2">
+            <div className="text-xs font-semibold text-charcoal/70 dark:text-sage mb-2">
               Total Words Dictated
             </div>
-            <p className="text-xs text-charcoal/60 leading-relaxed mb-4">
+            <p className="text-xs text-charcoal/60 dark:text-cream/80 leading-relaxed mb-4">
               {totalWords > 0
                 ? `${totalChars.toLocaleString()} characters recorded across ${totalSessions} dictations.`
                 : 'Your spoken words across all applications will appear here.'}
             </p>
           </div>
 
-          <div className="space-y-1.5 pt-2 border-t border-charcoal/10">
-            <div className="flex items-center justify-between text-[11px] text-charcoal/70 font-medium">
+          <div className="space-y-1.5 pt-2 border-t border-charcoal/10 dark:border-darkTealBorder">
+            <div className="flex items-center justify-between text-[11px] text-charcoal/70 dark:text-sage font-medium">
               <span>Volume</span>
-              <span className="font-bold text-darkTeal">{totalSessions} sessions</span>
+              <span className="font-bold text-darkTeal dark:text-cream">{totalSessions} sessions</span>
             </div>
-            <div className="w-full h-2 rounded-full bg-stone-100 overflow-hidden">
+            <div className="w-full h-2 rounded-full bg-stone-100 dark:bg-[#042D2A] overflow-hidden">
               <div
-                className="bg-darkTeal h-full rounded-full transition-all duration-500"
+                className="bg-darkTeal dark:bg-[#34A89E] h-full rounded-full transition-all duration-500"
                 style={{ width: `${Math.min(100, Math.max(8, (totalWords / 500) * 100))}%` }}
               />
             </div>
@@ -155,20 +155,20 @@ export const InsightsTab: React.FC<InsightsTabProps> = ({
         </div>
 
         {/* Card 3: Time Saved */}
-        <div className="p-5 sm:p-6 rounded-2xl border border-charcoal/15 bg-white shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+        <div className="p-5 sm:p-6 rounded-2xl border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-1">
-              <span className="text-3xl font-extrabold text-charcoal tracking-tight font-mono">
+              <span className="text-3xl font-extrabold text-charcoal dark:text-cream tracking-tight font-mono">
                 {timeSavedMinutes} <span className="text-base font-normal">mins</span>
               </span>
-              <div className="p-2 rounded-xl bg-sage/30 border border-charcoal/20">
-                <Clock className="w-5 h-5 text-darkTeal" />
+              <div className="p-2 rounded-xl bg-sage/30 dark:bg-[#0B4A45] border border-charcoal/20 dark:border-darkTealBorder">
+                <Clock className="w-5 h-5 text-darkTeal dark:text-cream" />
               </div>
             </div>
-            <div className="text-xs font-semibold text-charcoal/70 mb-2">
+            <div className="text-xs font-semibold text-charcoal/70 dark:text-sage mb-2">
               Estimated Time Saved
             </div>
-            <p className="text-xs text-charcoal/60 leading-relaxed mb-4">
+            <p className="text-xs text-charcoal/60 dark:text-cream/80 leading-relaxed mb-4">
               {timeSavedMinutes > 0
                 ? `Saved ~${timeSavedMinutes} minutes compared to manual typing.`
                 : 'Speaking saves ~60% of physical typing time.'}
@@ -193,32 +193,32 @@ export const InsightsTab: React.FC<InsightsTabProps> = ({
       {/* Bottom Row: Desktop App Usage + Activity Heatmap */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Real Desktop Usage Breakdown */}
-        <div className="p-5 sm:p-6 rounded-2xl border border-charcoal/15 bg-white shadow-sm flex flex-col justify-between">
+        <div className="p-5 sm:p-6 rounded-2xl border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface shadow-sm flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-base text-charcoal">Desktop Applications Used</h3>
-              <span className="text-xs font-semibold text-darkTeal bg-darkTeal/10 px-2.5 py-0.5 rounded-full border border-darkTeal/20">
+              <h3 className="font-bold text-base text-charcoal dark:text-cream">Desktop Applications Used</h3>
+              <span className="text-xs font-semibold text-darkTeal dark:text-cream bg-darkTeal/10 dark:bg-darkTeal/30 px-2.5 py-0.5 rounded-full border border-darkTeal/20 dark:border-darkTealBorder">
                 {appUsage.length} {appUsage.length === 1 ? 'App' : 'Apps'}
               </span>
             </div>
 
             {appUsage.length === 0 ? (
-              <div className="py-12 text-center text-xs text-charcoal/50 flex flex-col items-center justify-center gap-2">
-                <Laptop className="w-7 h-7 text-charcoal/30" />
-                <p className="font-bold text-charcoal">No applications recorded yet</p>
-                <p className="text-[11px] text-charcoal/60">Dictate into WhatsApp, Notes, Slack, or any app to see your breakdown.</p>
+              <div className="py-12 text-center text-xs text-charcoal/50 dark:text-sage flex flex-col items-center justify-center gap-2">
+                <Laptop className="w-7 h-7 text-charcoal/30 dark:text-sage/40" />
+                <p className="font-bold text-charcoal dark:text-cream">No applications recorded yet</p>
+                <p className="text-[11px] text-charcoal/60 dark:text-cream/70">Dictate into WhatsApp, Notes, Slack, or any app to see your breakdown.</p>
               </div>
             ) : (
               <div className="space-y-3.5">
                 {appUsage.map((item, idx) => (
                   <div key={idx} className="space-y-1">
                     <div className="flex items-center justify-between text-xs font-semibold">
-                      <span className="text-charcoal">{item.app_name}</span>
-                      <span className="text-[10px] text-charcoal/70 font-mono">{item.word_count} words ({Math.round(item.percentage)}%)</span>
+                      <span className="text-charcoal dark:text-cream">{item.app_name}</span>
+                      <span className="text-[10px] text-charcoal/70 dark:text-cream/80 font-mono">{item.word_count} words ({Math.round(item.percentage)}%)</span>
                     </div>
-                    <div className="w-full h-2 rounded-full bg-cream border border-charcoal/15 overflow-hidden">
+                    <div className="w-full h-2 rounded-full bg-cream dark:bg-[#042D2A] border border-charcoal/15 dark:border-darkTealBorder overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-darkTeal transition-all duration-500"
+                        className="h-full rounded-full bg-darkTeal dark:bg-[#34A89E] transition-all duration-500"
                         style={{ width: `${Math.max(5, item.percentage)}%` }}
                       />
                     </div>
@@ -228,21 +228,21 @@ export const InsightsTab: React.FC<InsightsTabProps> = ({
             )}
           </div>
 
-          <div className="mt-4 pt-3 border-t border-charcoal/10 flex items-center justify-between text-xs text-charcoal/60">
-            <span>Primary application: <strong className="text-darkTeal font-semibold">{appUsage[0]?.app_name || 'None'}</strong></span>
+          <div className="mt-4 pt-3 border-t border-charcoal/10 dark:border-darkTealBorder flex items-center justify-between text-xs text-charcoal/60 dark:text-cream/80">
+            <span>Primary application: <strong className="text-darkTeal dark:text-cream font-semibold">{appUsage[0]?.app_name || 'None'}</strong></span>
             <span>{totalWords.toLocaleString()} words</span>
           </div>
         </div>
 
         {/* GitHub-Style Activity Contributions Heatmap */}
-        <div className="p-5 sm:p-6 rounded-2xl border border-charcoal/15 bg-white shadow-sm flex flex-col justify-between">
+        <div className="p-5 sm:p-6 rounded-2xl border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface shadow-sm flex flex-col justify-between">
           <div>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
               <div>
-                <h3 className="font-bold text-base text-charcoal">
+                <h3 className="font-bold text-base text-charcoal dark:text-cream">
                   Activity Calendar
                 </h3>
-                <p className="text-xs text-charcoal/60 mt-0.5">
+                <p className="text-xs text-charcoal/60 dark:text-cream/80 mt-0.5">
                   {totalSessions} {totalSessions === 1 ? 'dictation' : 'dictations'} contributed in the last 4 months
                 </p>
               </div>

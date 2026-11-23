@@ -20,7 +20,7 @@ pub fn clamp_pill_position_internal(w: &tauri::WebviewWindow) {
             let win_w = if let Ok(sz) = w.outer_size() {
                 sz.width as f64 / scale
             } else {
-                312.0
+                340.0
             };
 
             // Strict hardware display boundaries:
@@ -101,14 +101,17 @@ pub fn resize_pill_window(app: AppHandle, expanded: bool, direction: Option<Stri
         if let Some(w) = app_handle.get_webview_window("floating-indicator") {
             #[cfg(target_os = "macos")]
             if let Ok(ns_win) = w.ns_window() {
-                use cocoa::base::id;
+                use cocoa::appkit::{NSColor, NSWindow};
+                use cocoa::base::{id, nil, NO};
                 let ns_win = ns_win as id;
                 unsafe {
-                    let () = objc::msg_send![ns_win, setHasShadow: 0u8];
+                    ns_win.setOpaque_(NO);
+                    ns_win.setBackgroundColor_(NSColor::clearColor(nil));
+                    ns_win.setHasShadow_(NO);
                 }
             }
-            let target_w = if expanded { 480.0 } else { 312.0 };
-            let target_h = if expanded { 745.0 } else { 48.0 };
+            let target_w = if expanded { 480.0 } else { 340.0 };
+            let target_h = if expanded { 745.0 } else { 70.0 };
 
             if let Ok(pos) = w.outer_position() {
                 if let Ok(Some(monitor)) = w.current_monitor() {
@@ -122,12 +125,12 @@ pub fn resize_pill_window(app: AppHandle, expanded: bool, direction: Option<Stri
                     });
 
                     // Keep horizontal center aligned during expansion and collapse
-                    let current_w = if let Ok(sz) = w.outer_size() { sz.width as f64 / scale } else { 312.0 };
+                    let current_w = if let Ok(sz) = w.outer_size() { sz.width as f64 / scale } else { 340.0 };
                     let adjusted_x = (current_x + (current_w - target_w) / 2.0).max(10.0);
 
                     if expanded {
                         if dir == "up" {
-                            let delta = target_h - 48.0;
+                            let delta = target_h - 70.0;
                             let new_y = (current_y - delta).max(44.0);
                             let _ = w.set_position(tauri::Position::Logical(tauri::LogicalPosition::new(adjusted_x, new_y)));
                         } else {
@@ -136,7 +139,7 @@ pub fn resize_pill_window(app: AppHandle, expanded: bool, direction: Option<Stri
                         }
                     } else {
                         if dir == "up" {
-                            let delta = 745.0 - 48.0;
+                            let delta = 745.0 - 70.0;
                             let new_y = (current_y + delta).min(screen_h - 165.0);
                             let _ = w.set_position(tauri::Position::Logical(tauri::LogicalPosition::new(adjusted_x, new_y)));
                         } else {
@@ -158,10 +161,13 @@ pub fn center_pill_window(app: AppHandle) -> Result<(), String> {
         if let Some(w) = app_handle.get_webview_window("floating-indicator") {
             #[cfg(target_os = "macos")]
             if let Ok(ns_win) = w.ns_window() {
-                use cocoa::base::id;
+                use cocoa::appkit::{NSColor, NSWindow};
+                use cocoa::base::{id, nil, NO};
                 let ns_win = ns_win as id;
                 unsafe {
-                    let () = objc::msg_send![ns_win, setHasShadow: 0u8];
+                    ns_win.setOpaque_(NO);
+                    ns_win.setBackgroundColor_(NSColor::clearColor(nil));
+                    ns_win.setHasShadow_(NO);
                     let () = objc::msg_send![ns_win, orderFrontRegardless];
                 }
             } else {
@@ -176,7 +182,7 @@ pub fn center_pill_window(app: AppHandle) -> Result<(), String> {
                 let scale = monitor.scale_factor();
                 let screen_w = size.width as f64 / scale;
                 let screen_h = size.height as f64 / scale;
-                let x = (screen_w - 312.0) / 2.0;
+                let x = (screen_w - 340.0) / 2.0;
                 // Pop it up safely hovering comfortably above the macOS Dock
                 let y = (screen_h - 165.0).max(44.0);
                 let _ = w.set_position(tauri::Position::Logical(tauri::LogicalPosition::new(x, y)));
@@ -195,10 +201,13 @@ pub fn set_pill_dock_position(app: AppHandle, position: String) -> Result<(), St
         if let Some(w) = app_handle.get_webview_window("floating-indicator") {
             #[cfg(target_os = "macos")]
             if let Ok(ns_win) = w.ns_window() {
-                use cocoa::base::id;
+                use cocoa::appkit::{NSColor, NSWindow};
+                use cocoa::base::{id, nil, NO};
                 let ns_win = ns_win as id;
                 unsafe {
-                    let () = objc::msg_send![ns_win, setHasShadow: 0u8];
+                    ns_win.setOpaque_(NO);
+                    ns_win.setBackgroundColor_(NSColor::clearColor(nil));
+                    ns_win.setHasShadow_(NO);
                     let () = objc::msg_send![ns_win, orderFrontRegardless];
                 }
             } else {

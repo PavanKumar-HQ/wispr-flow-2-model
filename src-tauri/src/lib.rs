@@ -392,7 +392,7 @@ pub fn run() {
                     WebviewUrl::App("index.html#pill".into())
                 )
                 .title("VoxQuest Status")
-                .inner_size(312.0, 48.0)
+                .inner_size(340.0, 70.0)
                 .decorations(false)
                 .always_on_top(true)
                 .transparent(true)
@@ -415,7 +415,8 @@ pub fn run() {
 
                     #[cfg(target_os = "macos")]
                     if let Ok(ns_win) = pill_win.ns_window() {
-                        use cocoa::base::id;
+                        use cocoa::appkit::{NSColor, NSWindow};
+                        use cocoa::base::{id, nil, NO};
                         let ns_win = ns_win as id;
                         unsafe {
                             // NSWindowCollectionBehaviorCanJoinAllSpaces (1) | NSWindowCollectionBehaviorFullScreenAuxiliary (256)
@@ -424,7 +425,9 @@ pub fn run() {
                             // PopUpMenuWindowLevel (101) floats above normal windows and full screen spaces
                             let () = objc::msg_send![ns_win, setLevel: 101i64];
                             let () = objc::msg_send![ns_win, setHidesOnDeactivate: 0u8];
-                            let () = objc::msg_send![ns_win, setHasShadow: 0u8];
+                            ns_win.setOpaque_(NO);
+                            ns_win.setBackgroundColor_(NSColor::clearColor(nil));
+                            ns_win.setHasShadow_(NO);
                             let () = objc::msg_send![ns_win, setMovableByWindowBackground: 1u8];
                             let () = objc::msg_send![ns_win, setMovable: 1u8];
                             let () = objc::msg_send![ns_win, orderFrontRegardless];
@@ -535,7 +538,9 @@ pub fn run() {
             commands::dismiss_technical_suggestion,
             commands::compose_thought_to_spec_cmd,
             commands::ingest_project_context_capsule_cmd,
-            commands::send_system_notification_cmd
+            commands::send_system_notification_cmd,
+            commands::run_system_clean_and_boost_cmd,
+            commands::launch_squirrel_cleaner_cmd
         ])
         .run(tauri::generate_context!())
         .expect("error while running VoxQuest application");

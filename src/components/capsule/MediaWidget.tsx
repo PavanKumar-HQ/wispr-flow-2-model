@@ -127,7 +127,7 @@ export const MediaWidget: React.FC = () => {
   return (
     <div
       data-tauri-no-drag
-      className="bg-white rounded-2xl p-4 border border-charcoal/15 shadow-sm space-y-3.5 font-sans select-none text-charcoal"
+      className="bg-white dark:bg-darkTealSurface rounded-2xl p-4 border border-charcoal/15 dark:border-darkTealBorder shadow-sm space-y-3.5 font-sans select-none text-charcoal dark:text-cream"
     >
       {/* Feedback banner */}
       {feedback && (
@@ -137,24 +137,24 @@ export const MediaWidget: React.FC = () => {
       )}
 
       {/* Header Bar: Music Controller & Service Picker */}
-      <div className="space-y-2 pb-2 border-b border-charcoal/10">
+      <div className="space-y-2 pb-2 border-b border-charcoal/10 dark:border-darkTealBorder">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="p-1.5 rounded-xl bg-darkTeal text-white shrink-0 shadow-xs">
               <Music className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-xs font-bold text-charcoal">Music & Flow Audio</div>
-              <div className="text-[10px] text-charcoal/50">Universal playback & stream controller</div>
+              <div className="text-xs font-bold text-charcoal dark:text-cream">Music & Flow Audio</div>
+              <div className="text-[10px] text-charcoal/50 dark:text-sage/70">Universal playback & stream controller</div>
             </div>
           </div>
 
           {/* Quick Floating Playback Controls (Play/Pause, Next, Prev, Mute) */}
-          <div className="flex items-center gap-1 bg-stone-100 p-1 rounded-xl border border-charcoal/15 shadow-2xs">
+          <div className="flex items-center gap-1 bg-stone-100 dark:bg-[#042D2A] p-1 rounded-xl border border-charcoal/15 dark:border-darkTealBorder shadow-2xs">
             <button
               type="button"
               onClick={() => handleMediaControl('previous')}
-              className="p-1 rounded-lg text-charcoal/70 hover:text-charcoal hover:bg-white active:scale-90 transition-all cursor-pointer"
+              className="p-1 rounded-lg text-charcoal/70 dark:text-cream hover:text-charcoal hover:bg-white dark:hover:bg-[#0B4A45] active:scale-90 transition-all cursor-pointer"
               title="Previous Track"
             >
               <SkipBack className="w-3.5 h-3.5" />
@@ -162,7 +162,7 @@ export const MediaWidget: React.FC = () => {
             <button
               type="button"
               onClick={() => handleMediaControl('playpause')}
-              className="p-1 px-1.5 rounded-lg bg-darkTeal text-white hover:bg-darkTeal/90 active:scale-90 transition-all shadow-2xs cursor-pointer"
+              className="p-1 px-1.5 rounded-lg bg-darkTeal dark:bg-[#0D6E67] text-white hover:bg-darkTeal/90 active:scale-90 transition-all shadow-2xs cursor-pointer"
               title="Play / Pause"
             >
               <Play className="w-3.5 h-3.5 fill-current" />
@@ -170,7 +170,7 @@ export const MediaWidget: React.FC = () => {
             <button
               type="button"
               onClick={() => handleMediaControl('next')}
-              className="p-1 rounded-lg text-charcoal/70 hover:text-charcoal hover:bg-white active:scale-90 transition-all cursor-pointer"
+              className="p-1 rounded-lg text-charcoal/70 dark:text-cream hover:text-charcoal hover:bg-white dark:hover:bg-[#0B4A45] active:scale-90 transition-all cursor-pointer"
               title="Next Track"
             >
               <SkipForward className="w-3.5 h-3.5" />
@@ -179,7 +179,9 @@ export const MediaWidget: React.FC = () => {
               type="button"
               onClick={() => handleMediaControl('mute')}
               className={`p-1 rounded-lg transition-all cursor-pointer ${
-                isMuted ? 'bg-terracotta text-white' : 'text-charcoal/70 hover:text-charcoal hover:bg-white'
+                isMuted
+                  ? 'bg-terracotta text-white'
+                  : 'text-charcoal/70 dark:text-cream hover:text-charcoal hover:bg-white dark:hover:bg-[#0B4A45]'
               }`}
               title="Toggle System Mute"
             >
@@ -246,19 +248,19 @@ export const MediaWidget: React.FC = () => {
               key={ch.id}
               type="button"
               onClick={() => handlePlayQuery(ch.query, ch.name)}
-              className="flex items-center justify-between p-2.5 rounded-xl bg-stone-50 hover:bg-stone-100/90 border border-charcoal/10 transition-all text-left active:scale-95 cursor-pointer group"
+              className="flex items-center justify-between p-2.5 rounded-xl bg-[#F6F6F2] dark:bg-[#073D39] hover:bg-[#EBEBE4] dark:hover:bg-[#0B4A45] border border-charcoal/15 dark:border-darkTealBorder transition-all text-left active:scale-95 cursor-pointer group"
             >
               <div className="min-w-0 pr-2">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <span className={`text-[8px] font-black uppercase px-1 py-0.2 rounded font-mono shrink-0 ${ch.iconBg}`}>
                     {ch.tag}
                   </span>
-                  <span className="text-xs font-bold text-charcoal leading-tight">{ch.name}</span>
+                  <span className="text-xs font-bold text-charcoal dark:text-cream leading-tight">{ch.name}</span>
                 </div>
-                <div className="text-[10px] text-charcoal/60 leading-tight mt-0.5">{ch.subtitle}</div>
+                <div className="text-[10px] text-charcoal/60 dark:text-sage leading-tight mt-0.5">{ch.subtitle}</div>
               </div>
 
-              <div className="w-6 h-6 rounded-lg bg-white group-hover:bg-darkTeal group-hover:text-white text-charcoal/40 border border-charcoal/10 flex items-center justify-center shrink-0 transition-colors shadow-2xs">
+              <div className="w-6 h-6 rounded-lg bg-white dark:bg-[#073D39] group-hover:bg-darkTeal dark:group-hover:bg-[#0D6E67] group-hover:text-white text-charcoal/40 dark:text-sage border border-charcoal/10 dark:border-darkTealBorder flex items-center justify-center shrink-0 transition-colors shadow-2xs">
                 <Play className="w-2.5 h-2.5 fill-current ml-0.5" />
               </div>
             </button>
@@ -266,8 +268,8 @@ export const MediaWidget: React.FC = () => {
         </div>
       </div>
 
-      <div className="text-[10px] text-charcoal/60 text-center font-medium pt-1 border-t border-charcoal/10">
-        Speak: <span className="font-mono text-darkTeal font-bold">"play &lt;song&gt; on {selectedService === 'spotify' ? 'Spotify' : selectedService === 'apple_music' ? 'Apple Music' : 'YouTube'}"</span> while dictating.
+      <div className="text-[10px] text-charcoal/60 dark:text-sage text-center font-medium pt-1 border-t border-charcoal/10 dark:border-darkTealBorder">
+        Speak: <span className="font-mono text-darkTeal dark:text-[#34A89E] font-bold">"play &lt;song&gt; on {selectedService === 'spotify' ? 'Spotify' : selectedService === 'apple_music' ? 'Apple Music' : 'YouTube'}"</span> while dictating.
       </div>
     </div>
   );

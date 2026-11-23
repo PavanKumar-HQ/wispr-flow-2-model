@@ -17,6 +17,7 @@ import { AudioWaveform } from './AudioWaveform';
 import { CapsuleTray } from './capsule/CapsuleTray';
 import { safeInvoke, safeListen, isNativeTauri } from '../lib/ipc';
 import { getCurrentWindow, currentMonitor } from '@tauri-apps/api/window';
+import { applyTheme, getStoredTheme, initThemeListener } from '../lib/theme';
 
 interface FloatingPillProps {
   status: SessionSnapshot;
@@ -41,6 +42,9 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
   const [noSpeechActive, setNoSpeechActive] = useState<boolean>(false);
   const [isTrayExpanded, setIsTrayExpanded] = useState<boolean>(false);
   const [nowPlaying, setNowPlaying] = useState<NowPlayingInfo | null>(null);
+  const [isDark, setIsDark] = useState<boolean>(() =>
+    typeof document !== 'undefined' ? document.documentElement.classList.contains('dark') : false
+  );
 
   // Sync with Now Playing audio stream
   useEffect(() => {
@@ -114,6 +118,12 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
 
   // Ensure pill is immediately shown and safely positioned on mount
   useEffect(() => {
+    applyTheme(getStoredTheme());
+    setIsDark(document.documentElement.classList.contains('dark'));
+    const cleanupTheme = initThemeListener((dark) => {
+      setIsDark(dark);
+    });
+
     if (isNativeTauri()) {
       safeInvoke('show_pill_window');
       safeInvoke('clamp_pill_position_cmd');
@@ -127,9 +137,13 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
       });
 
       return () => {
+        cleanupTheme();
         if (unlisten) unlisten();
       };
     }
+    return () => {
+      cleanupTheme();
+    };
   }, []);
 
   const formatSeconds = (sec: number) => {
@@ -207,29 +221,29 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
 
   return (
     <div
-      data-tauri-drag-region
       onMouseDown={handleMouseDown}
       className={`${
         compact
-          ? 'w-full flex flex-col items-center'
-          : 'fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center'
-      } select-none p-1`}
+          ? `w-full flex ${isTrayExpanded && expandDirection === 'up' ? 'flex-col-reverse' : 'flex-col'} items-center justify-center`
+          : `fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex ${isTrayExpanded && expandDirection === 'up' ? 'flex-col-reverse' : 'flex-col'} items-center justify-center`
+      } select-none bg-transparent`}
+      style={{ background: 'transparent' }}
     >
       {/* Pill Capsule styled with exact platform tokens: #DFDFD4 cream, #07514C dark teal, #DA6C4C terracotta */}
       <div
         data-tauri-drag-region
         onMouseDown={handleMouseDown}
-        className={`flex items-center justify-between gap-2 px-3.5 py-1.5 rounded-full border transition-all duration-300 ease-out cursor-grab active:cursor-grabbing ${
+        className={`voxquest-pill-capsule flex items-center justify-between gap-2 px-3.5 py-1.5 rounded-full border transition-all duration-300 ease-out cursor-grab active:cursor-grabbing ${
           isRecording
-            ? 'w-[300px] bg-cream border-terracotta shadow-md'
+            ? 'w-[310px] bg-cream dark:bg-darkTealSurface border-terracotta dark:border-[#FF7A59] shadow-lg dark:shadow-[0_0_16px_rgba(255,122,89,0.4)]'
             : isTranscribing
-            ? 'w-[300px] bg-cream border-darkTeal shadow-md'
+            ? 'w-[310px] bg-cream dark:bg-darkTealSurface border-darkTeal dark:border-amber shadow-lg dark:shadow-[0_0_16px_rgba(221,164,77,0.4)]'
             : isDone && !isDismissed
             ? status.state === 'recovery_required'
-              ? 'w-[300px] bg-cream border-amber shadow-md'
-              : 'w-[300px] bg-cream border-darkTeal shadow-md'
-            : 'w-[300px] bg-cream border-charcoal/25 hover:border-darkTeal shadow-md'
-        } h-[40px]`}
+              ? 'w-[310px] bg-cream dark:bg-darkTealSurface border-amber dark:border-amber shadow-lg'
+              : 'w-[310px] bg-cream dark:bg-darkTealSurface border-darkTeal dark:border-[#34A89E] shadow-lg'
+            : 'w-[310px] bg-cream dark:bg-darkTealSurface border-charcoal/25 hover:border-darkTeal dark:border-[#0F5E58] dark:hover:border-[#34A89E] shadow-lg'
+        } h-[42px]`}
       >
         {isRecording ? (
           <>
@@ -241,10 +255,10 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-terracotta opacity-75" />
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-terracotta shadow-xs" />
                 </span>
-                <span className="text-[11px] font-bold tracking-wider text-terracotta uppercase">
+                <span className="text-[11px] font-bold tracking-wider text-terracotta dark:text-[#FF8A65] uppercase">
                   Listening
                 </span>
-                <span className="text-[11px] font-mono font-bold text-terracotta bg-terracotta/10 px-1.5 py-0.5 rounded border border-terracotta/20">
+                <span className="text-[11px] font-mono font-bold text-terracotta dark:text-[#FF8A65] bg-terracotta/10 dark:bg-terracotta/20 px-1.5 py-0.5 rounded border border-terracotta/30">
                   {formatSeconds(status.elapsed_seconds)}
                 </span>
               </div>
@@ -258,7 +272,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
                 isRecording={true}
                 isTranscribing={false}
                 barCount={10}
-                theme="light"
+                theme={isDark ? 'dark' : 'light'}
               />
             </div>
             {/* Right: Stop Recording Button */}
@@ -284,8 +298,8 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
             <div className="shrink-0 flex items-center gap-1.5 font-sans pl-0.5">
               <Mascot size={22} />
               <div className="flex items-center gap-1.5">
-                <span className="w-3.5 h-3.5 border-2 border-darkTeal border-t-transparent rounded-full animate-spin shrink-0" />
-                <span className="text-[11px] font-bold tracking-wide text-darkTeal transcribing-shimmer shrink-0">
+                <span className="w-3.5 h-3.5 border-2 border-darkTeal dark:border-amber border-t-transparent rounded-full animate-spin shrink-0" />
+                <span className="text-[11px] font-bold tracking-wide text-darkTeal dark:text-[#DFDFD4] transcribing-shimmer shrink-0">
                   Transcribing...
                 </span>
               </div>
@@ -299,7 +313,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
                 isRecording={false}
                 isTranscribing={true}
                 barCount={8}
-                theme="light"
+                theme={isDark ? 'dark' : 'light'}
               />
             </div>
             <div className="w-7 shrink-0" />
@@ -310,8 +324,8 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
             <div className="shrink-0 flex items-center gap-1.5 font-sans pl-0.5">
               <Mascot size={22} />
               <div className="flex items-center gap-1.5 pl-1 font-sans">
-                <Check className="w-3.5 h-3.5 text-darkTeal shrink-0 stroke-[2.5]" />
-                <span className="text-[11px] font-bold text-darkTeal tracking-wide">
+                <Check className="w-3.5 h-3.5 text-darkTeal dark:text-[#34A89E] shrink-0 stroke-[2.5]" />
+                <span className="text-[11px] font-bold text-darkTeal dark:text-[#DFDFD4] tracking-wide">
                   {status.message?.startsWith('Opened ')
                     ? 'Opened'
                     : status.message?.startsWith('Searching')
@@ -335,7 +349,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
                 isRecording={false}
                 isTranscribing={false}
                 barCount={8}
-                theme="light"
+                theme={isDark ? 'dark' : 'light'}
               />
             </div>
             {/* Right: Copy & Next Dictation Mic */}
@@ -391,11 +405,11 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
                   e.stopPropagation();
                   onToggle();
                 }}
-                className="p-1.5 rounded-full bg-darkTeal text-white hover:bg-darkTeal/90 shadow-xs transition-all active:scale-95 cursor-pointer"
+                className="group relative p-1.5 rounded-full bg-darkTeal text-white hover:bg-darkTeal/90 shadow-xs transition-all active:scale-95 cursor-pointer anim-mic-halo"
                 title="Click to dictate"
                 aria-label="Start dictation"
               >
-                <Mic className="w-3.5 h-3.5" />
+                <Mic className="w-3.5 h-3.5 transition-transform duration-200 group-hover:scale-110" />
               </button>
             </div>
           </>
@@ -492,11 +506,11 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
                   e.stopPropagation();
                   onToggle();
                 }}
-                className="p-1.5 rounded-full bg-darkTeal text-white hover:bg-darkTeal/90 shadow-xs transition-all active:scale-95 cursor-pointer"
+                className="group relative p-1.5 rounded-full bg-darkTeal text-white hover:bg-darkTeal/90 shadow-xs transition-all active:scale-95 cursor-pointer anim-mic-halo"
                 title="Click to dictate (auto-pauses music)"
                 aria-label="Start dictation"
               >
-                <Mic className="w-3.5 h-3.5" />
+                <Mic className="w-3.5 h-3.5 transition-transform duration-200 group-hover:scale-110" />
               </button>
             </div>
           </>
@@ -529,7 +543,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-25" />
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.7)]" />
                   </span>
-                  <span className="text-[11px] font-extrabold text-darkTeal tracking-wide">
+                  <span className="text-[11px] font-extrabold text-charcoal dark:text-[#DFDFD4] tracking-wide">
                     Ready
                   </span>
                 </div>
@@ -545,7 +559,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
                 isRecording={false}
                 isTranscribing={false}
                 barCount={8}
-                theme="light"
+                theme={isDark ? 'dark' : 'light'}
               />
             </div>
 
@@ -560,8 +574,8 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
                 }}
                 className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-all flex items-center gap-1.5 active:scale-95 shrink-0 ${
                   isTrayExpanded
-                    ? 'bg-darkTeal text-white shadow-xs cursor-pointer'
-                    : 'bg-black/5 hover:bg-darkTeal hover:text-white text-charcoal/80 cursor-pointer'
+                    ? 'bg-darkTeal dark:bg-[#0D6E67] text-white shadow-xs cursor-pointer'
+                    : 'bg-black/5 dark:bg-[#0B4A45] hover:bg-darkTeal hover:text-white dark:hover:bg-[#0F5E58] text-charcoal/80 dark:text-[#DFDFD4] border border-transparent dark:border-[#167A72]/60 cursor-pointer'
                 }`}
                 title={isTrayExpanded ? 'Close Productivity Hub' : 'Open Productivity Hub'}
                 aria-label="Toggle Hub"
@@ -569,7 +583,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
                 {isTrayExpanded ? (
                   <X className="w-3 h-3 text-amber shrink-0" />
                 ) : (
-                  <LayoutGrid className="w-3 h-3 shrink-0" />
+                  <LayoutGrid className="w-3 h-3 text-darkTeal dark:text-amber shrink-0" />
                 )}
                 <span>{isTrayExpanded ? 'Close' : 'Hub'}</span>
               </button>
@@ -583,15 +597,15 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
                   e.stopPropagation();
                   onToggle();
                 }}
-                className={`p-1.5 rounded-full text-white shadow-xs transition-all active:scale-95 shrink-0 ${
+                className={`group relative p-1.5 rounded-full text-white shadow-xs transition-all active:scale-95 shrink-0 ${
                   isTranscribing
-                    ? 'bg-darkTeal/30 text-white/50 cursor-wait'
-                    : 'bg-darkTeal hover:bg-darkTeal/90 cursor-pointer'
+                    ? 'bg-darkTeal/30 dark:bg-[#0D6E67]/40 text-white/50 cursor-wait'
+                    : 'bg-darkTeal dark:bg-[#0D6E67] hover:bg-darkTeal/90 dark:hover:bg-[#10857D] border border-transparent dark:border-[#34A89E]/50 cursor-pointer anim-mic-halo'
                 }`}
                 title={isTranscribing ? 'Transcribing audio...' : 'Click to dictate'}
                 aria-label="Start dictation"
               >
-                <Mic className="w-3.5 h-3.5 shrink-0" />
+                <Mic className="w-3.5 h-3.5 shrink-0 transition-transform duration-200 group-hover:scale-110" />
               </button>
             </div>
           </>
@@ -600,7 +614,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
 
       {/* Expandable Productivity Hub Tray */}
       {isTrayExpanded && (
-        <div data-tauri-no-drag className="w-full flex justify-center animate-fadeIn select-auto mt-2">
+        <div data-tauri-no-drag className={`w-full flex justify-center animate-fadeIn select-auto ${expandDirection === 'up' ? 'mb-2' : 'mt-2'}`}>
           <CapsuleTray
             lastTranscript={currentActiveText}
             onCopy={onCopyLast}

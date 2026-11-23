@@ -41,7 +41,10 @@ body {
 }
 
 /* Dedicated styling for the floating pill / dynamic capsule window */
-body.pill-window {
+html.pill-window,
+html.pill-window body,
+body.pill-window,
+body.pill-window #root {
   background-color: transparent !important;
   background: transparent !important;
   min-width: 0 !important;
@@ -89,6 +92,270 @@ body.pill-window ::-webkit-scrollbar {
 }
 
 /* VoxQuest Modern Sovereign Design System Patterns */
+
+/* ==========================================================================
+   Sovereign Dark Teal Theme (Deep Sovereign Teal, Zero Black, Ultra Contrast)
+   ========================================================================== */
+
+html.dark {
+  --color-cream: #DFDFD4;
+  --color-dark-teal: #34A89E;
+  --color-deep-teal: #0F5E58;
+  --color-warm-amber: #DDA44D;
+  --color-terracotta: #DA6C4C;
+  --color-muted-sage: #B8CBC3;
+  --color-charcoal: #DFDFD4;
+}
+
+html.dark body:not(.pill-window) {
+  background-color: #042D2A !important;
+  color: #DFDFD4 !important;
+}
+
+html.dark ::-webkit-scrollbar-track {
+  background: #042D2A;
+  border-left: 1px solid #0F5E58;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: #0F5E58;
+  border: 1px solid #042D2A;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #34A89E;
+}
+
+/* Base Canvas & Layout */
+html.dark .bg-cream,
+html.dark main {
+  background-color: #042D2A !important;
+}
+
+/* Sidebar Layout & Navigation Buttons */
+aside {
+  background-color: #EBEBE4 !important;
+  border-color: #D1D1C5 !important;
+}
+
+html:not(.dark) aside {
+  background-color: #EBEBE4 !important;
+  border-color: #D1D1C5 !important;
+}
+
+html:not(.dark) aside nav button:not(.bg-darkTeal) {
+  color: #212121 !important;
+  font-weight: 600 !important;
+}
+
+html:not(.dark) aside nav button:not(.bg-darkTeal) span {
+  color: #212121 !important;
+  font-weight: 600 !important;
+}
+
+html:not(.dark) aside nav button:not(.bg-darkTeal) svg {
+  color: #212121 !important;
+}
+
+html:not(.dark) aside nav button:hover:not(.bg-darkTeal) {
+  color: #07514C !important;
+  background-color: rgba(7, 81, 76, 0.08) !important;
+}
+
+html:not(.dark) aside .text-darkTeal {
+  color: #07514C !important;
+}
+
+html:not(.dark) aside p {
+  color: #4B5563 !important;
+}
+
+aside nav button.bg-darkTeal {
+  background-color: #07514C !important;
+  color: #FFFFFF !important;
+}
+
+html.dark aside {
+  background-color: #05332F !important;
+  border-color: rgba(184, 203, 195, 0.18) !important;
+}
+
+html.dark aside nav button {
+  color: #DFDFD4 !important;
+}
+
+html.dark aside nav button span {
+  color: #DFDFD4 !important;
+}
+
+html.dark aside nav button svg {
+  color: #B8CBC3 !important;
+}
+
+html.dark aside nav button.bg-darkTeal {
+  background-color: #0D6E67 !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3) !important;
+}
+
+html.dark aside nav button.bg-darkTeal svg {
+  color: #DDA44D !important;
+}
+
+html.dark aside nav button:not(.bg-darkTeal):hover {
+  background-color: rgba(223, 223, 212, 0.08) !important;
+  color: #FFFFFF !important;
+}
+
+/* Strict High-Contrast Light Theme Typography */
+html:not(.dark) .text-charcoal,
+html:not(.dark) [class*="text-charcoal"] {
+  color: #212121 !important;
+}
+
+html:not(.dark) .text-charcoal\/90,
+html:not(.dark) .text-charcoal\/85,
+html:not(.dark) .text-charcoal\/80 {
+  color: #212121 !important;
+}
+
+html:not(.dark) .text-charcoal\/75,
+html:not(.dark) .text-charcoal\/70,
+html:not(.dark) .text-charcoal\/60 {
+  color: #4B5563 !important;
+}
+
+/* High-Contrast Sovereign Dark Typography */
+html.dark h1,
+html.dark h2,
+html.dark h3,
+html.dark h4 {
+  color: #FFFFFF !important;
+}
+
+html.dark .text-vq-tealDark,
+html.dark [class*="text-vq-tealDark"] {
+  color: #FFFFFF !important;
+}
+
+html.dark .text-darkTeal:not(aside nav button *),
+html.dark [class*="text-darkTeal"]:not(aside nav button *) {
+  color: #34A89E !important;
+}
+
+html.dark .text-vq-charcoal,
+html.dark [class*="text-vq-charcoal"] {
+  color: #DFDFD4 !important;
+}
+
+html.dark .text-charcoal,
+html.dark [class*="text-charcoal"] {
+  color: #DFDFD4 !important;
+}
+
+/* Subtitle and secondary text in Dark Teal mode - Crisp linen cream */
+html.dark .text-vq-charcoal\/70,
+html.dark .text-vq-charcoal\/75,
+html.dark .text-vq-charcoal\/80,
+html.dark .text-charcoal\/70,
+html.dark .text-charcoal\/75,
+html.dark .text-charcoal\/80,
+html.dark .text-charcoal\/60,
+html.dark .text-charcoal\/50,
+html.dark .text-charcoal\/40 {
+  color: #B8CBC3 !important;
+}
+
+/* Card Panels & Surfaces */
+html.dark .arcade-panel,
+html.dark .bg-white {
+  background-color: #073D39 !important;
+  color: #DFDFD4 !important;
+  border-color: rgba(184, 203, 195, 0.22) !important;
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.35) !important;
+}
+
+html.dark .arcade-panel-hoverable:hover {
+  border-color: #34A89E !important;
+  box-shadow: 0 8px 24px -2px rgba(4, 45, 42, 0.7) !important;
+}
+
+html.dark .arcade-panel-dark {
+  background-color: #0A4742 !important;
+  color: #DFDFD4 !important;
+  border-color: #167A72 !important;
+}
+
+html.dark .arcade-panel-deep {
+  background-color: #042D2A !important;
+  color: #DFDFD4 !important;
+  border-color: #0F5E58 !important;
+}
+
+html.dark .arcade-panel-amber {
+  background-color: #08433F !important;
+  color: #DFDFD4 !important;
+  border-color: rgba(221, 164, 77, 0.45) !important;
+}
+
+/* Form inputs & surfaces in Dark Teal */
+html.dark input:not([type="checkbox"]):not([type="radio"]),
+html.dark textarea,
+html.dark select {
+  background-color: #042D2A !important;
+  color: #DFDFD4 !important;
+  border-color: rgba(184, 203, 195, 0.3) !important;
+}
+
+html.dark input:focus,
+html.dark textarea:focus,
+html.dark select:focus {
+  border-color: #34A89E !important;
+  outline: none !important;
+}
+
+/* Dark mode hover states - NEVER blinding white */
+html.dark [class*="hover:bg-white"]:hover,
+html.dark [class*="hover:bg-stone"]:hover,
+html.dark [class*="hover:bg-neutral"]:hover,
+html.dark [class*="hover:bg-gray"]:hover,
+html.dark .hover\:bg-neutral-50:hover,
+html.dark .hover\:bg-neutral-100:hover,
+html.dark .hover\:bg-stone-50:hover,
+html.dark .hover\:bg-stone-100:hover,
+html.dark .hover\:bg-gray-50:hover,
+html.dark .hover\:bg-gray-100:hover,
+html.dark .hover\:bg-white:hover {
+  background-color: #0B4A45 !important;
+  color: #DFDFD4 !important;
+}
+
+/* Badges & Tags */
+html.dark [class*="bg-vq-sage"] {
+  background-color: #0B4A45 !important;
+  color: #DFDFD4 !important;
+  border-color: #167A72 !important;
+}
+
+html.dark .bg-darkTeal\/10,
+html.dark [class*="bg-darkTeal/10"] {
+  background-color: rgba(13, 110, 103, 0.35) !important;
+  color: #DFDFD4 !important;
+  border-color: rgba(52, 168, 158, 0.4) !important;
+}
+
+html.dark .border-charcoal\/15,
+html.dark .border-charcoal\/20,
+html.dark .border-charcoal\/25,
+html.dark .border-charcoal\/10 {
+  border-color: rgba(184, 203, 195, 0.22) !important;
+}
+
+/* Dedicated Floating Pill Styling */
+html.dark .voxquest-pill-capsule {
+  background: linear-gradient(180deg, #073D39 0%, #042D2A 100%) !important;
+  box-shadow: 0 10px 28px -4px rgba(0, 0, 0, 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.12) !important;
+}
 
 /* Standard Elevated Card Panel */
 .arcade-panel {
@@ -242,12 +509,20 @@ body.pill-window ::-webkit-scrollbar {
   gap: 4px;
   padding: 3.5px 7px;
   border-radius: 0.375rem;
-  color: rgba(33, 33, 33, 0.75);
+  color: #212121;
   background: transparent;
   border: 1px solid transparent;
   cursor: pointer;
   user-select: none;
   transition: all 0.12s ease;
+}
+
+html:not(.dark) .ghost-action-btn {
+  color: #212121 !important;
+}
+
+html:not(.dark) .ghost-action-btn span {
+  color: #212121 !important;
 }
 
 .ghost-action-btn:hover {
@@ -262,6 +537,74 @@ body.pill-window ::-webkit-scrollbar {
 .ghost-action-btn-danger:hover {
   background: rgba(218, 108, 76, 0.12);
   color: #DA6C4C;
+}
+
+/* High-Contrast Sovereign Dark Rules for Action Buttons */
+html.dark .ghost-action-btn {
+  color: #DFDFD4 !important;
+  background: rgba(223, 223, 212, 0.08) !important;
+  border: 1px solid rgba(184, 203, 195, 0.18) !important;
+}
+
+html.dark .ghost-action-btn span {
+  color: #DFDFD4 !important;
+}
+
+html.dark .ghost-action-btn:hover {
+  background: #0B4A45 !important;
+  color: #FFFFFF !important;
+  border-color: rgba(52, 168, 158, 0.55) !important;
+}
+
+html.dark .ghost-action-btn:active {
+  background: #073D39 !important;
+}
+
+html.dark .ghost-action-btn-danger {
+  color: #FF8A65 !important;
+}
+
+html.dark .ghost-action-btn-danger:hover {
+  background: rgba(218, 108, 76, 0.25) !important;
+  color: #FF7043 !important;
+  border-color: rgba(218, 108, 76, 0.5) !important;
+}
+
+html.dark .ghost-action-btn .text-amber-700 {
+  color: #DDA44D !important;
+}
+
+html.dark .ghost-action-btn .text-darkTeal {
+  color: #34A89E !important;
+}
+
+html.dark .ghost-action-btn .text-charcoal,
+html.dark .ghost-action-btn .text-charcoal\/70,
+html.dark .ghost-action-btn .text-charcoal\/40 {
+  color: #DFDFD4 !important;
+}
+
+html.dark .tactile-btn-surface {
+  background: #073D39 !important;
+  color: #DFDFD4 !important;
+  border-color: #0F5E58 !important;
+}
+
+html.dark .tactile-btn-surface:hover {
+  background: #0B4A45 !important;
+  border-color: #34A89E !important;
+  color: #FFFFFF !important;
+}
+
+html.dark .tactile-btn-teal {
+  background: #0B4A45 !important;
+  color: #FFFFFF !important;
+  border-color: #167A72 !important;
+}
+
+html.dark .tactile-btn-teal:hover {
+  background: #0E5C56 !important;
+  border-color: #34A89E !important;
 }
 
 /* Tactile Modern Buttons */
@@ -427,4 +770,19 @@ body.pill-window ::-webkit-scrollbar {
   display: inline-block;
   animation: transcribingShimmer 2s linear infinite;
 }
+
+/* Subtle Sovereign Dark Teal Mic Halo Animation */
+@keyframes micBreathingHalo {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(7, 81, 76, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(7, 81, 76, 0);
+  }
+}
+
+.anim-mic-halo {
+  animation: micBreathingHalo 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
 

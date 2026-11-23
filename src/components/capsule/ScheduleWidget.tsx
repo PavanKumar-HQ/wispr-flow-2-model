@@ -89,15 +89,15 @@ export const ScheduleWidget: React.FC = () => {
   return (
     <div
       data-tauri-no-drag
-      className="bg-white rounded-2xl p-3.5 border border-charcoal/15 shadow-sm space-y-2.5"
+      className="bg-white dark:bg-darkTealSurface rounded-2xl p-3.5 border border-charcoal/15 dark:border-darkTealBorder shadow-sm space-y-2.5"
     >
       <div className="flex items-center justify-between text-xs">
-        <div className="flex items-center gap-1.5 font-bold text-darkTeal">
+        <div className="flex items-center gap-1.5 font-bold text-darkTeal dark:text-cream">
           <Calendar className="w-3.5 h-3.5 text-terracotta" />
           <span>Schedule & Commitments</span>
         </div>
-        <div className="flex items-center gap-1 text-[10px] text-charcoal/60 font-medium">
-          <Clock className="w-3 h-3 text-charcoal/40" />
+        <div className="flex items-center gap-1 text-[10px] text-charcoal/60 dark:text-sage font-medium">
+          <Clock className="w-3 h-3 text-charcoal/40 dark:text-sage/60" />
           <span>Slot: {slotPreviewTime}</span>
         </div>
       </div>
@@ -110,8 +110,8 @@ export const ScheduleWidget: React.FC = () => {
             onClick={() => setSelectedDuration(dur)}
             className={`py-1 rounded-lg text-[11px] font-bold transition-all text-center cursor-pointer ${
               selectedDuration === dur
-                ? 'bg-darkTeal text-cream shadow-xs'
-                : 'bg-[#F6F6F2] text-charcoal/80 hover:bg-neutral-100 border border-charcoal/15'
+                ? 'bg-darkTeal dark:bg-[#0D6E67] text-white shadow-xs border border-transparent dark:border-[#34A89E]/40'
+                : 'bg-[#EBEBE4] dark:bg-[#073D39] text-charcoal dark:text-cream hover:bg-[#D1D1C5] dark:hover:bg-[#0B4A45] border border-charcoal/20 dark:border-darkTealBorder'
             }`}
           >
             {dur}m
@@ -120,20 +120,20 @@ export const ScheduleWidget: React.FC = () => {
       </div>
 
       {/* Meeting URL input with Save action */}
-      <div className="flex items-center gap-1.5 bg-[#FBFBFA] rounded-xl px-2.5 py-1.5 border border-charcoal/20">
-        <Link2 className="w-3.5 h-3.5 text-charcoal/40 shrink-0" />
+      <div className="flex items-center gap-1.5 bg-[#F6F6F2] dark:bg-[#042D2A] rounded-xl px-2.5 py-1.5 border border-charcoal/20 dark:border-darkTealBorder">
+        <Link2 className="w-3.5 h-3.5 text-charcoal/40 dark:text-sage/60 shrink-0" />
         <input
           type="text"
           value={urlInput}
           onChange={(e) => setUrlInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSave()}
           placeholder="Paste Google Meet or Zoom URL..."
-          className="w-full text-xs bg-transparent focus:outline-none placeholder:text-charcoal/40 text-charcoal font-medium"
+          className="w-full text-xs bg-transparent dark:bg-transparent focus:outline-none placeholder:text-charcoal/40 dark:placeholder:text-sage/50 text-charcoal dark:text-cream font-medium"
         />
         <button
           onClick={handleSave}
           disabled={!urlInput.trim()}
-          className="shrink-0 px-2.5 py-1 rounded-md bg-darkTeal text-cream text-[10px] font-bold hover:bg-deepTeal disabled:opacity-40 transition-all active:scale-95 shadow-xs cursor-pointer"
+          className="shrink-0 px-2.5 py-1 rounded-md bg-darkTeal dark:bg-[#0D6E67] text-cream text-[10px] font-bold hover:bg-deepTeal dark:hover:bg-[#10857D] disabled:opacity-40 transition-all active:scale-95 shadow-xs cursor-pointer"
         >
           Save
         </button>
@@ -145,13 +145,13 @@ export const ScheduleWidget: React.FC = () => {
           {commitments.map((c) => (
             <div
               key={c.id}
-              className="flex items-center justify-between px-2.5 py-2 rounded-xl bg-[#F8F8F5] border border-charcoal/15 text-xs hover:border-darkTeal/30 transition-all"
+              className="flex items-center justify-between px-2.5 py-2 rounded-xl bg-[#F8F8F5] dark:bg-[#05332F] border border-charcoal/15 dark:border-darkTealBorder text-xs hover:border-darkTeal/30 dark:hover:border-[#34A89E]/40 transition-all"
             >
               <div className="flex items-center gap-2 min-w-0">
                 <span className="w-1.5 h-1.5 rounded-full bg-terracotta shrink-0" />
                 <div className="truncate">
-                  <div className="font-semibold text-charcoal truncate">{c.title}</div>
-                  <div className="text-[10px] text-charcoal/60 flex items-center gap-1">
+                  <div className="font-semibold text-charcoal dark:text-cream truncate">{c.title}</div>
+                  <div className="text-[10px] text-charcoal/60 dark:text-sage flex items-center gap-1">
                     <span>{c.platform}</span>
                     <span>•</span>
                     <span>{c.timeStr}</span>

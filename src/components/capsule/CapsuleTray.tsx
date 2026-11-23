@@ -124,10 +124,10 @@ export const CapsuleTray: React.FC<CapsuleTrayProps> = ({
   return (
     <div
       data-tauri-no-drag
-      className="w-full max-w-[440px] max-h-[660px] overflow-y-auto no-scrollbar rounded-3xl border border-charcoal/15 bg-[#F6F6F2] shadow-2xl p-3.5 space-y-3 font-sans select-auto transition-all text-charcoal"
+      className="w-full max-w-[440px] max-h-[660px] overflow-y-auto no-scrollbar rounded-3xl border border-charcoal/15 dark:border-darkTealBorder bg-[#F6F6F2] dark:bg-darkTealSurface shadow-2xl p-3.5 space-y-3 font-sans select-auto transition-all text-charcoal dark:text-cream"
     >
       {/* Sleek Navigation Header */}
-      <div className="flex items-center justify-between pb-2 border-b border-charcoal/10 gap-2">
+      <div className="flex items-center justify-between pb-2 border-b border-charcoal/10 dark:border-darkTealBorder gap-2">
         <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 flex-1 min-w-0">
           {SLIDES.map((slide) => {
             const isActive = slide.id === activeSlide;
@@ -138,8 +138,8 @@ export const CapsuleTray: React.FC<CapsuleTrayProps> = ({
                 onClick={() => handleSelectSlide(slide.id)}
                 className={`flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer active:scale-95 shrink-0 ${
                   isActive
-                    ? 'bg-darkTeal text-white shadow-xs'
-                    : 'bg-white hover:bg-stone-100 text-charcoal/70 border border-charcoal/10'
+                    ? 'bg-darkTeal dark:bg-[#0D6E67] text-white shadow-xs border border-transparent dark:border-[#34A89E]/40'
+                    : 'bg-white dark:bg-[#05332F] hover:bg-stone-100 dark:hover:bg-[#0B4A45] text-charcoal/70 dark:text-cream/90 border border-charcoal/10 dark:border-darkTealBorder'
                 }`}
               >
                 {slide.icon}
@@ -153,7 +153,7 @@ export const CapsuleTray: React.FC<CapsuleTrayProps> = ({
         <button
           type="button"
           onClick={onCollapse}
-          className="p-1 rounded-lg hover:bg-stone-200 text-charcoal/60 hover:text-terracotta transition-all cursor-pointer active:scale-90 border border-charcoal/15 bg-white shadow-2xs shrink-0"
+          className="p-1 rounded-lg hover:bg-stone-200 dark:hover:bg-[#0B4A45] text-charcoal/60 dark:text-sage hover:text-terracotta dark:hover:text-[#FF8A65] transition-all cursor-pointer active:scale-90 border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-[#05332F] shadow-2xs shrink-0"
           title="Close Hub"
           aria-label="Close Hub"
         >

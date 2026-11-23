@@ -65,24 +65,24 @@ export const ModelManagerTab: React.FC<ModelManagerProps> = ({
     <div className="space-y-6 animate-fadeIn select-none">
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-2">
-          <h2 className="text-xl font-bold text-vq-tealDark">Dictation Accuracy Modes</h2>
-          <span className="text-[10px] font-bold text-darkTeal bg-darkTeal/10 border border-darkTeal/20 px-2.5 py-0.5 rounded-full">Profiles</span>
+          <h2 className="text-xl font-bold text-darkTeal dark:text-cream">Dictation Accuracy Modes</h2>
+          <span className="text-[10px] font-bold text-darkTeal dark:text-cream bg-darkTeal/10 dark:bg-darkTeal/30 border border-darkTeal/20 dark:border-darkTealBorder px-2.5 py-0.5 rounded-full">Profiles</span>
         </div>
-        <p className="text-xs text-vq-charcoal/70">
+        <p className="text-xs text-charcoal/80 dark:text-cream/80">
           Choose the speech profile that fits your daily workflow. Everything runs 100% on your device with complete privacy.
         </p>
       </div>
 
       {onToggleAutoRouting && (
-        <div className="p-4 rounded-2xl border border-darkTeal/20 bg-darkTeal/5 flex items-center justify-between">
+        <div className="p-4 rounded-2xl border border-darkTeal/20 dark:border-darkTealBorder bg-darkTeal/5 dark:bg-darkTealSurface flex items-center justify-between">
           <div className="space-y-0.5">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-darkTeal uppercase tracking-wider font-mono">Smart Context Auto-Pilot</span>
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${autoRoutingEnabled ? 'bg-darkTeal text-white' : 'bg-charcoal/20 text-charcoal'}`}>
+              <span className="text-xs font-bold text-darkTeal dark:text-cream uppercase tracking-wider font-mono">Smart Context Auto-Pilot</span>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${autoRoutingEnabled ? 'bg-darkTeal text-white' : 'bg-charcoal/20 dark:bg-charcoal/50 text-charcoal dark:text-cream'}`}>
                 {autoRoutingEnabled ? 'Active' : 'Manual'}
               </span>
             </div>
-            <p className="text-xs text-charcoal/80">
+            <p className="text-xs text-charcoal/80 dark:text-cream/80">
               Dynamically switches to <strong>Developer Precision</strong> in IDEs & Terminal, and <strong>General Speed</strong> in Slack & Notes.
             </p>
           </div>
@@ -93,7 +93,7 @@ export const ModelManagerTab: React.FC<ModelManagerProps> = ({
               onChange={(e) => onToggleAutoRouting(e.target.checked)}
               className="sr-only peer"
             />
-            <div className="w-11 h-6 bg-charcoal/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-darkTeal"></div>
+            <div className="w-11 h-6 bg-charcoal/20 dark:bg-charcoal/50 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-darkTeal"></div>
           </label>
         </div>
       )}
@@ -111,36 +111,36 @@ export const ModelManagerTab: React.FC<ModelManagerProps> = ({
               key={m.id}
               className={`p-5 rounded-2xl border transition-all ${
                 isCurrent 
-                  ? 'border-darkTeal/40 bg-white shadow-sm ring-1 ring-darkTeal/20' 
-                  : 'border-charcoal/15 bg-white hover:border-charcoal/30 shadow-xs'
+                  ? 'border-darkTeal/40 dark:border-[#34A89E] bg-white dark:bg-darkTealSurface shadow-sm ring-1 ring-darkTeal/20 dark:ring-[#34A89E]/20' 
+                  : 'border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface hover:border-charcoal/30 dark:hover:border-[#34A89E]/40 shadow-xs'
               }`}
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="space-y-2 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <div className="p-1.5 rounded-xl bg-darkTeal/10 text-darkTeal border border-darkTeal/20 shadow-xs">
+                    <div className="p-1.5 rounded-xl bg-darkTeal/10 dark:bg-[#0B4A45] text-darkTeal dark:text-cream border border-darkTeal/20 dark:border-darkTealBorder shadow-xs">
                       <Icon className="w-4 h-4" />
                     </div>
-                    <span className="font-bold text-sm text-vq-charcoal">{meta.title}</span>
+                    <span className="font-bold text-sm text-charcoal dark:text-cream">{meta.title}</span>
                     
-                    <span className="text-[10px] font-sans font-bold bg-vq-sage/40 text-vq-tealDark px-2 py-0.5 rounded-md border border-vq-border">
+                    <span className="text-[10px] font-sans font-bold bg-vq-sage/40 dark:bg-[#0B4A45] text-darkTeal dark:text-cream px-2 py-0.5 rounded-md border border-charcoal/15 dark:border-darkTealBorder">
                       {meta.tag}
                     </span>
 
                     {m.recommended && (
-                      <span className="text-[10px] font-sans font-bold bg-amber/20 text-charcoal px-2 py-0.5 rounded-md border border-amber/40">
+                      <span className="text-[10px] font-sans font-bold bg-amber/20 dark:bg-amber/30 text-charcoal dark:text-amber px-2 py-0.5 rounded-md border border-amber/40">
                         Recommended
                       </span>
                     )}
 
                     {isCurrent && (
-                      <span className="flex items-center gap-1 text-[10px] font-sans font-bold bg-darkTeal text-white px-2 py-0.5 rounded-md shadow-xs">
+                      <span className="flex items-center gap-1 text-[10px] font-sans font-bold bg-darkTeal dark:bg-[#0D6E67] text-white px-2 py-0.5 rounded-md shadow-xs border border-transparent dark:border-[#34A89E]/40">
                         <Check className="w-2.5 h-2.5" /> Active Mode
                       </span>
                     )}
                   </div>
 
-                  <p className="text-xs text-vq-charcoal/75 leading-relaxed">{meta.desc}</p>
+                  <p className="text-xs text-charcoal/80 dark:text-cream/90 leading-relaxed font-normal">{meta.desc}</p>
                 </div>
 
                 <div className="flex flex-col items-end gap-2 shrink-0 pt-0.5">
@@ -148,10 +148,10 @@ export const ModelManagerTab: React.FC<ModelManagerProps> = ({
                     {m.is_downloaded && onSmokeTest && (
                       <button
                         onClick={() => onSmokeTest(m.id)}
-                        className="px-3 py-1.5 text-xs font-semibold rounded-xl border border-charcoal/20 bg-white hover:bg-neutral-50 text-charcoal transition-all shadow-xs active:scale-95 flex items-center gap-1"
+                        className="px-3 py-1.5 text-xs font-semibold rounded-xl border border-charcoal/20 dark:border-darkTealBorder bg-white dark:bg-[#073D39] hover:bg-neutral-50 dark:hover:bg-[#0B4A45] text-charcoal dark:text-cream transition-all shadow-xs active:scale-95 flex items-center gap-1"
                         title="Run local voice engine diagnostic test"
                       >
-                        <Play className="w-3 h-3 text-darkTeal" />
+                        <Play className="w-3 h-3 text-darkTeal dark:text-amber" />
                         <span>Test</span>
                       </button>
                     )}
@@ -161,8 +161,8 @@ export const ModelManagerTab: React.FC<ModelManagerProps> = ({
                         disabled={isCurrent}
                         className={`px-3.5 py-1.5 text-xs font-semibold rounded-xl border transition-all ${
                           isCurrent
-                            ? 'bg-darkTeal/10 text-darkTeal cursor-default border-darkTeal/20'
-                            : 'bg-darkTeal text-white hover:bg-deepTeal border-darkTeal shadow-xs active:scale-95'
+                            ? 'bg-darkTeal/10 dark:bg-[#0D6E67]/30 text-darkTeal dark:text-cream cursor-default border-darkTeal/20 dark:border-darkTealBorder font-bold'
+                            : 'bg-darkTeal dark:bg-[#0D6E67] text-white hover:bg-deepTeal dark:hover:bg-[#10857D] border-darkTeal dark:border-[#34A89E]/40 shadow-xs active:scale-95'
                         }`}
                       >
                         {isCurrent ? 'Current' : 'Select'}
@@ -171,7 +171,7 @@ export const ModelManagerTab: React.FC<ModelManagerProps> = ({
                       <button
                         onClick={() => onDownload(m.id)}
                         disabled={isDownloading}
-                        className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-xl bg-amber text-charcoal hover:bg-amber/90 border border-amber/50 shadow-xs active:scale-95 disabled:opacity-50"
+                        className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-xl bg-amber text-[#042D2A] hover:bg-amber/90 border border-amber/50 shadow-xs active:scale-95 disabled:opacity-50 cursor-pointer"
                       >
                         <Download className="w-3 h-3" />
                         {isDownloading ? `Downloading (${prog.percent}%)` : 'Enable Profile'}

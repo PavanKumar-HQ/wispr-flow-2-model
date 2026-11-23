@@ -34,6 +34,7 @@ pub struct AppSettings {
     pub power_save_mode: bool,
     pub enable_student_dataset_mode: bool,
     pub student_speaker_id: String,
+    pub theme: String, // "system", "light", "dark_teal"
 }
 
 impl Default for AppSettings {
@@ -81,6 +82,7 @@ impl Default for AppSettings {
             power_save_mode: true,
             enable_student_dataset_mode: true,
             student_speaker_id: "student_default".to_string(),
+            theme: "system".to_string(),
         }
     }
 }

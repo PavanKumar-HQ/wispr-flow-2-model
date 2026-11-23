@@ -4,9 +4,14 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
+        darkTealCanvas: '#042D2A',
+        darkTealSurface: '#073D39',
+        darkTealSurfaceElevated: '#0B4A45',
+        darkTealBorder: '#0F5E58',
         cream: '#DFDFD4',
         darkTeal: '#07514C',
         deepTeal: '#0F5B57',
@@ -27,7 +32,11 @@ export default {
           charcoal: '#212121',
           border: '#212121',
           borderLight: '#D1D1C5',
-          borderDark: '#212121'
+          borderDark: '#212121',
+          darkCanvas: '#042D2A',
+          darkSurface: '#073D39',
+          darkElevated: '#0B4A45',
+          darkBorder: '#0F5E58'
         }
       },
       fontFamily: {

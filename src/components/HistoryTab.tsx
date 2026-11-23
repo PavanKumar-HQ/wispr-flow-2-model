@@ -234,18 +234,18 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
                         title="Enhance phrasing before placing text"
                         aria-label="Enhance recovery text"
                       >
-                        <Wand2 className="w-3.5 h-3.5 text-amber-700" />
+                        <Wand2 className="w-3.5 h-3.5 text-amber-700 dark:text-amber" />
                         <span>Enhance</span>
                       </button>
 
                       {/* 3. Copy - Icon-only */}
                       <button
                         onClick={() => onCopy(currentText)}
-                        className="ghost-action-btn p-1.5 text-charcoal/70 hover:text-darkTeal shrink-0"
+                        className="ghost-action-btn p-1.5 text-charcoal/70 dark:text-[#DFDFD4] hover:text-darkTeal dark:hover:text-[#34A89E] shrink-0"
                         title="Copy text to clipboard"
                         aria-label="Copy text"
                       >
-                        <Copy className="w-3.5 h-3.5 text-darkTeal" />
+                        <Copy className="w-3.5 h-3.5 text-darkTeal dark:text-[#34A89E]" />
                       </button>
 
                       {/* 4. Dismiss */}
@@ -384,13 +384,13 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
                       onClick={() => setEnhanceRecordId(enhanceRecordId === item.id ? null : item.id)}
                       className={`ghost-action-btn shrink-0 ${
                         enhanceRecordId === item.id 
-                          ? 'bg-amber/20 text-charcoal font-bold' 
+                          ? 'bg-amber/20 dark:bg-amber/30 text-charcoal dark:text-amber font-bold border-amber/40' 
                           : ''
                       }`}
                       title="Enhance grammar, clarity, or convert to prompt"
                       aria-label="Enhance"
                     >
-                      <Wand2 className="w-3.5 h-3.5 text-amber-700" />
+                      <Wand2 className="w-3.5 h-3.5 text-amber-700 dark:text-amber" />
                       <span>Enhance</span>
                     </button>
 
@@ -398,11 +398,11 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
                     <button
                       type="button"
                       onClick={() => onCopy(item.formatted_text)}
-                      className="ghost-action-btn p-1.5 text-charcoal/70 hover:text-darkTeal shrink-0"
+                      className="ghost-action-btn p-1.5 text-charcoal/70 dark:text-[#DFDFD4] hover:text-darkTeal dark:hover:text-[#34A89E] shrink-0"
                       title="Copy text to clipboard"
                       aria-label="Copy text"
                     >
-                      <Copy className="w-3.5 h-3.5 text-darkTeal" />
+                      <Copy className="w-3.5 h-3.5 text-darkTeal dark:text-[#34A89E]" />
                     </button>
 
                     {/* 4. Teach - Ghost action */}
@@ -418,7 +418,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
                       title="Teach preferred spelling"
                       aria-label="Teach vocabulary"
                     >
-                      <Edit3 className="w-3.5 h-3.5 text-darkTeal" />
+                      <Edit3 className="w-3.5 h-3.5 text-darkTeal dark:text-[#34A89E]" />
                       <span>Teach</span>
                     </button>
 
@@ -431,7 +431,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
                         title={restoredId === item.id ? 'Restored to raw speech!' : 'Roll back to verbatim raw speech'}
                         aria-label="Roll back to raw speech"
                       >
-                        <RotateCcw className="w-3.5 h-3.5 text-amber-700" />
+                        <RotateCcw className="w-3.5 h-3.5 text-amber-700 dark:text-amber" />
                         <span>{restoredId === item.id ? 'Restored!' : 'Rollback'}</span>
                       </button>
                     )}
@@ -440,7 +440,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
                     <button
                       type="button"
                       onClick={() => onDelete(item.id)}
-                      className="ghost-action-btn ghost-action-btn-danger p-1 text-charcoal/40 hover:text-terracotta shrink-0"
+                      className="ghost-action-btn ghost-action-btn-danger p-1 text-charcoal/40 dark:text-sage/70 hover:text-terracotta dark:hover:text-[#FF8A65] shrink-0"
                       title="Delete entry"
                       aria-label="Delete entry"
                     >
@@ -450,27 +450,27 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
                 </div>
 
                 {activeEditId === item.id ? (
-                  <div className="space-y-2.5 mt-2">
+                  <div className="space-y-2.5 mt-2 bg-stone-50 dark:bg-[#042D2A] p-3 rounded-xl border border-charcoal/15 dark:border-darkTealBorder">
                     <textarea
                       value={editingTexts[item.id] !== undefined ? editingTexts[item.id] : item.formatted_text}
                       onChange={(e) => handleTextChange(item.id, e.target.value)}
-                      className="w-full text-xs font-mono p-3 rounded-xl border border-charcoal/20 bg-white text-charcoal focus:outline-none focus:ring-2 focus:ring-darkTeal/20 focus:border-darkTeal shadow-xs"
+                      className="w-full text-xs font-mono p-3 rounded-xl border border-charcoal/20 dark:border-darkTealBorder bg-white dark:bg-[#073D39] text-charcoal dark:text-cream focus:outline-none focus:ring-2 focus:ring-darkTeal/20 focus:border-darkTeal shadow-xs"
                       rows={2}
                     />
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] text-charcoal/70">
+                      <span className="text-[11px] text-charcoal/70 dark:text-sage">
                         Editing will teach VoxQuest recurring corrections for future dictations.
                       </span>
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => setActiveEditId(null)}
-                          className="px-3 py-1.5 rounded-xl border border-charcoal/20 bg-white text-charcoal hover:bg-neutral-50 text-xs font-medium shadow-xs active:scale-95 transition-all"
+                          className="px-3 py-1.5 rounded-xl border border-charcoal/20 dark:border-darkTealBorder bg-white dark:bg-[#073D39] text-charcoal dark:text-cream hover:bg-neutral-50 dark:hover:bg-[#0B4A45] text-xs font-medium shadow-xs active:scale-95 transition-all"
                         >
                           Cancel
                         </button>
                         <button
                           onClick={() => handleSaveRegularEdit(item.id)}
-                          className="flex items-center gap-1 px-3.5 py-1.5 bg-darkTeal hover:bg-deepTeal text-white rounded-xl text-xs font-semibold border border-darkTeal shadow-xs active:scale-95"
+                          className="flex items-center gap-1 px-3.5 py-1.5 bg-darkTeal hover:bg-deepTeal dark:bg-[#0D6E67] dark:hover:bg-[#10857D] text-white rounded-xl text-xs font-semibold border border-darkTeal dark:border-[#34A89E]/40 shadow-xs active:scale-95"
                         >
                           <Check className="w-3.5 h-3.5" />
                           <span>Save & Teach</span>
@@ -479,7 +479,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
                     </div>
                   </div>
                 ) : (
-                  <p className="text-sm font-medium text-charcoal leading-relaxed select-text whitespace-pre-wrap py-0.5">
+                  <p className="text-sm font-medium text-charcoal dark:text-cream leading-relaxed select-text whitespace-pre-wrap py-0.5">
                     "{item.formatted_text}"
                   </p>
                 )}

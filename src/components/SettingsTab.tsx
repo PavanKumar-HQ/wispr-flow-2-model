@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Keyboard, Mic, Sliders, Shield, Target, CheckCircle2, AlertTriangle, ExternalLink, RotateCcw, BookOpen, Wand2 } from 'lucide-react';
+import { Keyboard, Mic, Sliders, Shield, Target, CheckCircle2, AlertTriangle, ExternalLink, RotateCcw, BookOpen, Wand2, Palette, Sun, Moon, Monitor } from 'lucide-react';
 import { AppSettings } from '../types';
 import { safeInvoke } from '../lib/ipc';
 
@@ -85,6 +85,113 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
       </div>
 
       <div className="grid gap-5">
+        {/* Appearance & Sovereign Theme Selector */}
+        <div className="p-5 rounded-2xl border border-charcoal/15 bg-white shadow-sm space-y-3.5">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal font-mono flex items-center gap-1.5">
+              <Palette className="w-3.5 h-3.5" /> Appearance & Theme
+            </h3>
+            <span className="text-[10px] font-mono font-bold text-darkTeal bg-darkTeal/10 px-2 py-0.5 rounded-full border border-darkTeal/20">
+              Sovereign Palette
+            </span>
+          </div>
+          <p className="text-xs text-charcoal/80 leading-relaxed">
+            Choose your preferred aesthetic. The dark theme is anchored entirely in deep Dark Teal (no generic black), preserving all brand tones.
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+            {/* Light Theme */}
+            <button
+              type="button"
+              onClick={() => handleChange('theme', 'light')}
+              className={`p-3.5 rounded-xl border text-left transition-all flex flex-col justify-between gap-3 active:scale-98 cursor-pointer ${
+                settings.theme === 'light'
+                  ? 'border-darkTeal ring-2 ring-darkTeal/20 bg-cream/40 shadow-xs'
+                  : 'border-charcoal/15 hover:border-darkTeal/40 bg-white'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 font-bold text-xs text-charcoal">
+                  <Sun className="w-3.5 h-3.5 text-amber" />
+                  <span>Warm Linen</span>
+                </div>
+                {settings.theme === 'light' && (
+                  <CheckCircle2 className="w-3.5 h-3.5 text-darkTeal" />
+                )}
+              </div>
+              <div className="flex items-center gap-1.5 pt-1">
+                <span className="w-4 h-4 rounded-full border border-charcoal/20" style={{ backgroundColor: '#DFDFD4' }} title="#DFDFD4 (Linen)" />
+                <span className="w-4 h-4 rounded-full" style={{ backgroundColor: '#07514C' }} title="#07514C (Dark Teal)" />
+                <span className="w-4 h-4 rounded-full" style={{ backgroundColor: '#DA6C4C' }} title="#DA6C4C (Terracotta)" />
+              </div>
+              <span className="text-[10px] text-charcoal/60 leading-tight">
+                Warm linen cream paper aesthetic with dark teal ink.
+              </span>
+            </button>
+
+            {/* Dark Teal Theme */}
+            <button
+              type="button"
+              onClick={() => handleChange('theme', 'dark_teal')}
+              className={`p-3.5 rounded-xl border text-left transition-all flex flex-col justify-between gap-3 active:scale-98 cursor-pointer ${
+                settings.theme === 'dark_teal'
+                  ? 'border-darkTeal ring-2 ring-darkTeal/30 shadow-xs'
+                  : 'border-charcoal/15 hover:border-darkTeal/40'
+              }`}
+              style={{ backgroundColor: settings.theme === 'dark_teal' ? '#073D39' : '#042D2A', color: '#DFDFD4' }}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 font-bold text-xs text-[#DFDFD4]">
+                  <Moon className="w-3.5 h-3.5 text-amber" />
+                  <span>Dark Teal</span>
+                </div>
+                {settings.theme === 'dark_teal' && (
+                  <CheckCircle2 className="w-3.5 h-3.5 text-amber" />
+                )}
+              </div>
+              <div className="flex items-center gap-1.5 pt-1">
+                <span className="w-4 h-4 rounded-full border border-[#0F5E58]" style={{ backgroundColor: '#042D2A' }} title="#042D2A (Deep Teal)" />
+                <span className="w-4 h-4 rounded-full" style={{ backgroundColor: '#DFDFD4' }} title="#DFDFD4 (Linen Text)" />
+                <span className="w-4 h-4 rounded-full" style={{ backgroundColor: '#DDA44D' }} title="#DDA44D (Amber Accent)" />
+              </div>
+              <span className="text-[10px] text-[#B8CBC3] leading-tight">
+                Deep sovereign teal canvas with linen typography (no black).
+              </span>
+            </button>
+
+            {/* System Auto Theme */}
+            <button
+              type="button"
+              onClick={() => handleChange('theme', 'system')}
+              className={`p-3.5 rounded-xl border text-left transition-all flex flex-col justify-between gap-3 active:scale-98 cursor-pointer ${
+                !settings.theme || settings.theme === 'system'
+                  ? 'border-darkTeal ring-2 ring-darkTeal/20 bg-stone-50 shadow-xs'
+                  : 'border-charcoal/15 hover:border-darkTeal/40 bg-white'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 font-bold text-xs text-charcoal">
+                  <Monitor className="w-3.5 h-3.5 text-darkTeal" />
+                  <span>System Auto</span>
+                </div>
+                {(!settings.theme || settings.theme === 'system') && (
+                  <CheckCircle2 className="w-3.5 h-3.5 text-darkTeal" />
+                )}
+              </div>
+              <div className="flex items-center gap-1.5 pt-1">
+                <div className="w-4 h-4 rounded-full border border-charcoal/20 overflow-hidden flex">
+                  <span className="w-1/2 h-full bg-[#DFDFD4]" />
+                  <span className="w-1/2 h-full bg-[#042D2A]" />
+                </div>
+                <span className="text-[11px] font-mono font-bold text-charcoal/70">macOS Sync</span>
+              </div>
+              <span className="text-[10px] text-charcoal/60 leading-tight">
+                Automatically adapts between Warm Linen and Dark Teal with macOS.
+              </span>
+            </button>
+          </div>
+        </div>
+
         {/* System Permission Card */}
         <div className="p-5 rounded-2xl border border-charcoal/15 bg-white shadow-sm space-y-3">
           <div className="flex items-center justify-between">

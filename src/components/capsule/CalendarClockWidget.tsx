@@ -273,17 +273,17 @@ export const CalendarClockWidget: React.FC = () => {
   return (
     <div data-tauri-no-drag className="space-y-3 font-sans select-none text-charcoal">
       {/* Clean Original Format Clock Card */}
-      <div className="bg-white rounded-2xl p-4 border border-charcoal/15 shadow-xs flex items-center justify-between">
+      <div className="bg-white dark:bg-darkTealSurface rounded-2xl p-4 border border-charcoal/15 dark:border-darkTealBorder shadow-xs flex items-center justify-between">
         <div className="space-y-0.5">
           <div className="flex items-baseline gap-1.5 font-mono">
-            <span className="text-2xl sm:text-3xl font-extrabold tracking-tight text-darkTeal">
+            <span className="text-2xl sm:text-3xl font-extrabold tracking-tight text-darkTeal dark:text-cream">
               {currentTimeStr}
             </span>
             <span className="text-xs font-bold font-mono text-terracotta">
               {currentSecondsStr}
             </span>
           </div>
-          <div className="text-xs font-medium text-charcoal/70">
+          <div className="text-xs font-medium text-charcoal/70 dark:text-sage">
             {currentDateStr}
           </div>
         </div>
@@ -294,8 +294,8 @@ export const CalendarClockWidget: React.FC = () => {
           onClick={toggleTimeFormat}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-2xs active:scale-95 cursor-pointer border ${
             is24Hour
-              ? 'bg-darkTeal text-white border-darkTeal'
-              : 'bg-stone-50 hover:bg-stone-100 text-charcoal/80 border-charcoal/20'
+              ? 'bg-darkTeal dark:bg-[#0D6E67] text-white border-darkTeal dark:border-[#34A89E]/40'
+              : 'bg-stone-50 dark:bg-[#05332F] hover:bg-stone-100 dark:hover:bg-[#0B4A45] text-charcoal/80 dark:text-cream border-charcoal/20 dark:border-darkTealBorder'
           }`}
           title="Toggle between 12-hour and 24-hour format"
         >
@@ -305,26 +305,26 @@ export const CalendarClockWidget: React.FC = () => {
       </div>
 
       {/* Interactive Calendar Card */}
-      <div className="bg-white rounded-2xl p-3.5 border border-charcoal/15 shadow-xs space-y-3">
+      <div className="bg-white dark:bg-darkTealSurface rounded-2xl p-3.5 border border-charcoal/15 dark:border-darkTealBorder shadow-xs space-y-3">
         {/* Month Navigation */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
-            <CalendarIcon className="w-4 h-4 text-darkTeal" />
-            <span className="text-xs font-bold text-darkTeal">{currentMonthLabel}</span>
+            <CalendarIcon className="w-4 h-4 text-darkTeal dark:text-cream" />
+            <span className="text-xs font-bold text-darkTeal dark:text-cream">{currentMonthLabel}</span>
           </div>
 
           <div className="flex items-center gap-1">
             <button
               type="button"
               onClick={handleTodayClick}
-              className="px-2 py-0.5 text-[10px] font-bold rounded-lg bg-stone-100 hover:bg-stone-200 text-charcoal/80 transition-all cursor-pointer"
+              className="px-2 py-0.5 text-[10px] font-bold rounded-lg bg-stone-100 dark:bg-[#05332F] hover:bg-stone-200 dark:hover:bg-[#0B4A45] text-charcoal/80 dark:text-cream transition-all cursor-pointer border border-transparent dark:border-darkTealBorder"
             >
               Today
             </button>
             <button
               type="button"
               onClick={handlePrevMonth}
-              className="p-1 rounded-lg hover:bg-stone-100 text-charcoal/70 transition-all cursor-pointer"
+              className="p-1 rounded-lg hover:bg-stone-100 dark:hover:bg-[#0B4A45] text-charcoal/70 dark:text-cream transition-all cursor-pointer"
               aria-label="Previous Month"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
@@ -332,7 +332,7 @@ export const CalendarClockWidget: React.FC = () => {
             <button
               type="button"
               onClick={handleNextMonth}
-              className="p-1 rounded-lg hover:bg-stone-100 text-charcoal/70 transition-all cursor-pointer"
+              className="p-1 rounded-lg hover:bg-stone-100 dark:hover:bg-[#0B4A45] text-charcoal/70 dark:text-cream transition-all cursor-pointer"
               aria-label="Next Month"
             >
               <ChevronRight className="w-3.5 h-3.5" />
@@ -343,7 +343,7 @@ export const CalendarClockWidget: React.FC = () => {
         {/* Calendar Grid */}
         <div className="space-y-1">
           {/* Day of Week Header */}
-          <div className="grid grid-cols-7 text-center text-[10px] font-bold text-charcoal/50 uppercase">
+          <div className="grid grid-cols-7 text-center text-[10px] font-bold text-charcoal/50 dark:text-sage/70 uppercase">
             <span>Su</span>
             <span>Mo</span>
             <span>Tu</span>
@@ -370,12 +370,12 @@ export const CalendarClockWidget: React.FC = () => {
                   onClick={() => setSelectedDateStr(cell.iso)}
                   className={`h-7 rounded-lg text-xs font-bold transition-all relative flex flex-col items-center justify-center cursor-pointer ${
                     isSelected
-                      ? 'bg-darkTeal text-white shadow-xs font-extrabold ring-2 ring-darkTeal/40'
+                      ? 'bg-darkTeal dark:bg-[#0D6E67] text-white shadow-xs font-extrabold ring-2 ring-darkTeal/40'
                       : isMarked
-                      ? 'bg-terracotta/20 text-terracotta font-extrabold border border-terracotta/40'
+                      ? 'bg-terracotta/20 dark:bg-terracotta/30 text-terracotta dark:text-[#FF8A65] font-extrabold border border-terracotta/40'
                       : isToday
-                      ? 'bg-stone-100 text-darkTeal border border-darkTeal/40'
-                      : 'hover:bg-stone-100 text-charcoal'
+                      ? 'bg-stone-100 dark:bg-[#0B4A45] text-darkTeal dark:text-cream border border-darkTeal/40'
+                      : 'hover:bg-stone-100 dark:hover:bg-[#0B4A45] text-charcoal dark:text-cream'
                   }`}
                   title={`${cell.iso}${isMarked ? ' (Marked Milestone)' : ''}`}
                 >
@@ -581,29 +581,29 @@ export const CalendarClockWidget: React.FC = () => {
 
       {/* Marked Dates List */}
       {markedDates.length > 0 && (
-        <div className="bg-white rounded-2xl p-3 border border-charcoal/15 shadow-xs space-y-2">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-charcoal/50 flex items-center justify-between">
+        <div className="bg-white dark:bg-darkTealSurface rounded-2xl p-3 border border-charcoal/15 dark:border-darkTealBorder shadow-xs space-y-2">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-charcoal/50 dark:text-sage flex items-center justify-between">
             <span>Marked Deadlines & Events ({markedDates.length})</span>
-            <span className="text-[9px] text-charcoal/40">Synced live</span>
+            <span className="text-[9px] text-charcoal/40 dark:text-sage/70">Synced live</span>
           </div>
 
           <div className="space-y-1.5 max-h-32 overflow-y-auto no-scrollbar">
             {markedDates.map((item) => (
               <div
                 key={item.dateStr}
-                className="flex items-center justify-between p-2 rounded-xl bg-stone-50 hover:bg-stone-100/80 border border-charcoal/10 text-xs transition-all"
+                className="flex items-center justify-between p-2 rounded-xl bg-stone-50 dark:bg-[#05332F] hover:bg-stone-100/80 dark:hover:bg-[#0B4A45] border border-charcoal/10 dark:border-darkTealBorder text-xs transition-all"
               >
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="w-2 h-2 rounded-full bg-terracotta shrink-0" />
-                  <span className="font-mono font-bold text-darkTeal text-[11px] shrink-0">
+                  <span className="font-mono font-bold text-darkTeal dark:text-[#34A89E] text-[11px] shrink-0">
                     {item.dateStr}
                   </span>
-                  <span className="text-charcoal/80 text-[11px] font-medium truncate max-w-[130px]">
+                  <span className="text-charcoal/80 dark:text-cream text-[11px] font-medium truncate max-w-[130px]">
                     {item.label}
                   </span>
                   {item.timeStr && (
-                    <span className="text-[9px] font-mono font-bold text-darkTeal/80 bg-stone-200/70 px-1.5 py-0.5 rounded flex items-center gap-0.5 shrink-0" title={`Reminder alert at ${item.timeStr}`}>
-                      <Bell className="w-2.5 h-2.5 text-emerald-600" />
+                    <span className="text-[9px] font-mono font-bold text-darkTeal/80 dark:text-[#34A89E] bg-stone-200/70 dark:bg-[#073D39] px-1.5 py-0.5 rounded flex items-center gap-0.5 shrink-0" title={`Reminder alert at ${item.timeStr}`}>
+                      <Bell className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" />
                       {item.timeStr}
                     </span>
                   )}
@@ -612,7 +612,7 @@ export const CalendarClockWidget: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => handleDeleteMarked(item.dateStr)}
-                  className="text-charcoal/40 hover:text-terracotta transition-colors p-1 cursor-pointer"
+                  className="text-charcoal/40 dark:text-sage/60 hover:text-terracotta dark:hover:text-[#FF8A65] transition-colors p-1 cursor-pointer"
                   title="Remove marked date"
                 >
                   <Trash2 className="w-3 h-3" />
