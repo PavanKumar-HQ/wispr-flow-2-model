@@ -12,7 +12,7 @@ import { TrainModelTab } from './components/TrainModelTab';
 import { UtilitiesTab } from './components/UtilitiesTab';
 import { ModelInfo, AppSettings, HistoryRecord, SessionSnapshot, InsightsData } from './types';
 import { Home, Layers, History, Settings as SettingsIcon, BookA, BarChart2, LocateFixed, GraduationCap, LayoutGrid } from 'lucide-react';
-import { applyTheme, initThemeListener, getStoredTheme, ThemeMode } from './lib/theme';
+import { applyTheme } from './lib/theme';
 
 export default function App() {
   const isPillOnlyWindow = typeof window !== 'undefined' && window.location.hash.includes('pill');
@@ -48,16 +48,13 @@ export default function App() {
     retain_history: true,
     play_sound_effects: true,
     max_duration_secs: 180,
-    theme: getStoredTheme(),
+    theme: 'light',
   });
 
-  // Synchronize Sovereign theme (Warm Linen vs Dark Teal) with settings and macOS appearance
+  // Enforce Sovereign Warm Linen light theme
   useEffect(() => {
-    const t = (settings.theme as ThemeMode) || getStoredTheme();
-    applyTheme(t);
-    const cleanup = initThemeListener();
-    return () => cleanup();
-  }, [settings.theme]);
+    applyTheme('light');
+  }, []);
   const [history, setHistory] = useState<HistoryRecord[]>([]);
   const [devices, setDevices] = useState<string[]>([]);
   const [session, setSession] = useState<SessionSnapshot>({
@@ -222,9 +219,7 @@ export default function App() {
       const res = await safeInvoke<AppSettings>('get_settings');
       if (res) {
         setSettings(res);
-        if (res.theme) {
-          applyTheme(res.theme as ThemeMode);
-        }
+        applyTheme('light');
         return res;
       }
     } catch (e) {
@@ -272,9 +267,7 @@ export default function App() {
 
   const handleUpdateSettings = async (updated: AppSettings) => {
     setSettings(updated);
-    if (updated.theme) {
-      applyTheme(updated.theme as ThemeMode);
-    }
+    applyTheme('light');
     try {
       await safeInvoke('save_settings_cmd', { newSettings: updated });
     } catch (e) {
@@ -539,9 +532,7 @@ export default function App() {
               devices={devices}
               onUpdate={async (newSettings) => {
                 setSettings(newSettings);
-                if (newSettings.theme) {
-                  applyTheme(newSettings.theme as ThemeMode);
-                }
+                applyTheme('light');
                 await safeInvoke('save_settings_cmd', { newSettings });
               }}
             />

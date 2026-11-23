@@ -24,7 +24,7 @@ export interface AppSettings {
   play_sound_effects: boolean;
   max_duration_secs: number;
   auto_hide_pill?: boolean;
-  theme?: 'system' | 'light' | 'dark' | 'dark_teal';
+  theme?: 'light' | string;
   selected_microphone?: string;
   enable_personal_dictionary?: boolean;
   enable_correction_learning?: boolean;

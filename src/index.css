@@ -98,279 +98,76 @@ body.pill-window ::-webkit-scrollbar {
 
 /* VoxQuest Modern Sovereign Design System Patterns */
 
-/* ==========================================================================
-   Modern Obsidian Dark Theme (Deep Slate/Charcoal, High Contrast, Sovereign Accents)
-   ========================================================================== */
-
-html.dark {
-  --color-cream: #DFDFD4;
-  --color-dark-teal: #07514C;
-  --color-dark-teal-accent: #0D6E67;
-  --color-mint: #34A89E;
-  --color-canvas: #121417;
-  --color-surface: #1A1D21;
-  --color-elevated: #22262B;
-  --color-border: #2B313A;
-  --color-charcoal: #F3F4F6;
-  --color-warm-amber: #DDA44D;
-  --color-terracotta: #DA6C4C;
-  --color-muted-sage: #9CA3AF;
-}
-
-html.dark body:not(.pill-window) {
-  background-color: #121417 !important;
-  color: #F3F4F6 !important;
-}
-
-html.dark ::-webkit-scrollbar-track {
-  background: #121417;
-  border-left: 1px solid #2B313A;
-}
-
-html.dark ::-webkit-scrollbar-thumb {
-  background: #2B313A;
-  border: 1px solid #121417;
-}
-
-html.dark ::-webkit-scrollbar-thumb:hover {
-  background: #0D6E67;
-}
-
-/* Base Canvas & Layout */
-html.dark .bg-cream,
-html.dark main {
-  background-color: #121417 !important;
-}
-
 /* Sidebar Layout & Navigation Buttons */
-html:not(.dark) aside {
+aside {
   background-color: #EBEBE4 !important;
   border-color: #D1D1C5 !important;
 }
 
-html:not(.dark) aside nav button:not(.bg-darkTeal) {
+aside nav button:not(.bg-darkTeal) {
   color: #212121 !important;
   font-weight: 600 !important;
 }
 
-html:not(.dark) aside nav button:not(.bg-darkTeal) span {
+aside nav button:not(.bg-darkTeal) span {
   color: #212121 !important;
   font-weight: 600 !important;
 }
 
-html:not(.dark) aside nav button:not(.bg-darkTeal) svg {
+aside nav button:not(.bg-darkTeal) svg {
   color: #212121 !important;
 }
 
-html:not(.dark) aside nav button:hover:not(.bg-darkTeal) {
+aside nav button:hover:not(.bg-darkTeal) {
   color: #07514C !important;
   background-color: rgba(7, 81, 76, 0.08) !important;
 }
 
-html:not(.dark) aside .text-darkTeal {
+aside .text-darkTeal {
   color: #07514C !important;
 }
 
-html:not(.dark) aside p {
+aside p {
   color: #4B5563 !important;
   font-weight: 600 !important;
 }
 
-aside nav button.bg-darkTeal,
-html:not(.dark) aside nav button.bg-darkTeal {
+aside nav button.bg-darkTeal {
   background-color: #07514C !important;
   color: #FFFFFF !important;
 }
 
-aside nav button.bg-darkTeal svg,
-html:not(.dark) aside nav button.bg-darkTeal svg {
+aside nav button.bg-darkTeal svg {
   color: #DDA44D !important;
-}
-
-html.dark aside {
-  background-color: #16181D !important;
-  border-color: #2B313A !important;
-}
-
-html.dark aside nav button {
-  color: #D1D5DB !important;
-}
-
-html.dark aside nav button span {
-  color: #D1D5DB !important;
-}
-
-html.dark aside nav button svg {
-  color: #9CA3AF !important;
-}
-
-html.dark aside nav button.bg-darkTeal {
-  background-color: #07514C !important;
-  color: #FFFFFF !important;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4) !important;
-  border-color: rgba(52, 168, 158, 0.4) !important;
-}
-
-html.dark aside nav button.bg-darkTeal svg {
-  color: #DDA44D !important;
-}
-
-html.dark aside nav button:not(.bg-darkTeal):hover {
-  background-color: rgba(255, 255, 255, 0.06) !important;
-  color: #FFFFFF !important;
 }
 
 /* Strict High-Contrast Light Theme Typography */
-html:not(.dark) .text-charcoal,
-html:not(.dark) [class*="text-charcoal"] {
+.text-charcoal,
+[class*="text-charcoal"] {
   color: #212121 !important;
 }
 
-html:not(.dark) .text-darkTeal,
-html:not(.dark) [class*="text-darkTeal"] {
+.text-darkTeal,
+[class*="text-darkTeal"] {
   color: #07514C !important;
 }
 
-html:not(.dark) .text-charcoal\/90,
-html:not(.dark) .text-charcoal\/85,
-html:not(.dark) .text-charcoal\/80 {
+.text-charcoal\/90,
+.text-charcoal\/85,
+.text-charcoal\/80 {
   color: #212121 !important;
 }
 
-html:not(.dark) .text-charcoal\/75,
-html:not(.dark) .text-charcoal\/70,
-html:not(.dark) .text-charcoal\/60 {
+.text-charcoal\/75,
+.text-charcoal\/70,
+.text-charcoal\/60 {
   color: #4B5563 !important;
-}
-
-/* High-Contrast Modern Obsidian Dark Typography */
-html.dark .text-vq-tealDark,
-html.dark [class*="text-vq-tealDark"] {
-  color: #34A89E !important;
-}
-
-html.dark .text-darkTeal:not(aside nav button *),
-html.dark [class*="text-darkTeal"]:not(aside nav button *) {
-  color: #34A89E !important;
-}
-
-html.dark .text-vq-charcoal,
-html.dark [class*="text-vq-charcoal"] {
-  color: #F3F4F6 !important;
-}
-
-html.dark .text-charcoal,
-html.dark [class*="text-charcoal"] {
-  color: #F3F4F6 !important;
-}
-
-/* Subtitle and secondary text in Dark Mode - Crisp readable zinc */
-html.dark .text-vq-charcoal\/70,
-html.dark .text-vq-charcoal\/75,
-html.dark .text-vq-charcoal\/80,
-html.dark .text-charcoal\/70,
-html.dark .text-charcoal\/75,
-html.dark .text-charcoal\/80,
-html.dark .text-charcoal\/60,
-html.dark .text-charcoal\/50,
-html.dark .text-charcoal\/40 {
-  color: #9CA3AF !important;
-}
-
-/* Card Panels & Surfaces */
-html.dark .arcade-panel {
-  background-color: #1A1D21 !important;
-  color: #F3F4F6 !important;
-  border-color: #2B313A !important;
-  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.45) !important;
-}
-
-html.dark .arcade-panel-hoverable:hover {
-  border-color: #34A89E !important;
-  box-shadow: 0 8px 24px -2px rgba(0, 0, 0, 0.6) !important;
-}
-
-html.dark .arcade-panel-dark {
-  background-color: #1A1D21 !important;
-  color: #F3F4F6 !important;
-  border-color: #2B313A !important;
-}
-
-html.dark .arcade-panel-deep {
-  background-color: #121417 !important;
-  color: #F3F4F6 !important;
-  border-color: #2B313A !important;
-}
-
-html.dark .arcade-panel-amber {
-  background-color: #1A1D21 !important;
-  color: #F3F4F6 !important;
-  border-color: rgba(221, 164, 77, 0.45) !important;
-}
-
-/* Form inputs & surfaces in Dark Mode */
-html.dark input:not([type="checkbox"]):not([type="radio"]):not(.bg-transparent),
-html.dark textarea:not(.bg-transparent),
-html.dark select {
-  background-color: #22262B !important;
-  color: #F3F4F6 !important;
-  border-color: #2B313A !important;
-}
-
-html.dark input:focus,
-html.dark textarea:focus,
-html.dark select:focus {
-  border-color: #34A89E !important;
-  outline: none !important;
-}
-
-/* Dark mode hover states - NEVER blinding white */
-html.dark [class*="hover:bg-white"]:hover,
-html.dark [class*="hover:bg-stone"]:hover,
-html.dark [class*="hover:bg-neutral"]:hover,
-html.dark [class*="hover:bg-gray"]:hover,
-html.dark .hover\:bg-neutral-50:hover,
-html.dark .hover\:bg-neutral-100:hover,
-html.dark .hover\:bg-stone-50:hover,
-html.dark .hover\:bg-stone-100:hover,
-html.dark .hover\:bg-gray-50:hover,
-html.dark .hover\:bg-gray-100:hover,
-html.dark .hover\:bg-white:hover {
-  background-color: #262B32 !important;
-  color: #FFFFFF !important;
-}
-
-/* Badges & Tags */
-html.dark [class*="bg-vq-sage"] {
-  background-color: #22262B !important;
-  color: #E5E7EB !important;
-  border-color: #2B313A !important;
-}
-
-html.dark .bg-darkTeal\/10,
-html.dark [class*="bg-darkTeal/10"] {
-  background-color: rgba(7, 81, 76, 0.3) !important;
-  color: #34A89E !important;
-  border-color: rgba(52, 168, 158, 0.3) !important;
-}
-
-html.dark .border-charcoal\/15,
-html.dark .border-charcoal\/20,
-html.dark .border-charcoal\/25,
-html.dark .border-charcoal\/10 {
-  border-color: #2B313A !important;
 }
 
 /* Dedicated Floating Pill Styling: perfectly rounded capsule, zero box artifacts */
 .voxquest-pill-capsule {
   border-radius: 9999px !important;
   overflow: hidden !important;
-}
-
-html.dark .voxquest-pill-capsule {
-  background: linear-gradient(180deg, #1A1D21 0%, #121417 100%) !important;
-  box-shadow: 0 10px 28px -4px rgba(0, 0, 0, 0.7), inset 0 1px 1px rgba(255, 255, 255, 0.1) !important;
-  border-color: #2B313A !important;
 }
 
 /* Standard Elevated Card Panel */
@@ -530,115 +327,36 @@ html.dark .voxquest-pill-capsule {
   transition: all 0.15s ease;
 }
 
-html:not(.dark) .ghost-action-btn {
+.ghost-action-btn {
   background-color: #F6F6F2 !important;
   border: 1px solid rgba(33, 33, 33, 0.15) !important;
   color: #212121 !important;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
-html:not(.dark) .ghost-action-btn span {
+.ghost-action-btn span {
   color: #212121 !important;
   font-weight: 600 !important;
 }
 
-html:not(.dark) .ghost-action-btn:hover {
+.ghost-action-btn:hover {
   background-color: #EBEBE4 !important;
   border-color: #07514C !important;
   color: #07514C !important;
 }
 
-html:not(.dark) .ghost-action-btn:hover span {
+.ghost-action-btn:hover span {
   color: #07514C !important;
 }
 
-html:not(.dark) .ghost-action-btn-danger {
+.ghost-action-btn-danger {
   color: #DA6C4C !important;
 }
 
-html:not(.dark) .ghost-action-btn-danger:hover {
+.ghost-action-btn-danger:hover {
   background-color: rgba(218, 108, 76, 0.12) !important;
   border-color: #DA6C4C !important;
   color: #DA6C4C !important;
-}
-
-/* High-Contrast Modern Obsidian Dark Rules for Action Buttons */
-html.dark .ghost-action-btn {
-  color: #E5E7EB !important;
-  background-color: #22262B !important;
-  border: 1px solid #2B313A !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
-}
-
-html.dark .ghost-action-btn span {
-  color: #E5E7EB !important;
-  font-weight: 600 !important;
-}
-
-html.dark .ghost-action-btn:hover {
-  background-color: #2B313A !important;
-  color: #FFFFFF !important;
-  border-color: #34A89E !important;
-}
-
-html.dark .ghost-action-btn:hover span {
-  color: #FFFFFF !important;
-}
-
-html.dark .ghost-action-btn:active {
-  background-color: #1A1D21 !important;
-}
-
-html.dark .ghost-action-btn-danger {
-  color: #FF8A65 !important;
-}
-
-html.dark .ghost-action-btn-danger:hover {
-  background-color: rgba(218, 108, 76, 0.25) !important;
-  color: #FF7043 !important;
-  border-color: #DA6C4C !important;
-}
-
-html.dark .ghost-action-btn svg {
-  color: #34A89E !important;
-}
-
-html.dark .ghost-action-btn .text-amber-700,
-html.dark .ghost-action-btn .text-amber {
-  color: #DDA44D !important;
-}
-
-html.dark .ghost-action-btn-danger svg {
-  color: #FF8A65 !important;
-}
-
-html.dark .ghost-action-btn .text-charcoal,
-html.dark .ghost-action-btn .text-charcoal\/70,
-html.dark .ghost-action-btn .text-charcoal\/40 {
-  color: #E5E7EB !important;
-}
-
-html.dark .tactile-btn-surface {
-  background: #22262B !important;
-  color: #E5E7EB !important;
-  border-color: #2B313A !important;
-}
-
-html.dark .tactile-btn-surface:hover {
-  background: #2B313A !important;
-  border-color: #34A89E !important;
-  color: #FFFFFF !important;
-}
-
-html.dark .tactile-btn-teal {
-  background: #07514C !important;
-  color: #FFFFFF !important;
-  border-color: rgba(52, 168, 158, 0.4) !important;
-}
-
-html.dark .tactile-btn-teal:hover {
-  background: #0D6E67 !important;
-  border-color: #34A89E !important;
 }
 
 /* Tactile Modern Buttons */

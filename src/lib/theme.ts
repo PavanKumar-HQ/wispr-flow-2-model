@@ -1,17 +1,12 @@
-export type ThemeMode = 'system' | 'light' | 'dark_teal';
+export type ThemeMode = 'light';
 
 const THEME_STORAGE_KEY = 'voxquest_theme';
 
 export function getStoredTheme(): ThemeMode {
-  if (typeof window === 'undefined') return 'light';
-  const stored = localStorage.getItem(THEME_STORAGE_KEY) as ThemeMode | null;
-  if (stored === 'light' || stored === 'dark_teal' || stored === 'system') {
-    return stored;
-  }
   return 'light';
 }
 
-export function applyTheme(mode: ThemeMode) {
+export function applyTheme(_mode?: string) {
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
 
   const root = document.documentElement;
@@ -32,56 +27,21 @@ export function applyTheme(mode: ThemeMode) {
     }
   }
 
-  let isDark = false;
-  if (mode === 'dark_teal') {
-    isDark = true;
-  } else if (mode === 'light') {
-    isDark = false;
-  } else {
-    // system
-    isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  // Strictly enforce light theme throughout VoxQuest
+  root.classList.remove('dark');
+  root.classList.add('light');
+  root.setAttribute('data-theme', 'light');
+  if (!isPill && document.body) {
+    document.body.style.backgroundColor = '#DFDFD4';
+    document.body.style.color = '#212121';
   }
 
-  if (isDark) {
-    root.classList.add('dark');
-    root.classList.remove('light');
-    root.setAttribute('data-theme', 'dark_teal');
-    if (!isPill) {
-      document.body.style.backgroundColor = '#121417';
-      document.body.style.color = '#F3F4F6';
-    }
-  } else {
-    root.classList.remove('dark');
-    root.classList.add('light');
-    root.setAttribute('data-theme', 'light');
-    if (!isPill) {
-      document.body.style.backgroundColor = '#DFDFD4';
-      document.body.style.color = '#212121';
-    }
-  }
-
-  localStorage.setItem(THEME_STORAGE_KEY, mode);
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, 'light');
+  } catch {}
 }
 
-export function initThemeListener(onThemeChange?: (isDark: boolean) => void) {
-  if (typeof window === 'undefined') return () => {};
-
-  const media = window.matchMedia('(prefers-color-scheme: dark)');
-  const listener = () => {
-    const currentMode = getStoredTheme();
-    if (currentMode === 'system') {
-      applyTheme('system');
-      if (onThemeChange) onThemeChange(media.matches);
-    }
-  };
-
-  if (media.addEventListener) {
-    media.addEventListener('change', listener);
-    return () => media.removeEventListener('change', listener);
-  } else if ((media as any).addListener) {
-    (media as any).addListener(listener);
-    return () => (media as any).removeListener(listener);
-  }
+export function initThemeListener(_onThemeChange?: (isDark: boolean) => void) {
+  applyTheme('light');
   return () => {};
 }
-

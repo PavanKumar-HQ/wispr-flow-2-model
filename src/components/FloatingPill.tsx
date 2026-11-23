@@ -17,7 +17,7 @@ import { AudioWaveform } from './AudioWaveform';
 import { CapsuleTray } from './capsule/CapsuleTray';
 import { safeInvoke, safeListen, isNativeTauri } from '../lib/ipc';
 import { getCurrentWindow, currentMonitor } from '@tauri-apps/api/window';
-import { applyTheme, getStoredTheme, initThemeListener } from '../lib/theme';
+import { applyTheme } from '../lib/theme';
 
 interface FloatingPillProps {
   status: SessionSnapshot;
@@ -42,9 +42,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
   const [noSpeechActive, setNoSpeechActive] = useState<boolean>(false);
   const [isTrayExpanded, setIsTrayExpanded] = useState<boolean>(false);
   const [nowPlaying, setNowPlaying] = useState<NowPlayingInfo | null>(null);
-  const [isDark, setIsDark] = useState<boolean>(() =>
-    typeof document !== 'undefined' ? document.documentElement.classList.contains('dark') : false
-  );
+  const isDark = false;
 
   // Sync with Now Playing audio stream
   useEffect(() => {
@@ -118,11 +116,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
 
   // Ensure pill is immediately shown and safely positioned on mount
   useEffect(() => {
-    applyTheme(getStoredTheme());
-    setIsDark(document.documentElement.classList.contains('dark'));
-    const cleanupTheme = initThemeListener((dark) => {
-      setIsDark(dark);
-    });
+    applyTheme('light');
 
     if (isNativeTauri()) {
       safeInvoke('show_pill_window');
@@ -137,13 +131,9 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
       });
 
       return () => {
-        cleanupTheme();
         if (unlisten) unlisten();
       };
     }
-    return () => {
-      cleanupTheme();
-    };
   }, []);
 
   const formatSeconds = (sec: number) => {

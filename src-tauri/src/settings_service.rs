@@ -82,7 +82,7 @@ impl Default for AppSettings {
             power_save_mode: true,
             enable_student_dataset_mode: true,
             student_speaker_id: "student_default".to_string(),
-            theme: "system".to_string(),
+            theme: "light".to_string(),
         }
     }
 }
