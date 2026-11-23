@@ -105,14 +105,14 @@ export const InsightsTab: React.FC<InsightsTabProps> = ({
             </p>
           </div>
 
-          <div className="space-y-1.5 pt-2 border-t border-charcoal/10">
-            <div className="flex items-center justify-between text-[11px] text-charcoal/70 font-medium">
+          <div className="space-y-1.5 pt-2 border-t border-charcoal/10 dark:border-darkTealBorder">
+            <div className="flex items-center justify-between text-[11px] text-charcoal/70 dark:text-sage font-medium">
               <span>Benchmark (40 WPM)</span>
-              <span className="font-bold text-darkTeal">{avgWpm > 0 ? `${avgWpm} WPM` : 'Baseline'}</span>
+              <span className="font-bold text-darkTeal dark:text-cream">{avgWpm > 0 ? `${avgWpm} WPM` : 'Baseline'}</span>
             </div>
-            <div className="w-full h-2 rounded-full bg-stone-100 overflow-hidden">
+            <div className="w-full h-2 rounded-full bg-stone-100 dark:bg-[#042D2A] overflow-hidden">
               <div
-                className="bg-darkTeal h-full rounded-full transition-all duration-500"
+                className="bg-darkTeal dark:bg-[#34A89E] h-full rounded-full transition-all duration-500"
                 style={{ width: `${Math.min(100, Math.max(10, (avgWpm / 150) * 100))}%` }}
               />
             </div>
@@ -175,14 +175,14 @@ export const InsightsTab: React.FC<InsightsTabProps> = ({
             </p>
           </div>
 
-          <div className="space-y-1.5 pt-2 border-t border-charcoal/10">
-            <div className="flex items-center justify-between text-[11px] text-charcoal/70 font-medium">
+          <div className="space-y-1.5 pt-2 border-t border-charcoal/10 dark:border-darkTealBorder">
+            <div className="flex items-center justify-between text-[11px] text-charcoal/70 dark:text-sage font-medium">
               <span>Time saved</span>
-              <span className="font-bold text-darkTeal">{timeSavedMinutes}m</span>
+              <span className="font-bold text-darkTeal dark:text-cream">{timeSavedMinutes}m</span>
             </div>
-            <div className="w-full h-2 rounded-full bg-stone-100 overflow-hidden">
+            <div className="w-full h-2 rounded-full bg-stone-100 dark:bg-[#042D2A] overflow-hidden">
               <div
-                className="bg-darkTeal h-full rounded-full transition-all duration-500"
+                className="bg-darkTeal dark:bg-[#34A89E] h-full rounded-full transition-all duration-500"
                 style={{ width: `${Math.min(100, Math.max(8, timeSavedMinutes * 10))}%` }}
               />
             </div>
@@ -252,16 +252,16 @@ export const InsightsTab: React.FC<InsightsTabProps> = ({
             </div>
 
             {/* Month labels with pagination */}
-            <div className="flex items-center justify-between text-xs text-charcoal/60 mb-2 pt-1">
+            <div className="flex items-center justify-between text-xs text-charcoal/60 dark:text-cream/60 mb-2 pt-1">
               <button
                 onClick={() => setMonthOffset((prev) => prev - 1)}
-                className="p-1 rounded-lg border border-charcoal/20 bg-white hover:bg-neutral-50 text-charcoal shadow-xs active:scale-95 transition-all"
+                className="p-1 rounded-lg border border-charcoal/20 dark:border-darkTealBorder bg-white dark:bg-darkTealCanvas hover:bg-neutral-50 dark:hover:bg-darkTealElevated text-charcoal dark:text-cream shadow-xs active:scale-95 transition-all cursor-pointer"
                 title="Previous months"
                 aria-label="Previous months"
               >
                 <ChevronLeft className="w-3.5 h-3.5" />
               </button>
-              <div className="flex items-center gap-8 sm:gap-12 font-medium text-[11px] text-charcoal/70">
+              <div className="flex items-center gap-8 sm:gap-12 font-medium text-[11px] text-charcoal/70 dark:text-cream/70">
                 {visibleMonths.map((m, idx) => (
                   <span key={idx}>{m}</span>
                 ))}
@@ -269,7 +269,7 @@ export const InsightsTab: React.FC<InsightsTabProps> = ({
               <button
                 onClick={() => setMonthOffset((prev) => Math.min(0, prev + 1))}
                 disabled={monthOffset >= 0}
-                className="p-1 rounded-lg border border-charcoal/20 bg-white hover:bg-neutral-50 text-charcoal shadow-xs active:scale-95 transition-all disabled:opacity-30 disabled:hover:bg-white"
+                className="p-1 rounded-lg border border-charcoal/20 dark:border-darkTealBorder bg-white dark:bg-darkTealCanvas hover:bg-neutral-50 dark:hover:bg-darkTealElevated text-charcoal dark:text-cream shadow-xs active:scale-95 transition-all disabled:opacity-30 disabled:hover:bg-white dark:disabled:hover:bg-darkTealCanvas cursor-pointer"
                 title="Next months"
                 aria-label="Next months"
               >

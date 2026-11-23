@@ -425,8 +425,8 @@ export const TrainModelTab: React.FC<TrainModelTabProps> = ({ session, onToggleD
             }}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${
               selectedCategory === cat.id
-                ? 'bg-darkTeal text-white border-darkTeal shadow-xs'
-                : 'bg-white hover:bg-neutral-50 text-charcoal/70 border-charcoal/15'
+                ? 'bg-darkTeal dark:bg-darkTealAccent text-white border-darkTeal dark:border-mint/40 shadow-xs'
+                : 'bg-white dark:bg-darkTealElevated hover:bg-neutral-50 dark:hover:bg-darkTealCanvas text-charcoal/70 dark:text-cream/80 border-charcoal/15 dark:border-darkTealBorder'
             }`}
           >
             {cat.label}
@@ -453,21 +453,21 @@ export const TrainModelTab: React.FC<TrainModelTabProps> = ({ session, onToggleD
         </div>
 
         {/* The Sentence Box */}
-        <div className="max-w-2xl mx-auto p-6 bg-stone-50 rounded-2xl border border-charcoal/15 shadow-xs text-left space-y-2">
-          <div className="text-[11px] font-bold uppercase tracking-wider text-charcoal/50">
+        <div className="max-w-2xl mx-auto p-6 bg-stone-50 dark:bg-darkTealCanvas rounded-2xl border border-charcoal/15 dark:border-darkTealBorder shadow-xs text-left space-y-2">
+          <div className="text-[11px] font-bold uppercase tracking-wider text-charcoal/50 dark:text-cream/60">
             Read This Sentence Aloud:
           </div>
-          <p className="text-lg sm:text-xl font-bold text-charcoal leading-relaxed font-sans">
+          <p className="text-lg sm:text-xl font-bold text-charcoal dark:text-cream leading-relaxed font-sans">
             "{currentSentence.sentence}"
           </p>
-          <p className="text-xs text-charcoal/70 pt-2 border-t border-charcoal/10 font-medium">
+          <p className="text-xs text-charcoal/70 dark:text-cream/70 pt-2 border-t border-charcoal/10 dark:border-darkTealBorder font-medium">
             <span>{currentSentence.phoneticTips}</span>
           </p>
         </div>
 
         {/* Calibration Status Badge */}
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-darkTeal/5 border border-darkTeal/15 text-[11px] font-bold text-darkTeal">
-          <CheckCircle2 className="w-3.5 h-3.5 text-darkTeal" />
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-darkTeal/5 dark:bg-darkTealElevated border border-darkTeal/15 dark:border-darkTealBorder text-[11px] font-bold text-darkTeal dark:text-mint">
+          <CheckCircle2 className="w-3.5 h-3.5 text-darkTeal dark:text-mint" />
           <span>Calibration Mode Active</span>
         </div>
 
@@ -479,7 +479,7 @@ export const TrainModelTab: React.FC<TrainModelTabProps> = ({ session, onToggleD
             className={`w-full max-w-sm py-4 px-6 rounded-2xl font-bold text-base transition-all shadow-sm active:scale-95 flex items-center justify-center gap-2.5 ${
               isDictating
                 ? 'bg-terracotta text-white animate-pulse shadow-md'
-                : 'bg-darkTeal hover:bg-darkTeal/90 text-white'
+                : 'bg-darkTeal dark:bg-[#0D6E67] hover:bg-darkTeal/90 dark:hover:bg-[#0D6E67]/90 text-white'
             }`}
           >
             {isDictating ? (
@@ -494,16 +494,16 @@ export const TrainModelTab: React.FC<TrainModelTabProps> = ({ session, onToggleD
               </>
             )}
           </button>
-          <span className="text-[11px] text-charcoal/50">
+          <span className="text-[11px] text-charcoal/50 dark:text-sage">
             {isDictating ? 'Speaking now...' : 'Or use shortcut: Command + Shift + Space'}
           </span>
         </div>
 
         {/* Live Feedback & 1-Click Train */}
-        <div className="pt-4 border-t border-charcoal/10 max-w-2xl mx-auto text-left space-y-3">
-          <div className="p-4 bg-stone-50 rounded-xl border border-charcoal/15 space-y-1.5">
-            <div className="text-xs text-charcoal/60 font-semibold">What VoxQuest Heard:</div>
-            <div className="text-sm font-mono text-darkTeal font-bold bg-white p-3 rounded-lg border border-charcoal/10">
+        <div className="pt-4 border-t border-charcoal/10 dark:border-darkTealBorder max-w-2xl mx-auto text-left space-y-3">
+          <div className="p-4 bg-stone-50 dark:bg-darkTealCanvas rounded-xl border border-charcoal/15 dark:border-darkTealBorder space-y-1.5">
+            <div className="text-xs text-charcoal/60 dark:text-sage font-semibold">What VoxQuest Heard:</div>
+            <div className="text-sm font-mono text-darkTeal dark:text-mint font-bold bg-white dark:bg-darkTealSurface p-3 rounded-lg border border-charcoal/10 dark:border-darkTealBorder">
               {session.last_transcript ? `"${session.last_transcript}"` : 'Your spoken words will appear here...'}
             </div>
           </div>
@@ -512,7 +512,7 @@ export const TrainModelTab: React.FC<TrainModelTabProps> = ({ session, onToggleD
             <button
               type="button"
               onClick={handleTeachCurrentSentence}
-              className="w-full sm:flex-1 py-3 px-4 bg-darkTeal hover:bg-darkTeal/90 text-white rounded-xl text-xs font-bold shadow-xs active:scale-95 transition-all flex items-center justify-center gap-2"
+              className="w-full sm:flex-1 py-3 px-4 bg-darkTeal dark:bg-[#0D6E67] hover:bg-darkTeal/90 text-white rounded-xl text-xs font-bold shadow-xs active:scale-95 transition-all flex items-center justify-center gap-2"
             >
               <Check className="w-4 h-4 text-amber" />
               <span>Teach Model (1-Click Train)</span>
@@ -527,7 +527,7 @@ export const TrainModelTab: React.FC<TrainModelTabProps> = ({ session, onToggleD
                   setActiveSentenceIndex(0);
                 }
               }}
-              className="w-full sm:w-auto py-3 px-5 bg-white hover:bg-neutral-50 text-charcoal border border-charcoal/20 rounded-xl text-xs font-bold shadow-xs active:scale-95 transition-all flex items-center justify-center gap-1.5"
+              className="w-full sm:w-auto py-3 px-5 bg-white dark:bg-darkTealElevated hover:bg-neutral-50 dark:hover:bg-darkTealCanvas text-charcoal dark:text-cream border border-charcoal/20 dark:border-darkTealBorder rounded-xl text-xs font-bold shadow-xs active:scale-95 transition-all flex items-center justify-center gap-1.5"
             >
               <span>Next Sentence</span>
               <ArrowRight className="w-4 h-4" />
@@ -601,19 +601,19 @@ export const TrainModelTab: React.FC<TrainModelTabProps> = ({ session, onToggleD
             {vocabList.map((entry) => (
               <div
                 key={entry.id}
-                className="flex items-center justify-between p-3 rounded-xl bg-stone-50 border border-charcoal/10 text-xs"
+                className="flex items-center justify-between p-3 rounded-xl bg-stone-50 dark:bg-darkTealCanvas border border-charcoal/10 dark:border-darkTealBorder text-xs"
               >
                 <div className="min-w-0 pr-2">
                   <div className="flex items-center gap-1.5">
                     <span className="font-mono text-terracotta text-[11px] line-through">
                       "{entry.original_text}"
                     </span>
-                    <span className="text-charcoal/40 font-bold">→</span>
-                    <span className="font-bold text-darkTeal text-[12px]">
+                    <span className="text-charcoal/40 dark:text-sage/50 font-bold">→</span>
+                    <span className="font-bold text-darkTeal dark:text-mint text-[12px]">
                       "{entry.preferred_text}"
                     </span>
                   </div>
-                  <div className="text-[10px] text-charcoal/50 mt-0.5">
+                  <div className="text-[10px] text-charcoal/50 dark:text-sage mt-0.5">
                     Type: {entry.entry_type || 'accent'}
                   </div>
                 </div>
@@ -621,7 +621,7 @@ export const TrainModelTab: React.FC<TrainModelTabProps> = ({ session, onToggleD
                 <button
                   type="button"
                   onClick={() => handleDeleteVocab(entry.id)}
-                  className="p-1.5 rounded-lg text-charcoal/40 hover:text-terracotta hover:bg-white transition-all cursor-pointer"
+                  className="p-1.5 rounded-lg text-charcoal/40 dark:text-sage/70 hover:text-terracotta dark:hover:text-[#FF8A65] hover:bg-white dark:hover:bg-darkTealElevated transition-all cursor-pointer"
                   title="Remove from trained model"
                 >
                   <Trash2 className="w-3.5 h-3.5" />

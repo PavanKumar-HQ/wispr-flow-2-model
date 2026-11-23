@@ -300,24 +300,24 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
 
       {/* Search Bar for Transcriptions */}
       <div className="relative">
-        <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-charcoal/50" />
+        <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-charcoal/50 dark:text-sage/60" />
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search spoken dictations..."
-          className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-charcoal/15 bg-white text-xs font-medium text-charcoal placeholder-charcoal/40 focus:outline-none focus:ring-2 focus:ring-darkTeal/20 focus:border-darkTeal shadow-xs"
+          className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealCanvas text-xs font-medium text-charcoal dark:text-cream placeholder-charcoal/40 dark:placeholder-sage/50 focus:outline-none focus:ring-2 focus:ring-darkTeal/20 dark:focus:ring-mint/20 focus:border-darkTeal dark:focus:border-mint shadow-xs"
         />
       </div>
 
       {/* History List */}
       {filteredHistory.length === 0 ? (
-        <div className="p-12 text-center border border-dashed border-charcoal/20 rounded-2xl bg-white shadow-xs">
-          <Clock className="w-8 h-8 text-charcoal/30 mx-auto mb-2" />
-          <p className="text-sm font-bold text-charcoal">
+        <div className="p-12 text-center border border-dashed border-charcoal/20 dark:border-darkTealBorder rounded-2xl bg-white dark:bg-darkTealSurface shadow-xs">
+          <Clock className="w-8 h-8 text-charcoal/30 dark:text-sage/40 mx-auto mb-2" />
+          <p className="text-sm font-bold text-charcoal dark:text-cream">
             {searchQuery ? 'No matching dictations found' : 'No dictations recorded yet'}
           </p>
-          <p className="text-xs text-charcoal/60 mt-1">
+          <p className="text-xs text-charcoal/60 dark:text-sage mt-1">
             {searchQuery ? 'Try searching for different words' : 'Hold your shortcut key to speak into any text box'}
           </p>
         </div>
@@ -331,17 +331,17 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
             return (
               <div
                 key={item.id}
-                className="p-4 rounded-xl border border-charcoal/10 hover:border-charcoal/20 bg-white transition-all shadow-xs group overflow-hidden space-y-2.5"
+                className="p-4 rounded-xl border border-charcoal/10 dark:border-darkTealBorder hover:border-charcoal/20 dark:hover:border-mint/30 bg-white dark:bg-darkTealSurface transition-all shadow-xs group overflow-hidden space-y-2.5"
               >
-                <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-charcoal/70">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-charcoal/70 dark:text-sage">
                   <div className="flex items-center gap-2 flex-wrap min-w-0">
-                    <span className="font-bold text-charcoal whitespace-nowrap">{dateStr}, {timeStr}</span>
+                    <span className="font-bold text-charcoal dark:text-cream whitespace-nowrap">{dateStr}, {timeStr}</span>
                     <span>•</span>
                     <span className="font-mono text-[11px] font-bold whitespace-nowrap">{item.duration_seconds.toFixed(1)}s</span>
                     {item.target_app && (
                       <>
                         <span>•</span>
-                        <span className="bg-darkTeal/10 text-darkTeal px-2 py-0.5 rounded-md font-bold text-[10px] whitespace-nowrap">
+                        <span className="bg-darkTeal/10 dark:bg-darkTealElevated text-darkTeal dark:text-mint px-2 py-0.5 rounded-md font-bold text-[10px] whitespace-nowrap">
                           {item.target_app}
                         </span>
                       </>
@@ -349,7 +349,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
                     {item.user_edited_text && item.user_edited_text !== item.original_text && (
                       <>
                         <span>•</span>
-                        <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-md font-bold text-[10px] whitespace-nowrap">
+                        <span className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-md font-bold text-[10px] whitespace-nowrap border border-emerald-200 dark:border-emerald-800">
                           Synced from Edit
                         </span>
                       </>

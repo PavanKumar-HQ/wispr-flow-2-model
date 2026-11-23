@@ -394,7 +394,7 @@ export default function App() {
                 <span className="font-extrabold text-sm text-darkTeal dark:text-white tracking-wide">VOXQUEST</span>
                 <span className="w-2 h-2 rounded-full bg-amber animate-pulse" />
               </div>
-              <p className="text-[10px] text-charcoal/70 dark:text-sage font-sans font-medium">Sovereign Voice</p>
+              <p className="text-[10px] text-charcoal/80 dark:text-cream/80 font-sans font-medium">Sovereign Voice</p>
             </div>
           </div>
 
@@ -417,13 +417,13 @@ export default function App() {
                   key={item.id}
                   onClick={() => setActiveTab(item.id as any)}
                   title={item.label}
-                  className={`w-full flex items-center justify-center md:justify-between px-2.5 md:px-3 py-2.5 rounded-xl text-xs font-semibold transition-all relative ${isActive
+                  className={`w-full flex items-center justify-center md:justify-between px-2.5 md:px-3 py-2.5 rounded-xl text-xs font-semibold transition-all relative cursor-pointer ${isActive
                     ? 'bg-darkTeal dark:bg-[#0D6E67] text-white shadow-sm border border-transparent dark:border-[#34A89E]/40'
                     : 'text-charcoal hover:text-darkTeal hover:bg-black/5 dark:text-[#DFDFD4] dark:hover:text-white dark:hover:bg-white/10'
                     }`}
                 >
                   <div className="flex items-center gap-2.5">
-                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-amber' : 'text-charcoal/70 dark:text-[#DFDFD4]/70'}`} />
+                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-amber' : 'text-charcoal/80 dark:text-[#DFDFD4]/80'}`} />
                     <span className="hidden md:inline">{item.label}</span>
                   </div>
                   {item.badge && (
@@ -444,14 +444,14 @@ export default function App() {
         <div className="space-y-2 pt-3 border-t border-charcoal/15 dark:border-darkTealBorder">
           <button
             onClick={() => safeInvoke('center_pill_window')}
-            className="w-full flex items-center justify-center gap-1.5 px-2 md:px-3 py-2 text-xs font-semibold rounded-xl border border-charcoal/20 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface text-darkTeal dark:text-cream hover:bg-darkTeal dark:hover:bg-darkTealAccent hover:text-white transition-all shadow-sm active:scale-95"
+            className="w-full flex items-center justify-center gap-1.5 px-2 md:px-3 py-2 text-xs font-semibold rounded-xl border border-charcoal/20 dark:border-darkTealBorder bg-white dark:bg-darkTealElevated text-darkTeal dark:text-cream hover:bg-darkTeal dark:hover:bg-darkTealAccent hover:text-white transition-all shadow-xs active:scale-95 cursor-pointer"
             title="Summon the floating pill to the front of your screen"
           >
             <LocateFixed className="w-3.5 h-3.5 shrink-0" />
             <span className="hidden md:inline">Summon Pill</span>
           </button>
 
-          <div className="hidden md:flex px-1 items-center justify-between text-[10px] text-charcoal/60 dark:text-sage">
+          <div className="hidden md:flex px-1 items-center justify-between text-[10px] text-charcoal/70 dark:text-sage font-medium">
             <span className="flex items-center gap-1 font-semibold text-darkTeal dark:text-cream">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> 100% Offline
             </span>

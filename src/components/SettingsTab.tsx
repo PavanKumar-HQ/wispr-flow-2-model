@@ -76,26 +76,26 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
     <div className="space-y-6 animate-fadeIn select-none">
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-2">
-          <h2 className="text-xl font-bold text-darkTeal">App & Voice Settings</h2>
-          <span className="text-[10px] font-bold text-darkTeal bg-darkTeal/10 border border-darkTeal/20 px-2.5 py-0.5 rounded-full">Config</span>
+          <h2 className="text-xl font-bold text-charcoal dark:text-cream">App & Voice Settings</h2>
+          <span className="text-[10px] font-bold text-darkTeal dark:text-mint bg-darkTeal/10 dark:bg-darkTealElevated border border-darkTeal/20 dark:border-darkTealBorder px-2.5 py-0.5 rounded-full font-mono">Config</span>
         </div>
-        <p className="text-xs text-charcoal/70">
+        <p className="text-xs text-charcoal/70 dark:text-cream/70">
           Customize your voice shortcut, language, and smart formatting preferences.
         </p>
       </div>
 
       <div className="grid gap-5">
         {/* Appearance & Sovereign Theme Selector */}
-        <div className="p-5 rounded-2xl border border-charcoal/15 bg-white shadow-sm space-y-3.5">
+        <div className="p-5 rounded-2xl border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface shadow-xs space-y-3.5">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal font-mono flex items-center gap-1.5">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal dark:text-mint font-mono flex items-center gap-1.5">
               <Palette className="w-3.5 h-3.5" /> Appearance & Theme
             </h3>
-            <span className="text-[10px] font-mono font-bold text-darkTeal bg-darkTeal/10 px-2 py-0.5 rounded-full border border-darkTeal/20">
+            <span className="text-[10px] font-mono font-bold text-darkTeal dark:text-mint bg-darkTeal/10 dark:bg-darkTealElevated px-2 py-0.5 rounded-full border border-darkTeal/20 dark:border-darkTealBorder">
               Sovereign Palette
             </span>
           </div>
-          <p className="text-xs text-charcoal/80 leading-relaxed">
+          <p className="text-xs text-charcoal/70 dark:text-cream/70 leading-relaxed">
             Choose your preferred aesthetic. The dark theme is anchored entirely in deep Dark Teal (no generic black), preserving all brand tones.
           </p>
 
@@ -106,17 +106,17 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
               onClick={() => handleChange('theme', 'light')}
               className={`p-3.5 rounded-xl border text-left transition-all flex flex-col justify-between gap-3 active:scale-98 cursor-pointer ${
                 settings.theme === 'light'
-                  ? 'border-darkTeal ring-2 ring-darkTeal/20 bg-cream/40 shadow-xs'
-                  : 'border-charcoal/15 hover:border-darkTeal/40 bg-white'
+                  ? 'border-darkTeal ring-2 ring-darkTeal/20 bg-cream/40 dark:bg-darkTealElevated shadow-xs'
+                  : 'border-charcoal/15 dark:border-darkTealBorder hover:border-darkTeal/40 dark:hover:border-mint/40 bg-white dark:bg-darkTealCanvas'
               }`}
             >
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 font-bold text-xs text-charcoal">
+                <div className="flex items-center gap-1.5 font-bold text-xs text-charcoal dark:text-cream">
                   <Sun className="w-3.5 h-3.5 text-amber" />
                   <span>Warm Linen</span>
                 </div>
                 {settings.theme === 'light' && (
-                  <CheckCircle2 className="w-3.5 h-3.5 text-darkTeal" />
+                  <CheckCircle2 className="w-3.5 h-3.5 text-darkTeal dark:text-mint" />
                 )}
               </div>
               <div className="flex items-center gap-1.5 pt-1">
@@ -124,7 +124,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                 <span className="w-4 h-4 rounded-full" style={{ backgroundColor: '#07514C' }} title="#07514C (Dark Teal)" />
                 <span className="w-4 h-4 rounded-full" style={{ backgroundColor: '#DA6C4C' }} title="#DA6C4C (Terracotta)" />
               </div>
-              <span className="text-[10px] text-charcoal/60 leading-tight">
+              <span className="text-[10px] text-charcoal/60 dark:text-sage leading-tight">
                 Warm linen cream paper aesthetic with dark teal ink.
               </span>
             </button>
@@ -135,8 +135,8 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
               onClick={() => handleChange('theme', 'dark_teal')}
               className={`p-3.5 rounded-xl border text-left transition-all flex flex-col justify-between gap-3 active:scale-98 cursor-pointer ${
                 settings.theme === 'dark_teal'
-                  ? 'border-darkTeal ring-2 ring-darkTeal/30 shadow-xs'
-                  : 'border-charcoal/15 hover:border-darkTeal/40'
+                  ? 'border-[#34A89E] ring-2 ring-[#34A89E]/30 shadow-xs'
+                  : 'border-charcoal/15 dark:border-darkTealBorder hover:border-darkTeal/40 dark:hover:border-mint/40'
               }`}
               style={{ backgroundColor: settings.theme === 'dark_teal' ? '#073D39' : '#042D2A', color: '#DFDFD4' }}
             >
@@ -165,27 +165,27 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
               onClick={() => handleChange('theme', 'system')}
               className={`p-3.5 rounded-xl border text-left transition-all flex flex-col justify-between gap-3 active:scale-98 cursor-pointer ${
                 !settings.theme || settings.theme === 'system'
-                  ? 'border-darkTeal ring-2 ring-darkTeal/20 bg-stone-50 shadow-xs'
-                  : 'border-charcoal/15 hover:border-darkTeal/40 bg-white'
+                  ? 'border-darkTeal dark:border-mint ring-2 ring-darkTeal/20 dark:ring-mint/20 bg-stone-50 dark:bg-darkTealElevated shadow-xs'
+                  : 'border-charcoal/15 dark:border-darkTealBorder hover:border-darkTeal/40 dark:hover:border-mint/40 bg-white dark:bg-darkTealCanvas'
               }`}
             >
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 font-bold text-xs text-charcoal">
-                  <Monitor className="w-3.5 h-3.5 text-darkTeal" />
+                <div className="flex items-center gap-1.5 font-bold text-xs text-charcoal dark:text-cream">
+                  <Monitor className="w-3.5 h-3.5 text-darkTeal dark:text-mint" />
                   <span>System Auto</span>
                 </div>
                 {(!settings.theme || settings.theme === 'system') && (
-                  <CheckCircle2 className="w-3.5 h-3.5 text-darkTeal" />
+                  <CheckCircle2 className="w-3.5 h-3.5 text-darkTeal dark:text-mint" />
                 )}
               </div>
               <div className="flex items-center gap-1.5 pt-1">
-                <div className="w-4 h-4 rounded-full border border-charcoal/20 overflow-hidden flex">
+                <div className="w-4 h-4 rounded-full border border-charcoal/20 dark:border-darkTealBorder overflow-hidden flex">
                   <span className="w-1/2 h-full bg-[#DFDFD4]" />
                   <span className="w-1/2 h-full bg-[#042D2A]" />
                 </div>
-                <span className="text-[11px] font-mono font-bold text-charcoal/70">macOS Sync</span>
+                <span className="text-[11px] font-mono font-bold text-charcoal/70 dark:text-sage">macOS Sync</span>
               </div>
-              <span className="text-[10px] text-charcoal/60 leading-tight">
+              <span className="text-[10px] text-charcoal/60 dark:text-sage leading-tight">
                 Automatically adapts between Warm Linen and Dark Teal with macOS.
               </span>
             </button>
@@ -193,28 +193,28 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
         </div>
 
         {/* System Permission Card */}
-        <div className="p-5 rounded-2xl border border-charcoal/15 bg-white shadow-sm space-y-3">
+        <div className="p-5 rounded-2xl border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface shadow-xs space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal font-mono flex items-center gap-1.5">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal dark:text-mint font-mono flex items-center gap-1.5">
               <Shield className="w-3.5 h-3.5" /> macOS Text Insertion Permission
             </h3>
             {accessChecked === true && (
-              <span className="flex items-center gap-1 text-[11px] font-bold text-darkTeal bg-darkTeal/10 border border-darkTeal/20 px-2.5 py-0.5 rounded-full">
-                <CheckCircle2 className="w-3 h-3 text-darkTeal" /> Granted
+              <span className="flex items-center gap-1 text-[11px] font-bold text-darkTeal dark:text-mint bg-darkTeal/10 dark:bg-darkTealElevated border border-darkTeal/20 dark:border-darkTealBorder px-2.5 py-0.5 rounded-full">
+                <CheckCircle2 className="w-3 h-3 text-darkTeal dark:text-mint" /> Granted
               </span>
             )}
             {accessChecked === false && (
-              <span className="flex items-center gap-1 text-[11px] font-bold text-charcoal bg-amber/20 border border-amber/40 px-2.5 py-0.5 rounded-full">
-                <AlertTriangle className="w-3 h-3 text-charcoal" /> Action Required
+              <span className="flex items-center gap-1 text-[11px] font-bold text-charcoal dark:text-amber bg-amber/20 dark:bg-amber/30 border border-amber/40 px-2.5 py-0.5 rounded-full">
+                <AlertTriangle className="w-3 h-3 text-charcoal dark:text-amber" /> Action Required
               </span>
             )}
           </div>
-          <p className="text-xs text-charcoal/80 leading-relaxed">
+          <p className="text-xs text-charcoal/70 dark:text-cream/70 leading-relaxed">
             For VoxQuest to automatically paste transcribed speech directly into external apps (like WhatsApp, Chrome, Notes, Slack), macOS requires Accessibility permission.
           </p>
           <button
             onClick={handleRequestAccess}
-            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl bg-darkTeal hover:bg-deepTeal text-white border border-darkTeal shadow-xs active:scale-95 transition-all"
+            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl bg-darkTeal hover:bg-darkTealAccent dark:bg-darkTealAccent dark:hover:bg-[#0E5C56] text-white border border-darkTeal dark:border-mint/40 shadow-xs active:scale-95 transition-all cursor-pointer"
           >
             <span>Check & Enable Accessibility Permission</span>
             <ExternalLink className="w-3 h-3" />
@@ -222,8 +222,8 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
         </div>
 
         {/* Destination Policy */}
-        <div className="p-5 rounded-2xl border border-charcoal/15 bg-white shadow-sm space-y-3.5">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal font-mono flex items-center gap-1.5">
+        <div className="p-5 rounded-2xl border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface shadow-xs space-y-3.5">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal dark:text-mint font-mono flex items-center gap-1.5">
             <Target className="w-3.5 h-3.5" /> Where to Insert Text
           </h3>
 
@@ -238,10 +238,10 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                 className="mt-0.5 text-darkTeal focus:ring-darkTeal"
               />
               <div>
-                <span className="text-xs font-bold text-charcoal">
+                <span className="text-xs font-bold text-charcoal dark:text-cream">
                   Original App (Recommended)
                 </span>
-                <p className="text-[11px] text-charcoal/70">
+                <p className="text-[11px] text-charcoal/70 dark:text-sage">
                   Always inserts text into the exact window you were working in when you started speaking. If you switch windows while speaking, text is saved safely to history instead of pasting in the wrong place.
                 </p>
               </div>
@@ -257,17 +257,17 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                 className="mt-0.5 text-darkTeal focus:ring-darkTeal"
               />
               <div>
-                <span className="text-xs font-bold text-charcoal">
+                <span className="text-xs font-bold text-charcoal dark:text-cream">
                   Current Window When You Finish
                 </span>
-                <p className="text-[11px] text-charcoal/70">
+                <p className="text-[11px] text-charcoal/70 dark:text-sage">
                   Pastes into whichever text box is focused when you release your shortcut or finish speaking.
                 </p>
               </div>
             </label>
 
             {/* Destination Edit Sync Toggle */}
-            <div className="pt-2 border-t border-charcoal/10">
+            <div className="pt-2 border-t border-charcoal/10 dark:border-darkTealBorder">
               <label className="flex items-start gap-2.5 cursor-pointer">
                 <input
                   type="checkbox"
@@ -276,10 +276,10 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                   className="mt-0.5 text-darkTeal focus:ring-darkTeal rounded"
                 />
                 <div>
-                  <span className="text-xs font-bold text-charcoal">
+                  <span className="text-xs font-bold text-charcoal dark:text-cream">
                     Sync subsequent edits made in destination apps
                   </span>
-                  <p className="text-[11px] text-charcoal/70">
+                  <p className="text-[11px] text-charcoal/70 dark:text-sage">
                     When you edit text directly in TextEdit, Notes, or your browser after pasting, VoxQuest automatically synchronizes your changes back to history and learns vocabulary corrections.
                   </p>
                 </div>
@@ -289,19 +289,19 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
         </div>
 
         {/* Shortcut and Language */}
-        <div className="p-5 rounded-2xl border border-charcoal/15 bg-white shadow-sm space-y-4">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal font-mono flex items-center gap-1.5">
+        <div className="p-5 rounded-2xl border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface shadow-xs space-y-4">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal dark:text-mint font-mono flex items-center gap-1.5">
             <Keyboard className="w-3.5 h-3.5" /> Voice Shortcut & Language
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-charcoal">Global Shortcut</label>
+                <label className="text-xs font-bold text-charcoal dark:text-cream">Global Shortcut</label>
                 {settings.shortcut !== 'CommandOrControl+Shift+Space' && (
                   <button
                     onClick={() => handleChange('shortcut', 'CommandOrControl+Shift+Space')}
-                    className="text-[10px] text-charcoal/80 hover:text-darkTeal flex items-center gap-1 font-semibold px-2 py-0.5 rounded-lg border border-charcoal/20 bg-white hover:bg-neutral-50 shadow-xs transition-all active:scale-95"
+                    className="text-[10px] text-charcoal/80 dark:text-cream/80 hover:text-darkTeal dark:hover:text-mint flex items-center gap-1 font-semibold px-2 py-0.5 rounded-lg border border-charcoal/20 dark:border-darkTealBorder bg-white dark:bg-darkTealElevated hover:bg-neutral-50 dark:hover:bg-darkTealCanvas shadow-xs transition-all active:scale-95 cursor-pointer"
                     title="Reset to default ⌘ ⇧ Space"
                   >
                     <RotateCcw className="w-2.5 h-2.5" />
@@ -312,7 +312,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
 
               {isRecordingShortcut ? (
                 <div className="space-y-1.5 min-w-0">
-                  <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl border-2 border-terracotta bg-white shadow-xs overflow-hidden">
+                  <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl border-2 border-terracotta bg-white dark:bg-darkTealElevated shadow-xs overflow-hidden">
                     <input
                       type="text"
                       autoFocus
@@ -336,30 +336,30 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                   <button
                     type="button"
                     onClick={() => setIsRecordingShortcut(true)}
-                    className="flex-1 flex items-center justify-between px-3 py-2 rounded-xl border border-charcoal/20 bg-neutral-50 hover:border-darkTeal transition-all text-xs font-mono shadow-xs active:scale-95 group"
+                    className="flex-1 flex items-center justify-between px-3 py-2 rounded-xl border border-charcoal/20 dark:border-darkTealBorder bg-neutral-50 dark:bg-darkTealCanvas hover:border-darkTeal dark:hover:border-mint transition-all text-xs font-mono shadow-xs active:scale-95 group cursor-pointer"
                   >
                     <div className="flex items-center gap-1.5">
                       {formatShortcutBadges(settings.shortcut).map((b, i) => (
-                        <kbd key={i} className="px-2 py-0.5 rounded-md bg-white border border-charcoal/20 font-bold text-charcoal text-[11px] shadow-xs">
+                        <kbd key={i} className="px-2 py-0.5 rounded-md bg-white dark:bg-darkTealElevated border border-charcoal/20 dark:border-darkTealBorder font-bold text-charcoal dark:text-cream text-[11px] shadow-xs">
                           {b}
                         </kbd>
                       ))}
                     </div>
-                    <span className="text-[10px] text-charcoal/60 group-hover:text-darkTeal font-sans font-semibold">
+                    <span className="text-[10px] text-charcoal/60 dark:text-sage group-hover:text-darkTeal dark:group-hover:text-mint font-sans font-semibold">
                       Click to Rebind
                     </span>
                   </button>
                 </div>
               )}
-              <span className="text-[10px] text-charcoal/60 block">Hold or tap anywhere on macOS to speak into any text box</span>
+              <span className="text-[10px] text-charcoal/60 dark:text-sage block">Hold or tap anywhere on macOS to speak into any text box</span>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-charcoal">Language</label>
+              <label className="text-xs font-bold text-charcoal dark:text-cream">Language</label>
               <select
                 value={settings.language}
                 onChange={(e) => handleChange('language', e.target.value)}
-                className="w-full px-3 py-2 text-xs font-sans rounded-xl border border-charcoal/20 bg-neutral-50 text-charcoal focus:outline-none focus:ring-2 focus:ring-darkTeal/20 focus:border-darkTeal shadow-xs"
+                className="w-full px-3 py-2 text-xs font-sans rounded-xl border border-charcoal/20 dark:border-darkTealBorder bg-neutral-50 dark:bg-darkTealCanvas text-charcoal dark:text-cream focus:outline-none focus:ring-2 focus:ring-darkTeal/20 dark:focus:ring-mint/20 focus:border-darkTeal dark:focus:border-mint shadow-xs"
               >
                 <option value="auto">Auto-detect Language</option>
                 <option value="en">English</option>
@@ -369,18 +369,18 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                 <option value="de">German</option>
                 <option value="ja">Japanese</option>
               </select>
-              <span className="text-[10px] text-charcoal/60 block">Supports 99+ languages automatically</span>
+              <span className="text-[10px] text-charcoal/60 dark:text-sage block">Supports 99+ languages automatically</span>
             </div>
           </div>
 
-          <div className="pt-3 border-t border-charcoal/10 space-y-2">
+          <div className="pt-3 border-t border-charcoal/10 dark:border-darkTealBorder space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-charcoal">Voice Activation & Trigger Mode</label>
-              <span className="text-[10px] font-semibold text-darkTeal bg-darkTeal/10 px-2.5 py-0.5 rounded-full border border-darkTeal/20">
+              <label className="text-xs font-bold text-charcoal dark:text-cream">Voice Activation & Trigger Mode</label>
+              <span className="text-[10px] font-semibold text-darkTeal dark:text-mint bg-darkTeal/10 dark:bg-darkTealElevated px-2.5 py-0.5 rounded-full border border-darkTeal/20 dark:border-darkTealBorder">
                 {settings.interaction_mode === 'push_to_talk' ? 'Hold to Talk' : 'Tap to Toggle'}
               </span>
             </div>
-            <p className="text-[11px] text-charcoal/70">
+            <p className="text-[11px] text-charcoal/70 dark:text-sage">
               Choose how you prefer to activate voice dictation using your keyboard shortcut or UI buttons.
             </p>
 
@@ -391,27 +391,27 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                 onClick={() => handleChange('interaction_mode', 'push_to_talk')}
                 className={`p-3.5 rounded-xl border text-left transition-all relative flex flex-col justify-between shadow-xs active:scale-98 cursor-pointer ${
                   settings.interaction_mode === 'push_to_talk'
-                    ? 'border-darkTeal bg-darkTeal/5 ring-2 ring-darkTeal/20 shadow-sm'
-                    : 'border-charcoal/20 bg-white hover:border-charcoal/40 hover:bg-neutral-50/80'
+                    ? 'border-darkTeal dark:border-mint bg-darkTeal/5 dark:bg-darkTealElevated ring-2 ring-darkTeal/20 dark:ring-mint/30 shadow-xs'
+                    : 'border-charcoal/20 dark:border-darkTealBorder bg-white dark:bg-darkTealCanvas hover:border-charcoal/40 dark:hover:border-mint/40 hover:bg-neutral-50/80 dark:hover:bg-darkTealElevated'
                 }`}
               >
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-charcoal flex items-center gap-1.5">
-                      <Mic className="w-3.5 h-3.5 text-darkTeal" />
+                    <span className="text-xs font-bold text-charcoal dark:text-cream flex items-center gap-1.5">
+                      <Mic className="w-3.5 h-3.5 text-darkTeal dark:text-mint" />
                       Push-to-Talk (Hold Key)
                     </span>
                     {settings.interaction_mode === 'push_to_talk' && (
-                      <span className="w-2 h-2 rounded-full bg-darkTeal" />
+                      <span className="w-2 h-2 rounded-full bg-darkTeal dark:bg-mint" />
                     )}
                   </div>
-                  <p className="text-[11px] text-charcoal/70 leading-relaxed">
+                  <p className="text-[11px] text-charcoal/70 dark:text-sage leading-relaxed">
                     Hold down your shortcut key while speaking. Dictation instantly stops and pastes the exact second you release the key.
                   </p>
                 </div>
-                <div className="mt-2.5 pt-2 border-t border-charcoal/10 flex items-center justify-between text-[10px] text-charcoal/60 font-mono">
+                <div className="mt-2.5 pt-2 border-t border-charcoal/10 dark:border-darkTealBorder flex items-center justify-between text-[10px] text-charcoal/60 dark:text-sage font-mono">
                   <span>Fastest for quick speech</span>
-                  <span className="font-bold text-darkTeal">Hold & Release</span>
+                  <span className="font-bold text-darkTeal dark:text-mint">Hold & Release</span>
                 </div>
               </button>
 
@@ -421,27 +421,27 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                 onClick={() => handleChange('interaction_mode', 'toggle')}
                 className={`p-3.5 rounded-xl border text-left transition-all relative flex flex-col justify-between shadow-xs active:scale-98 cursor-pointer ${
                   settings.interaction_mode !== 'push_to_talk'
-                    ? 'border-darkTeal bg-darkTeal/5 ring-2 ring-darkTeal/20 shadow-sm'
-                    : 'border-charcoal/20 bg-white hover:border-charcoal/40 hover:bg-neutral-50/80'
+                    ? 'border-darkTeal dark:border-mint bg-darkTeal/5 dark:bg-darkTealElevated ring-2 ring-darkTeal/20 dark:ring-mint/30 shadow-xs'
+                    : 'border-charcoal/20 dark:border-darkTealBorder bg-white dark:bg-darkTealCanvas hover:border-charcoal/40 dark:hover:border-mint/40 hover:bg-neutral-50/80 dark:hover:bg-darkTealElevated'
                 }`}
               >
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-charcoal flex items-center gap-1.5">
-                      <Radio className="w-3.5 h-3.5 text-amber-700" />
+                    <span className="text-xs font-bold text-charcoal dark:text-cream flex items-center gap-1.5">
+                      <Radio className="w-3.5 h-3.5 text-amber-700 dark:text-amber" />
                       Toggle Mode (Tap to Talk)
                     </span>
                     {settings.interaction_mode !== 'push_to_talk' && (
-                      <span className="w-2 h-2 rounded-full bg-darkTeal" />
+                      <span className="w-2 h-2 rounded-full bg-darkTeal dark:bg-mint" />
                     )}
                   </div>
-                  <p className="text-[11px] text-charcoal/70 leading-relaxed">
+                  <p className="text-[11px] text-charcoal/70 dark:text-sage leading-relaxed">
                     Tap your shortcut once to start speaking hands-free. Take your time, then tap again when finished to transcribe and paste.
                   </p>
                 </div>
-                <div className="mt-2.5 pt-2 border-t border-charcoal/10 flex items-center justify-between text-[10px] text-charcoal/60 font-mono">
+                <div className="mt-2.5 pt-2 border-t border-charcoal/10 dark:border-darkTealBorder flex items-center justify-between text-[10px] text-charcoal/60 dark:text-sage font-mono">
                   <span>Best for long dictations</span>
-                  <span className="font-bold text-darkTeal">Tap Once / Tap Again</span>
+                  <span className="font-bold text-darkTeal dark:text-mint">Tap Once / Tap Again</span>
                 </div>
               </button>
             </div>
@@ -449,16 +449,16 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
         </div>
 
         {/* Audio Input Device */}
-        <div className="p-5 rounded-2xl border border-charcoal/15 bg-white shadow-sm space-y-3">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal font-mono flex items-center gap-1.5">
+        <div className="p-5 rounded-2xl border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface shadow-xs space-y-3">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal dark:text-mint font-mono flex items-center gap-1.5">
             <Mic className="w-3.5 h-3.5" /> Microphone
           </h3>
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-charcoal">Selected Microphone</label>
+            <label className="text-xs font-bold text-charcoal dark:text-cream">Selected Microphone</label>
             <select
               value={settings.selected_microphone || 'default'}
               onChange={(e) => handleChange('selected_microphone', e.target.value)}
-              className="w-full px-3 py-2 text-xs font-sans rounded-xl border border-charcoal/20 bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-darkTeal/20 focus:border-darkTeal text-charcoal shadow-xs"
+              className="w-full px-3 py-2 text-xs font-sans rounded-xl border border-charcoal/20 dark:border-darkTealBorder bg-neutral-50 dark:bg-darkTealCanvas focus:outline-none focus:ring-2 focus:ring-darkTeal/20 dark:focus:ring-mint/20 focus:border-darkTeal dark:focus:border-mint text-charcoal dark:text-cream shadow-xs"
             >
               <option value="default">System Default (Intelligent Auto-Select)</option>
               {devices.map((d, i) => {
@@ -470,13 +470,13 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                 );
               })}
             </select>
-            <span className="text-[10px] text-charcoal/60 block">High-fidelity voice capture for dictation</span>
+            <span className="text-[10px] text-charcoal/60 dark:text-sage block">High-fidelity voice capture for dictation</span>
           </div>
         </div>
 
         {/* Smart Formatting Options */}
-        <div className="p-5 rounded-2xl border border-charcoal/15 bg-white shadow-sm space-y-3">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal font-mono flex items-center gap-1.5">
+        <div className="p-5 rounded-2xl border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface shadow-xs space-y-3">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal dark:text-mint font-mono flex items-center gap-1.5">
             <Sliders className="w-3.5 h-3.5" /> Smart Formatting
           </h3>
 
@@ -488,7 +488,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                 onChange={(e) => handleChange('spoken_punctuation', e.target.checked)}
                 className="w-4 h-4 rounded text-darkTeal focus:ring-darkTeal"
               />
-              <span className="text-xs font-medium text-charcoal">
+              <span className="text-xs font-medium text-charcoal dark:text-cream">
                 Spoken punctuation (saying "period", "comma", "question mark", "new line")
               </span>
             </label>
@@ -500,7 +500,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                 onChange={(e) => handleChange('auto_capitalization', e.target.checked)}
                 className="w-4 h-4 rounded text-darkTeal focus:ring-darkTeal"
               />
-              <span className="text-xs font-medium text-charcoal">
+              <span className="text-xs font-medium text-charcoal dark:text-cream">
                 Automatic sentence capitalization
               </span>
             </label>
@@ -512,7 +512,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                 onChange={(e) => handleChange('conservative_filler_removal', e.target.checked)}
                 className="w-4 h-4 rounded text-darkTeal focus:ring-darkTeal"
               />
-              <span className="text-xs font-medium text-charcoal">
+              <span className="text-xs font-medium text-charcoal dark:text-cream">
                 Clean up hesitation sounds (removes "um", "uh", "er" while preserving your words)
               </span>
             </label>
@@ -524,7 +524,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                 onChange={(e) => handleChange('enable_speech_repair', e.target.checked)}
                 className="w-4 h-4 rounded text-darkTeal focus:ring-darkTeal"
               />
-              <span className="text-xs font-medium text-charcoal">
+              <span className="text-xs font-medium text-charcoal dark:text-cream">
                 Real-time speech self-correction (auto-replaces edits like "at 4pm, oh no, 5pm" → "at 5pm")
               </span>
             </label>
@@ -532,8 +532,8 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
         </div>
 
         {/* Dynamic Model Routing */}
-        <div className="p-5 rounded-2xl border border-charcoal/15 bg-white shadow-sm space-y-3">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal font-mono flex items-center gap-1.5">
+        <div className="p-5 rounded-2xl border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface shadow-xs space-y-3">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal dark:text-mint font-mono flex items-center gap-1.5">
             <Sliders className="w-3.5 h-3.5" /> Context-Aware Auto Model Routing
           </h3>
 
@@ -545,19 +545,19 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                 onChange={(e) => handleChange('enable_auto_model_routing', e.target.checked)}
                 className="w-4 h-4 rounded text-darkTeal focus:ring-darkTeal"
               />
-              <span className="text-xs font-medium text-charcoal">
+              <span className="text-xs font-medium text-charcoal dark:text-cream">
                 Automatic profile switching based on active app (Developer Precision for VS Code & Terminal; General Speed for Slack & Notes)
               </span>
             </label>
-            <span className="text-[10px] text-charcoal/60 block pl-6">
+            <span className="text-[10px] text-charcoal/60 dark:text-sage block pl-6">
               Dynamically routes speech between low-latency speed profiles and deep precision profiles without requiring manual switching.
             </span>
           </div>
         </div>
 
         {/* Personal Vocabulary & Self-Learning */}
-        <div className="p-5 rounded-2xl border border-charcoal/15 bg-white shadow-sm space-y-3">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal font-mono flex items-center gap-1.5">
+        <div className="p-5 rounded-2xl border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface shadow-xs space-y-3">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal dark:text-mint font-mono flex items-center gap-1.5">
             <BookOpen className="w-3.5 h-3.5" /> Personal Vocabulary & Learning
           </h3>
 
@@ -569,7 +569,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                 onChange={(e) => handleChange('enable_personal_dictionary', e.target.checked)}
                 className="w-4 h-4 rounded text-darkTeal focus:ring-darkTeal"
               />
-              <span className="text-xs font-medium text-charcoal">
+              <span className="text-xs font-medium text-charcoal dark:text-cream">
                 Enable personal dictionary (biases recognition and replaces custom terms)
               </span>
             </label>
@@ -581,7 +581,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                 onChange={(e) => handleChange('enable_correction_learning', e.target.checked)}
                 className="w-4 h-4 rounded text-darkTeal focus:ring-darkTeal"
               />
-              <span className="text-xs font-medium text-charcoal">
+              <span className="text-xs font-medium text-charcoal dark:text-cream">
                 Learn from corrections (extracts proper nouns and technical terms when you edit)
               </span>
             </label>
@@ -593,7 +593,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                 onChange={(e) => handleChange('auto_approve_corrections', e.target.checked)}
                 className="w-4 h-4 rounded text-darkTeal focus:ring-darkTeal"
               />
-              <span className="text-xs font-medium text-charcoal">
+              <span className="text-xs font-medium text-charcoal dark:text-cream">
                 Auto-approve unambiguous corrections (when unchecked, requires manual confirmation in Dictionary)
               </span>
             </label>
@@ -601,8 +601,8 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
         </div>
 
         {/* Privacy & Storage */}
-        <div className="p-5 rounded-2xl border border-charcoal/15 bg-white shadow-sm space-y-3">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal font-mono flex items-center gap-1.5">
+        <div className="p-5 rounded-2xl border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface shadow-xs space-y-3">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal dark:text-mint font-mono flex items-center gap-1.5">
             <Shield className="w-3.5 h-3.5" /> Privacy & Local Storage
           </h3>
 
@@ -614,13 +614,13 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                 onChange={(e) => handleChange('retain_history', e.target.checked)}
                 className="w-4 h-4 rounded text-darkTeal focus:ring-darkTeal"
               />
-              <span className="text-xs font-medium text-charcoal">
+              <span className="text-xs font-medium text-charcoal dark:text-cream">
                 Save dictation history on this Mac
               </span>
             </label>
 
-            <div className="p-3.5 rounded-xl bg-neutral-50 border border-charcoal/10 text-[11px] text-charcoal/80 leading-relaxed shadow-xs">
-              <strong className="text-darkTeal">100% Private:</strong> Your speech is processed entirely on your Mac and discarded from memory immediately after transcription. Your voice is never recorded to disk and never leaves your computer.
+            <div className="p-3.5 rounded-xl bg-neutral-50 dark:bg-darkTealCanvas border border-charcoal/10 dark:border-darkTealBorder text-[11px] text-charcoal/80 dark:text-cream/80 leading-relaxed shadow-xs">
+              <strong className="text-darkTeal dark:text-mint">100% Private:</strong> Your speech is processed entirely on your Mac and discarded from memory immediately after transcription. Your voice is never recorded to disk and never leaves your computer.
             </div>
           </div>
         </div>

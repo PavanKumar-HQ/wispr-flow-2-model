@@ -340,8 +340,8 @@ export const DictionaryTab: React.FC = () => {
               <BookA className="w-5 h-5 text-[#07514C] dark:text-mint" />
             </div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-lg sm:text-xl font-bold text-charcoal dark:text-cream whitespace-nowrap">Personal Vocabulary & Self-Learning</h2>
-              <span className="text-[10px] font-bold text-charcoal dark:text-mint bg-darkTeal/10 dark:bg-darkTealElevated border border-darkTeal/20 dark:border-darkTealBorder px-2.5 py-0.5 rounded-full">Adaptive</span>
+              <h2 className="text-lg sm:text-xl font-bold text-charcoal dark:text-cream">Personal Vocabulary & Self-Learning</h2>
+              <span className="text-[10px] font-bold text-darkTeal dark:text-mint bg-darkTeal/10 dark:bg-darkTealElevated border border-darkTeal/20 dark:border-darkTealBorder px-2.5 py-0.5 rounded-full shrink-0">Adaptive</span>
             </div>
           </div>
           <p className="text-xs text-charcoal/70 dark:text-cream/70 mt-1 max-w-xl">
