@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Laptop, Clock, Zap, FileText } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Laptop, Clock, Gauge, FileText } from 'lucide-react';
 import { InsightsData, HistoryRecord } from '../types';
 
 interface InsightsTabProps {
@@ -91,8 +91,8 @@ export const InsightsTab: React.FC<InsightsTabProps> = ({
               <span className="text-3xl font-extrabold text-charcoal dark:text-cream tracking-tight font-mono">
                 {avgWpm > 0 ? avgWpm : '—'}
               </span>
-              <div className="p-2 rounded-xl bg-amber/20 dark:bg-amber/30 border border-amber/30 dark:border-amber/40">
-                <Zap className="w-5 h-5 text-amber-700 dark:text-amber fill-amber-400" />
+              <div className="p-2 rounded-xl bg-amber/20 dark:bg-amber/30 border border-amber/30 dark:border-amber/40 shadow-xs">
+                <Gauge className="w-5 h-5 text-amber-700 dark:text-amber" />
               </div>
             </div>
             <div className="text-xs font-semibold text-charcoal/70 dark:text-sage mb-2">
@@ -126,8 +126,8 @@ export const InsightsTab: React.FC<InsightsTabProps> = ({
               <span className="text-3xl font-extrabold text-charcoal dark:text-cream tracking-tight font-mono">
                 {totalWords.toLocaleString()}
               </span>
-              <div className="p-2 rounded-xl bg-darkTeal/10 dark:bg-[#0B4A45] border border-darkTeal/20 dark:border-darkTealBorder">
-                <FileText className="w-5 h-5 text-darkTeal dark:text-cream" />
+              <div className="p-2 rounded-xl bg-[#EAF2F1] dark:bg-[#0B4A45] border border-[#07514C]/20 dark:border-darkTealBorder shadow-xs">
+                <FileText className="w-5 h-5 text-[#07514C] dark:text-mint" />
               </div>
             </div>
             <div className="text-xs font-semibold text-charcoal/70 dark:text-sage mb-2">
@@ -161,8 +161,8 @@ export const InsightsTab: React.FC<InsightsTabProps> = ({
               <span className="text-3xl font-extrabold text-charcoal dark:text-cream tracking-tight font-mono">
                 {timeSavedMinutes} <span className="text-base font-normal">mins</span>
               </span>
-              <div className="p-2 rounded-xl bg-sage/30 dark:bg-[#0B4A45] border border-charcoal/20 dark:border-darkTealBorder">
-                <Clock className="w-5 h-5 text-darkTeal dark:text-cream" />
+              <div className="p-2 rounded-xl bg-[#E8F0EE] dark:bg-[#0B4A45] border border-darkTeal/20 dark:border-darkTealBorder shadow-xs">
+                <Clock className="w-5 h-5 text-[#07514C] dark:text-mint" />
               </div>
             </div>
             <div className="text-xs font-semibold text-charcoal/70 dark:text-sage mb-2">

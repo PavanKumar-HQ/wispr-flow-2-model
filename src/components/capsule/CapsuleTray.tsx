@@ -5,7 +5,7 @@ import {
   Rocket,
   Music,
   ClipboardList,
-  Wand2,
+  Sliders,
   FileText,
   Settings,
   X
@@ -41,7 +41,7 @@ const SLIDES: SlideConfig[] = [
     id: 'rewrite',
     title: 'Tone & Persona Shifter',
     shortLabel: 'Rewrite',
-    icon: <Wand2 className="w-3.5 h-3.5" />,
+    icon: <Sliders className="w-3.5 h-3.5" />,
   },
   {
     id: 'snippets',

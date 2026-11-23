@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LayoutGrid, LocateFixed, Sparkles, CheckCircle2, RefreshCw, ExternalLink, ShieldCheck, Zap } from 'lucide-react';
+import { LayoutGrid, LocateFixed, CheckCircle2, RefreshCw, ExternalLink, ShieldCheck, Activity } from 'lucide-react';
 import { CalendarClockWidget } from './capsule/CalendarClockWidget';
 import { FocusTimerWidget } from './capsule/FocusTimerWidget';
 import { MediaWidget } from './capsule/MediaWidget';
@@ -98,7 +98,7 @@ export const UtilitiesTab: React.FC<UtilitiesTabProps> = ({ session, onCopy, onS
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-charcoal/10 dark:border-darkTealBorder pb-3">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-terracotta/10 text-terracotta flex items-center justify-center font-bold">
-              <Zap className="w-5 h-5 fill-current" />
+              <Activity className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -108,7 +108,7 @@ export const UtilitiesTab: React.FC<UtilitiesTabProps> = ({ session, onCopy, onS
                 </span>
               </div>
               <p className="text-xs text-charcoal/60 dark:text-sage mt-0.5">
-                Flushes GPU tensors, frees RAM, kills orphaned dev server ports (3000, 5173, 8080), and integrates with Squirrel.
+                Purge GPU caches and kill orphaned dev ports in 1 click.
               </p>
             </div>
           </div>
@@ -143,7 +143,7 @@ export const UtilitiesTab: React.FC<UtilitiesTabProps> = ({ session, onCopy, onS
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-3.5 h-3.5 text-amber" />
+                  <RefreshCw className="w-3.5 h-3.5" />
                   <span>Quick Clean & Boost</span>
                 </>
               )}
@@ -179,9 +179,9 @@ export const UtilitiesTab: React.FC<UtilitiesTabProps> = ({ session, onCopy, onS
             </div>
           </div>
         ) : (
-          <div className="flex items-center justify-between p-3 rounded-xl bg-stone-50/70 dark:bg-darkTealSurface border border-dashed border-charcoal/20 dark:border-darkTealBorder text-xs text-charcoal/60 dark:text-sage">
-            <span>Click <strong>Quick Clean & Boost</strong> to scan listening ports, purge unused GPU tensor memory, and optimize your system in 1 click.</span>
-            <span className="font-mono text-[11px] text-charcoal/40 dark:text-sage/60">Ports: 3000, 5173, 8080</span>
+          <div className="flex items-center justify-between p-2.5 rounded-xl bg-[#F8F8F5] dark:bg-darkTealSurface border border-charcoal/15 dark:border-darkTealBorder text-xs text-charcoal/70 dark:text-cream/70">
+            <span>Optimize system resources and terminate stale dev servers in 1 click.</span>
+            <span className="font-mono text-[10px] text-charcoal/50 dark:text-cream/50">Ports: 3000, 5173, 8080</span>
           </div>
         )}
       </div>

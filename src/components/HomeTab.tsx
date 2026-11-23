@@ -7,14 +7,13 @@ import {
   Trash2,
   CornerDownLeft,
   Clock,
-  LocateFixed,
   FileText,
   Gauge,
   Flame,
   CheckCircle2,
-  Wand2,
+  Sliders,
   ArrowRight,
-  Zap,
+  Radio,
   Edit3
 } from 'lucide-react';
 import { InsightsData, HistoryRecord, SessionSnapshot } from '../types';
@@ -50,7 +49,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
   onClearHistory: _onClearHistory,
   onToggleDictation,
   onNavigateTab,
-  onSummonPill,
+  onSummonPill: _onSummonPill,
 }) => {
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [activeTeachId, setActiveTeachId] = useState<number | null>(null);
@@ -147,19 +146,10 @@ export const HomeTab: React.FC<HomeTabProps> = ({
               </h1>
             </div>
             <p className="text-xs text-charcoal/70 mt-0.5 font-sans">
-              Press <kbd className="px-1.5 py-0.5 rounded bg-sage/30 border border-charcoal/20 font-mono text-[11px] font-bold text-darkTeal shadow-xs">{formatShortcut(shortcut)}</kbd> anywhere or tap below to speak naturally into any app.
+              Press <kbd className="px-1.5 py-0.5 rounded bg-sage/30 dark:bg-darkTealCanvas border border-charcoal/20 dark:border-darkTealBorder font-mono text-[11px] font-bold text-darkTeal dark:text-cream shadow-xs">{formatShortcut(shortcut)}</kbd> anywhere or tap below to speak naturally into any app.
             </p>
           </div>
         </div>
-
-        <button
-          onClick={onSummonPill}
-          className="tactile-btn tactile-btn-teal px-3.5 py-2 text-xs font-bold shrink-0"
-          title="Bring the floating pill onto your screen"
-        >
-          <LocateFixed className="w-3.5 h-3.5 text-amber" />
-          <span>Summon Pill</span>
-        </button>
       </div>
 
       {/* Proactive Adaptive Model Shifting Suggestion */}
@@ -167,7 +157,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
         <div className="bg-gradient-to-r from-amber/20 via-amber/10 to-transparent border-2 border-amber/60 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-fadeIn">
           <div className="flex items-start gap-3">
             <div className="p-2 bg-amber/30 rounded-xl text-charcoal border border-amber/50 shrink-0 mt-0.5 shadow-xs">
-              <Zap className="w-4 h-4 text-darkTeal" />
+              <Gauge className="w-4 h-4 text-darkTeal" />
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -289,7 +279,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
               }`}
               title="Tap shortcut once to speak, tap again to paste"
             >
-              <Wand2 className="w-3.5 h-3.5" />
+              <Radio className="w-3.5 h-3.5" />
               <span>Tap to Toggle</span>
             </button>
           </div>
@@ -310,8 +300,8 @@ export const HomeTab: React.FC<HomeTabProps> = ({
           onClick={() => onNavigateTab('insights')}
           className="bg-white dark:bg-darkTealSurface hover:bg-neutral-50/80 dark:hover:bg-[#0B4A45] border border-charcoal/15 dark:border-darkTealBorder rounded-xl p-3 sm:p-3.5 shadow-xs transition-all cursor-pointer flex items-center gap-3"
         >
-          <div className="p-2 rounded-lg bg-darkTeal/10 dark:bg-[#0B4A45] text-darkTeal dark:text-cream border border-darkTeal/20 dark:border-darkTealBorder">
-            <FileText className="w-4 h-4" />
+          <div className="p-2 rounded-lg bg-[#EAF2F1] dark:bg-[#0B4A45] border border-[#07514C]/20 dark:border-darkTealBorder shadow-xs">
+            <FileText className="w-4 h-4 text-[#07514C] dark:text-mint" />
           </div>
           <div>
             <div className="text-lg sm:text-xl font-extrabold text-charcoal dark:text-cream font-mono leading-none">
@@ -432,10 +422,10 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                             ? 'bg-amber/20 dark:bg-amber/30 text-charcoal dark:text-amber font-bold border-amber/40'
                             : ''
                         }`}
-                        title="Enhance grammar, clarity, or convert to prompt"
+                        title="Refine grammar, clarity, and phrasing"
                         aria-label="Enhance dictation"
                       >
-                        <Wand2 className="w-3.5 h-3.5 text-amber-700 dark:text-amber" />
+                        <Sliders className="w-3.5 h-3.5 text-amber-700 dark:text-amber" />
                         <span>Enhance</span>
                       </button>
 

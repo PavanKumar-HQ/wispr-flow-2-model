@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BookA, Plus, Trash2, Search, Tag, Check, Info, CheckCircle2, XCircle, RotateCcw, Download, Mail, Phone, Link2, Zap, Box, FolderCode, RefreshCw, Pencil } from 'lucide-react';
+import { BookA, Plus, Trash2, Search, Tag, Check, Info, CheckCircle2, XCircle, RotateCcw, Download, Mail, Phone, Link2, Box, FolderCode, RefreshCw, Pencil, FileText } from 'lucide-react';
 import { safeInvoke, safeListen } from '../lib/ipc';
 import { DictionaryEntry, PersonalVocabularyEntry, IngestCapsuleResult } from '../types';
 
@@ -333,34 +333,32 @@ export const DictionaryTab: React.FC = () => {
   return (
     <div className="space-y-6 w-full max-w-5xl mx-auto select-none animate-fadeIn">
       {/* Header Banner */}
-      <div className="p-5 rounded-2xl border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-darkTeal/10 dark:bg-[#0B4A45] text-darkTeal dark:text-cream rounded-xl border border-darkTeal/20 dark:border-darkTealBorder shadow-xs">
-              <BookA className="w-5 h-5 text-darkTeal dark:text-cream" />
+      <div className="p-5 rounded-2xl border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <div className="p-2 bg-[#EAF2F1] dark:bg-[#0B4A45] text-[#07514C] dark:text-mint rounded-xl border border-[#07514C]/20 dark:border-darkTealBorder shadow-xs shrink-0">
+              <BookA className="w-5 h-5 text-[#07514C] dark:text-mint" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-lg sm:text-xl font-bold text-darkTeal dark:text-cream">Personal Vocabulary & Self-Learning</h2>
-                <span className="text-[10px] font-bold text-darkTeal dark:text-cream bg-darkTeal/10 dark:bg-darkTeal/30 border border-darkTeal/20 dark:border-darkTealBorder px-2.5 py-0.5 rounded-full">Adaptive</span>
-              </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-lg sm:text-xl font-bold text-charcoal dark:text-cream whitespace-nowrap">Personal Vocabulary & Self-Learning</h2>
+              <span className="text-[10px] font-bold text-charcoal dark:text-mint bg-darkTeal/10 dark:bg-darkTealElevated border border-darkTeal/20 dark:border-darkTealBorder px-2.5 py-0.5 rounded-full">Adaptive</span>
             </div>
           </div>
-          <p className="text-xs text-charcoal/70 dark:text-cream/80 mt-1 max-w-xl leading-relaxed">
-            VoxQuest adapts to your voice without retraining models. When you correct transcriptions, recurring names, acronyms, and terminology are learned automatically.
+          <p className="text-xs text-charcoal/70 dark:text-cream/70 mt-1 max-w-xl">
+            Custom terminology, spoken corrections, and automated rule learning.
           </p>
         </div>
-        <div className="shrink-0 flex items-center gap-2">
+        <div className="shrink-0 flex items-center gap-2 flex-wrap">
           <button
             onClick={handleExportJson}
-            className="px-3.5 py-2 text-xs font-semibold rounded-xl border border-charcoal/20 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface hover:bg-neutral-50 dark:hover:bg-darkTealElevated text-charcoal dark:text-cream shadow-xs active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
+            className="px-3.5 py-2 text-xs font-semibold rounded-xl border border-charcoal/20 dark:border-darkTealBorder bg-white dark:bg-darkTealElevated hover:bg-neutral-50 dark:hover:bg-darkTealCanvas text-charcoal dark:text-cream shadow-xs active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
             title="Export personal vocabulary and rules as JSON"
           >
             <Download className="w-3.5 h-3.5 text-darkTeal dark:text-cream" />
             <span>Export JSON</span>
           </button>
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-darkTeal/10 dark:bg-darkTealElevated border border-darkTeal/20 dark:border-darkTealBorder text-darkTeal dark:text-cream rounded-xl text-xs font-semibold shadow-xs">
-            <BookA className="w-3.5 h-3.5 text-darkTeal dark:text-mint" />
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-[#EAF2F1] dark:bg-darkTealElevated border border-[#07514C]/20 dark:border-darkTealBorder text-charcoal dark:text-cream rounded-xl text-xs font-semibold shadow-xs">
+            <BookA className="w-3.5 h-3.5 text-[#07514C] dark:text-mint" />
             <span>Self-Learning Active</span>
           </div>
         </div>
@@ -405,7 +403,7 @@ export const DictionaryTab: React.FC = () => {
                 : 'bg-white dark:bg-darkTealSurface hover:bg-[#F6F6F2] dark:hover:bg-darkTealElevated text-charcoal dark:text-cream border-charcoal/15 dark:border-darkTealBorder shadow-xs'
             }`}
           >
-            <Zap className="w-3.5 h-3.5 text-amber" />
+            <FileText className="w-3.5 h-3.5 text-amber" />
             <span>Voice Snippets</span>
           </button>
           <button
@@ -968,8 +966,8 @@ export const DictionaryTab: React.FC = () => {
                     className="py-3 flex items-center justify-between gap-4 group hover:bg-neutral-100/60 dark:hover:bg-[#0B4A45] px-2 rounded-xl transition-colors"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="p-1.5 bg-stone-100 dark:bg-[#042D2A] border border-charcoal/10 dark:border-darkTealBorder rounded-lg text-charcoal/60 dark:text-sage">
-                        <Tag className="w-3.5 h-3.5 text-darkTeal dark:text-amber" />
+                      <div className="p-1.5 bg-[#F6F6F2] dark:bg-[#073D39] border border-charcoal/15 dark:border-darkTealBorder rounded-lg shadow-2xs">
+                        <Tag className="w-3.5 h-3.5 text-charcoal/70 dark:text-mint" />
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">

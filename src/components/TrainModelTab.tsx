@@ -294,7 +294,7 @@ export const TrainModelTab: React.FC<TrainModelTabProps> = ({ session, onToggleD
         )
       ).then(() => {
         setStatusBanner(
-          `✨ Calibrated & Learned ${detectedPairs.length} Accent Rules (${detectedPairs
+          `Calibrated & Learned ${detectedPairs.length} Accent Rules (${detectedPairs
             .map((d) => `"${d.heard}" → "${d.expected}"`)
             .join(', ')}) into Model!`
         );
@@ -370,11 +370,11 @@ export const TrainModelTab: React.FC<TrainModelTabProps> = ({ session, onToggleD
       {/* Header Banner */}
       <div className="p-6 rounded-2xl border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="p-3 bg-darkTeal text-white rounded-xl shadow-xs">
-            <GraduationCap className="w-6 h-6" />
+          <div className="p-3 bg-[#EAF2F1] dark:bg-[#0B4A45] text-[#07514C] dark:text-mint rounded-xl border border-[#07514C]/20 dark:border-darkTealBorder shadow-xs">
+            <GraduationCap className="w-6 h-6 text-[#07514C] dark:text-mint" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-darkTeal dark:text-cream">Train VoxQuest to Your Voice</h2>
+            <h2 className="text-xl font-bold text-charcoal dark:text-cream">Train VoxQuest to Your Voice</h2>
             <p className="text-xs text-charcoal/70 dark:text-cream/80 mt-0.5">
               Read any sentence aloud or add word corrections. The speech engine adapts to your pronunciation in real time.
             </p>
@@ -392,16 +392,16 @@ export const TrainModelTab: React.FC<TrainModelTabProps> = ({ session, onToggleD
       {/* Model Status Bar */}
       <div className="p-4 rounded-2xl border border-charcoal/15 dark:border-darkTealBorder bg-stone-50/80 dark:bg-darkTealSurface shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2.5 text-xs">
-          <GraduationCap className="w-4 h-4 text-darkTeal shrink-0" />
+          <GraduationCap className="w-4 h-4 text-[#07514C] dark:text-mint shrink-0" />
           <div>
-            <span className="font-bold text-darkTeal">Active Acoustic Lexicon:</span>{' '}
-            <span className="text-charcoal/70">
-              <strong className="font-mono text-darkTeal">{1420 + vocabList.length}</strong> verified pronunciation patterns loaded in Whisper decoder.
+            <span className="font-bold text-charcoal dark:text-cream">Active Acoustic Lexicon:</span>{' '}
+            <span className="text-charcoal/70 dark:text-cream/70">
+              <strong className="font-mono text-darkTeal dark:text-mint">{1420 + vocabList.length}</strong> verified pronunciation patterns loaded in Whisper decoder.
             </span>
           </div>
         </div>
 
-        <span className="text-[11px] font-bold text-darkTeal bg-darkTeal/10 px-2.5 py-1 rounded-full border border-darkTeal/15">
+        <span className="text-[11px] font-bold text-charcoal dark:text-mint bg-[#EAF2F1] dark:bg-darkTealElevated px-2.5 py-1 rounded-full border border-charcoal/15 dark:border-darkTealBorder">
           Your Trained Custom Words: {vocabList.length}
         </span>
       </div>

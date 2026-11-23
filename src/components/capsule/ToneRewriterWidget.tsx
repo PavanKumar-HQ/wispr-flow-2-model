@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Wand2, Briefcase, Zap, Terminal, Lightbulb, Check, Copy, CornerDownLeft, RefreshCw, PenTool } from 'lucide-react';
+import { Sliders, Briefcase, Scissors, Terminal, Lightbulb, Check, Copy, CornerDownLeft, RefreshCw, PenTool } from 'lucide-react';
 import { safeInvoke } from '../../lib/ipc';
 import { EnhancementMode, EnhancementRequest, EnhancementResponse } from '../../types';
 
@@ -10,7 +10,7 @@ interface ToneRewriterWidgetProps {
 
 const TONES: { id: EnhancementMode; label: string; icon: React.ReactNode; desc: string }[] = [
   { id: 'professional', label: 'Executive', icon: <Briefcase className="w-3.5 h-3.5" />, desc: 'Formal, polite, client-ready' },
-  { id: 'concise', label: 'Concise', icon: <Zap className="w-3.5 h-3.5" />, desc: 'Punchy bullet points, no fluff' },
+  { id: 'concise', label: 'Concise', icon: <Scissors className="w-3.5 h-3.5" />, desc: 'Punchy bullet points, no fluff' },
   { id: 'technical_precision', label: 'Technical', icon: <Terminal className="w-3.5 h-3.5" />, desc: 'Precise developer & spec tone' },
   { id: 'prompt', label: 'AI Prompt', icon: <Lightbulb className="w-3.5 h-3.5" />, desc: 'Structured high-performance prompt' },
   { id: 'light_correction', label: 'Clean & Fix', icon: <PenTool className="w-3.5 h-3.5" />, desc: 'Grammar, punctuation & flow' },
@@ -124,7 +124,7 @@ export const ToneRewriterWidget: React.FC<ToneRewriterWidgetProps> = ({ lastTran
       <div className="space-y-1.5">
         <div className="flex items-center justify-between text-xs">
           <span className="font-bold text-darkTeal flex items-center gap-1.5">
-            <Wand2 className="w-3.5 h-3.5 text-darkTeal" />
+            <Sliders className="w-3.5 h-3.5 text-darkTeal" />
             <span>Tone & Persona Shifter</span>
           </span>
           <span className="text-[10px] text-charcoal/50">Instant Rewrite</span>

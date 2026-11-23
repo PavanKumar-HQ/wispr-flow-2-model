@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Keyboard, Mic, Sliders, Shield, Target, CheckCircle2, AlertTriangle, ExternalLink, RotateCcw, BookOpen, Wand2, Palette, Sun, Moon, Monitor } from 'lucide-react';
+import { Keyboard, Mic, Sliders, Shield, Target, CheckCircle2, AlertTriangle, ExternalLink, RotateCcw, BookOpen, Radio, Palette, Sun, Moon, Monitor } from 'lucide-react';
 import { AppSettings } from '../types';
 import { safeInvoke } from '../lib/ipc';
 
@@ -428,7 +428,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-charcoal flex items-center gap-1.5">
-                      <Wand2 className="w-3.5 h-3.5 text-amber-700" />
+                      <Radio className="w-3.5 h-3.5 text-amber-700" />
                       Toggle Mode (Tap to Talk)
                     </span>
                     {settings.interaction_mode !== 'push_to_talk' && (

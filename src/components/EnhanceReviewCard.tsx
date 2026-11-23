@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Wand2, Check, Copy, CornerDownLeft, RotateCcw, X, AlertCircle, RefreshCw, Edit3, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { Sliders, Check, Copy, CornerDownLeft, RotateCcw, X, AlertCircle, RefreshCw, Edit3, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { safeInvoke } from '../lib/ipc';
 import { EnhancementMode, EnhancementResponse, EnhancementRequest } from '../types';
 import { DeveloperCasingBar } from './DeveloperCasingBar';
@@ -160,11 +160,11 @@ export const EnhanceReviewCard: React.FC<EnhanceReviewCardProps> = ({
       <div className="flex items-center justify-between gap-3 border-b border-charcoal/10 dark:border-darkTealBorder pb-3">
         <div className="flex items-center gap-2">
           <div className="p-1.5 rounded-lg bg-amber/20 dark:bg-amber/30 border border-amber/40 text-charcoal dark:text-amber">
-            <Wand2 className="w-4 h-4 text-darkTeal dark:text-amber" />
+            <Sliders className="w-4 h-4 text-darkTeal dark:text-amber" />
           </div>
           <div>
             <h4 className="text-xs font-bold uppercase tracking-wider text-charcoal dark:text-cream">
-              Enhance Dictation
+              Refine Dictation
             </h4>
             <p className="text-[11px] text-charcoal/70 dark:text-cream/70">
               Improve clarity, grammar, and tone while preserving your original intent.
@@ -233,7 +233,7 @@ export const EnhanceReviewCard: React.FC<EnhanceReviewCardProps> = ({
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold text-darkTeal dark:text-mint uppercase tracking-wide flex items-center gap-1">
-                  <Wand2 className="w-3 h-3 text-amber" />
+                  <Sliders className="w-3 h-3 text-amber" />
                   Enhanced ({selectedMode.replace('_', ' ')})
                 </span>
                 <div className="flex items-center gap-2">

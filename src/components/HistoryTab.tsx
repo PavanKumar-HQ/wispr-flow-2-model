@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Copy, Trash2, Clock, AlertCircle, CornerDownLeft, Search, CheckCircle2, Edit3, Check, Wand2, RotateCcw } from 'lucide-react';
+import { Copy, Trash2, Clock, AlertCircle, CornerDownLeft, Search, CheckCircle2, Edit3, Check, Sliders, RotateCcw } from 'lucide-react';
 import { HistoryRecord } from '../types';
 import { EnhanceReviewCard } from './EnhanceReviewCard';
 import { safeInvoke } from '../lib/ipc';
@@ -231,10 +231,10 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
                             ? 'tactile-btn-primary' 
                             : 'tactile-btn-surface'
                         }`}
-                        title="Enhance phrasing before placing text"
+                        title="Refine phrasing before placing text"
                         aria-label="Enhance recovery text"
                       >
-                        <Wand2 className="w-3.5 h-3.5 text-amber-700 dark:text-amber" />
+                        <Sliders className="w-3.5 h-3.5 text-amber-700 dark:text-amber" />
                         <span>Enhance</span>
                       </button>
 
@@ -387,10 +387,10 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
                           ? 'bg-amber/20 dark:bg-amber/30 text-charcoal dark:text-amber font-bold border-amber/40' 
                           : ''
                       }`}
-                      title="Enhance grammar, clarity, or convert to prompt"
+                      title="Refine grammar, clarity, or convert to prompt"
                       aria-label="Enhance"
                     >
-                      <Wand2 className="w-3.5 h-3.5 text-amber-700 dark:text-amber" />
+                      <Sliders className="w-3.5 h-3.5 text-amber-700 dark:text-amber" />
                       <span>Enhance</span>
                     </button>
 

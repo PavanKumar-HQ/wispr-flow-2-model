@@ -1,5 +1,5 @@
 import React from 'react';
-import { Download, Check, Zap, Globe, ShieldCheck, Play, X, Cpu, Shield, CheckCircle2 } from 'lucide-react';
+import { Download, Check, Gauge, Globe, ShieldCheck, Play, X, Cpu, Shield, CheckCircle2 } from 'lucide-react';
 import { ModelInfo } from '../types';
 
 interface ModelManagerProps {
@@ -34,22 +34,22 @@ export const ModelManagerTab: React.FC<ModelManagerProps> = ({
         return {
           title: 'Instant English (Lightweight)',
           tag: 'English • 57 MB • Instant',
-          icon: Zap,
-          desc: 'Ultra-lightweight English model. Instant response (~140ms latency), lowest battery consumption, and zero MacBook heat.',
+          icon: Gauge,
+          desc: 'Ultra-lightweight English model. Instant response (~140ms latency), lowest battery consumption, and zero heat.',
         };
       case 'whisper-base-q5_1':
         return {
           title: 'Everyday Multilingual (Low RAM)',
           tag: 'Multilingual • 59 MB',
           icon: Globe,
-          desc: 'Compact Q5_1 multilingual model. High transcription precision with minimal memory overhead (~180 MB RAM).',
+          desc: 'Compact multilingual model with high precision and low memory footprint (~180 MB RAM).',
         };
       case 'whisper-tiny-q5_1':
         return {
           title: 'Ultra-Low Power (Battery Saver)',
           tag: 'Battery Saver • 32 MB',
-          icon: Zap,
-          desc: 'Ultra-quantized Q5_1 model. Lowest battery and RAM footprint (~120 MB RAM), ideal for maximum battery life.',
+          icon: Cpu,
+          desc: 'Ultra-quantized model with lowest footprint (~120 MB RAM), ideal for all-day battery life.',
         };
       default:
         return {
@@ -69,7 +69,7 @@ export const ModelManagerTab: React.FC<ModelManagerProps> = ({
           <span className="text-[10px] font-bold text-charcoal dark:text-mint bg-darkTeal/10 dark:bg-darkTealElevated border border-darkTeal/20 dark:border-darkTealBorder px-2.5 py-0.5 rounded-full">Profiles</span>
         </div>
         <p className="text-xs text-charcoal/80 dark:text-cream/80">
-          Choose the speech profile that fits your daily workflow. Everything runs 100% on your device with complete privacy.
+          Select your speech profile. Everything runs 100% locally on your device.
         </p>
       </div>
 
