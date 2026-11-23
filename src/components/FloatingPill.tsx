@@ -574,8 +574,8 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
                 }}
                 className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-all flex items-center gap-1.5 active:scale-95 shrink-0 ${
                   isTrayExpanded
-                    ? 'bg-darkTeal dark:bg-[#0D6E67] text-white shadow-xs cursor-pointer'
-                    : 'bg-black/5 dark:bg-[#0B4A45] hover:bg-darkTeal hover:text-white dark:hover:bg-[#0F5E58] text-charcoal/80 dark:text-[#DFDFD4] border border-transparent dark:border-[#167A72]/60 cursor-pointer'
+                    ? 'bg-darkTeal dark:bg-darkTealAccent text-white shadow-xs cursor-pointer'
+                    : 'bg-black/5 dark:bg-darkTealElevated hover:bg-darkTeal hover:text-white dark:hover:bg-darkTealBorder text-charcoal/80 dark:text-[#DFDFD4] border border-transparent dark:border-darkTealBorder/60 cursor-pointer'
                 }`}
                 title={isTrayExpanded ? 'Close Productivity Hub' : 'Open Productivity Hub'}
                 aria-label="Toggle Hub"
@@ -599,8 +599,8 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
                 }}
                 className={`group relative p-1.5 rounded-full text-white shadow-xs transition-all active:scale-95 shrink-0 ${
                   isTranscribing
-                    ? 'bg-darkTeal/30 dark:bg-[#0D6E67]/40 text-white/50 cursor-wait'
-                    : 'bg-darkTeal dark:bg-[#0D6E67] hover:bg-darkTeal/90 dark:hover:bg-[#10857D] border border-transparent dark:border-[#34A89E]/50 cursor-pointer anim-mic-halo'
+                    ? 'bg-darkTeal/30 dark:bg-darkTealAccent/40 text-white/50 cursor-wait'
+                    : 'bg-darkTeal dark:bg-darkTealAccent hover:bg-darkTeal/90 dark:hover:bg-darkTealAccent/90 border border-transparent dark:border-mint/50 cursor-pointer anim-mic-halo'
                 }`}
                 title={isTranscribing ? 'Transcribing audio...' : 'Click to dictate'}
                 aria-label="Start dictation"

@@ -133,7 +133,7 @@ export const ScheduleWidget: React.FC = () => {
         <button
           onClick={handleSave}
           disabled={!urlInput.trim()}
-          className="shrink-0 px-2.5 py-1 rounded-md bg-darkTeal dark:bg-[#0D6E67] text-cream text-[10px] font-bold hover:bg-deepTeal dark:hover:bg-[#10857D] disabled:opacity-40 transition-all active:scale-95 shadow-xs cursor-pointer"
+          className="shrink-0 px-2.5 py-1 rounded-md bg-darkTeal dark:bg-darkTealAccent text-cream text-[10px] font-bold hover:bg-darkTeal/90 dark:hover:bg-darkTealAccent/90 disabled:opacity-40 transition-all active:scale-95 shadow-xs cursor-pointer"
         >
           Save
         </button>
@@ -145,7 +145,7 @@ export const ScheduleWidget: React.FC = () => {
           {commitments.map((c) => (
             <div
               key={c.id}
-              className="flex items-center justify-between px-2.5 py-2 rounded-xl bg-[#F8F8F5] dark:bg-[#05332F] border border-charcoal/15 dark:border-darkTealBorder text-xs hover:border-darkTeal/30 dark:hover:border-[#34A89E]/40 transition-all"
+              className="flex items-center justify-between px-2.5 py-2 rounded-xl bg-[#F8F8F5] dark:bg-darkTealSurface border border-charcoal/15 dark:border-darkTealBorder text-xs hover:border-darkTeal/30 dark:hover:border-mint/40 transition-all"
             >
               <div className="flex items-center gap-2 min-w-0">
                 <span className="w-1.5 h-1.5 rounded-full bg-terracotta shrink-0" />

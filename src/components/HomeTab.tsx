@@ -211,7 +211,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
       )}
 
       {/* 2. Interactive Voice Dictation Canvas */}
-      <div className="bg-[#1A332E] text-cream border-2 border-darkTeal/40 rounded-2xl p-5 sm:p-6 shadow-md relative overflow-hidden space-y-4">
+      <div className="bg-darkTeal dark:bg-darkTealSurface text-cream border-2 border-darkTeal/40 dark:border-darkTealBorder rounded-2xl p-5 sm:p-6 shadow-md relative overflow-hidden space-y-4">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="space-y-1 text-center sm:text-left">
             <div className="flex items-center justify-center sm:justify-start gap-2">

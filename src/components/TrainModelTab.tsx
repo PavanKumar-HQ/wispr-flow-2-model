@@ -390,7 +390,7 @@ export const TrainModelTab: React.FC<TrainModelTabProps> = ({ session, onToggleD
       )}
 
       {/* Model Status Bar */}
-      <div className="p-4 rounded-2xl border border-charcoal/15 dark:border-darkTealBorder bg-stone-50/80 dark:bg-[#05332F] shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+      <div className="p-4 rounded-2xl border border-charcoal/15 dark:border-darkTealBorder bg-stone-50/80 dark:bg-darkTealSurface shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2.5 text-xs">
           <GraduationCap className="w-4 h-4 text-darkTeal shrink-0" />
           <div>

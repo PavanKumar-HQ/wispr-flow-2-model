@@ -384,7 +384,7 @@ export default function App() {
   return (
     <div className="flex h-screen bg-cream dark:bg-darkTealCanvas text-charcoal dark:text-cream overflow-hidden font-sans">
       {/* Left Sidebar (Responsive Width: compact on small screens, full on desktop) */}
-      <aside className="w-16 sm:w-20 md:w-56 bg-[#EBEBE4] dark:bg-[#05332F] border-r border-[#D1D1C5] dark:border-darkTealBorder flex flex-col justify-between p-2 sm:p-3 md:p-4 select-none shrink-0 h-full transition-all">
+      <aside className="w-16 sm:w-20 md:w-56 bg-[#EBEBE4] dark:bg-darkTealSurface border-r border-[#D1D1C5] dark:border-darkTealBorder flex flex-col justify-between p-2 sm:p-3 md:p-4 select-none shrink-0 h-full transition-all">
         <div className="space-y-4 md:space-y-6">
           {/* Logo / Brand Header */}
           <div className="flex items-center justify-center md:justify-start gap-2.5 px-1 md:px-2 pt-1">
@@ -444,7 +444,7 @@ export default function App() {
         <div className="space-y-2 pt-3 border-t border-charcoal/15 dark:border-darkTealBorder">
           <button
             onClick={() => safeInvoke('center_pill_window')}
-            className="w-full flex items-center justify-center gap-1.5 px-2 md:px-3 py-2 text-xs font-semibold rounded-xl border border-charcoal/20 dark:border-darkTealBorder bg-white dark:bg-[#063430] text-darkTeal dark:text-cream hover:bg-darkTeal dark:hover:bg-[#0D6E67] hover:text-white transition-all shadow-sm active:scale-95"
+            className="w-full flex items-center justify-center gap-1.5 px-2 md:px-3 py-2 text-xs font-semibold rounded-xl border border-charcoal/20 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface text-darkTeal dark:text-cream hover:bg-darkTeal dark:hover:bg-darkTealAccent hover:text-white transition-all shadow-sm active:scale-95"
             title="Summon the floating pill to the front of your screen"
           >
             <LocateFixed className="w-3.5 h-3.5 shrink-0" />

@@ -54,7 +54,7 @@ export const FocusTimerWidget: React.FC = () => {
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-[#F6F6F2] dark:bg-[#05332F] border border-charcoal/15 dark:border-darkTealBorder flex items-center justify-center text-terracotta shadow-xs">
+          <div className="w-9 h-9 rounded-xl bg-[#F6F6F2] dark:bg-darkTealCanvas border border-charcoal/15 dark:border-darkTealBorder flex items-center justify-center text-terracotta shadow-xs">
             <Clock className="w-4 h-4" />
           </div>
           <div>
@@ -76,7 +76,7 @@ export const FocusTimerWidget: React.FC = () => {
         <div className="flex items-center gap-1.5">
           <button
             onClick={() => setIsRunning(!isRunning)}
-            className="w-8 h-8 rounded-xl bg-darkTeal dark:bg-[#0D6E67] text-cream hover:bg-deepTeal dark:hover:bg-[#10857D] flex items-center justify-center shadow-xs transition-all active:scale-95 cursor-pointer"
+            className="w-8 h-8 rounded-xl bg-darkTeal dark:bg-darkTealAccent text-cream hover:bg-darkTeal/90 dark:hover:bg-darkTealAccent/90 flex items-center justify-center shadow-xs transition-all active:scale-95 cursor-pointer"
             title={isRunning ? 'Pause Focus' : 'Start Focus'}
             aria-label={isRunning ? 'Pause timer' : 'Start timer'}
           >
@@ -84,7 +84,7 @@ export const FocusTimerWidget: React.FC = () => {
           </button>
           <button
             onClick={handleReset}
-            className="w-8 h-8 rounded-xl bg-[#F6F6F2] dark:bg-[#05332F] text-charcoal/70 dark:text-cream/80 hover:bg-white dark:hover:bg-[#0B4A45] hover:text-charcoal dark:hover:text-cream border border-charcoal/15 dark:border-darkTealBorder flex items-center justify-center transition-all active:scale-95 cursor-pointer"
+            className="w-8 h-8 rounded-xl bg-[#F6F6F2] dark:bg-darkTealElevated text-charcoal/70 dark:text-cream/80 hover:bg-white dark:hover:bg-darkTealSurface hover:text-charcoal dark:hover:text-cream border border-charcoal/15 dark:border-darkTealBorder flex items-center justify-center transition-all active:scale-95 cursor-pointer"
             title="Reset timer"
             aria-label="Reset timer"
           >
@@ -107,8 +107,8 @@ export const FocusTimerWidget: React.FC = () => {
           onClick={() => setTimerMode('focus')}
           className={`flex-1 py-1 rounded-md text-[10px] font-bold transition-all text-center cursor-pointer ${
             mode === 'focus'
-              ? 'text-darkTeal dark:text-white bg-[#EBEBE4] dark:bg-[#0B4A45] border border-charcoal/20 dark:border-[#34A89E]/40 font-extrabold shadow-2xs'
-              : 'text-charcoal/70 dark:text-sage/70 hover:text-charcoal dark:hover:text-cream hover:bg-[#F6F6F2] dark:hover:bg-[#05332F]'
+              ? 'text-darkTeal dark:text-white bg-[#EBEBE4] dark:bg-darkTealElevated border border-charcoal/20 dark:border-mint/40 font-extrabold shadow-2xs'
+              : 'text-charcoal/70 dark:text-sage/70 hover:text-charcoal dark:hover:text-cream hover:bg-[#F6F6F2] dark:hover:bg-darkTealCanvas'
           }`}
         >
           25m Focus
@@ -117,8 +117,8 @@ export const FocusTimerWidget: React.FC = () => {
           onClick={() => setTimerMode('short_break')}
           className={`flex-1 py-1 rounded-md text-[10px] font-bold transition-all text-center cursor-pointer ${
             mode === 'short_break'
-              ? 'text-darkTeal dark:text-white bg-[#EBEBE4] dark:bg-[#0B4A45] border border-charcoal/20 dark:border-[#34A89E]/40 font-extrabold shadow-2xs'
-              : 'text-charcoal/70 dark:text-sage/70 hover:text-charcoal dark:hover:text-cream hover:bg-[#F6F6F2] dark:hover:bg-[#05332F]'
+              ? 'text-darkTeal dark:text-white bg-[#EBEBE4] dark:bg-darkTealElevated border border-charcoal/20 dark:border-mint/40 font-extrabold shadow-2xs'
+              : 'text-charcoal/70 dark:text-sage/70 hover:text-charcoal dark:hover:text-cream hover:bg-[#F6F6F2] dark:hover:bg-darkTealCanvas'
           }`}
         >
           5m Break
@@ -127,8 +127,8 @@ export const FocusTimerWidget: React.FC = () => {
           onClick={() => setTimerMode('long_break')}
           className={`flex-1 py-1 rounded-md text-[10px] font-bold transition-all text-center cursor-pointer ${
             mode === 'long_break'
-              ? 'text-darkTeal dark:text-white bg-[#EBEBE4] dark:bg-[#0B4A45] border border-charcoal/20 dark:border-[#34A89E]/40 font-extrabold shadow-2xs'
-              : 'text-charcoal/70 dark:text-sage/70 hover:text-charcoal dark:hover:text-cream hover:bg-[#F6F6F2] dark:hover:bg-[#05332F]'
+              ? 'text-darkTeal dark:text-white bg-[#EBEBE4] dark:bg-darkTealElevated border border-charcoal/20 dark:border-mint/40 font-extrabold shadow-2xs'
+              : 'text-charcoal/70 dark:text-sage/70 hover:text-charcoal dark:hover:text-cream hover:bg-[#F6F6F2] dark:hover:bg-darkTealCanvas'
           }`}
         >
           15m Break

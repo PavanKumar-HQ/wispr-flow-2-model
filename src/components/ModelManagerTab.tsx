@@ -162,7 +162,7 @@ export const ModelManagerTab: React.FC<ModelManagerProps> = ({
                         className={`px-3.5 py-1.5 text-xs font-semibold rounded-xl border transition-all ${
                           isCurrent
                             ? 'bg-darkTeal/10 dark:bg-[#0D6E67]/30 text-darkTeal dark:text-cream cursor-default border-darkTeal/20 dark:border-darkTealBorder font-bold'
-                            : 'bg-darkTeal dark:bg-[#0D6E67] text-white hover:bg-deepTeal dark:hover:bg-[#10857D] border-darkTeal dark:border-[#34A89E]/40 shadow-xs active:scale-95'
+                            : 'bg-darkTeal dark:bg-darkTealAccent text-white hover:bg-darkTeal/90 dark:hover:bg-darkTealAccent/90 border-darkTeal dark:border-mint/40 shadow-xs active:scale-95'
                         }`}
                       >
                         {isCurrent ? 'Current' : 'Select'}

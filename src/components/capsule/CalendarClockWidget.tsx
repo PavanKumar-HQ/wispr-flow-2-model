@@ -294,8 +294,8 @@ export const CalendarClockWidget: React.FC = () => {
           onClick={toggleTimeFormat}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-2xs active:scale-95 cursor-pointer border ${
             is24Hour
-              ? 'bg-darkTeal dark:bg-[#0D6E67] text-white border-darkTeal dark:border-[#34A89E]/40'
-              : 'bg-stone-50 dark:bg-[#05332F] hover:bg-stone-100 dark:hover:bg-[#0B4A45] text-charcoal/80 dark:text-cream border-charcoal/20 dark:border-darkTealBorder'
+              ? 'bg-darkTeal dark:bg-darkTealAccent text-white border-darkTeal dark:border-mint/40'
+              : 'bg-stone-50 dark:bg-darkTealSurface hover:bg-stone-100 dark:hover:bg-darkTealElevated text-charcoal/80 dark:text-cream border-charcoal/20 dark:border-darkTealBorder'
           }`}
           title="Toggle between 12-hour and 24-hour format"
         >
@@ -317,7 +317,7 @@ export const CalendarClockWidget: React.FC = () => {
             <button
               type="button"
               onClick={handleTodayClick}
-              className="px-2 py-0.5 text-[10px] font-bold rounded-lg bg-stone-100 dark:bg-[#05332F] hover:bg-stone-200 dark:hover:bg-[#0B4A45] text-charcoal/80 dark:text-cream transition-all cursor-pointer border border-transparent dark:border-darkTealBorder"
+              className="px-2 py-0.5 text-[10px] font-bold rounded-lg bg-stone-100 dark:bg-darkTealSurface hover:bg-stone-200 dark:hover:bg-darkTealElevated text-charcoal/80 dark:text-cream transition-all cursor-pointer border border-transparent dark:border-darkTealBorder"
             >
               Today
             </button>
@@ -591,7 +591,7 @@ export const CalendarClockWidget: React.FC = () => {
             {markedDates.map((item) => (
               <div
                 key={item.dateStr}
-                className="flex items-center justify-between p-2 rounded-xl bg-stone-50 dark:bg-[#05332F] hover:bg-stone-100/80 dark:hover:bg-[#0B4A45] border border-charcoal/10 dark:border-darkTealBorder text-xs transition-all"
+                className="flex items-center justify-between p-2 rounded-xl bg-stone-50 dark:bg-darkTealSurface hover:bg-stone-100/80 dark:hover:bg-darkTealElevated border border-charcoal/10 dark:border-darkTealBorder text-xs transition-all"
               >
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="w-2 h-2 rounded-full bg-terracotta shrink-0" />

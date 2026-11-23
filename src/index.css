@@ -7,11 +7,16 @@
 :root {
   --color-cream: #DFDFD4;
   --color-dark-teal: #07514C;
-  --color-deep-teal: #0F5B57;
+  --color-dark-teal-accent: #0D6E67;
+  --color-mint: #34A89E;
+  --color-canvas: #DFDFD4;
+  --color-surface: #FFFFFF;
+  --color-elevated: #F6F6F2;
+  --color-border: #D1D1C5;
+  --color-charcoal: #212121;
   --color-warm-amber: #DDA44D;
   --color-terracotta: #DA6C4C;
   --color-muted-sage: #B8CBC3;
-  --color-charcoal: #212121;
 
   font-family: 'Plus Jakarta Sans', system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -99,12 +104,17 @@ body.pill-window ::-webkit-scrollbar {
 
 html.dark {
   --color-cream: #DFDFD4;
-  --color-dark-teal: #34A89E;
-  --color-deep-teal: #0F5E58;
+  --color-dark-teal: #07514C;
+  --color-dark-teal-accent: #0D6E67;
+  --color-mint: #34A89E;
+  --color-canvas: #042D2A;
+  --color-surface: #073D39;
+  --color-elevated: #0B4A45;
+  --color-border: #0F5E58;
+  --color-charcoal: #DFDFD4;
   --color-warm-amber: #DDA44D;
   --color-terracotta: #DA6C4C;
   --color-muted-sage: #B8CBC3;
-  --color-charcoal: #DFDFD4;
 }
 
 html.dark body:not(.pill-window) {
@@ -176,8 +186,8 @@ aside nav button.bg-darkTeal {
 }
 
 html.dark aside {
-  background-color: #05332F !important;
-  border-color: rgba(184, 203, 195, 0.18) !important;
+  background-color: #073D39 !important;
+  border-color: #0F5E58 !important;
 }
 
 html.dark aside nav button {
@@ -281,9 +291,9 @@ html.dark .arcade-panel-hoverable:hover {
 }
 
 html.dark .arcade-panel-dark {
-  background-color: #0A4742 !important;
+  background-color: #073D39 !important;
   color: #DFDFD4 !important;
-  border-color: #167A72 !important;
+  border-color: #0F5E58 !important;
 }
 
 html.dark .arcade-panel-deep {
@@ -293,7 +303,7 @@ html.dark .arcade-panel-deep {
 }
 
 html.dark .arcade-panel-amber {
-  background-color: #08433F !important;
+  background-color: #073D39 !important;
   color: #DFDFD4 !important;
   border-color: rgba(221, 164, 77, 0.45) !important;
 }
@@ -334,7 +344,7 @@ html.dark .hover\:bg-white:hover {
 html.dark [class*="bg-vq-sage"] {
   background-color: #0B4A45 !important;
   color: #DFDFD4 !important;
-  border-color: #167A72 !important;
+  border-color: #0F5E58 !important;
 }
 
 html.dark .bg-darkTeal\/10,
@@ -459,11 +469,11 @@ html.dark .voxquest-pill-capsule {
 .tactile-btn-teal {
   background: #07514C;
   color: #FFFFFF;
-  border-color: #053D39;
+  border-color: #07514C;
 }
 
 .tactile-btn-teal:hover {
-  background: #0A5F59;
+  background: #0D6E67;
 }
 
 .tactile-btn-surface {
@@ -599,11 +609,11 @@ html.dark .tactile-btn-surface:hover {
 html.dark .tactile-btn-teal {
   background: #0B4A45 !important;
   color: #FFFFFF !important;
-  border-color: #167A72 !important;
+  border-color: #0F5E58 !important;
 }
 
 html.dark .tactile-btn-teal:hover {
-  background: #0E5C56 !important;
+  background: #0D6E67 !important;
   border-color: #34A89E !important;
 }
 

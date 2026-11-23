@@ -816,7 +816,7 @@ export const DictionaryTab: React.FC = () => {
                   <div className="flex items-center gap-2 self-end sm:self-center">
                     <button
                       onClick={() => handleApproveCandidate(cand)}
-                      className="flex items-center gap-1 px-3 py-1.5 bg-darkTeal hover:bg-deepTeal dark:bg-[#0D6E67] dark:hover:bg-[#10857D] text-white rounded-xl text-xs font-semibold transition-all border border-darkTeal dark:border-[#34A89E]/40 shadow-xs active:scale-95"
+                      className="flex items-center gap-1 px-3 py-1.5 bg-darkTeal hover:bg-darkTeal/90 dark:bg-darkTealAccent dark:hover:bg-darkTealAccent/90 text-white rounded-xl text-xs font-semibold transition-all border border-darkTeal dark:border-mint/40 shadow-xs active:scale-95"
                       title="Promote to active dictionary"
                     >
                       <CheckCircle2 className="w-3.5 h-3.5" />

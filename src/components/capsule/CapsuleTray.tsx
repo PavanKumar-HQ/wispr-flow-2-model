@@ -138,8 +138,8 @@ export const CapsuleTray: React.FC<CapsuleTrayProps> = ({
                 onClick={() => handleSelectSlide(slide.id)}
                 className={`flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer active:scale-95 shrink-0 ${
                   isActive
-                    ? 'bg-darkTeal dark:bg-[#0D6E67] text-white shadow-xs border border-transparent dark:border-[#34A89E]/40'
-                    : 'bg-white dark:bg-[#05332F] hover:bg-stone-100 dark:hover:bg-[#0B4A45] text-charcoal/70 dark:text-cream/90 border border-charcoal/10 dark:border-darkTealBorder'
+                    ? 'bg-darkTeal dark:bg-darkTealAccent text-white shadow-xs border border-transparent dark:border-mint/40'
+                    : 'bg-white dark:bg-darkTealSurface hover:bg-stone-100 dark:hover:bg-darkTealElevated text-charcoal/70 dark:text-cream/90 border border-charcoal/10 dark:border-darkTealBorder'
                 }`}
               >
                 {slide.icon}
@@ -153,7 +153,7 @@ export const CapsuleTray: React.FC<CapsuleTrayProps> = ({
         <button
           type="button"
           onClick={onCollapse}
-          className="p-1 rounded-lg hover:bg-stone-200 dark:hover:bg-[#0B4A45] text-charcoal/60 dark:text-sage hover:text-terracotta dark:hover:text-[#FF8A65] transition-all cursor-pointer active:scale-90 border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-[#05332F] shadow-2xs shrink-0"
+          className="p-1 rounded-lg hover:bg-stone-200 dark:hover:bg-darkTealElevated text-charcoal/60 dark:text-sage hover:text-terracotta dark:hover:text-[#FF8A65] transition-all cursor-pointer active:scale-90 border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface shadow-2xs shrink-0"
           title="Close Hub"
           aria-label="Close Hub"
         >
