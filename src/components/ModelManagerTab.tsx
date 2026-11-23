@@ -171,7 +171,7 @@ export const ModelManagerTab: React.FC<ModelManagerProps> = ({
                       <button
                         onClick={() => onDownload(m.id)}
                         disabled={isDownloading}
-                        className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-xl bg-amber text-[#042D2A] hover:bg-amber/90 border border-amber/50 shadow-xs active:scale-95 disabled:opacity-50 cursor-pointer"
+                        className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-xl bg-amber text-charcoal hover:bg-amber/90 border border-amber/50 shadow-xs active:scale-95 disabled:opacity-50 cursor-pointer"
                       >
                         <Download className="w-3 h-3" />
                         {isDownloading ? `Downloading (${prog.percent}%)` : 'Enable Profile'}

@@ -298,9 +298,9 @@ export const HomeTab: React.FC<HomeTabProps> = ({
         {/* Words Dictated */}
         <div
           onClick={() => onNavigateTab('insights')}
-          className="bg-white dark:bg-darkTealSurface hover:bg-neutral-50/80 dark:hover:bg-[#0B4A45] border border-charcoal/15 dark:border-darkTealBorder rounded-xl p-3 sm:p-3.5 shadow-xs transition-all cursor-pointer flex items-center gap-3"
+          className="bg-white dark:bg-darkTealSurface hover:bg-neutral-50/80 dark:hover:bg-darkTealElevated border border-charcoal/15 dark:border-darkTealBorder rounded-xl p-3 sm:p-3.5 shadow-xs transition-all cursor-pointer flex items-center gap-3"
         >
-          <div className="p-2 rounded-lg bg-[#EAF2F1] dark:bg-[#0B4A45] border border-[#07514C]/20 dark:border-darkTealBorder shadow-xs">
+          <div className="p-2 rounded-lg bg-[#EAF2F1] dark:bg-darkTealElevated border border-[#07514C]/20 dark:border-darkTealBorder shadow-xs">
             <FileText className="w-4 h-4 text-[#07514C] dark:text-mint" />
           </div>
           <div>
@@ -314,7 +314,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
         {/* Speed */}
         <div
           onClick={() => onNavigateTab('insights')}
-          className="bg-white dark:bg-darkTealSurface hover:bg-neutral-50/80 dark:hover:bg-[#0B4A45] border border-charcoal/15 dark:border-darkTealBorder rounded-xl p-3 sm:p-3.5 shadow-xs transition-all cursor-pointer flex items-center gap-3"
+          className="bg-white dark:bg-darkTealSurface hover:bg-neutral-50/80 dark:hover:bg-darkTealElevated border border-charcoal/15 dark:border-darkTealBorder rounded-xl p-3 sm:p-3.5 shadow-xs transition-all cursor-pointer flex items-center gap-3"
         >
           <div className="p-2 rounded-lg bg-amber/20 dark:bg-amber/30 text-charcoal dark:text-amber border border-amber/40">
             <Gauge className="w-4 h-4" />
@@ -332,7 +332,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
         {/* Daily Streak */}
         <div
           onClick={() => onNavigateTab('insights')}
-          className="bg-white dark:bg-darkTealSurface hover:bg-neutral-50/80 dark:hover:bg-[#0B4A45] border border-charcoal/15 dark:border-darkTealBorder rounded-xl p-3 sm:p-3.5 shadow-xs transition-all cursor-pointer flex items-center gap-3"
+          className="bg-white dark:bg-darkTealSurface hover:bg-neutral-50/80 dark:hover:bg-darkTealElevated border border-charcoal/15 dark:border-darkTealBorder rounded-xl p-3 sm:p-3.5 shadow-xs transition-all cursor-pointer flex items-center gap-3"
         >
           <div className="p-2 rounded-lg bg-terracotta/15 dark:bg-terracotta/25 text-terracotta dark:text-[#FF8A65] border border-terracotta/30">
             <Flame className="w-4 h-4 fill-terracotta" />
@@ -354,7 +354,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
           <button
             type="button"
             onClick={() => onNavigateTab('history')}
-            className="px-3 py-1.5 rounded-xl border border-charcoal/20 dark:border-darkTealBorder bg-white dark:bg-[#073D39] hover:bg-neutral-50 dark:hover:bg-[#0B4A45] hover:border-darkTeal/40 text-darkTeal dark:text-cream font-semibold text-xs shadow-xs transition-all active:scale-95 flex items-center gap-1.5"
+            className="px-3 py-1.5 rounded-xl border border-charcoal/20 dark:border-darkTealBorder bg-white dark:bg-darkTealElevated hover:bg-neutral-50 dark:hover:bg-darkTealCanvas hover:border-darkTeal/40 text-darkTeal dark:text-cream font-semibold text-xs shadow-xs transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer"
             title="Open complete dictation history"
           >
             <span>View all in History</span>

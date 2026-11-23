@@ -8,11 +8,11 @@ export default {
   theme: {
     extend: {
       colors: {
-        darkTealCanvas: '#042D2A',
-        darkTealSurface: '#073D39',
-        darkTealElevated: '#0B4A45',
-        darkTealSurfaceElevated: '#0B4A45',
-        darkTealBorder: '#0F5E58',
+        darkTealCanvas: '#121417',
+        darkTealSurface: '#1A1D21',
+        darkTealElevated: '#22262B',
+        darkTealSurfaceElevated: '#22262B',
+        darkTealBorder: '#2B313A',
         darkTeal: '#07514C',
         darkTealAccent: '#0D6E67',
         deepTeal: '#07514C',
@@ -36,10 +36,10 @@ export default {
           border: '#212121',
           borderLight: '#D1D1C5',
           borderDark: '#212121',
-          darkCanvas: '#042D2A',
-          darkSurface: '#073D39',
-          darkElevated: '#0B4A45',
-          darkBorder: '#0F5E58'
+          darkCanvas: '#121417',
+          darkSurface: '#1A1D21',
+          darkElevated: '#22262B',
+          darkBorder: '#2B313A'
         }
       },
       fontFamily: {

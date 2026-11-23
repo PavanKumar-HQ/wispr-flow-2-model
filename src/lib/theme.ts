@@ -47,8 +47,8 @@ export function applyTheme(mode: ThemeMode) {
     root.classList.remove('light');
     root.setAttribute('data-theme', 'dark_teal');
     if (!isPill) {
-      document.body.style.backgroundColor = '#042D2A';
-      document.body.style.color = '#DFDFD4';
+      document.body.style.backgroundColor = '#121417';
+      document.body.style.color = '#F3F4F6';
     }
   } else {
     root.classList.remove('dark');

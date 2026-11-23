@@ -94,7 +94,7 @@ export const FocusTimerWidget: React.FC = () => {
       </div>
 
       {/* Progress line */}
-      <div className="w-full h-1.5 bg-[#F0F0EA] dark:bg-[#042D2A] rounded-full overflow-hidden border border-transparent dark:border-darkTealBorder/50">
+      <div className="w-full h-1.5 bg-[#F0F0EA] dark:bg-darkTealElevated rounded-full overflow-hidden border border-transparent dark:border-darkTealBorder/50">
         <div
           className="h-full bg-terracotta rounded-full transition-all duration-300"
           style={{ width: `${progressPercent}%` }}

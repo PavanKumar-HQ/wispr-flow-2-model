@@ -370,7 +370,7 @@ export const TrainModelTab: React.FC<TrainModelTabProps> = ({ session, onToggleD
       {/* Header Banner */}
       <div className="p-6 rounded-2xl border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="p-3 bg-[#EAF2F1] dark:bg-[#0B4A45] text-[#07514C] dark:text-mint rounded-xl border border-[#07514C]/20 dark:border-darkTealBorder shadow-xs">
+          <div className="p-3 bg-[#EAF2F1] dark:bg-darkTealElevated text-[#07514C] dark:text-mint rounded-xl border border-[#07514C]/20 dark:border-darkTealBorder shadow-xs">
             <GraduationCap className="w-6 h-6 text-[#07514C] dark:text-mint" />
           </div>
           <div>
@@ -556,7 +556,7 @@ export const TrainModelTab: React.FC<TrainModelTabProps> = ({ session, onToggleD
               placeholder="e.g. whisper float, skima"
               value={quickHeard}
               onChange={(e) => setQuickHeard(e.target.value)}
-              className="w-full px-3 py-2 bg-stone-50 dark:bg-[#042D2A] border border-charcoal/20 dark:border-darkTealBorder rounded-xl text-xs text-charcoal dark:text-cream font-mono focus:outline-none focus:border-darkTeal shadow-xs"
+              className="w-full px-3 py-2 bg-stone-50 dark:bg-darkTealElevated border border-charcoal/20 dark:border-darkTealBorder rounded-xl text-xs text-charcoal dark:text-cream font-mono focus:outline-none focus:border-darkTeal shadow-xs"
               required
             />
           </div>
@@ -570,7 +570,7 @@ export const TrainModelTab: React.FC<TrainModelTabProps> = ({ session, onToggleD
               placeholder="e.g. Wispr Flow, schema"
               value={quickExpected}
               onChange={(e) => setQuickExpected(e.target.value)}
-              className="w-full px-3 py-2 bg-stone-50 dark:bg-[#042D2A] border border-charcoal/20 dark:border-darkTealBorder rounded-xl text-xs text-charcoal dark:text-cream font-bold focus:outline-none focus:border-darkTeal shadow-xs"
+              className="w-full px-3 py-2 bg-stone-50 dark:bg-darkTealElevated border border-charcoal/20 dark:border-darkTealBorder rounded-xl text-xs text-charcoal dark:text-cream font-bold focus:outline-none focus:border-darkTeal shadow-xs"
               required
             />
           </div>

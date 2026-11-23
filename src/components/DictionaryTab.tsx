@@ -336,7 +336,7 @@ export const DictionaryTab: React.FC = () => {
       <div className="p-5 rounded-2xl border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2.5 flex-wrap">
-            <div className="p-2 bg-[#EAF2F1] dark:bg-[#0B4A45] text-[#07514C] dark:text-mint rounded-xl border border-[#07514C]/20 dark:border-darkTealBorder shadow-xs shrink-0">
+            <div className="p-2 bg-[#EAF2F1] dark:bg-darkTealElevated text-[#07514C] dark:text-mint rounded-xl border border-[#07514C]/20 dark:border-darkTealBorder shadow-xs shrink-0">
               <BookA className="w-5 h-5 text-[#07514C] dark:text-mint" />
             </div>
             <div className="flex items-center gap-2 flex-wrap">
@@ -963,10 +963,10 @@ export const DictionaryTab: React.FC = () => {
                 return (
                   <div
                     key={`${entry.isVocab ? 'v' : 'd'}-${entry.id}`}
-                    className="py-3 flex items-center justify-between gap-4 group hover:bg-neutral-100/60 dark:hover:bg-[#0B4A45] px-2 rounded-xl transition-colors"
+                    className="py-3 flex items-center justify-between gap-4 group hover:bg-neutral-100/60 dark:hover:bg-darkTealElevated px-2 rounded-xl transition-colors"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="p-1.5 bg-[#F6F6F2] dark:bg-[#073D39] border border-charcoal/15 dark:border-darkTealBorder rounded-lg shadow-2xs">
+                      <div className="p-1.5 bg-[#F6F6F2] dark:bg-darkTealSurface border border-charcoal/15 dark:border-darkTealBorder rounded-lg shadow-2xs">
                         <Tag className="w-3.5 h-3.5 text-charcoal/70 dark:text-mint" />
                       </div>
                       <div className="min-w-0">
@@ -1009,7 +1009,7 @@ export const DictionaryTab: React.FC = () => {
                             ? 'bg-blue-50 dark:bg-[#0E3D52] text-blue-700 dark:text-[#80D0FF] border-blue-200 dark:border-[#1E5C7B]'
                             : entry.category === 'acronym'
                             ? 'bg-purple-50 dark:bg-[#32234D] text-purple-700 dark:text-[#D1A8FF] border-purple-200 dark:border-[#523A7E]'
-                            : 'bg-darkTeal/10 dark:bg-[#0B4A45] text-darkTeal dark:text-cream border-darkTeal/20 dark:border-darkTealBorder'
+                            : 'bg-darkTeal/10 dark:bg-darkTealElevated text-darkTeal dark:text-cream border-darkTeal/20 dark:border-darkTealBorder'
                         }`}
                       >
                         {entry.category}

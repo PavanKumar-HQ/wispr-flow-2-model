@@ -150,11 +150,11 @@ export const MediaWidget: React.FC = () => {
           </div>
 
           {/* Quick Floating Playback Controls (Play/Pause, Next, Prev, Mute) */}
-          <div className="flex items-center gap-1 bg-stone-100 dark:bg-[#042D2A] p-1 rounded-xl border border-charcoal/15 dark:border-darkTealBorder shadow-2xs">
+          <div className="flex items-center gap-1 bg-stone-100 dark:bg-darkTealCanvas p-1 rounded-xl border border-charcoal/15 dark:border-darkTealBorder shadow-2xs">
             <button
               type="button"
               onClick={() => handleMediaControl('previous')}
-              className="p-1 rounded-lg text-charcoal/70 dark:text-cream hover:text-charcoal hover:bg-white dark:hover:bg-[#0B4A45] active:scale-90 transition-all cursor-pointer"
+              className="p-1 rounded-lg text-charcoal/70 dark:text-cream hover:text-charcoal hover:bg-white dark:hover:bg-darkTealElevated active:scale-90 transition-all cursor-pointer"
               title="Previous Track"
             >
               <SkipBack className="w-3.5 h-3.5" />
@@ -170,7 +170,7 @@ export const MediaWidget: React.FC = () => {
             <button
               type="button"
               onClick={() => handleMediaControl('next')}
-              className="p-1 rounded-lg text-charcoal/70 dark:text-cream hover:text-charcoal hover:bg-white dark:hover:bg-[#0B4A45] active:scale-90 transition-all cursor-pointer"
+              className="p-1 rounded-lg text-charcoal/70 dark:text-cream hover:text-charcoal hover:bg-white dark:hover:bg-darkTealElevated active:scale-90 transition-all cursor-pointer"
               title="Next Track"
             >
               <SkipForward className="w-3.5 h-3.5" />
@@ -181,7 +181,7 @@ export const MediaWidget: React.FC = () => {
               className={`p-1 rounded-lg transition-all cursor-pointer ${
                 isMuted
                   ? 'bg-terracotta text-white'
-                  : 'text-charcoal/70 dark:text-cream hover:text-charcoal hover:bg-white dark:hover:bg-[#0B4A45]'
+                  : 'text-charcoal/70 dark:text-cream hover:text-charcoal hover:bg-white dark:hover:bg-darkTealElevated'
               }`}
               title="Toggle System Mute"
             >

@@ -242,7 +242,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
             ? status.state === 'recovery_required'
               ? 'w-[310px] bg-cream dark:bg-darkTealSurface border-amber dark:border-amber shadow-lg'
               : 'w-[310px] bg-cream dark:bg-darkTealSurface border-darkTeal dark:border-[#34A89E] shadow-lg'
-            : 'w-[310px] bg-cream dark:bg-darkTealSurface border-charcoal/25 hover:border-darkTeal dark:border-[#0F5E58] dark:hover:border-[#34A89E] shadow-lg'
+            : 'w-[310px] bg-cream dark:bg-darkTealSurface border-charcoal/25 hover:border-darkTeal dark:border-[#2B313A] dark:hover:border-[#34A89E] shadow-lg'
         } h-[42px]`}
       >
         {isRecording ? (

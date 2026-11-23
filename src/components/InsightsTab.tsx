@@ -110,7 +110,7 @@ export const InsightsTab: React.FC<InsightsTabProps> = ({
               <span>Benchmark (40 WPM)</span>
               <span className="font-bold text-darkTeal dark:text-cream">{avgWpm > 0 ? `${avgWpm} WPM` : 'Baseline'}</span>
             </div>
-            <div className="w-full h-2 rounded-full bg-stone-100 dark:bg-[#042D2A] overflow-hidden">
+            <div className="w-full h-2 rounded-full bg-stone-100 dark:bg-darkTealElevated overflow-hidden">
               <div
                 className="bg-darkTeal dark:bg-[#34A89E] h-full rounded-full transition-all duration-500"
                 style={{ width: `${Math.min(100, Math.max(10, (avgWpm / 150) * 100))}%` }}
@@ -126,7 +126,7 @@ export const InsightsTab: React.FC<InsightsTabProps> = ({
               <span className="text-3xl font-extrabold text-charcoal dark:text-cream tracking-tight font-mono">
                 {totalWords.toLocaleString()}
               </span>
-              <div className="p-2 rounded-xl bg-[#EAF2F1] dark:bg-[#0B4A45] border border-[#07514C]/20 dark:border-darkTealBorder shadow-xs">
+              <div className="p-2 rounded-xl bg-[#EAF2F1] dark:bg-darkTealElevated border border-[#07514C]/20 dark:border-darkTealBorder shadow-xs">
                 <FileText className="w-5 h-5 text-[#07514C] dark:text-mint" />
               </div>
             </div>
@@ -145,7 +145,7 @@ export const InsightsTab: React.FC<InsightsTabProps> = ({
               <span>Volume</span>
               <span className="font-bold text-darkTeal dark:text-cream">{totalSessions} sessions</span>
             </div>
-            <div className="w-full h-2 rounded-full bg-stone-100 dark:bg-[#042D2A] overflow-hidden">
+            <div className="w-full h-2 rounded-full bg-stone-100 dark:bg-darkTealElevated overflow-hidden">
               <div
                 className="bg-darkTeal dark:bg-[#34A89E] h-full rounded-full transition-all duration-500"
                 style={{ width: `${Math.min(100, Math.max(8, (totalWords / 500) * 100))}%` }}
@@ -161,7 +161,7 @@ export const InsightsTab: React.FC<InsightsTabProps> = ({
               <span className="text-3xl font-extrabold text-charcoal dark:text-cream tracking-tight font-mono">
                 {timeSavedMinutes} <span className="text-base font-normal">mins</span>
               </span>
-              <div className="p-2 rounded-xl bg-[#E8F0EE] dark:bg-[#0B4A45] border border-darkTeal/20 dark:border-darkTealBorder shadow-xs">
+              <div className="p-2 rounded-xl bg-[#E8F0EE] dark:bg-darkTealElevated border border-darkTeal/20 dark:border-darkTealBorder shadow-xs">
                 <Clock className="w-5 h-5 text-[#07514C] dark:text-mint" />
               </div>
             </div>
@@ -180,7 +180,7 @@ export const InsightsTab: React.FC<InsightsTabProps> = ({
               <span>Time saved</span>
               <span className="font-bold text-darkTeal dark:text-cream">{timeSavedMinutes}m</span>
             </div>
-            <div className="w-full h-2 rounded-full bg-stone-100 dark:bg-[#042D2A] overflow-hidden">
+            <div className="w-full h-2 rounded-full bg-stone-100 dark:bg-darkTealElevated overflow-hidden">
               <div
                 className="bg-darkTeal dark:bg-[#34A89E] h-full rounded-full transition-all duration-500"
                 style={{ width: `${Math.min(100, Math.max(8, timeSavedMinutes * 10))}%` }}
@@ -216,7 +216,7 @@ export const InsightsTab: React.FC<InsightsTabProps> = ({
                       <span className="text-charcoal dark:text-cream">{item.app_name}</span>
                       <span className="text-[10px] text-charcoal/70 dark:text-cream/80 font-mono">{item.word_count} words ({Math.round(item.percentage)}%)</span>
                     </div>
-                    <div className="w-full h-2 rounded-full bg-cream dark:bg-[#042D2A] border border-charcoal/15 dark:border-darkTealBorder overflow-hidden">
+                    <div className="w-full h-2 rounded-full bg-cream dark:bg-darkTealElevated border border-charcoal/15 dark:border-darkTealBorder overflow-hidden">
                       <div
                         className="h-full rounded-full bg-darkTeal dark:bg-[#34A89E] transition-all duration-500"
                         style={{ width: `${Math.max(5, item.percentage)}%` }}

@@ -96,7 +96,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
             </span>
           </div>
           <p className="text-xs text-charcoal/70 dark:text-cream/70 leading-relaxed">
-            Choose your preferred aesthetic. The dark theme is anchored entirely in deep Dark Teal (no generic black), preserving all brand tones.
+            Choose your preferred aesthetic. Switch between the Warm Linen aesthetic and pro Obsidian Dark with Sovereign Teal accents.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
@@ -129,7 +129,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
               </span>
             </button>
 
-            {/* Dark Teal Theme */}
+            {/* Obsidian Dark Theme */}
             <button
               type="button"
               onClick={() => handleChange('theme', 'dark_teal')}
@@ -138,24 +138,24 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                   ? 'border-[#34A89E] ring-2 ring-[#34A89E]/30 shadow-xs'
                   : 'border-charcoal/15 dark:border-darkTealBorder hover:border-darkTeal/40 dark:hover:border-mint/40'
               }`}
-              style={{ backgroundColor: settings.theme === 'dark_teal' ? '#073D39' : '#042D2A', color: '#DFDFD4' }}
+              style={{ backgroundColor: settings.theme === 'dark_teal' ? '#1A1D21' : '#121417', color: '#F3F4F6' }}
             >
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 font-bold text-xs text-[#DFDFD4]">
+                <div className="flex items-center gap-1.5 font-bold text-xs text-[#F3F4F6]">
                   <Moon className="w-3.5 h-3.5 text-amber" />
-                  <span>Dark Teal</span>
+                  <span>Obsidian Dark</span>
                 </div>
                 {settings.theme === 'dark_teal' && (
                   <CheckCircle2 className="w-3.5 h-3.5 text-amber" />
                 )}
               </div>
               <div className="flex items-center gap-1.5 pt-1">
-                <span className="w-4 h-4 rounded-full border border-[#0F5E58]" style={{ backgroundColor: '#042D2A' }} title="#042D2A (Deep Teal)" />
-                <span className="w-4 h-4 rounded-full" style={{ backgroundColor: '#DFDFD4' }} title="#DFDFD4 (Linen Text)" />
-                <span className="w-4 h-4 rounded-full" style={{ backgroundColor: '#DDA44D' }} title="#DDA44D (Amber Accent)" />
+                <span className="w-4 h-4 rounded-full border border-[#2B313A]" style={{ backgroundColor: '#121417' }} title="#121417 (Obsidian Canvas)" />
+                <span className="w-4 h-4 rounded-full" style={{ backgroundColor: '#1A1D21' }} title="#1A1D21 (Charcoal Surface)" />
+                <span className="w-4 h-4 rounded-full" style={{ backgroundColor: '#34A89E' }} title="#34A89E (Mint Accent)" />
               </div>
-              <span className="text-[10px] text-[#B8CBC3] leading-tight">
-                Deep sovereign teal canvas with linen typography (no black).
+              <span className="text-[10px] text-[#9CA3AF] leading-tight">
+                Deep slate obsidian canvas with crisp typography and sovereign teal accents.
               </span>
             </button>
 
@@ -181,12 +181,12 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
               <div className="flex items-center gap-1.5 pt-1">
                 <div className="w-4 h-4 rounded-full border border-charcoal/20 dark:border-darkTealBorder overflow-hidden flex">
                   <span className="w-1/2 h-full bg-[#DFDFD4]" />
-                  <span className="w-1/2 h-full bg-[#042D2A]" />
+                  <span className="w-1/2 h-full bg-[#121417]" />
                 </div>
                 <span className="text-[11px] font-mono font-bold text-charcoal/70 dark:text-sage">macOS Sync</span>
               </div>
               <span className="text-[10px] text-charcoal/60 dark:text-sage leading-tight">
-                Automatically adapts between Warm Linen and Dark Teal with macOS.
+                Automatically adapts between Warm Linen and Obsidian Dark with macOS.
               </span>
             </button>
           </div>
