@@ -604,23 +604,23 @@ export const DictionaryTab: React.FC = () => {
 
       {/* Sub Tab: Context Capsules */}
       {activeSubTab === 'capsules' && (
-        <div className="bg-white border-2 border-charcoal/20 rounded-2xl p-5 shadow-sm space-y-5 animate-fadeIn">
-          <div className="flex items-center justify-between border-b border-charcoal/10 pb-3">
+        <div className="bg-white dark:bg-darkTealSurface border border-charcoal/15 dark:border-darkTealBorder rounded-2xl p-5 shadow-xs space-y-5 animate-fadeIn">
+          <div className="flex items-center justify-between border-b border-charcoal/10 dark:border-darkTealBorder pb-3">
             <div>
               <div className="flex items-center gap-2">
-                <Box className="w-5 h-5 text-darkTeal" />
-                <h3 className="text-base font-extrabold text-darkTeal">Project Context Capsules</h3>
+                <Box className="w-5 h-5 text-darkTeal dark:text-mint" />
+                <h3 className="text-base font-extrabold text-charcoal dark:text-cream">Project Context Capsules</h3>
               </div>
-              <p className="text-xs text-charcoal/70 mt-1 max-w-xl">
+              <p className="text-xs text-charcoal/70 dark:text-cream/70 mt-1 max-w-xl">
                 Automatically harvest library names and symbols from your active codebase manifests (<code>package.json</code>, <code>Cargo.toml</code>). Project terms are isolated to project scope and bias Whisper recognition without polluting your global vocabulary.
               </p>
             </div>
           </div>
 
           {/* Ingestion Trigger Bar */}
-          <div className="p-4 rounded-xl border-2 border-darkTeal/20 bg-[#F4F9F7] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="p-4 rounded-xl border border-charcoal/15 dark:border-darkTealBorder bg-[#F8F8F5] dark:bg-darkTealElevated flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="space-y-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-darkTeal flex items-center gap-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-charcoal dark:text-cream flex items-center gap-1">
                 <FolderCode className="w-3.5 h-3.5 text-amber" />
                 Project Scope Name
               </span>
@@ -630,9 +630,9 @@ export const DictionaryTab: React.FC = () => {
                   value={capsuleName}
                   onChange={(e) => setCapsuleName(e.target.value)}
                   placeholder="e.g. wispr-flow, backend-api"
-                  className="px-3 py-1.5 rounded-xl border-2 border-charcoal/20 bg-white text-xs font-bold font-mono text-darkTeal focus:outline-none focus:border-darkTeal shadow-xs"
+                  className="px-3 py-1.5 rounded-xl border border-charcoal/20 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface text-xs font-bold font-mono text-charcoal dark:text-cream focus:outline-none focus:border-darkTeal shadow-xs"
                 />
-                <span className="text-xs text-charcoal/60">Target: Local Workspace</span>
+                <span className="text-xs text-charcoal/60 dark:text-cream/60">Target: Local Workspace</span>
               </div>
             </div>
 
@@ -658,14 +658,14 @@ export const DictionaryTab: React.FC = () => {
 
           {/* Ingest Result Card */}
           {capsuleResult && (
-            <div className="p-3.5 rounded-xl border-2 border-amber/40 bg-amber/10 space-y-2 animate-fadeIn">
-              <span className="text-xs font-bold text-charcoal flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            <div className="p-3.5 rounded-xl border border-amber/40 bg-amber/10 dark:bg-amber/20 space-y-2 animate-fadeIn">
+              <span className="text-xs font-bold text-charcoal dark:text-cream flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-mint" />
                 Successfully Ingested {capsuleResult.terms_ingested} terms for project "{capsuleResult.project_name}":
               </span>
               <div className="flex flex-wrap items-center gap-1.5 pt-1">
                 {capsuleResult.terms.map((t, i) => (
-                  <span key={i} className="px-2 py-0.5 rounded-lg bg-white border border-amber/40 text-[11px] font-mono font-bold text-darkTeal shadow-xs">
+                  <span key={i} className="px-2 py-0.5 rounded-lg bg-white dark:bg-darkTealSurface border border-amber/40 text-[11px] font-mono font-bold text-darkTeal dark:text-mint shadow-xs">
                     {t}
                   </span>
                 ))}
@@ -675,18 +675,18 @@ export const DictionaryTab: React.FC = () => {
 
           {/* Sourced Vocabulary Table */}
           <div className="space-y-2 pt-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-charcoal/60">
+            <span className="text-xs font-bold uppercase tracking-wider text-charcoal/60 dark:text-cream/60">
               Capsule-Scoped Identifiers ({vocabEntries.filter(v => v.source === 'capsule').length} active)
             </span>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
               {vocabEntries.filter(v => v.source === 'capsule').map((v) => (
-                <div key={v.id} className="p-2.5 rounded-xl border-2 border-charcoal/15 bg-stone-50 flex items-center justify-between shadow-xs">
-                  <span className="font-mono text-xs font-bold text-darkTeal">{v.preferred_text}</span>
-                  <span className="text-[9px] font-bold uppercase bg-darkTeal/10 text-darkTeal px-1.5 py-0.5 rounded">Capsule</span>
+                <div key={v.id} className="p-2.5 rounded-xl border border-charcoal/15 dark:border-darkTealBorder bg-[#F8F8F5] dark:bg-darkTealElevated flex items-center justify-between shadow-xs">
+                  <span className="font-mono text-xs font-bold text-charcoal dark:text-cream">{v.preferred_text}</span>
+                  <span className="text-[9px] font-bold uppercase bg-darkTeal/10 dark:bg-darkTealSurface text-darkTeal dark:text-mint border border-darkTeal/20 dark:border-darkTealBorder px-1.5 py-0.5 rounded">Capsule</span>
                 </div>
               ))}
               {vocabEntries.filter(v => v.source === 'capsule').length === 0 && (
-                <div className="col-span-full py-8 text-center text-xs text-charcoal/60 border-2 border-dashed border-charcoal/20 rounded-xl bg-stone-50">
+                <div className="col-span-full py-8 text-center text-xs text-charcoal/60 dark:text-cream/60 border border-dashed border-charcoal/20 dark:border-darkTealBorder rounded-xl bg-[#F8F8F5] dark:bg-darkTealElevated">
                   No capsule terms ingested yet. Click "Scan & Ingest Codebase" to automatically extract dependencies from package.json and Cargo.toml.
                 </div>
               )}
@@ -697,14 +697,14 @@ export const DictionaryTab: React.FC = () => {
 
       {/* Sub Tab: Add New Term Form */}
       {activeSubTab === 'add' && (
-        <div className="bg-white border border-charcoal/15 rounded-2xl p-5 shadow-sm">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal mb-3 flex items-center gap-1.5 font-mono">
+        <div className="bg-white dark:bg-darkTealSurface border border-charcoal/15 dark:border-darkTealBorder rounded-2xl p-5 shadow-xs">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-charcoal dark:text-cream mb-3 flex items-center gap-1.5 font-mono">
             <Plus className="w-4 h-4 text-terracotta" />
             Add Personal Term or Preferred Spelling
           </h3>
           <form onSubmit={handleAdd} className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
             <div className="sm:col-span-4">
-              <label className="block text-xs font-bold text-charcoal mb-1">
+              <label className="block text-xs font-bold text-charcoal dark:text-cream mb-1">
                 Spoken sound or misspelling
               </label>
               <input
@@ -712,13 +712,13 @@ export const DictionaryTab: React.FC = () => {
                 placeholder="e.g. Brand X, api, satoshi"
                 value={original}
                 onChange={(e) => setOriginal(e.target.value)}
-                className="w-full px-3 py-2 bg-white border border-charcoal/20 rounded-xl text-xs text-charcoal font-sans focus:outline-none focus:ring-2 focus:ring-darkTeal/20 focus:border-darkTeal shadow-xs"
+                className="w-full px-3 py-2 bg-white dark:bg-darkTealElevated border border-charcoal/20 dark:border-darkTealBorder rounded-xl text-xs text-charcoal dark:text-cream font-sans focus:outline-none focus:ring-2 focus:ring-darkTeal/20 focus:border-darkTeal shadow-xs"
                 required
               />
             </div>
 
             <div className="sm:col-span-4">
-              <label className="block text-xs font-bold text-charcoal mb-1">
+              <label className="block text-xs font-bold text-charcoal dark:text-cream mb-1">
                 Preferred output replacement
               </label>
               <input
@@ -726,19 +726,19 @@ export const DictionaryTab: React.FC = () => {
                 placeholder="e.g. Brandex, API, Satoshi"
                 value={replacement}
                 onChange={(e) => setReplacement(e.target.value)}
-                className="w-full px-3 py-2 bg-white border border-charcoal/20 rounded-xl text-xs text-charcoal font-sans focus:outline-none focus:ring-2 focus:ring-darkTeal/20 focus:border-darkTeal shadow-xs"
+                className="w-full px-3 py-2 bg-white dark:bg-darkTealElevated border border-charcoal/20 dark:border-darkTealBorder rounded-xl text-xs text-charcoal dark:text-cream font-sans focus:outline-none focus:ring-2 focus:ring-darkTeal/20 focus:border-darkTeal shadow-xs"
                 required
               />
             </div>
 
             <div className="sm:col-span-2">
-              <label className="block text-xs font-bold text-charcoal mb-1">
+              <label className="block text-xs font-bold text-charcoal dark:text-cream mb-1">
                 Category
               </label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full px-3 py-2 bg-white border border-charcoal/20 rounded-xl text-xs text-charcoal font-sans focus:outline-none focus:ring-2 focus:ring-darkTeal/20 focus:border-darkTeal shadow-xs"
+                className="w-full px-3 py-2 bg-white dark:bg-darkTealElevated border border-charcoal/20 dark:border-darkTealBorder rounded-xl text-xs text-charcoal dark:text-cream font-sans focus:outline-none focus:ring-2 focus:ring-darkTeal/20 focus:border-darkTeal shadow-xs"
               >
                 <option value="name">Name / Brand</option>
                 <option value="tech">Technical</option>
@@ -751,7 +751,7 @@ export const DictionaryTab: React.FC = () => {
             <div className="sm:col-span-2">
               <button
                 type="submit"
-                className="w-full flex items-center justify-center gap-1.5 px-4 py-2 bg-darkTeal hover:bg-deepTeal text-white rounded-xl text-xs font-semibold transition-all border border-darkTeal shadow-xs active:scale-95"
+                className="w-full flex items-center justify-center gap-1.5 px-4 py-2 bg-darkTeal hover:bg-darkTeal/90 dark:bg-darkTealAccent dark:hover:bg-darkTealAccent/90 text-white rounded-xl text-xs font-semibold transition-all border border-darkTeal dark:border-mint/40 shadow-xs active:scale-95"
               >
                 <Plus className="w-4 h-4" />
                 <span>Save Term</span>
@@ -763,51 +763,51 @@ export const DictionaryTab: React.FC = () => {
 
       {/* Sub Tab: Learned Candidates */}
       {activeSubTab === 'candidates' && (
-        <div className="bg-white border border-charcoal/15 rounded-2xl p-5 shadow-sm space-y-4">
+        <div className="bg-white dark:bg-darkTealSurface border border-charcoal/15 dark:border-darkTealBorder rounded-2xl p-5 shadow-xs space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-bold text-charcoal">
+              <h3 className="text-sm font-bold text-charcoal dark:text-cream">
                 Learned Correction Candidates ({candidateEntries.length})
               </h3>
-              <p className="text-xs text-charcoal/70 mt-0.5">
+              <p className="text-xs text-charcoal/70 dark:text-cream/70 mt-0.5">
                 These candidate rules were automatically detected from your transcript edits. Consistent edits promote automatically, or you can approve them now.
               </p>
             </div>
           </div>
 
           {candidateEntries.length === 0 ? (
-            <div className="text-center py-12 text-charcoal/60 space-y-2">
-              <BookA className="w-8 h-8 mx-auto text-charcoal/30" />
-              <p className="text-sm font-bold text-charcoal">No pending candidates</p>
-              <p className="text-xs text-charcoal/60">
+            <div className="text-center py-12 text-charcoal/60 dark:text-cream/60 space-y-2">
+              <BookA className="w-8 h-8 mx-auto text-charcoal/30 dark:text-cream/30" />
+              <p className="text-sm font-bold text-charcoal dark:text-cream">No pending candidates</p>
+              <p className="text-xs text-charcoal/60 dark:text-cream/60">
                 When you correct any transcribed word in History or Recovery, VoxQuest extracts the correction candidate and displays it here for review.
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-charcoal/10">
+            <div className="divide-y divide-charcoal/10 dark:divide-darkTealBorder">
               {candidateEntries.map((cand) => (
                 <div
                   key={cand.id}
-                  className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-neutral-100/60 dark:hover:bg-[#0B4A45] px-3 rounded-xl transition-colors"
+                  className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-neutral-100/60 dark:hover:bg-darkTealElevated px-3 rounded-xl transition-colors"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="p-2 bg-amber/20 text-charcoal rounded-xl border border-amber/30">
-                      <Tag className="w-4 h-4 text-amber-700" />
+                    <div className="p-2 bg-amber/20 dark:bg-amber/30 text-charcoal dark:text-amber rounded-xl border border-amber/30">
+                      <Tag className="w-4 h-4 text-amber-700 dark:text-amber" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono text-charcoal/60 line-through decoration-terracotta">
+                        <span className="text-xs font-mono text-charcoal/60 dark:text-sage/70 line-through decoration-terracotta">
                           {cand.original_text}
                         </span>
-                        <span className="text-xs text-charcoal/40 font-bold">→</span>
-                        <span className="text-sm font-bold text-charcoal">
+                        <span className="text-xs text-charcoal/40 dark:text-sage/50 font-bold">→</span>
+                        <span className="text-sm font-bold text-charcoal dark:text-cream">
                           {cand.preferred_text}
                         </span>
-                        <span className="px-2 py-0.5 bg-neutral-100 text-[10px] font-bold rounded-md border border-charcoal/10 text-charcoal/70 uppercase">
+                        <span className="px-2 py-0.5 bg-neutral-100 dark:bg-darkTealElevated text-[10px] font-bold rounded-md border border-charcoal/10 dark:border-darkTealBorder text-charcoal/70 dark:text-cream/70 uppercase">
                           {cand.entry_type}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2 mt-1 text-[11px] text-charcoal/60 font-medium">
+                      <div className="flex items-center gap-2 mt-1 text-[11px] text-charcoal/60 dark:text-cream/60 font-medium">
                         <span>{cand.positive_count} {cand.positive_count === 1 ? 'correction recorded' : 'corrections recorded'}</span>
                       </div>
                     </div>
@@ -824,7 +824,7 @@ export const DictionaryTab: React.FC = () => {
                     </button>
                     <button
                       onClick={() => handleRejectCandidate(cand)}
-                      className="flex items-center gap-1 px-2.5 py-1.5 bg-white dark:bg-[#073D39] border border-charcoal/20 dark:border-darkTealBorder hover:bg-neutral-50 dark:hover:bg-[#0B4A45] text-charcoal dark:text-cream rounded-xl text-xs font-semibold transition-all shadow-xs active:scale-95"
+                      className="flex items-center gap-1 px-2.5 py-1.5 bg-white dark:bg-darkTealElevated border border-charcoal/20 dark:border-darkTealBorder hover:bg-neutral-50 dark:hover:bg-darkTealCanvas text-charcoal dark:text-cream rounded-xl text-xs font-semibold transition-all shadow-xs active:scale-95"
                       title="Reject candidate"
                     >
                       <XCircle className="w-3.5 h-3.5" />
@@ -832,7 +832,7 @@ export const DictionaryTab: React.FC = () => {
                     </button>
                     <button
                       onClick={() => handleDeleteVocab(cand.id)}
-                      className="p-1.5 rounded-lg border border-charcoal/20 dark:border-darkTealBorder bg-white dark:bg-[#073D39] hover:bg-terracotta/10 hover:border-terracotta/30 text-charcoal/60 dark:text-cream/70 hover:text-terracotta transition-all shadow-xs active:scale-95"
+                      className="p-1.5 rounded-lg border border-charcoal/20 dark:border-darkTealBorder bg-white dark:bg-darkTealElevated hover:bg-terracotta/10 hover:border-terracotta/30 text-charcoal/60 dark:text-cream/70 hover:text-terracotta transition-all shadow-xs active:scale-95"
                       title="Delete candidate"
                     >
                       <Trash2 className="w-3.5 h-3.5" />

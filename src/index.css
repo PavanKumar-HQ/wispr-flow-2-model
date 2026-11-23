@@ -225,6 +225,11 @@ html:not(.dark) [class*="text-charcoal"] {
   color: #212121 !important;
 }
 
+html:not(.dark) .text-darkTeal,
+html:not(.dark) [class*="text-darkTeal"] {
+  color: #07514C !important;
+}
+
 html:not(.dark) .text-charcoal\/90,
 html:not(.dark) .text-charcoal\/85,
 html:not(.dark) .text-charcoal\/80 {

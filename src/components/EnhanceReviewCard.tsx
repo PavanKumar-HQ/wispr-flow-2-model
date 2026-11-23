@@ -155,18 +155,18 @@ export const EnhanceReviewCard: React.FC<EnhanceReviewCardProps> = ({
   };
 
   return (
-    <div className={`p-4 sm:p-5 rounded-2xl border border-charcoal/15 bg-white shadow-sm space-y-4 animate-fadeIn ${className}`}>
+    <div className={`p-4 sm:p-5 rounded-2xl border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface shadow-xs space-y-4 animate-fadeIn ${className}`}>
       {/* Header */}
-      <div className="flex items-center justify-between gap-3 border-b border-charcoal/10 pb-3">
+      <div className="flex items-center justify-between gap-3 border-b border-charcoal/10 dark:border-darkTealBorder pb-3">
         <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-amber/20 border border-amber/40 text-charcoal">
-            <Wand2 className="w-4 h-4 text-darkTeal" />
+          <div className="p-1.5 rounded-lg bg-amber/20 dark:bg-amber/30 border border-amber/40 text-charcoal dark:text-amber">
+            <Wand2 className="w-4 h-4 text-darkTeal dark:text-amber" />
           </div>
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-charcoal">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-charcoal dark:text-cream">
               Enhance Dictation
             </h4>
-            <p className="text-[11px] text-charcoal/70">
+            <p className="text-[11px] text-charcoal/70 dark:text-cream/70">
               Improve clarity, grammar, and tone while preserving your original intent.
             </p>
           </div>
@@ -174,7 +174,7 @@ export const EnhanceReviewCard: React.FC<EnhanceReviewCardProps> = ({
 
         <button
           onClick={onDiscard}
-          className="p-1.5 rounded-lg border border-charcoal/15 bg-white hover:bg-neutral-50 text-charcoal/60 hover:text-charcoal shadow-xs active:scale-95 transition-all"
+          className="p-1.5 rounded-lg border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealElevated hover:bg-neutral-50 dark:hover:bg-darkTealCanvas text-charcoal/60 dark:text-cream/70 hover:text-charcoal dark:hover:text-cream shadow-xs active:scale-95 transition-all"
           title="Close review without changing"
           aria-label="Discard enhancement"
         >
@@ -193,8 +193,8 @@ export const EnhanceReviewCard: React.FC<EnhanceReviewCardProps> = ({
               disabled={loading}
               className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all active:scale-95 flex items-center gap-1.5 ${
                 isSelected
-                  ? 'bg-darkTeal text-white border-darkTeal shadow-xs'
-                  : 'bg-white border-charcoal/15 text-charcoal hover:bg-neutral-50 shadow-xs'
+                  ? 'bg-darkTeal dark:bg-darkTealAccent text-white border-darkTeal dark:border-mint/40 shadow-xs font-bold'
+                  : 'bg-white dark:bg-darkTealElevated border-charcoal/15 dark:border-darkTealBorder text-charcoal dark:text-cream hover:bg-[#F6F6F2] dark:hover:bg-darkTealCanvas shadow-xs'
               }`}
               title={m.desc}
             >
@@ -206,13 +206,13 @@ export const EnhanceReviewCard: React.FC<EnhanceReviewCardProps> = ({
 
       {/* Comparison View */}
       {loading ? (
-        <div className="py-8 text-center space-y-2 border border-dashed border-charcoal/20 rounded-xl bg-stone-50">
-          <RefreshCw className="w-5 h-5 text-darkTeal animate-spin mx-auto" />
-          <p className="text-xs font-bold text-charcoal">Enhancing with local engine...</p>
-          <p className="text-[10px] text-charcoal/60">Applying {selectedMode.replace('_', ' ')} transformations</p>
+        <div className="py-8 text-center space-y-2 border border-dashed border-charcoal/20 dark:border-darkTealBorder rounded-xl bg-[#F8F8F5] dark:bg-darkTealElevated">
+          <RefreshCw className="w-5 h-5 text-darkTeal dark:text-mint animate-spin mx-auto" />
+          <p className="text-xs font-bold text-charcoal dark:text-cream">Enhancing with local engine...</p>
+          <p className="text-[10px] text-charcoal/60 dark:text-cream/60">Applying {selectedMode.replace('_', ' ')} transformations</p>
         </div>
       ) : error ? (
-        <div className="p-3 rounded-xl bg-terracotta/10 border border-terracotta/30 text-xs flex items-center gap-2 text-charcoal">
+        <div className="p-3 rounded-xl bg-terracotta/10 dark:bg-terracotta/20 border border-terracotta/30 text-xs flex items-center gap-2 text-charcoal dark:text-cream">
           <AlertCircle className="w-4 h-4 text-terracotta shrink-0" />
           <span>{error}</span>
         </div>
@@ -221,10 +221,10 @@ export const EnhanceReviewCard: React.FC<EnhanceReviewCardProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {/* Original Box */}
             <div className="space-y-1.5">
-              <span className="text-[10px] font-semibold text-charcoal/60 uppercase tracking-wide">
+              <span className="text-[10px] font-semibold text-charcoal/60 dark:text-cream/60 uppercase tracking-wide">
                 Original Spoken Text
               </span>
-              <div className="p-3 rounded-xl bg-stone-50 border border-charcoal/15 text-xs text-charcoal font-medium leading-relaxed min-h-[64px] select-text">
+              <div className="p-3 rounded-xl bg-[#F8F8F5] dark:bg-darkTealElevated border border-charcoal/15 dark:border-darkTealBorder text-xs text-charcoal dark:text-cream font-medium leading-relaxed min-h-[64px] select-text">
                 "{result.original_text}"
               </div>
             </div>
@@ -232,7 +232,7 @@ export const EnhanceReviewCard: React.FC<EnhanceReviewCardProps> = ({
             {/* Enhanced Draft Box */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-darkTeal uppercase tracking-wide flex items-center gap-1">
+                <span className="text-[10px] font-bold text-darkTeal dark:text-mint uppercase tracking-wide flex items-center gap-1">
                   <Wand2 className="w-3 h-3 text-amber" />
                   Enhanced ({selectedMode.replace('_', ' ')})
                 </span>
@@ -247,11 +247,11 @@ export const EnhanceReviewCard: React.FC<EnhanceReviewCardProps> = ({
                     <span>{isEditing ? 'Done Editing' : 'Edit Draft'}</span>
                   </button>
                   {result.changes_made ? (
-                    <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-darkTealCanvas text-emerald-700 dark:text-mint border border-emerald-200 dark:border-darkTealBorder">
                       Refined
                     </span>
                   ) : (
-                    <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full bg-stone-100 text-charcoal/70 border border-charcoal/10">
+                    <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full bg-stone-100 dark:bg-darkTealCanvas text-charcoal/70 dark:text-cream/70 border border-charcoal/10 dark:border-darkTealBorder">
                       No changes needed
                     </span>
                   )}
@@ -262,11 +262,11 @@ export const EnhanceReviewCard: React.FC<EnhanceReviewCardProps> = ({
                 <textarea
                   value={editedText}
                   onChange={(e) => setEditedText(e.target.value)}
-                  className="w-full p-3 rounded-xl bg-white border-2 border-darkTeal text-xs text-charcoal font-medium leading-relaxed min-h-[72px] focus:outline-none focus:ring-1 focus:ring-darkTeal resize-y"
+                  className="w-full p-3 rounded-xl bg-white dark:bg-darkTealElevated border-2 border-darkTeal dark:border-mint text-xs text-charcoal dark:text-cream font-medium leading-relaxed min-h-[72px] focus:outline-none focus:ring-1 focus:ring-darkTeal dark:focus:ring-mint resize-y"
                   placeholder="Edit enhanced text directly..."
                 />
               ) : (
-                <div className="p-3 rounded-xl bg-[#F7FAF8] border-2 border-darkTeal/30 text-xs text-charcoal font-medium leading-relaxed min-h-[64px] select-text">
+                <div className="p-3 rounded-xl bg-[#F8F8F5] dark:bg-darkTealElevated border-2 border-darkTeal/30 dark:border-darkTealBorder text-xs text-charcoal dark:text-cream font-medium leading-relaxed min-h-[64px] select-text">
                   "{editedText || result.enhanced_text}"
                 </div>
               )}
@@ -284,12 +284,12 @@ export const EnhanceReviewCard: React.FC<EnhanceReviewCardProps> = ({
 
           {/* Explanation Checklist: Exactly what was changed */}
           {result.explanations && result.explanations.length > 0 && (
-            <div className="p-3 rounded-xl bg-amber/10 border border-amber/30 space-y-1.5 text-xs text-charcoal">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-darkTeal flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-darkTeal" />
+            <div className="p-3 rounded-xl bg-amber/10 dark:bg-amber/20 border border-amber/30 space-y-1.5 text-xs text-charcoal dark:text-cream">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-darkTeal dark:text-amber flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-darkTeal dark:text-amber" />
                 What was improved:
               </span>
-              <ul className="space-y-1 pl-4 list-disc text-[11px] text-charcoal/80 font-medium">
+              <ul className="space-y-1 pl-4 list-disc text-[11px] text-charcoal/80 dark:text-cream/80 font-medium">
                 {result.explanations.map((exp, idx) => (
                   <li key={idx}>{exp}</li>
                 ))}
@@ -299,38 +299,38 @@ export const EnhanceReviewCard: React.FC<EnhanceReviewCardProps> = ({
 
           {/* Intent Integrity Inspector & Checklist */}
           {result.intent_audit && (
-            <div className="p-3.5 rounded-xl border-2 border-darkTeal/20 bg-[#F4F9F7] space-y-2 animate-fadeIn">
+            <div className="p-3.5 rounded-xl border-2 border-darkTeal/20 dark:border-darkTealBorder bg-[#F8F8F5] dark:bg-darkTealElevated space-y-2 animate-fadeIn">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-darkTeal flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-charcoal dark:text-cream flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-700 dark:text-mint" />
                   Intent Integrity Verification
                 </span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-darkTealCanvas text-emerald-800 dark:text-mint border border-emerald-300 dark:border-darkTealBorder">
                   {result.intent_audit.missing_constraints.length === 0 ? 'Verified Safe & Intact' : 'Warning: Modified'}
                 </span>
               </div>
 
               <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
                 {result.intent_audit.preserved_negations.map((neg, i) => (
-                  <span key={i} className="px-2 py-0.5 rounded-lg bg-white border border-darkTeal/30 text-darkTeal font-mono font-bold flex items-center gap-1 shadow-xs">
-                    <Check className="w-2.5 h-2.5 text-emerald-600" />
+                  <span key={i} className="px-2 py-0.5 rounded-lg bg-white dark:bg-darkTealSurface border border-darkTeal/30 dark:border-darkTealBorder text-darkTeal dark:text-mint font-mono font-bold flex items-center gap-1 shadow-xs">
+                    <Check className="w-2.5 h-2.5 text-emerald-600 dark:text-mint" />
                     <span>Negation: "{neg}"</span>
                   </span>
                 ))}
                 {result.intent_audit.protected_terms.map((term, i) => (
-                  <span key={i} className="px-2 py-0.5 rounded-lg bg-white border border-amber/50 text-charcoal font-mono font-bold flex items-center gap-1 shadow-xs">
-                    <Check className="w-2.5 h-2.5 text-amber-600" />
+                  <span key={i} className="px-2 py-0.5 rounded-lg bg-white dark:bg-darkTealSurface border border-amber/50 dark:border-amber/40 text-charcoal dark:text-cream font-mono font-bold flex items-center gap-1 shadow-xs">
+                    <Check className="w-2.5 h-2.5 text-amber-600 dark:text-amber" />
                     <span>Entity: {term}</span>
                   </span>
                 ))}
                 {result.intent_audit.preserved_numbers.map((num, i) => (
-                  <span key={i} className="px-2 py-0.5 rounded-lg bg-white border border-charcoal/20 text-charcoal font-mono font-bold flex items-center gap-1 shadow-xs">
-                    <Check className="w-2.5 h-2.5 text-emerald-600" />
+                  <span key={i} className="px-2 py-0.5 rounded-lg bg-white dark:bg-darkTealSurface border border-charcoal/20 dark:border-darkTealBorder text-charcoal dark:text-cream font-mono font-bold flex items-center gap-1 shadow-xs">
+                    <Check className="w-2.5 h-2.5 text-emerald-600 dark:text-mint" />
                     <span>Constant: {num}</span>
                   </span>
                 ))}
                 {result.intent_audit.preserved_negations.length === 0 && result.intent_audit.protected_terms.length === 0 && result.intent_audit.preserved_numbers.length === 0 && (
-                  <span className="text-[11px] text-charcoal/60 italic">Semantic intent verified and preserved.</span>
+                  <span className="text-[11px] text-charcoal/60 dark:text-cream/60 italic">Semantic intent verified and preserved.</span>
                 )}
               </div>
             </div>
@@ -338,16 +338,16 @@ export const EnhanceReviewCard: React.FC<EnhanceReviewCardProps> = ({
 
           {/* Clean status note */}
           {result.changes_made && (
-            <div className="flex items-center justify-between text-[11px] text-charcoal/70 px-1">
+            <div className="flex items-center justify-between text-[11px] text-charcoal/70 dark:text-cream/70 px-1">
               <span>Text polished and verified against intent degradation</span>
-              <span className="font-semibold text-darkTeal capitalize">{selectedMode.replace('_', ' ')}</span>
+              <span className="font-semibold text-darkTeal dark:text-mint capitalize">{selectedMode.replace('_', ' ')}</span>
             </div>
           )}
         </div>
       ) : null}
 
       {/* Action Buttons */}
-      <div className="flex items-center justify-between flex-wrap gap-2 pt-2 border-t-2 border-charcoal/10">
+      <div className="flex items-center justify-between flex-wrap gap-2 pt-2 border-t-2 border-charcoal/10 dark:border-darkTealBorder">
         <div className="flex items-center gap-2">
           {onRestoreOriginal && (
             <button
