@@ -17,7 +17,7 @@ export const Mascot: React.FC<{ size?: number; className?: string }> = ({ size =
     <path d="M 28 35 C 28 62, 72 62, 72 35" fill="none" stroke="#212121" strokeWidth="4.5" strokeLinecap="round"/>
     <circle cx="28" cy="35" r="3" fill="#DDA44D" stroke="#212121" strokeWidth="2"/>
     <circle cx="72" cy="35" r="3" fill="#DDA44D" stroke="#212121" strokeWidth="2"/>
-    <rect x="47" y="60" width="6" height="20" fill="#0F5B57" stroke="#212121" strokeWidth="3"/>
+    <rect x="47" y="60" width="6" height="20" fill="#07514C" stroke="#212121" strokeWidth="3"/>
     <path d="M 26 84 C 26 80, 74 80, 74 84 L 78 89 L 22 89 Z" fill="#DA6C4C" stroke="#212121" strokeWidth="3.5" strokeLinejoin="round"/>
     <circle cx="50" cy="85" r="2.5" fill="#DDA44D"/>
   </svg>

@@ -3,12 +3,12 @@ export type ThemeMode = 'system' | 'light' | 'dark_teal';
 const THEME_STORAGE_KEY = 'voxquest_theme';
 
 export function getStoredTheme(): ThemeMode {
-  if (typeof window === 'undefined') return 'system';
+  if (typeof window === 'undefined') return 'light';
   const stored = localStorage.getItem(THEME_STORAGE_KEY) as ThemeMode | null;
   if (stored === 'light' || stored === 'dark_teal' || stored === 'system') {
     return stored;
   }
-  return 'system';
+  return 'light';
 }
 
 export function applyTheme(mode: ThemeMode) {
@@ -44,12 +44,16 @@ export function applyTheme(mode: ThemeMode) {
 
   if (isDark) {
     root.classList.add('dark');
+    root.classList.remove('light');
+    root.setAttribute('data-theme', 'dark_teal');
     if (!isPill) {
       document.body.style.backgroundColor = '#042D2A';
       document.body.style.color = '#DFDFD4';
     }
   } else {
     root.classList.remove('dark');
+    root.classList.add('light');
+    root.setAttribute('data-theme', 'light');
     if (!isPill) {
       document.body.style.backgroundColor = '#DFDFD4';
       document.body.style.color = '#212121';

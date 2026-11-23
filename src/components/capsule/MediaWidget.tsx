@@ -248,7 +248,7 @@ export const MediaWidget: React.FC = () => {
               key={ch.id}
               type="button"
               onClick={() => handlePlayQuery(ch.query, ch.name)}
-              className="flex items-center justify-between p-2.5 rounded-xl bg-[#F6F6F2] dark:bg-[#073D39] hover:bg-[#EBEBE4] dark:hover:bg-[#0B4A45] border border-charcoal/15 dark:border-darkTealBorder transition-all text-left active:scale-95 cursor-pointer group"
+              className="flex items-center justify-between p-2.5 rounded-xl bg-[#F6F6F2] dark:bg-darkTealElevated hover:bg-[#EBEBE4] dark:hover:bg-darkTealCanvas border border-charcoal/15 dark:border-darkTealBorder transition-all text-left active:scale-95 cursor-pointer group"
             >
               <div className="min-w-0 pr-2">
                 <div className="flex items-center gap-1.5 flex-wrap">
@@ -257,10 +257,10 @@ export const MediaWidget: React.FC = () => {
                   </span>
                   <span className="text-xs font-bold text-charcoal dark:text-cream leading-tight">{ch.name}</span>
                 </div>
-                <div className="text-[10px] text-charcoal/60 dark:text-sage leading-tight mt-0.5">{ch.subtitle}</div>
+                <div className="text-[10px] text-charcoal/70 dark:text-sage leading-tight mt-0.5">{ch.subtitle}</div>
               </div>
 
-              <div className="w-6 h-6 rounded-lg bg-white dark:bg-[#073D39] group-hover:bg-darkTeal dark:group-hover:bg-[#0D6E67] group-hover:text-white text-charcoal/40 dark:text-sage border border-charcoal/10 dark:border-darkTealBorder flex items-center justify-center shrink-0 transition-colors shadow-2xs">
+              <div className="w-6 h-6 rounded-lg bg-white dark:bg-darkTealSurface group-hover:bg-darkTeal dark:group-hover:bg-darkTealAccent group-hover:text-white text-darkTeal dark:text-cream border border-charcoal/10 dark:border-darkTealBorder flex items-center justify-center shrink-0 transition-colors shadow-2xs">
                 <Play className="w-2.5 h-2.5 fill-current ml-0.5" />
               </div>
             </button>
@@ -269,7 +269,7 @@ export const MediaWidget: React.FC = () => {
       </div>
 
       <div className="text-[10px] text-charcoal/60 dark:text-sage text-center font-medium pt-1 border-t border-charcoal/10 dark:border-darkTealBorder">
-        Speak: <span className="font-mono text-darkTeal dark:text-[#34A89E] font-bold">"play &lt;song&gt; on {selectedService === 'spotify' ? 'Spotify' : selectedService === 'apple_music' ? 'Apple Music' : 'YouTube'}"</span> while dictating.
+        Speak: <span className="font-mono text-darkTeal dark:text-mint font-bold">"play &lt;song&gt; on {selectedService === 'spotify' ? 'Spotify' : selectedService === 'apple_music' ? 'Apple Music' : 'YouTube'}"</span> while dictating.
       </div>
     </div>
   );

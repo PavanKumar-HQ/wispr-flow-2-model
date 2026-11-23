@@ -38,18 +38,25 @@
             isDark = true;
           } else if (storedTheme === 'light') {
             isDark = false;
-          } else {
+          } else if (storedTheme === 'system') {
             isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          } else {
+            // Default to light theme for a pristine initial appearance
+            isDark = false;
           }
 
           if (isDark) {
             document.documentElement.classList.add('dark');
+            document.documentElement.classList.remove('light');
+            document.documentElement.setAttribute('data-theme', 'dark_teal');
             if (!isPill && document.body) {
               document.body.style.backgroundColor = '#042D2A';
               document.body.style.color = '#DFDFD4';
             }
           } else {
             document.documentElement.classList.remove('dark');
+            document.documentElement.classList.add('light');
+            document.documentElement.setAttribute('data-theme', 'light');
             if (!isPill && document.body) {
               document.body.style.backgroundColor = '#DFDFD4';
               document.body.style.color = '#212121';

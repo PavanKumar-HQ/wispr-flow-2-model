@@ -353,14 +353,14 @@ export const DictionaryTab: React.FC = () => {
         <div className="shrink-0 flex items-center gap-2">
           <button
             onClick={handleExportJson}
-            className="px-3.5 py-2 text-xs font-semibold rounded-xl border border-charcoal/20 dark:border-darkTealBorder bg-white dark:bg-[#073D39] hover:bg-neutral-50 dark:hover:bg-[#0B4A45] text-charcoal dark:text-cream shadow-xs active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
+            className="px-3.5 py-2 text-xs font-semibold rounded-xl border border-charcoal/20 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface hover:bg-neutral-50 dark:hover:bg-darkTealElevated text-charcoal dark:text-cream shadow-xs active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
             title="Export personal vocabulary and rules as JSON"
           >
             <Download className="w-3.5 h-3.5 text-darkTeal dark:text-cream" />
             <span>Export JSON</span>
           </button>
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-darkTeal/10 border border-darkTeal/20 text-darkTeal rounded-xl text-xs font-semibold shadow-xs">
-            <BookA className="w-3.5 h-3.5 text-darkTeal" />
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-darkTeal/10 dark:bg-darkTealElevated border border-darkTeal/20 dark:border-darkTealBorder text-darkTeal dark:text-cream rounded-xl text-xs font-semibold shadow-xs">
+            <BookA className="w-3.5 h-3.5 text-darkTeal dark:text-mint" />
             <span>Self-Learning Active</span>
           </div>
         </div>
@@ -374,8 +374,8 @@ export const DictionaryTab: React.FC = () => {
             onClick={() => setActiveSubTab('active')}
             className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border ${
               activeSubTab === 'active'
-                ? 'bg-darkTeal dark:bg-[#0D6E67] text-white border-darkTeal dark:border-[#34A89E]/40 shadow-xs font-bold'
-                : 'bg-white dark:bg-[#073D39] hover:bg-neutral-50 dark:hover:bg-[#0B4A45] text-charcoal dark:text-cream border-charcoal/15 dark:border-darkTealBorder shadow-xs'
+                ? 'bg-darkTeal dark:bg-darkTealAccent text-white border-darkTeal dark:border-mint/40 shadow-xs font-bold'
+                : 'bg-white dark:bg-darkTealSurface hover:bg-[#F6F6F2] dark:hover:bg-darkTealElevated text-charcoal dark:text-cream border-charcoal/15 dark:border-darkTealBorder shadow-xs'
             }`}
           >
             Active Vocabulary ({combinedActive.length})
@@ -385,8 +385,8 @@ export const DictionaryTab: React.FC = () => {
             onClick={() => setActiveSubTab('candidates')}
             className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border relative ${
               activeSubTab === 'candidates'
-                ? 'bg-darkTeal dark:bg-[#0D6E67] text-white border-darkTeal dark:border-[#34A89E]/40 shadow-xs font-bold'
-                : 'bg-white dark:bg-[#073D39] hover:bg-neutral-50 dark:hover:bg-[#0B4A45] text-charcoal dark:text-cream border-charcoal/15 dark:border-darkTealBorder shadow-xs'
+                ? 'bg-darkTeal dark:bg-darkTealAccent text-white border-darkTeal dark:border-mint/40 shadow-xs font-bold'
+                : 'bg-white dark:bg-darkTealSurface hover:bg-[#F6F6F2] dark:hover:bg-darkTealElevated text-charcoal dark:text-cream border-charcoal/15 dark:border-darkTealBorder shadow-xs'
             }`}
           >
             Learned Candidates
@@ -401,11 +401,11 @@ export const DictionaryTab: React.FC = () => {
             onClick={() => setActiveSubTab('snippets')}
             className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border flex items-center gap-1.5 ${
               activeSubTab === 'snippets'
-                ? 'bg-darkTeal dark:bg-[#0D6E67] text-white border-darkTeal dark:border-[#34A89E]/40 shadow-xs font-bold'
-                : 'bg-white dark:bg-[#073D39] hover:bg-neutral-50 dark:hover:bg-[#0B4A45] text-charcoal dark:text-cream border-charcoal/15 dark:border-darkTealBorder shadow-xs'
+                ? 'bg-darkTeal dark:bg-darkTealAccent text-white border-darkTeal dark:border-mint/40 shadow-xs font-bold'
+                : 'bg-white dark:bg-darkTealSurface hover:bg-[#F6F6F2] dark:hover:bg-darkTealElevated text-charcoal dark:text-cream border-charcoal/15 dark:border-darkTealBorder shadow-xs'
             }`}
           >
-            <Zap className="w-3.5 h-3.5" />
+            <Zap className="w-3.5 h-3.5 text-amber" />
             <span>Voice Snippets</span>
           </button>
           <button
@@ -413,8 +413,8 @@ export const DictionaryTab: React.FC = () => {
             onClick={() => setActiveSubTab('capsules')}
             className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border flex items-center gap-1.5 ${
               activeSubTab === 'capsules'
-                ? 'bg-darkTeal dark:bg-[#0D6E67] text-white border-darkTeal dark:border-[#34A89E]/40 shadow-xs font-bold'
-                : 'bg-white dark:bg-[#073D39] hover:bg-neutral-50 dark:hover:bg-[#0B4A45] text-charcoal dark:text-cream border-charcoal/15 dark:border-darkTealBorder shadow-xs'
+                ? 'bg-darkTeal dark:bg-darkTealAccent text-white border-darkTeal dark:border-mint/40 shadow-xs font-bold'
+                : 'bg-white dark:bg-darkTealSurface hover:bg-[#F6F6F2] dark:hover:bg-darkTealElevated text-charcoal dark:text-cream border-charcoal/15 dark:border-darkTealBorder shadow-xs'
             }`}
           >
             <Box className="w-3.5 h-3.5 text-amber" />
@@ -428,8 +428,8 @@ export const DictionaryTab: React.FC = () => {
             onClick={() => setActiveSubTab('add')}
             className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border flex items-center gap-1.5 shadow-xs active:scale-95 ${
               activeSubTab === 'add'
-                ? 'bg-darkTeal dark:bg-[#0D6E67] text-white border-darkTeal dark:border-[#34A89E]/40 font-bold'
-                : 'bg-white dark:bg-[#073D39] hover:bg-neutral-50 dark:hover:bg-[#0B4A45] text-darkTeal dark:text-cream border-darkTeal/30 dark:border-darkTealBorder'
+                ? 'bg-darkTeal dark:bg-darkTealAccent text-white border-darkTeal dark:border-mint/40 font-bold'
+                : 'bg-white dark:bg-darkTealSurface hover:bg-[#F6F6F2] dark:hover:bg-darkTealElevated text-darkTeal dark:text-cream border-darkTeal/30 dark:border-darkTealBorder'
             }`}
           >
             <Plus className="w-3.5 h-3.5" />
@@ -443,7 +443,7 @@ export const DictionaryTab: React.FC = () => {
               className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all shadow-xs active:scale-95 ${
                 confirmingReset
                   ? 'bg-terracotta text-white animate-pulse'
-                  : 'bg-white dark:bg-[#073D39] hover:bg-terracotta/10 border border-terracotta/30 dark:border-darkTealBorder text-terracotta dark:text-[#FF8A65]'
+                  : 'bg-white dark:bg-darkTealSurface hover:bg-terracotta/10 border border-terracotta/30 dark:border-darkTealBorder text-terracotta dark:text-[#FF8A65]'
               }`}
               title="Reset learned candidate history"
             >
@@ -851,15 +851,15 @@ export const DictionaryTab: React.FC = () => {
           {/* Filters Header */}
           <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 pb-3 border-b border-charcoal/10 dark:border-darkTealBorder">
             {/* Category Tabs */}
-            <div className="p-1 bg-stone-100 dark:bg-[#042D2A] rounded-xl inline-flex flex-wrap items-center gap-1 border border-charcoal/5 dark:border-darkTealBorder">
+            <div className="p-1 bg-[#F6F6F2] dark:bg-darkTealCanvas rounded-xl inline-flex flex-wrap items-center gap-1 border border-charcoal/10 dark:border-darkTealBorder">
               {categories.map((c) => (
                 <button
                   key={c.id}
                   onClick={() => setSelectedCategory(c.id)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all active:scale-95 cursor-pointer ${
                     selectedCategory === c.id
-                      ? 'bg-white dark:bg-[#0D6E67] text-darkTeal dark:text-white shadow-xs font-bold'
-                      : 'text-charcoal/70 dark:text-cream/70 hover:text-charcoal dark:hover:text-cream hover:bg-white/50 dark:hover:bg-white/5'
+                      ? 'bg-white dark:bg-darkTealAccent text-darkTeal dark:text-white shadow-xs font-bold border border-charcoal/10 dark:border-mint/40'
+                      : 'text-charcoal/80 dark:text-cream/80 hover:text-charcoal dark:hover:text-cream hover:bg-white/60 dark:hover:bg-darkTealElevated'
                   }`}
                 >
                   {c.label}
@@ -875,7 +875,7 @@ export const DictionaryTab: React.FC = () => {
                 placeholder="Search words..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 bg-white dark:bg-[#042D2A] border border-charcoal/20 dark:border-darkTealBorder rounded-xl text-xs text-charcoal dark:text-cream focus:outline-none focus:ring-2 focus:ring-darkTeal/20 focus:border-darkTeal shadow-xs"
+                className="w-full pl-8 pr-3 py-1.5 bg-white dark:bg-darkTealCanvas border border-charcoal/20 dark:border-darkTealBorder rounded-xl text-xs text-charcoal dark:text-cream placeholder:text-charcoal/40 dark:placeholder:text-sage/50 focus:outline-none focus:ring-2 focus:ring-darkTeal/20 focus:border-darkTeal shadow-xs"
               />
             </div>
           </div>
@@ -1020,7 +1020,7 @@ export const DictionaryTab: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => handleStartEdit(entry)}
-                        className="p-1.5 rounded-lg bg-white dark:bg-[#073D39] hover:bg-neutral-100 dark:hover:bg-[#0B4A45] border border-charcoal/20 dark:border-darkTealBorder hover:border-darkTeal text-charcoal/70 dark:text-cream hover:text-darkTeal dark:hover:text-[#4ADE80] transition-all shadow-xs active:scale-95"
+                        className="p-1.5 rounded-lg bg-white dark:bg-darkTealSurface hover:bg-neutral-100 dark:hover:bg-darkTealElevated border border-charcoal/20 dark:border-darkTealBorder hover:border-darkTeal text-charcoal/80 dark:text-cream hover:text-darkTeal dark:hover:text-mint transition-all shadow-xs active:scale-95"
                         title="Edit term spelling and replacement"
                         aria-label="Edit term"
                       >
@@ -1034,7 +1034,7 @@ export const DictionaryTab: React.FC = () => {
                             ? handleDeleteVocab(entry.id)
                             : handleDeleteDict(entry.id)
                         }
-                        className="p-1.5 rounded-lg bg-white dark:bg-[#073D39] hover:bg-terracotta/10 border border-charcoal/20 dark:border-darkTealBorder hover:border-terracotta/30 text-charcoal/60 dark:text-cream/70 hover:text-terracotta transition-all shadow-xs active:scale-95"
+                        className="p-1.5 rounded-lg bg-white dark:bg-darkTealSurface hover:bg-terracotta/10 dark:hover:bg-terracotta/20 border border-charcoal/20 dark:border-darkTealBorder hover:border-terracotta/40 text-charcoal/60 dark:text-cream/70 hover:text-terracotta dark:hover:text-[#FF8A65] transition-all shadow-xs active:scale-95"
                         title="Delete term"
                         aria-label="Delete term"
                       >

@@ -105,30 +105,30 @@ export const FocusTimerWidget: React.FC = () => {
       <div className="flex items-center justify-between gap-1 pt-0.5 border-t border-charcoal/15 dark:border-darkTealBorder">
         <button
           onClick={() => setTimerMode('focus')}
-          className={`flex-1 py-1 rounded-md text-[10px] font-bold transition-all text-center cursor-pointer ${
+          className={`flex-1 py-1 rounded-md text-[10px] font-bold transition-all text-center cursor-pointer border ${
             mode === 'focus'
-              ? 'text-darkTeal dark:text-white bg-[#EBEBE4] dark:bg-darkTealElevated border border-charcoal/20 dark:border-mint/40 font-extrabold shadow-2xs'
-              : 'text-charcoal/70 dark:text-sage/70 hover:text-charcoal dark:hover:text-cream hover:bg-[#F6F6F2] dark:hover:bg-darkTealCanvas'
+              ? 'bg-darkTeal dark:bg-darkTealAccent text-white border-darkTeal dark:border-mint/50 font-extrabold shadow-2xs'
+              : 'bg-[#F6F6F2] dark:bg-darkTealElevated text-charcoal dark:text-cream border-charcoal/15 dark:border-darkTealBorder hover:bg-[#EBEBE4] dark:hover:bg-darkTealCanvas'
           }`}
         >
           25m Focus
         </button>
         <button
           onClick={() => setTimerMode('short_break')}
-          className={`flex-1 py-1 rounded-md text-[10px] font-bold transition-all text-center cursor-pointer ${
+          className={`flex-1 py-1 rounded-md text-[10px] font-bold transition-all text-center cursor-pointer border ${
             mode === 'short_break'
-              ? 'text-darkTeal dark:text-white bg-[#EBEBE4] dark:bg-darkTealElevated border border-charcoal/20 dark:border-mint/40 font-extrabold shadow-2xs'
-              : 'text-charcoal/70 dark:text-sage/70 hover:text-charcoal dark:hover:text-cream hover:bg-[#F6F6F2] dark:hover:bg-darkTealCanvas'
+              ? 'bg-darkTeal dark:bg-darkTealAccent text-white border-darkTeal dark:border-mint/50 font-extrabold shadow-2xs'
+              : 'bg-[#F6F6F2] dark:bg-darkTealElevated text-charcoal dark:text-cream border-charcoal/15 dark:border-darkTealBorder hover:bg-[#EBEBE4] dark:hover:bg-darkTealCanvas'
           }`}
         >
           5m Break
         </button>
         <button
           onClick={() => setTimerMode('long_break')}
-          className={`flex-1 py-1 rounded-md text-[10px] font-bold transition-all text-center cursor-pointer ${
+          className={`flex-1 py-1 rounded-md text-[10px] font-bold transition-all text-center cursor-pointer border ${
             mode === 'long_break'
-              ? 'text-darkTeal dark:text-white bg-[#EBEBE4] dark:bg-darkTealElevated border border-charcoal/20 dark:border-mint/40 font-extrabold shadow-2xs'
-              : 'text-charcoal/70 dark:text-sage/70 hover:text-charcoal dark:hover:text-cream hover:bg-[#F6F6F2] dark:hover:bg-darkTealCanvas'
+              ? 'bg-darkTeal dark:bg-darkTealAccent text-white border-darkTeal dark:border-mint/50 font-extrabold shadow-2xs'
+              : 'bg-[#F6F6F2] dark:bg-darkTealElevated text-charcoal dark:text-cream border-charcoal/15 dark:border-darkTealBorder hover:bg-[#EBEBE4] dark:hover:bg-darkTealCanvas'
           }`}
         >
           15m Break

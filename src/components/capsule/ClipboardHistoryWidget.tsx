@@ -156,13 +156,13 @@ export const ClipboardHistoryWidget: React.FC<ClipboardHistoryWidgetProps> = ({
           <span>Voice Clipboard History</span>
         </div>
         {/* Filter Pills */}
-        <div className="flex items-center bg-[#F6F6F2] dark:bg-[#042D2A] p-0.5 rounded-lg border border-charcoal/15 dark:border-darkTealBorder text-[10px]">
+        <div className="flex items-center bg-[#F6F6F2] dark:bg-darkTealCanvas p-0.5 rounded-lg border border-charcoal/15 dark:border-darkTealBorder text-[10px]">
           <button
             onClick={() => setActiveFilter('all')}
             className={`px-2 py-0.5 rounded-md font-bold transition-all cursor-pointer ${
               activeFilter === 'all'
-                ? 'bg-darkTeal dark:bg-[#0D6E67] text-cream shadow-xs'
-                : 'text-charcoal/60 dark:text-sage hover:text-charcoal dark:hover:text-cream'
+                ? 'bg-darkTeal dark:bg-darkTealAccent text-white shadow-xs'
+                : 'text-charcoal/80 dark:text-cream/80 hover:text-charcoal dark:hover:text-cream'
             }`}
           >
             All ({items.length})
@@ -171,8 +171,8 @@ export const ClipboardHistoryWidget: React.FC<ClipboardHistoryWidgetProps> = ({
             onClick={() => setActiveFilter('pinned')}
             className={`px-2 py-0.5 rounded-md font-bold transition-all cursor-pointer ${
               activeFilter === 'pinned'
-                ? 'bg-darkTeal dark:bg-[#0D6E67] text-cream shadow-xs'
-                : 'text-charcoal/60 dark:text-sage hover:text-charcoal dark:hover:text-cream'
+                ? 'bg-darkTeal dark:bg-darkTealAccent text-white shadow-xs'
+                : 'text-charcoal/80 dark:text-cream/80 hover:text-charcoal dark:hover:text-cream'
             }`}
           >
             Pinned ({items.filter((i) => i.pinned).length})
@@ -183,20 +183,20 @@ export const ClipboardHistoryWidget: React.FC<ClipboardHistoryWidgetProps> = ({
       {/* Snippet list - fully scrollable with comfortable padding and zero vertical clipping */}
       <div className="space-y-2 max-h-[260px] overflow-y-auto p-1 no-scrollbar">
         {filteredItems.length === 0 ? (
-          <div className="py-6 text-center text-xs text-charcoal/40 dark:text-sage/60 italic">
+          <div className="py-6 text-center text-xs text-charcoal/60 dark:text-sage/70 italic">
             No pinned dictations recorded yet
           </div>
         ) : (
           filteredItems.map((item) => (
             <div
               key={item.id}
-              className="flex items-center justify-between p-3 rounded-xl bg-[#F8F8F5] dark:bg-[#073D39] hover:bg-[#EBEBE4] dark:hover:bg-[#0B4A45] border border-charcoal/15 dark:border-darkTealBorder text-xs hover:border-darkTeal/40 dark:hover:border-[#34A89E]/50 transition-all group"
+              className="flex items-center justify-between p-3 rounded-xl bg-[#F8F8F5] dark:bg-darkTealElevated hover:bg-[#EBEBE4] dark:hover:bg-darkTealCanvas border border-charcoal/15 dark:border-darkTealBorder text-xs hover:border-darkTeal/40 dark:hover:border-mint/50 transition-all group"
             >
               <div className="min-w-0 mr-2 flex-1">
                 <div className="text-charcoal dark:text-cream font-semibold text-xs leading-relaxed break-words line-clamp-2">
                   "{item.text}"
                 </div>
-                <div className="text-[10px] text-charcoal/50 dark:text-sage/70 font-mono mt-1">
+                <div className="text-[10px] text-charcoal/60 dark:text-sage font-mono mt-1">
                   {formatDynamicRelativeTime(item.timestampMs)}
                 </div>
               </div>
@@ -209,7 +209,7 @@ export const ClipboardHistoryWidget: React.FC<ClipboardHistoryWidgetProps> = ({
                   className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
                     item.pinned
                       ? 'text-terracotta bg-terracotta/10 dark:bg-terracotta/20'
-                      : 'text-charcoal/40 dark:text-sage/70 hover:text-charcoal dark:hover:text-cream hover:bg-black/5 dark:hover:bg-white/5'
+                      : 'text-charcoal/60 dark:text-sage hover:text-charcoal dark:hover:text-cream hover:bg-black/5 dark:hover:bg-white/5'
                   }`}
                   title={item.pinned ? 'Unpin snippet' : 'Pin snippet'}
                   aria-label="Pin snippet"
@@ -219,7 +219,7 @@ export const ClipboardHistoryWidget: React.FC<ClipboardHistoryWidgetProps> = ({
                 <button
                   type="button"
                   onClick={() => handleCopy(item)}
-                  className="p-1.5 rounded-lg text-charcoal/70 dark:text-[#34A89E] hover:text-darkTeal dark:hover:text-cream hover:bg-darkTeal/10 dark:hover:bg-[#0D6E67]/40 transition-colors cursor-pointer"
+                  className="p-1.5 rounded-lg text-darkTeal dark:text-mint hover:text-darkTeal dark:hover:text-white hover:bg-darkTeal/10 dark:hover:bg-darkTealAccent/40 transition-colors cursor-pointer"
                   title="Copy to clipboard"
                   aria-label="Copy snippet"
                 >
@@ -232,7 +232,7 @@ export const ClipboardHistoryWidget: React.FC<ClipboardHistoryWidgetProps> = ({
                 <button
                   type="button"
                   onClick={() => handlePaste(item)}
-                  className="p-1.5 rounded-lg text-darkTeal dark:text-cream hover:bg-darkTeal/10 dark:hover:bg-[#0D6E67]/40 transition-colors cursor-pointer"
+                  className="p-1.5 rounded-lg text-darkTeal dark:text-cream hover:bg-darkTeal/10 dark:hover:bg-darkTealAccent/40 transition-colors cursor-pointer"
                   title="Paste directly to active app"
                   aria-label="Paste snippet"
                 >

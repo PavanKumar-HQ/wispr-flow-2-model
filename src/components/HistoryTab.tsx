@@ -450,11 +450,11 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
                 </div>
 
                 {activeEditId === item.id ? (
-                  <div className="space-y-2.5 mt-2 bg-stone-50 dark:bg-[#042D2A] p-3 rounded-xl border border-charcoal/15 dark:border-darkTealBorder">
+                  <div className="space-y-2.5 mt-2 bg-[#F6F6F2] dark:bg-darkTealCanvas p-3 rounded-xl border border-charcoal/15 dark:border-darkTealBorder">
                     <textarea
                       value={editingTexts[item.id] !== undefined ? editingTexts[item.id] : item.formatted_text}
                       onChange={(e) => handleTextChange(item.id, e.target.value)}
-                      className="w-full text-xs font-mono p-3 rounded-xl border border-charcoal/20 dark:border-darkTealBorder bg-white dark:bg-[#073D39] text-charcoal dark:text-cream focus:outline-none focus:ring-2 focus:ring-darkTeal/20 focus:border-darkTeal shadow-xs"
+                      className="w-full text-xs font-mono p-3 rounded-xl border border-charcoal/20 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface text-charcoal dark:text-cream focus:outline-none focus:ring-2 focus:ring-darkTeal/20 focus:border-darkTeal shadow-xs"
                       rows={2}
                     />
                     <div className="flex items-center justify-between">
@@ -464,7 +464,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => setActiveEditId(null)}
-                          className="px-3 py-1.5 rounded-xl border border-charcoal/20 dark:border-darkTealBorder bg-white dark:bg-[#073D39] text-charcoal dark:text-cream hover:bg-neutral-50 dark:hover:bg-[#0B4A45] text-xs font-medium shadow-xs active:scale-95 transition-all"
+                          className="px-3 py-1.5 rounded-xl border border-charcoal/20 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface text-charcoal dark:text-cream hover:bg-neutral-50 dark:hover:bg-darkTealElevated text-xs font-medium shadow-xs active:scale-95 transition-all"
                         >
                           Cancel
                         </button>

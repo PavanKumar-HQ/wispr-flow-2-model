@@ -143,11 +143,6 @@ html.dark main {
 }
 
 /* Sidebar Layout & Navigation Buttons */
-aside {
-  background-color: #EBEBE4 !important;
-  border-color: #D1D1C5 !important;
-}
-
 html:not(.dark) aside {
   background-color: #EBEBE4 !important;
   border-color: #D1D1C5 !important;
@@ -178,11 +173,18 @@ html:not(.dark) aside .text-darkTeal {
 
 html:not(.dark) aside p {
   color: #4B5563 !important;
+  font-weight: 600 !important;
 }
 
-aside nav button.bg-darkTeal {
+aside nav button.bg-darkTeal,
+html:not(.dark) aside nav button.bg-darkTeal {
   background-color: #07514C !important;
   color: #FFFFFF !important;
+}
+
+aside nav button.bg-darkTeal svg,
+html:not(.dark) aside nav button.bg-darkTeal svg {
+  color: #DDA44D !important;
 }
 
 html.dark aside {
@@ -236,16 +238,9 @@ html:not(.dark) .text-charcoal\/60 {
 }
 
 /* High-Contrast Sovereign Dark Typography */
-html.dark h1,
-html.dark h2,
-html.dark h3,
-html.dark h4 {
-  color: #FFFFFF !important;
-}
-
 html.dark .text-vq-tealDark,
 html.dark [class*="text-vq-tealDark"] {
-  color: #FFFFFF !important;
+  color: #34A89E !important;
 }
 
 html.dark .text-darkTeal:not(aside nav button *),
@@ -277,11 +272,10 @@ html.dark .text-charcoal\/40 {
 }
 
 /* Card Panels & Surfaces */
-html.dark .arcade-panel,
-html.dark .bg-white {
+html.dark .arcade-panel {
   background-color: #073D39 !important;
   color: #DFDFD4 !important;
-  border-color: rgba(184, 203, 195, 0.22) !important;
+  border-color: #0F5E58 !important;
   box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.35) !important;
 }
 
@@ -309,12 +303,12 @@ html.dark .arcade-panel-amber {
 }
 
 /* Form inputs & surfaces in Dark Teal */
-html.dark input:not([type="checkbox"]):not([type="radio"]),
-html.dark textarea,
+html.dark input:not([type="checkbox"]):not([type="radio"]):not(.bg-transparent),
+html.dark textarea:not(.bg-transparent),
 html.dark select {
   background-color: #042D2A !important;
   color: #DFDFD4 !important;
-  border-color: rgba(184, 203, 195, 0.3) !important;
+  border-color: #0F5E58 !important;
 }
 
 html.dark input:focus,
@@ -361,10 +355,16 @@ html.dark .border-charcoal\/10 {
   border-color: rgba(184, 203, 195, 0.22) !important;
 }
 
-/* Dedicated Floating Pill Styling */
+/* Dedicated Floating Pill Styling: perfectly rounded capsule, zero box artifacts */
+.voxquest-pill-capsule {
+  border-radius: 9999px !important;
+  overflow: hidden !important;
+}
+
 html.dark .voxquest-pill-capsule {
   background: linear-gradient(180deg, #073D39 0%, #042D2A 100%) !important;
   box-shadow: 0 10px 28px -4px rgba(0, 0, 0, 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.12) !important;
+  border-color: #0F5E58 !important;
 }
 
 /* Standard Elevated Card Panel */
@@ -395,11 +395,11 @@ html.dark .voxquest-pill-capsule {
 
 /* Deep Teal Elevated Container */
 .arcade-panel-deep {
-  background: #0F5B57;
+  background: #073D39;
   color: #F5F5F0;
-  border: 1px solid rgba(15, 91, 87, 0.6);
+  border: 1px solid #0F5E58;
   border-radius: 1rem;
-  box-shadow: 0 4px 12px 0 rgba(15, 91, 87, 0.2);
+  box-shadow: 0 4px 12px 0 rgba(4, 45, 42, 0.3);
 }
 
 /* Amber Highlight Panel */
@@ -509,7 +509,7 @@ html.dark .voxquest-pill-capsule {
   color: #FFFFFF;
 }
 
-/* Sleek Ghost Action Buttons (eliminates visual box clutter) */
+/* Sleek High-Contrast Action Buttons (Recent Dictations, History, etc.) */
 .ghost-action-btn {
   font-family: inherit;
   font-size: 11px;
@@ -517,57 +517,70 @@ html.dark .voxquest-pill-capsule {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 3.5px 7px;
-  border-radius: 0.375rem;
-  color: #212121;
-  background: transparent;
-  border: 1px solid transparent;
+  padding: 4px 8px;
+  border-radius: 0.5rem;
   cursor: pointer;
   user-select: none;
-  transition: all 0.12s ease;
+  transition: all 0.15s ease;
 }
 
 html:not(.dark) .ghost-action-btn {
+  background-color: #F6F6F2 !important;
+  border: 1px solid rgba(33, 33, 33, 0.15) !important;
   color: #212121 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 html:not(.dark) .ghost-action-btn span {
   color: #212121 !important;
+  font-weight: 600 !important;
 }
 
-.ghost-action-btn:hover {
-  background: rgba(7, 81, 76, 0.08);
-  color: #07514C;
+html:not(.dark) .ghost-action-btn:hover {
+  background-color: #EBEBE4 !important;
+  border-color: #07514C !important;
+  color: #07514C !important;
 }
 
-.ghost-action-btn:active {
-  transform: scale(0.97);
+html:not(.dark) .ghost-action-btn:hover span {
+  color: #07514C !important;
 }
 
-.ghost-action-btn-danger:hover {
-  background: rgba(218, 108, 76, 0.12);
-  color: #DA6C4C;
+html:not(.dark) .ghost-action-btn-danger {
+  color: #DA6C4C !important;
+}
+
+html:not(.dark) .ghost-action-btn-danger:hover {
+  background-color: rgba(218, 108, 76, 0.12) !important;
+  border-color: #DA6C4C !important;
+  color: #DA6C4C !important;
 }
 
 /* High-Contrast Sovereign Dark Rules for Action Buttons */
 html.dark .ghost-action-btn {
   color: #DFDFD4 !important;
-  background: rgba(223, 223, 212, 0.08) !important;
-  border: 1px solid rgba(184, 203, 195, 0.18) !important;
+  background-color: #0B4A45 !important;
+  border: 1px solid #0F5E58 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
 }
 
 html.dark .ghost-action-btn span {
   color: #DFDFD4 !important;
+  font-weight: 600 !important;
 }
 
 html.dark .ghost-action-btn:hover {
-  background: #0B4A45 !important;
+  background-color: #0D6E67 !important;
   color: #FFFFFF !important;
-  border-color: rgba(52, 168, 158, 0.55) !important;
+  border-color: #34A89E !important;
+}
+
+html.dark .ghost-action-btn:hover span {
+  color: #FFFFFF !important;
 }
 
 html.dark .ghost-action-btn:active {
-  background: #073D39 !important;
+  background-color: #073D39 !important;
 }
 
 html.dark .ghost-action-btn-danger {
@@ -575,17 +588,22 @@ html.dark .ghost-action-btn-danger {
 }
 
 html.dark .ghost-action-btn-danger:hover {
-  background: rgba(218, 108, 76, 0.25) !important;
+  background-color: rgba(218, 108, 76, 0.3) !important;
   color: #FF7043 !important;
-  border-color: rgba(218, 108, 76, 0.5) !important;
+  border-color: #DA6C4C !important;
 }
 
-html.dark .ghost-action-btn .text-amber-700 {
+html.dark .ghost-action-btn svg {
+  color: #34A89E !important;
+}
+
+html.dark .ghost-action-btn .text-amber-700,
+html.dark .ghost-action-btn .text-amber {
   color: #DDA44D !important;
 }
 
-html.dark .ghost-action-btn .text-darkTeal {
-  color: #34A89E !important;
+html.dark .ghost-action-btn-danger svg {
+  color: #FF8A65 !important;
 }
 
 html.dark .ghost-action-btn .text-charcoal,
@@ -675,7 +693,7 @@ html.dark .tactile-btn-teal:hover {
 }
 
 .arcade-btn-teal:hover {
-  background: #0F5B57;
+  background: #0D6E67;
   box-shadow: 0 4px 10px rgba(7, 81, 76, 0.32);
 }
 
@@ -772,7 +790,7 @@ html.dark .tactile-btn-teal:hover {
 }
 
 .transcribing-shimmer {
-  background: linear-gradient(90deg, #07514C 0%, #157E78 50%, #07514C 100%);
+  background: linear-gradient(90deg, #07514C 0%, #34A89E 50%, #07514C 100%);
   background-size: 200% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent !important;

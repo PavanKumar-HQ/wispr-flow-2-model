@@ -481,12 +481,12 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                   </div>
 
                   {activeTeachId === item.id ? (
-                    <div className="space-y-2 mt-2 bg-stone-50 dark:bg-[#042D2A] p-2.5 rounded-xl border border-charcoal/15 dark:border-darkTealBorder">
+                    <div className="space-y-2 mt-2 bg-[#F6F6F2] dark:bg-darkTealCanvas p-2.5 rounded-xl border border-charcoal/15 dark:border-darkTealBorder">
                       <input
                         type="text"
                         value={teachTexts[item.id] !== undefined ? teachTexts[item.id] : item.formatted_text}
                         onChange={(e) => setTeachTexts((prev) => ({ ...prev, [item.id]: e.target.value }))}
-                        className="w-full text-xs font-mono p-2 rounded-lg border border-charcoal/20 dark:border-darkTealBorder bg-white dark:bg-[#073D39] text-charcoal dark:text-cream focus:outline-none focus:ring-2 focus:ring-darkTeal/20 focus:border-darkTeal"
+                        className="w-full text-xs font-mono p-2 rounded-lg border border-charcoal/20 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface text-charcoal dark:text-cream focus:outline-none focus:ring-2 focus:ring-darkTeal/20 focus:border-darkTeal"
                         placeholder="Corrected spelling or phrase..."
                       />
                       <div className="flex items-center justify-between">
@@ -513,7 +513,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                       </div>
                     </div>
                   ) : (
-                    <p className="text-[13px] font-medium text-charcoal/90 dark:text-cream leading-relaxed select-text">
+                    <p className="text-[13px] font-semibold text-charcoal dark:text-cream leading-relaxed select-text">
                       "{item.formatted_text}"
                     </p>
                   )}

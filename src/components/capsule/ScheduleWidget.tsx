@@ -108,10 +108,10 @@ export const ScheduleWidget: React.FC = () => {
           <button
             key={dur}
             onClick={() => setSelectedDuration(dur)}
-            className={`py-1 rounded-lg text-[11px] font-bold transition-all text-center cursor-pointer ${
+            className={`py-1 rounded-lg text-[11px] font-bold transition-all text-center cursor-pointer border ${
               selectedDuration === dur
-                ? 'bg-darkTeal dark:bg-[#0D6E67] text-white shadow-xs border border-transparent dark:border-[#34A89E]/40'
-                : 'bg-[#EBEBE4] dark:bg-[#073D39] text-charcoal dark:text-cream hover:bg-[#D1D1C5] dark:hover:bg-[#0B4A45] border border-charcoal/20 dark:border-darkTealBorder'
+                ? 'bg-darkTeal dark:bg-darkTealAccent text-white shadow-xs border-darkTeal dark:border-mint/50 font-extrabold'
+                : 'bg-[#F6F6F2] dark:bg-darkTealElevated text-charcoal dark:text-cream hover:bg-[#EBEBE4] dark:hover:bg-darkTealCanvas border-charcoal/15 dark:border-darkTealBorder'
             }`}
           >
             {dur}m
@@ -120,7 +120,7 @@ export const ScheduleWidget: React.FC = () => {
       </div>
 
       {/* Meeting URL input with Save action */}
-      <div className="flex items-center gap-1.5 bg-[#F6F6F2] dark:bg-[#042D2A] rounded-xl px-2.5 py-1.5 border border-charcoal/20 dark:border-darkTealBorder">
+      <div className="flex items-center gap-1.5 bg-[#F6F6F2] dark:bg-darkTealCanvas rounded-xl px-2.5 py-1.5 border border-charcoal/20 dark:border-darkTealBorder">
         <Link2 className="w-3.5 h-3.5 text-charcoal/40 dark:text-sage/60 shrink-0" />
         <input
           type="text"
