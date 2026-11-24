@@ -927,6 +927,7 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
     let deduped_raw = crate::formatter::deduplicate_repeated_speech(&cleaned_transcript);
     let formatted_transcript = format_transcript(&deduped_raw, &fmt_cfg);
     let (mut formatted_transcript, _applied_vocab) = state.history.apply_personalization_pipeline(&formatted_transcript);
+    formatted_transcript = crate::formatter::normalize_contraction_casing(&formatted_transcript);
     if formatted_transcript.trim().is_empty() && !cleaned_transcript.trim().is_empty() {
         formatted_transcript = cleaned_transcript.trim().to_string();
     }
@@ -1893,7 +1894,8 @@ pub fn polish_transcript_cmd(
     reinsert: Option<bool>,
 ) -> Result<String, String> {
     let polished = crate::formatter::polish_text(&text);
-    let (personalized, _) = state.history.apply_personalization_pipeline(&polished);
+    let (mut personalized, _) = state.history.apply_personalization_pipeline(&polished);
+    personalized = crate::formatter::normalize_contraction_casing(&personalized);
 
     // Keep polished text on system clipboard
     if let Ok(mut cb) = arboard::Clipboard::new() {

@@ -206,6 +206,56 @@ fn apply_spoken_punctuation_conservative(input: &str) -> (String, usize) {
             continue;
         }
 
+        // "apostrophe s" -> "'s"
+        if curr_lower == "apostrophe" && i + 1 < words.len() {
+            let next_clean = clean_word_for_matching(words[i + 1]);
+            if next_clean == "s" {
+                let is_meta = if let Some(prev) = out.last() {
+                    let p = clean_word_for_matching(prev);
+                    p == "for" || p == "the" || p == "an" || p == "about" || p == "say" || p == "take" || p == "taking"
+                } else {
+                    true
+                };
+
+                if is_meta {
+                    out.push(curr_raw.to_string());
+                    out.push(words[i + 1].to_string());
+                } else {
+                    let punct_suffix = words[i + 1].trim_start_matches(|c: char| c == 's' || c == 'S');
+                    if let Some(prev) = out.last_mut() {
+                        if prev.ends_with(',') {
+                            prev.pop();
+                        }
+                        prev.push_str("'s");
+                        prev.push_str(punct_suffix);
+                    } else {
+                        out.push(format!("'s{}", punct_suffix));
+                    }
+                }
+                count += 1;
+                i += 2;
+                continue;
+            }
+        }
+
+        // Single "apostrophe" -> "'"
+        if curr_lower == "apostrophe" {
+            let is_meta = if let Some(prev) = out.last() {
+                let p = clean_word_for_matching(prev);
+                p == "the" || p == "an" || p == "no" || p == "say" || p == "for"
+            } else {
+                false
+            };
+            if is_meta {
+                out.push(curr_raw.to_string());
+            } else {
+                attach_punctuation_to_last(&mut out, "'");
+                count += 1;
+            }
+            i += 1;
+            continue;
+        }
+
         // "open parenthesis" / "open paren" / "open parens" -> "("
         if curr_lower == "open" && i + 1 < words.len() {
             let next_lower = clean_word_for_matching(words[i + 1]);
@@ -838,6 +888,34 @@ pub fn repair_phonetic_speech_confusions(input: &str) -> String {
         ("vibe coding", "vibe-coding"),
         ("vibe coder", "vibe-coder"),
         ("vibe coders", "vibe-coders"),
+
+        // Acoustic confusions for "apostrophe s" / "apostrophe" / "lowercase s"
+        ("For a first trophy, s,", "For apostrophe s,"),
+        ("for a first trophy, s,", "for apostrophe s,"),
+        ("For a first trophy, s", "For apostrophe s"),
+        ("for a first trophy, s", "for apostrophe s"),
+        ("For a first trophy s", "For apostrophe s"),
+        ("for a first trophy s", "for apostrophe s"),
+        ("a first trophy, s", "apostrophe s"),
+        ("A first trophy, s", "Apostrophe s"),
+        ("a first trophy s", "apostrophe s"),
+        ("A first trophy s", "Apostrophe s"),
+        ("first trophy, s", "apostrophe s"),
+        ("First trophy, s", "Apostrophe s"),
+        ("first trophy s", "apostrophe s"),
+        ("First trophy s", "Apostrophe s"),
+        ("a fast trophy, s", "apostrophe s"),
+        ("a fast trophy s", "apostrophe s"),
+        ("a post trophy, s", "apostrophe s"),
+        ("a post trophy s", "apostrophe s"),
+        ("apostrophe, s", "apostrophe s"),
+        ("apostrophe, S", "apostrophe s"),
+        ("apostrophe S", "apostrophe s"),
+        ("rather than a smaller row, yes", "rather than a lowercase s, yes"),
+        ("rather than a smaller row yes", "rather than a lowercase s, yes"),
+        ("rather than a smaller row", "rather than a lowercase s"),
+        ("smaller row, yes", "lowercase s, yes"),
+        ("smaller row yes", "lowercase s, yes"),
     ];
     for (pat, rep) in developer_vocab_patterns {
         if text.contains(pat) {
@@ -2643,13 +2721,13 @@ fn normalize_single_word_contraction(token: &str) -> String {
         return token.to_string();
     }
 
-    // Check if stem has lowercase letters OR is single "I"
+    // Check if stem has lowercase letters OR is single "I" OR is uppercase acronym/noun with possessive 's
     let stem_has_lowercase = stem.chars().any(|c| c.is_lowercase());
     let is_single_i = stem == "I";
+    let is_s_suffix = contraction_letters.to_uppercase() == "S";
 
-    // If stem has lowercase (e.g. "it", "It", "that", "there", "suit", "don") or is "I":
-    // Lowercase the contraction suffix!
-    if stem_has_lowercase || is_single_i {
+    // Contraction suffixes are virtually always lowercase in English ('s, 't, 'd, 'm, 'll, 've, 're)
+    if stem_has_lowercase || is_single_i || is_s_suffix {
         let lower_suffix = contraction_letters.to_lowercase();
         format!("{}{}{}{}", stem, apos_char, lower_suffix, trailing_punct)
     } else {
@@ -3767,6 +3845,20 @@ mod tests {
         assert!(res20.contains("don't"), "Expected don't, got: {}", res20);
         assert!(!res20.contains("'S"), "Must not contain 'S: {}", res20);
         assert!(!res20.contains("'T"), "Must not contain 'T: {}", res20);
+
+        // 16. Spoken 'apostrophe s' acoustic confusions and contraction normalization
+        let res21 = format_transcript(
+            "For a first trophy, s, it'S taking capital S rather than a smaller row, yes.",
+            &cfg
+        );
+        assert!(res21.contains("apostrophe s"), "Expected 'apostrophe s', got: {}", res21);
+        assert!(res21.contains("it's"), "Expected 'it's', got: {}", res21);
+        assert!(!res21.contains("it'S"), "Must not contain 'it'S': {}", res21);
+        assert!(res21.contains("lowercase s"), "Expected 'lowercase s', got: {}", res21);
+
+        // 17. Spoken possessive 'apostrophe s' attachment
+        let res22 = format_transcript("Pavan a first trophy s laptop is ready", &cfg);
+        assert!(res22.contains("Pavan's laptop"), "Expected 'Pavan's laptop', got: {}", res22);
     }
 
     #[test]

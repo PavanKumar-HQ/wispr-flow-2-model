@@ -245,6 +245,12 @@ pub static BUNDLED_INDIAN_TECH_LEXICON: &[(&str, &str, &str)] = &[
     ("photos and all", "photos and all", "workplace"),
     ("videos and all", "videos and all", "workplace"),
     ("and all that", "and all that", "workplace"),
+
+    // Acoustic speech repairs for contractions and spoken punctuation
+    ("a first trophy s", "'s", "spelling"),
+    ("first trophy s", "'s", "spelling"),
+    ("a fast trophy s", "'s", "spelling"),
+    ("apostrophe s", "'s", "spelling"),
 ];
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -412,6 +418,10 @@ impl HistoryDatabase {
             "DELETE FROM personal_vocabulary WHERE id NOT IN (SELECT MAX(id) FROM personal_vocabulary GROUP BY LOWER(original_text))",
             [],
         );
+
+        // Normalize spurious contraction casing across personal vocabulary and custom dictionary
+        let _ = conn.execute("UPDATE personal_vocabulary SET preferred_text = REPLACE(preferred_text, '\'S', '\'s') WHERE preferred_text LIKE '%\'S%'", []);
+        let _ = conn.execute("UPDATE custom_dictionary SET replacement_phrase = REPLACE(replacement_phrase, '\'S', '\'s') WHERE replacement_phrase LIKE '%\'S%'", []);
 
         // Ensure "dishtary" -> "dictionary" is seeded in production dictionary so mishearings are guaranteed to be corrected
         if !db_path.to_string_lossy().contains("test") {
@@ -1486,7 +1496,8 @@ impl HistoryDatabase {
             applied.push("Dictionary correction applied".to_string());
         }
 
-        (dict_applied, applied)
+        let normalized = crate::formatter::normalize_contraction_casing(&dict_applied);
+        (normalized, applied)
     }
 
     pub fn record_training_sample(
