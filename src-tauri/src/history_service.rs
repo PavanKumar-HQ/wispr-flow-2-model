@@ -99,6 +99,10 @@ pub static BUNDLED_INDIAN_TECH_LEXICON: &[(&str, &str, &str)] = &[
     ("react in js", "React.js", "tech"),
     ("react js", "React", "tech"),
     ("vue js", "Vue.js", "tech"),
+    ("vibe core head", "vibe-coded", "tech"),
+    ("vibe coded", "vibe-coded", "tech"),
+    ("vibe coding", "vibe-coding", "tech"),
+    ("vibe coder", "vibe-coder", "tech"),
     ("taiwind", "Tailwind CSS", "tech"),
     ("tail wind", "Tailwind CSS", "tech"),
     ("tauri", "Tauri", "tech"),
@@ -1390,9 +1394,9 @@ impl HistoryDatabase {
             || app_lower.contains("discord");
 
         let base_context = if is_developer_ctx {
-            "In software engineering and coding workspaces, we frequently discuss Rust, TypeScript, Python, Go, API, JSON, GraphQL, PostgreSQL, Kubernetes, Docker, Tauri, Git commit, pull request, async, await, function, component, import, export, debug, refactor, Zustand, React, Vite, tribe, tribe members, ma'am, and terminal commands."
+            "In software engineering and coding workspaces, we frequently discuss Rust, TypeScript, Python, Go, API, JSON, GraphQL, PostgreSQL, Kubernetes, Docker, Tauri, Git commit, pull request, async, await, function, component, import, export, debug, refactor, Zustand, React, Vite, vibe coding, vibe-coded, tribe, tribe members, ma'am, and terminal commands."
         } else if is_browser_or_chat && (title_lower.contains("chatgpt") || title_lower.contains("claude") || title_lower.contains("gemini")) {
-            "When dictating prompts to AI assistants, we give instructions, ask to analyze, debug, explain, optimize, refactor, draft, or summarize clearly with accurate terms: ChatGPT, Codex, Claude, Gemini, API, JSON, React, Tauri, tribe, ma'am, and all."
+            "When dictating prompts to AI assistants, we give instructions, ask to analyze, debug, explain, optimize, refactor, draft, or summarize clearly with accurate terms: ChatGPT, Codex, Claude, Gemini, API, JSON, React, Tauri, vibe coding, vibe-coded, tribe, ma'am, and all."
         } else {
             "In everyday work, conversations, and Indian English professional dictation, clear vocabulary, proper names, entities, Bengaluru, Hyderabad, Mumbai, Delhi, lakh, crore, UPI, WhatsApp, email drafting, meeting notes, tribe, tribe members, ma'am, and all, and concise natural sentences are used."
         };

@@ -113,11 +113,13 @@ pub fn format_transcript_with_metadata(raw: &str, config: &FormattingConfig) -> 
     // Stage 4: Whitespace and Punctuation Spacing Cleanliness
     text = fix_punctuation_spacing(&text);
     text = fix_common_grammar_and_contractions(&text);
+    text = normalize_contraction_casing(&text);
     text = fix_common_proper_nouns(&text);
     text = apply_developer_code_syntax(&text);
     text = apply_developer_casing_commands(&text);
     text = apply_developer_terminal_formatting(&text);
     text = clean_punctuation_and_whitespace(&text);
+    text = normalize_contraction_casing(&text);
     meta.final_text = text.clone();
 
     (text, meta)
@@ -821,6 +823,21 @@ pub fn repair_phonetic_speech_confusions(input: &str) -> String {
         ("what is in common", "what's in common"),
         ("use of particular set", "use a particular set"),
         ("of particular set of languages", "a particular set of languages"),
+
+        // Vibe coding / vibe-coded acoustic decompositions
+        ("vibe, core head, shit", "vibe-coded shit"),
+        ("vibe core head, shit", "vibe-coded shit"),
+        ("vibe core head shit", "vibe-coded shit"),
+        ("vibe, core head", "vibe-coded"),
+        ("vibe core head", "vibe-coded"),
+        ("vibe, corehead", "vibe-coded"),
+        ("vibe corehead", "vibe-coded"),
+        ("vibe cold", "vibe-coded"),
+        ("vibe code it", "vibe-coded"),
+        ("vibe code", "vibe-code"),
+        ("vibe coding", "vibe-coding"),
+        ("vibe coder", "vibe-coder"),
+        ("vibe coders", "vibe-coders"),
     ];
     for (pat, rep) in developer_vocab_patterns {
         if text.contains(pat) {
@@ -2577,6 +2594,69 @@ fn clean_punctuation_and_whitespace(text: &str) -> String {
     cleaned_lines.join("\n").trim().to_string()
 }
 
+/// Normalizes spurious uppercase contraction suffixes emitted by Whisper BPE tokens
+/// (e.g. "it'S" -> "it's", "It'S" -> "It's", "there'S" -> "there's", "that'S" -> "that's",
+/// "suit'S" -> "suit's", "don'T" -> "don't", "can'T" -> "can't", "I'M" -> "I'm", "I'VE" -> "I've")
+pub fn normalize_contraction_casing(input: &str) -> String {
+    if input.contains('\n') {
+        return input
+            .split('\n')
+            .map(normalize_contraction_casing)
+            .collect::<Vec<_>>()
+            .join("\n");
+    }
+
+    let mut words: Vec<String> = Vec::new();
+    for token in input.split(' ') {
+        words.push(normalize_single_word_contraction(token));
+    }
+    words.join(" ")
+}
+
+fn normalize_single_word_contraction(token: &str) -> String {
+    // Check for both ASCII apostrophe (') and right single quote / curly apostrophe (’)
+    let apos_pos = token.find('\'').or_else(|| token.find('’'));
+    let apos_idx = match apos_pos {
+        Some(idx) => idx,
+        None => return token.to_string(),
+    };
+
+    let stem = &token[..apos_idx];
+    let apos_char = token[apos_idx..].chars().next().unwrap();
+    let after_apos = &token[apos_idx + apos_char.len_utf8()..];
+
+    if stem.is_empty() || after_apos.is_empty() {
+        return token.to_string();
+    }
+
+    // Separate contraction letters from trailing punctuation (e.g. "S," or "S." or "S")
+    let contraction_letters: String = after_apos.chars().take_while(|c| c.is_alphabetic()).collect();
+    let trailing_punct = &after_apos[contraction_letters.len()..];
+
+    // Contraction suffixes to normalize
+    let is_valid_contraction_suffix = match contraction_letters.to_uppercase().as_str() {
+        "S" | "T" | "D" | "M" | "LL" | "VE" | "RE" => true,
+        _ => false,
+    };
+
+    if !is_valid_contraction_suffix {
+        return token.to_string();
+    }
+
+    // Check if stem has lowercase letters OR is single "I"
+    let stem_has_lowercase = stem.chars().any(|c| c.is_lowercase());
+    let is_single_i = stem == "I";
+
+    // If stem has lowercase (e.g. "it", "It", "that", "there", "suit", "don") or is "I":
+    // Lowercase the contraction suffix!
+    if stem_has_lowercase || is_single_i {
+        let lower_suffix = contraction_letters.to_lowercase();
+        format!("{}{}{}{}", stem, apos_char, lower_suffix, trailing_punct)
+    } else {
+        token.to_string()
+    }
+}
+
 fn reconstruct_spaced_tokens(tokens: &[String]) -> String {
     let mut res = String::new();
     let mut iter = tokens.iter().peekable();
@@ -3665,6 +3745,28 @@ mod tests {
         assert!(res18.contains("React.js"), "Expected 'React.js', got: {}", res18);
         assert!(res18.contains("particular framework they stick to"), "Expected 'particular framework they stick to', got: {}", res18);
         assert!(res18.contains("what's in common"), "Expected 'what's in common', got: {}", res18);
+
+        // 14. Vibe-coded acoustic repair & contraction casing
+        let res19 = format_transcript(
+            "I mean it'S not taking certain words like vibe, core head, shit.",
+            &cfg
+        );
+        assert!(res19.contains("it's"), "Expected lowercase it's, got: {}", res19);
+        assert!(!res19.contains("it'S"), "Must not contain it'S: {}", res19);
+        assert!(res19.contains("vibe-coded shit"), "Expected 'vibe-coded shit', got: {}", res19);
+
+        // 15. Contraction casing normalization across common contractions
+        let res20 = format_transcript(
+            "that'S the agenda and see what colour suit'S the best because there'S an issue and it'S working, don'T worry.",
+            &cfg
+        );
+        assert!(res20.contains("That's"), "Expected That's, got: {}", res20);
+        assert!(res20.contains("suit's"), "Expected suit's, got: {}", res20);
+        assert!(res20.contains("there's"), "Expected there's, got: {}", res20);
+        assert!(res20.contains("it's"), "Expected it's, got: {}", res20);
+        assert!(res20.contains("don't"), "Expected don't, got: {}", res20);
+        assert!(!res20.contains("'S"), "Must not contain 'S: {}", res20);
+        assert!(!res20.contains("'T"), "Must not contain 'T: {}", res20);
     }
 
     #[test]
