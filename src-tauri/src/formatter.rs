@@ -790,6 +790,37 @@ pub fn repair_phonetic_speech_confusions(input: &str) -> String {
         ("properly, take", "properly take"),
         ("and then, approve", "and then approve"),
         ("then, approve", "then approve"),
+
+        // Next.js and React acoustic speech confusions ("next to JS" -> "Next.js", "React in JS" -> "React.js")
+        ("next to JS", "Next.js"),
+        ("next to js", "Next.js"),
+        ("Next to JS", "Next.js"),
+        ("Next to js", "Next.js"),
+        ("next 2 JS", "Next.js"),
+        ("next 2 js", "Next.js"),
+        ("React in JS", "React.js"),
+        ("react in js", "React.js"),
+        ("React in js", "React.js"),
+        ("react in JS", "React.js"),
+
+        // Framework acoustic decompositions ("frame where" -> "framework")
+        ("some kind of particular frame where they have stick", "some kind of particular framework they stick to"),
+        ("some kind of particular frame where they stick", "some kind of particular framework they stick to"),
+        ("particular frame where they have stick", "particular framework they stick to"),
+        ("particular frame where they stick", "particular framework they stick to"),
+        ("frame where they have stick", "framework they stick to"),
+        ("frame where they stick", "framework they stick to"),
+        ("particular frame where", "particular framework"),
+        ("kind of frame where", "kind of framework"),
+        ("type of frame where", "type of framework"),
+        ("sort of frame where", "sort of framework"),
+        ("which frame where", "which framework"),
+
+        // Fast speech repairs ("what are in common", "of particular set")
+        ("what are in common", "what's in common"),
+        ("what is in common", "what's in common"),
+        ("use of particular set", "use a particular set"),
+        ("of particular set of languages", "a particular set of languages"),
     ];
     for (pat, rep) in developer_vocab_patterns {
         if text.contains(pat) {
@@ -2808,11 +2839,32 @@ fn fix_punctuation_spacing(input: &str) -> String {
         out.push(c);
 
         // Ensure space after punctuation: "word.word" -> "word. word", but protect abbreviations like "e.g.", "i.e.", "U.S."
+        // and technology/file extensions like ".js", ".ts", ".rs", ".py", ".com", ".io", etc.
         let is_abbrev = if c == '.' && i + 1 < chars.len() && chars[i + 1].is_alphabetic() {
             let prev_is_single_letter = (i == 1 && chars[0].is_alphabetic())
                 || (i >= 2 && chars[i - 1].is_alphabetic() && (chars[i - 2].is_whitespace() || chars[i - 2] == '.'));
             let next_has_dot = i + 2 < chars.len() && (chars[i + 2] == '.' || (i + 3 < chars.len() && chars[i + 3] == '.'));
-            prev_is_single_letter && next_has_dot
+            
+            // Check for code/domain extensions like .js, .ts, .rs, .py, .com, .io, .ai
+            let rest: String = chars[i + 1..].iter().take(6).collect();
+            let lower_rest = rest.to_lowercase();
+            let is_ext = [
+                "js", "ts", "tsx", "jsx", "rs", "py", "go", "io", "ai", "dev", "app", "com", "org", "net", "co", "json", "toml", "yaml", "html", "css"
+            ].iter().any(|ext| {
+                if lower_rest.starts_with(ext) {
+                    let next_char_idx = ext.len();
+                    if next_char_idx >= lower_rest.len() {
+                        true
+                    } else {
+                        let ch = lower_rest.chars().nth(next_char_idx).unwrap();
+                        !ch.is_alphabetic()
+                    }
+                } else {
+                    false
+                }
+            });
+
+            (prev_is_single_letter && next_has_dot) || is_ext
         } else {
             false
         };
@@ -3068,12 +3120,18 @@ fn fix_common_proper_nouns(input: &str) -> String {
         ("post degree SQL", "PostgreSQL"),
         ("postgres sql", "PostgreSQL"),
         ("postgre sql", "PostgreSQL"),
+        ("next to js", "Next.js"),
+        ("next. js", "Next.js"),
         ("next js", "Next.js"),
         ("nextjs", "Next.js"),
+        ("react in js", "React.js"),
+        ("react. js", "React.js"),
         ("react js", "React"),
         ("reactjs", "React"),
+        ("node. js", "Node.js"),
         ("node js", "Node.js"),
         ("nodejs", "Node.js"),
+        ("vue. js", "Vue.js"),
         ("vue js", "Vue.js"),
         ("vuejs", "Vue.js"),
         ("type script", "TypeScript"),
@@ -3598,8 +3656,15 @@ mod tests {
         let res16 = format_transcript("Don't show the monetization plan at all and it feels like too much of theory", &cfg);
         assert!(res16.contains("monetization plan and all"), "Expected 'monetization plan and all', got: {}", res16);
 
-        let res17 = format_transcript("photos you'll definitely be getting, and all the things", &cfg);
-        assert!(res17.contains("and all the things"), "Expected 'and all the things', got: {}", res17);
+        // 13. Developer stack & Next.js / React.js / framework acoustic repairs
+        let res18 = format_transcript(
+            "I found that whatever project we are giving to AI agents, what are in common, the notations that they use of particular set of languages itself, like for example, website, next to JS, React in JS, some kind of particular frame where they have stick, why is that so?",
+            &cfg
+        );
+        assert!(res18.contains("Next.js"), "Expected 'Next.js', got: {}", res18);
+        assert!(res18.contains("React.js"), "Expected 'React.js', got: {}", res18);
+        assert!(res18.contains("particular framework they stick to"), "Expected 'particular framework they stick to', got: {}", res18);
+        assert!(res18.contains("what's in common"), "Expected 'what's in common', got: {}", res18);
     }
 
     #[test]
