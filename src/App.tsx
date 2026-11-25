@@ -11,8 +11,10 @@ import { DictionaryTab } from './components/DictionaryTab';
 import { TrainModelTab } from './components/TrainModelTab';
 import { UtilitiesTab } from './components/UtilitiesTab';
 import { QuestsTab } from './components/QuestsTab';
+import { MeetingAssistantTab } from './components/MeetingAssistantTab';
+import { MobileModeTab } from './components/MobileModeTab';
 import { ModelInfo, AppSettings, HistoryRecord, SessionSnapshot, InsightsData } from './types';
-import { Home, Layers, History, Settings as SettingsIcon, BookA, BarChart2, LocateFixed, GraduationCap, LayoutGrid, Trophy } from 'lucide-react';
+import { Home, Layers, History, Settings as SettingsIcon, BookA, BarChart2, LocateFixed, GraduationCap, LayoutGrid, Trophy, Video, Smartphone } from 'lucide-react';
 import { applyTheme } from './lib/theme';
 
 export default function App() {
@@ -34,7 +36,7 @@ export default function App() {
     }
   }, [isPillOnlyWindow]);
 
-  const [activeTab, setActiveTab] = useState<'home' | 'utilities' | 'train' | 'quests' | 'insights' | 'models' | 'dictionary' | 'history' | 'settings'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'meetings' | 'mobile' | 'utilities' | 'train' | 'quests' | 'insights' | 'models' | 'dictionary' | 'history' | 'settings'>('home');
   const [insights, setInsights] = useState<InsightsData | null>(null);
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [settings, setSettings] = useState<AppSettings>({
@@ -412,6 +414,8 @@ export default function App() {
           <nav className="space-y-1.5">
             {[
               { id: 'home', label: 'Home', icon: Home },
+              { id: 'meetings', label: 'Meeting Assistant', icon: Video, badge: 'PARITY' },
+              { id: 'mobile', label: 'Mobile Mode', icon: Smartphone },
               { id: 'utilities', label: 'Utilities', icon: LayoutGrid },
               { id: 'train', label: 'Train the Model', icon: GraduationCap },
               { id: 'quests', label: 'Quests & Badges', icon: Trophy },
@@ -506,6 +510,10 @@ export default function App() {
               onSummonPill={() => safeInvoke('center_pill_window')}
             />
           )}
+
+          {activeTab === 'meetings' && <MeetingAssistantTab />}
+
+          {activeTab === 'mobile' && <MobileModeTab />}
 
           {activeTab === 'utilities' && (
             <UtilitiesTab

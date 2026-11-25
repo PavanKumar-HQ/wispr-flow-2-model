@@ -48,6 +48,7 @@ pub mod history_service;
 pub mod personalization_service;
 pub mod prompt_service;
 pub mod enhancement_service;
+pub mod meeting_service;
 pub mod destination_sync_service;
 pub mod cloud_speech_service;
 pub mod settings_service;
@@ -209,6 +210,7 @@ pub struct AppState {
     pub active_session: Arc<Mutex<SessionSnapshot>>,
     pub destination_sync: Arc<destination_sync_service::DestinationSyncService>,
     pub calibration_mode: Arc<Mutex<bool>>,
+    pub meeting: Arc<meeting_service::MeetingService>,
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -221,6 +223,7 @@ pub fn run() {
     let recording_start = Arc::new(Mutex::new(None));
     let destination_sync = Arc::new(destination_sync_service::DestinationSyncService::new());
     let calibration_mode = Arc::new(Mutex::new(false));
+    let meeting_service = Arc::new(meeting_service::MeetingService::new());
     let active_session = Arc::new(Mutex::new(SessionSnapshot {
         session_id: String::new(),
         sequence: 0,
@@ -246,6 +249,7 @@ pub fn run() {
         active_session: Arc::clone(&active_session),
         destination_sync: Arc::clone(&destination_sync),
         calibration_mode: Arc::clone(&calibration_mode),
+        meeting: Arc::clone(&meeting_service),
     };
 
     let initial_shortcut_str = {
@@ -543,7 +547,13 @@ pub fn run() {
             commands::send_system_notification_cmd,
             commands::scan_mac_storage_cmd,
             commands::run_system_clean_and_boost_cmd,
-            commands::launch_squirrel_cleaner_cmd
+            commands::launch_squirrel_cleaner_cmd,
+            commands::start_meeting_recording_cmd,
+            commands::stop_meeting_recording_cmd,
+            commands::get_active_meeting_cmd,
+            commands::add_meeting_utterance_cmd,
+            commands::generate_meeting_summary_cmd,
+            commands::export_meeting_notes_cmd
         ])
         .run(tauri::generate_context!())
         .expect("error while running VoxQuest application");

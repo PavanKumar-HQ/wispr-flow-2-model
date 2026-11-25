@@ -15,7 +15,9 @@ import {
   ArrowRight,
   Radio,
   Edit3,
-  Trophy
+  Trophy,
+  Video,
+  Smartphone
 } from 'lucide-react';
 import { InsightsData, HistoryRecord, SessionSnapshot } from '../types';
 import { AudioWaveform } from './AudioWaveform';
@@ -34,7 +36,7 @@ interface HomeTabProps {
   onDeleteHistory: (id: number) => void;
   onClearHistory: () => void;
   onToggleDictation: () => void;
-  onNavigateTab: (tab: 'home' | 'utilities' | 'train' | 'quests' | 'insights' | 'history' | 'dictionary' | 'models' | 'settings') => void;
+  onNavigateTab: (tab: 'home' | 'meetings' | 'mobile' | 'utilities' | 'train' | 'quests' | 'insights' | 'history' | 'dictionary' | 'models' | 'settings') => void;
   onSummonPill: () => void;
 }
 
@@ -387,6 +389,63 @@ export const HomeTab: React.FC<HomeTabProps> = ({
             <span>Quests</span>
             <ArrowRight className="w-3 h-3 text-amber" />
           </button>
+        </div>
+      </div>
+
+      {/* Feature Spotlight: Meeting Assistant (Wispr Parity) & Mobile Trigger Architecture */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Card 1: Meeting Assistant */}
+        <div
+          onClick={() => onNavigateTab('meetings')}
+          className="p-4 rounded-2xl bg-white dark:bg-darkTealSurface border border-charcoal/15 dark:border-darkTealBorder hover:border-emerald-500/60 transition-all cursor-pointer shadow-xs group"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300">
+                <Video className="w-4 h-4" />
+              </div>
+              <span className="text-xs font-bold text-charcoal dark:text-cream">
+                VoxMeeting Assistant
+              </span>
+            </div>
+            <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+              WISPR PARITY
+            </span>
+          </div>
+          <p className="text-[11px] text-charcoal/70 dark:text-sage leading-relaxed mb-3">
+            Auto-capture Google Meet, Zoom &amp; Teams calls. Dual-stream transcription, executive summaries, and action items with 100% on-device privacy.
+          </p>
+          <div className="flex items-center justify-between text-[11px] font-mono font-semibold text-emerald-700 dark:text-emerald-400">
+            <span>Launch Meeting Notetaker</span>
+            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+          </div>
+        </div>
+
+        {/* Card 2: Mobile Mode Companion */}
+        <div
+          onClick={() => onNavigateTab('mobile')}
+          className="p-4 rounded-2xl bg-white dark:bg-darkTealSurface border border-charcoal/15 dark:border-darkTealBorder hover:border-amber/60 transition-all cursor-pointer shadow-xs group"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-xl bg-amber/20 dark:bg-amber/30 text-charcoal dark:text-amber">
+                <Smartphone className="w-4 h-4" />
+              </div>
+              <span className="text-xs font-bold text-charcoal dark:text-cream">
+                Mobile &amp; Android Trigger
+              </span>
+            </div>
+            <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber/20 text-charcoal dark:text-amber">
+              NEW ARCHITECTURE
+            </span>
+          </div>
+          <p className="text-[11px] text-charcoal/70 dark:text-sage leading-relaxed mb-3">
+            No physical laptop keys on phone? Use our Floating Omnipresent Bubble, Custom Voice IME, and Hardware Key remapper with zero clipboard hijacking.
+          </p>
+          <div className="flex items-center justify-between text-[11px] font-mono font-semibold text-amber-800 dark:text-amber">
+            <span>Configure Mobile Mode</span>
+            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+          </div>
         </div>
       </div>
 

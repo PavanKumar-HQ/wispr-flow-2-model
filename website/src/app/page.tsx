@@ -180,6 +180,41 @@ export default function HomePage() {
                 {/* Row 4 */}
                 <div className="grid grid-cols-3 p-4 sm:p-5 items-center hover:bg-white/[0.03] transition-colors">
                   <div>
+                    <div className="font-bold text-white">Meeting Assistant &amp; Notetaker</div>
+                    <div className="text-xs text-white/60">Google Meet, Zoom, Teams calls</div>
+                  </div>
+                  <div className="text-center text-white/80 flex flex-col items-center gap-1">
+                    <span className="text-xs text-red-300 font-mono flex items-center gap-1">
+                      <X className="w-3.5 h-3.5 text-red-400" /> Cloud Audio Eavesdropping
+                    </span>
+                    <span className="text-[11px] text-white/50">Streams NDA calls to server</span>
+                  </div>
+                  <div className="text-center flex flex-col items-center gap-1">
+                    <span className="text-xs text-emerald-400 font-mono font-bold flex items-center gap-1">
+                      <Check className="w-3.5 h-3.5 text-emerald-400" /> 100% On-Device VoxMeeting
+                    </span>
+                    <span className="text-[11px] text-white/80">Verbatim notes + action items locally</span>
+                  </div>
+                </div>
+
+                {/* Row 5 */}
+                <div className="grid grid-cols-3 p-4 sm:p-5 items-center hover:bg-white/[0.03] transition-colors">
+                  <div>
+                    <div className="font-bold text-white">Mobile Mode Trigger Strategy</div>
+                    <div className="text-xs text-white/60">Android &amp; iOS hands-free dictation</div>
+                  </div>
+                  <div className="text-center text-white/60 text-xs">
+                    <span className="text-red-300">Closed proprietary cloud app</span>
+                  </div>
+                  <div className="text-center text-emerald-400 text-xs font-bold">
+                    <span>Floating Pill + AccessibilityService</span>
+                    <div className="text-[11px] text-white/80">Injects into WhatsApp, Slack, Gmail</div>
+                  </div>
+                </div>
+
+                {/* Row 6 */}
+                <div className="grid grid-cols-3 p-4 sm:p-5 items-center hover:bg-white/[0.03] transition-colors">
+                  <div>
                     <div className="font-bold text-white">Mac Storage Cleaner</div>
                     <div className="text-xs text-white/60">System utility suite</div>
                   </div>
@@ -190,7 +225,7 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                {/* Row 5 */}
+                {/* Row 7 */}
                 <div className="grid grid-cols-3 p-4 sm:p-5 items-center hover:bg-white/[0.03] transition-colors">
                   <div>
                     <div className="font-bold text-white">Gamification &amp; Quests</div>

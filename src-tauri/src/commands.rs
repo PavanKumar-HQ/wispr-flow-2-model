@@ -2398,3 +2398,54 @@ pub fn try_execute_voice_action(_raw_transcript: &str) -> Option<VoiceActionResu
     // preventing awkward unexpected YouTube or search tabs from opening in public.
     None
 }
+
+#[tauri::command]
+pub fn start_meeting_recording_cmd(
+    state: State<'_, AppState>,
+    title: String,
+    platform: String,
+    meeting_url: Option<String>,
+) -> Result<crate::meeting_service::MeetingSession, String> {
+    state.meeting.start_meeting(title, platform, meeting_url)
+}
+
+#[tauri::command]
+pub fn stop_meeting_recording_cmd(
+    state: State<'_, AppState>,
+) -> Result<crate::meeting_service::MeetingSession, String> {
+    state.meeting.stop_meeting()
+}
+
+#[tauri::command]
+pub fn get_active_meeting_cmd(
+    state: State<'_, AppState>,
+) -> Result<Option<crate::meeting_service::MeetingSession>, String> {
+    state.meeting.get_active_meeting()
+}
+
+#[tauri::command]
+pub fn add_meeting_utterance_cmd(
+    state: State<'_, AppState>,
+    speaker: String,
+    text: String,
+    is_user: bool,
+) -> Result<crate::meeting_service::MeetingSession, String> {
+    state.meeting.add_utterance(speaker, text, is_user)
+}
+
+#[tauri::command]
+pub fn generate_meeting_summary_cmd(
+    state: State<'_, AppState>,
+    session_id: String,
+) -> Result<crate::meeting_service::MeetingSummary, String> {
+    state.meeting.generate_summary_for_session(&session_id)
+}
+
+#[tauri::command]
+pub fn export_meeting_notes_cmd(
+    state: State<'_, AppState>,
+    session_id: String,
+) -> Result<String, String> {
+    state.meeting.export_notes_markdown(&session_id)
+}
+
