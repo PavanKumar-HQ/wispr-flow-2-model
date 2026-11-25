@@ -414,8 +414,8 @@ export default function App() {
           <nav className="space-y-1.5">
             {[
               { id: 'home', label: 'Home', icon: Home },
-              { id: 'meetings', label: 'Meeting Assistant', icon: Video, badge: 'PARITY' },
-              { id: 'mobile', label: 'Mobile Mode', icon: Smartphone },
+              { id: 'meetings', label: 'Meetings', icon: Video },
+              { id: 'mobile', label: 'Mobile', icon: Smartphone },
               { id: 'utilities', label: 'Utilities', icon: LayoutGrid },
               { id: 'train', label: 'Train the Model', icon: GraduationCap },
               { id: 'quests', label: 'Quests & Badges', icon: Trophy },

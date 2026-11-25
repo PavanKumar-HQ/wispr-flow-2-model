@@ -116,7 +116,7 @@ export const MobileModeTab: React.FC = () => {
                 <p className="text-[11px] text-charcoal/70 dark:text-sage leading-relaxed">
                   Persistent draggable pill using Android <code>SYSTEM_ALERT_WINDOW</code>. Docks to screen edge; tap or hold to dictate anywhere.
                 </p>
-                <div className="mt-2 text-[9px] font-mono font-bold text-emerald-700 dark:text-emerald-400">
+                <div className="mt-2 text-[9px] font-mono font-bold text-darkTeal dark:text-amber">
                   Recommended &middot; Global Injection
                 </div>
               </div>
@@ -158,7 +158,7 @@ export const MobileModeTab: React.FC = () => {
               >
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-2">
-                    <Volume2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <Volume2 className="w-4 h-4 text-darkTeal dark:text-amber" />
                     <span className="text-xs font-bold text-charcoal dark:text-cream">
                       3. Hardware Key Remap
                     </span>
@@ -214,7 +214,7 @@ export const MobileModeTab: React.FC = () => {
                 onClick={copyAndroidCode}
                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-stone-100 dark:bg-darkTealElevated hover:bg-stone-200 text-[11px] font-mono font-bold text-charcoal dark:text-cream transition-all"
               >
-                {copiedCode ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                {copiedCode ? <Check className="w-3 h-3 text-amber" /> : <Copy className="w-3 h-3" />}
                 <span>{copiedCode ? 'Copied' : 'Copy Kotlin'}</span>
               </button>
             </div>

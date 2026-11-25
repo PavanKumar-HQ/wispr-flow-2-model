@@ -397,25 +397,25 @@ export const HomeTab: React.FC<HomeTabProps> = ({
         {/* Card 1: Meeting Assistant */}
         <div
           onClick={() => onNavigateTab('meetings')}
-          className="p-4 rounded-2xl bg-white dark:bg-darkTealSurface border border-charcoal/15 dark:border-darkTealBorder hover:border-emerald-500/60 transition-all cursor-pointer shadow-xs group"
+          className="p-4 rounded-2xl bg-white dark:bg-darkTealSurface border border-charcoal/15 dark:border-darkTealBorder hover:border-darkTeal/40 dark:hover:border-amber/40 transition-all cursor-pointer shadow-xs group"
         >
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
-              <div className="p-2 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300">
-                <Video className="w-4 h-4" />
+              <div className="p-2 rounded-xl bg-darkTeal/10 dark:bg-darkTealElevated text-darkTeal dark:text-cream">
+                <Video className="w-4 h-4 text-darkTeal dark:text-amber" />
               </div>
               <span className="text-xs font-bold text-charcoal dark:text-cream">
-                VoxMeeting Assistant
+                Meeting Assistant
               </span>
             </div>
-            <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-              WISPR PARITY
+            <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-darkTeal/10 text-darkTeal dark:bg-darkTealElevated dark:text-amber border border-darkTeal/20">
+              NEW FEATURE
             </span>
           </div>
           <p className="text-[11px] text-charcoal/70 dark:text-sage leading-relaxed mb-3">
             Auto-capture Google Meet, Zoom &amp; Teams calls. Dual-stream transcription, executive summaries, and action items with 100% on-device privacy.
           </p>
-          <div className="flex items-center justify-between text-[11px] font-mono font-semibold text-emerald-700 dark:text-emerald-400">
+          <div className="flex items-center justify-between text-[11px] font-mono font-semibold text-darkTeal dark:text-amber">
             <span>Launch Meeting Notetaker</span>
             <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
           </div>
