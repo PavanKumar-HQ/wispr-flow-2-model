@@ -1,52 +1,59 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
 import { Navbar, Footer } from '@/components/Navigation';
 import { AnimatedVoxelBackground } from '@/components/AnimatedVoxelBackground';
 import { SmartDownloadSection } from '@/components/SmartDownloadSection';
-import { Terminal, Shield, Zap } from 'lucide-react';
+import { ShieldCheck, Zap, Laptop, Lock } from 'lucide-react';
 
 export default function DownloadPage() {
   return (
-    <div className="min-h-screen flex flex-col relative overflow-x-hidden">
-      {/* 3D Animated Minecraft Voxel Overworld Background */}
+    <div className="min-h-screen flex flex-col relative overflow-x-hidden font-sans">
+      {/* Zero-Lag Ambient Background */}
       <AnimatedVoxelBackground />
 
       <Navbar />
 
       <main className="flex-1 pt-28 pb-14 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto w-full relative z-10">
         <div className="text-center max-w-3xl mx-auto mb-10">
-          <div className="inline-flex items-center gap-2 arcade-badge bg-[#DDA44D] text-[#212121] mb-3">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#DDA44D]/20 text-[#DDA44D] border border-[#DDA44D]/40 font-mono text-xs font-bold mb-3 uppercase">
             <Zap className="w-3.5 h-3.5 text-[#DA6C4C]" />
-            <span>DIRECT NATIVE INSTALLERS</span>
+            <span>NATIVE APPLICATION DOWNLOAD</span>
           </div>
-          <h1 className="font-pixel text-2xl sm:text-4xl text-[#DFDFD4] tracking-wide uppercase drop-shadow-[4px_4px_0px_#212121]">
-            DOWNLOAD VOXQUEST
+          <h1 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
+            Download VoxQuest
           </h1>
-          <p className="mt-4 font-mono text-xs sm:text-sm text-[#DFDFD4] leading-relaxed drop-shadow-[2px_2px_0px_#212121]">
+          <p className="mt-3 text-sm sm:text-base text-white/80 leading-relaxed max-w-xl mx-auto font-sans">
             Push-to-talk voice dictation with zero cloud streaming, instant text injection, and full offline Whisper inference.
           </p>
         </div>
 
-        {/* Smart OS Auto-Detection & Direct Downloads */}
+        {/* Smart OS Auto-Detection & Direct Software Binary Downloads */}
         <SmartDownloadSection />
 
-        {/* Source Build Instructions */}
-        <div className="mt-12 arcade-panel-dark p-6 sm:p-8 bg-[#0F5B57]/80 backdrop-blur-md border-3 border-[#212121]">
-          <h3 className="font-pixel text-xs sm:text-sm text-[#DDA44D] mb-3 flex items-center gap-2">
-            <Terminal className="w-4 h-4 text-[#DDA44D]" />
-            <span>BUILDING FROM VERIFIED SOURCE</span>
+        {/* Verification & Air-Gapped Security Guarantee */}
+        <div className="mt-12 p-6 sm:p-8 rounded-2xl bg-white/[0.04] backdrop-blur-xl border border-white/10 space-y-3">
+          <h3 className="text-sm font-bold text-white flex items-center gap-2 font-mono uppercase tracking-wide">
+            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            <span>Integrity &amp; Privacy Verification</span>
           </h3>
-          <p className="text-xs font-mono text-[#DFDFD4] leading-relaxed mb-4">
-            Prefer compiling natively on your own machine? Clone the open-source repository:
+          <p className="text-xs text-white/75 leading-relaxed">
+            All VoxQuest releases are self-contained standalone installers. The application runs entirely within your system sandbox, requires zero network connections after download, and processes all microphone audio locally via Apple Silicon Metal acceleration.
           </p>
-          <pre className="p-4 bg-[#212121] border-2 border-[#212121] text-xs font-mono overflow-x-auto text-[#DFDFD4] space-y-1">
-{`git clone https://github.com/PavanKumar-HQ/wispr-flow-2-model.git voxquest
-cd voxquest
-pnpm install
-pnpm tauri build`}
-          </pre>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs font-mono text-white/80">
+            <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+              <div className="text-emerald-400 font-bold mb-0.5">100% OFFLINE</div>
+              <p className="text-[11px] text-white/60">Works without an internet connection or Wi-Fi.</p>
+            </div>
+            <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+              <div className="text-[#DDA44D] font-bold mb-0.5">ZERO TELEMETRY</div>
+              <p className="text-[11px] text-white/60">No audio packets are ever recorded or uploaded.</p>
+            </div>
+            <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+              <div className="text-blue-400 font-bold mb-0.5">COMPACT 6.0 MB</div>
+              <p className="text-[11px] text-white/60">Lightweight native binary with minimal storage impact.</p>
+            </div>
+          </div>
         </div>
       </main>
 

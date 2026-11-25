@@ -75,11 +75,10 @@ export default function HomePage() {
                 <span>DOWNLOAD VOXQUEST FREE</span>
               </Link>
               <Link
-                href="/open-source"
+                href="/download"
                 className="arcade-btn arcade-btn-ghost w-full sm:w-auto text-sm py-4 px-6 flex items-center justify-center gap-2.5 bg-white/90 backdrop-blur-md hover:bg-white"
               >
-                <FileCode className="w-4 h-4" />
-                <span>VIEW SOURCE (APACHE 2.0)</span>
+                <span>GET STARTED FREE</span>
               </Link>
             </div>
 
@@ -344,20 +343,18 @@ export default function HomePage() {
               </div>
 
               <div className="pt-4 flex flex-wrap gap-4 border-t border-charcoal/15">
-                <a
-                  href="https://github.com/PavanKumar-HQ/wispr-flow-2-model"
-                  target="_blank"
-                  rel="noreferrer"
+                <Link
+                  href="/download"
                   className="arcade-btn arcade-btn-primary text-xs py-3 px-6 flex items-center gap-2"
                 >
-                  <FileCode className="w-4 h-4 text-[#212121]" />
-                  <span>GITHUB REPOSITORY</span>
-                </a>
+                  <Download className="w-4 h-4 text-[#212121]" />
+                  <span>DOWNLOAD APPLICATION</span>
+                </Link>
                 <Link
-                  href="/open-source"
+                  href="/features"
                   className="arcade-btn arcade-btn-ghost text-xs py-3 px-6 flex items-center gap-2 bg-white"
                 >
-                  <span>CONTRIBUTION GUIDE</span>
+                  <span>EXPLORE CAPABILITIES</span>
                 </Link>
               </div>
             </div>

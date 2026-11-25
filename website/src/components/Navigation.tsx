@@ -55,22 +55,12 @@ export function Navbar() {
 
           {/* Action Buttons */}
           <div className="hidden sm:flex items-center gap-3">
-            <a
-              href="https://github.com/PavanKumar-HQ/wispr-flow-2-model"
-              target="_blank"
-              rel="noreferrer"
-              className="arcade-btn arcade-btn-ghost text-xs py-2 px-3.5 flex items-center gap-2"
-              aria-label="GitHub Repository"
-            >
-              <Github className="w-4 h-4 text-[#212121]" />
-              <span>REPO</span>
-            </a>
             <Link
               href="/download"
-              className="arcade-btn arcade-btn-primary text-xs py-2.5 px-4 flex items-center gap-2"
+              className="arcade-btn arcade-btn-primary text-xs py-2.5 px-5 flex items-center gap-2 shadow-md hover:scale-105 transition-all"
             >
               <Download className="w-4 h-4 text-[#212121]" />
-              <span>DOWNLOAD</span>
+              <span>DOWNLOAD APP</span>
             </Link>
           </div>
 

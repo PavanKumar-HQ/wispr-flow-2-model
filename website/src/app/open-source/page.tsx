@@ -47,36 +47,31 @@ export default function OpenSourcePage() {
 
         <div className="arcade-panel p-6 sm:p-8 bg-[#DFDFD4]/85 backdrop-blur-md space-y-6">
           <h2 className="font-pixel text-sm sm:text-base text-[#212121] border-b-2 border-[#212121] pb-3">
-            HOW TO CONTRIBUTE
+            APPLICATION ARCHITECTURE &amp; DISTRIBUTION
           </h2>
 
           <div className="space-y-4 text-xs font-mono text-[#212121]/90">
             <p className="leading-relaxed">
-              We welcome code contributions, vocabulary dictionary expansions, accessibility reviews, documentation improvements, and translations.
+              VoxQuest delivers native, pre-packaged binaries for macOS, Windows, and Linux. All core speech recognition features run offline through on-device models.
             </p>
 
-            <div className="p-4 bg-[#212121] border-2 border-[#212121] space-y-1.5 font-mono text-xs text-[#DFDFD4]">
-              <div className="text-[#B8CBC3]"># 1. Clone the repository</div>
-              <div>git clone https://github.com/PavanKumar-HQ/wispr-flow-2-model.git voxquest</div>
-              <div className="text-[#B8CBC3]"># 2. Install dependencies</div>
-              <div>npm install</div>
-              <div className="text-[#B8CBC3]"># 3. Run development server</div>
-              <div>npm run dev</div>
+            <div className="p-4 bg-[#212121] border-2 border-[#212121] space-y-2 font-mono text-xs text-[#DFDFD4]">
+              <div className="text-[#34D399] font-bold"># Standalone Native Software Package</div>
+              <div>Native macOS Installer: VoxQuest_0.1.0_aarch64.dmg (6.0 MB)</div>
+              <div>Runtime: Local Whisper Engine via Metal GPU / Apple Silicon Accelerate</div>
+              <div>Telemetry: 0 network connections / 100% Air-Gapped Privacy</div>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-4 pt-4 border-t-2 border-[#212121]">
-            <a
-              href="https://github.com/PavanKumar-HQ/wispr-flow-2-model"
-              target="_blank"
-              rel="noreferrer"
+            <Link
+              href="/download"
               className="arcade-btn arcade-btn-primary px-6 py-3.5 text-xs font-bold flex items-center gap-2"
             >
-              <Github className="w-4 h-4 text-[#212121]" />
-              <span>GITHUB REPOSITORY</span>
-            </a>
+              <span>DOWNLOAD SOFTWARE</span>
+            </Link>
             <Link href="/docs" className="arcade-btn arcade-btn-ghost px-6 py-3.5 text-xs font-bold bg-[#DFDFD4]">
-              DEVELOPER GUIDE
+              DOCUMENTATION GUIDE
             </Link>
           </div>
         </div>

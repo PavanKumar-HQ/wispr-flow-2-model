@@ -25,19 +25,17 @@ export default function CommunityPage() {
           <div className="arcade-panel p-6 bg-[#DFDFD4]/85 backdrop-blur-md space-y-4">
             <div className="flex items-center gap-2 text-[#07514C]">
               <Bug className="w-5 h-5 text-[#07514C]" />
-              <h3 className="font-pixel text-xs sm:text-sm text-[#212121]">ISSUE TRACKING &amp; ROADMAP</h3>
+              <h3 className="font-pixel text-xs sm:text-sm text-[#212121]">BUILT-IN FEEDBACK &amp; ROADMAP</h3>
             </div>
             <p className="text-xs font-mono text-[#212121]/80 leading-relaxed">
-              Encountered a bug or want to propose a new speech engine binding? File a detailed issue on our GitHub tracker.
+              Encountered a bug or want to suggest a new custom vocabulary package? Send feedback directly through the in-app Studio tab.
             </p>
-            <a
-              href="https://github.com/PavanKumar-HQ/wispr-flow-2-model/issues"
-              target="_blank"
-              rel="noreferrer"
+            <Link
+              href="/download"
               className="arcade-btn arcade-btn-ghost px-4 py-2 text-xs font-bold inline-flex items-center gap-1.5"
             >
-              <span>BROWSE ISSUES</span>
-            </a>
+              <span>GET THE APP</span>
+            </Link>
           </div>
 
           <div className="arcade-panel p-6 bg-[#DFDFD4]/85 backdrop-blur-md space-y-4">
@@ -48,14 +46,12 @@ export default function CommunityPage() {
             <p className="text-xs font-mono text-[#212121]/80 leading-relaxed">
               Share prompt templates, custom dictionary lists for specific frameworks, and desktop workflow hacks.
             </p>
-            <a
-              href="https://github.com/PavanKumar-HQ/wispr-flow-2-model/discussions"
-              target="_blank"
-              rel="noreferrer"
+            <Link
+              href="/features"
               className="arcade-btn arcade-btn-ghost px-4 py-2 text-xs font-bold inline-flex items-center gap-1.5"
             >
-              <span>JOIN DISCUSSIONS</span>
-            </a>
+              <span>VIEW CAPABILITIES</span>
+            </Link>
           </div>
         </div>
 
