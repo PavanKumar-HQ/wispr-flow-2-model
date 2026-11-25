@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sliders, Briefcase, Scissors, Terminal, Lightbulb, Check, Copy, CornerDownLeft, RefreshCw, PenTool, Smile } from 'lucide-react';
+import { Sliders, Briefcase, Scissors, Terminal, Lightbulb, Check, Copy, CornerDownLeft, RefreshCw, PenTool, Smile, GitBranch } from 'lucide-react';
 import { safeInvoke } from '../../lib/ipc';
 import { EnhancementMode, EnhancementRequest, EnhancementResponse } from '../../types';
 
@@ -10,9 +10,10 @@ interface ToneRewriterWidgetProps {
 
 const TONES: { id: EnhancementMode; label: string; icon: React.ReactNode; desc: string }[] = [
   { id: 'professional', label: 'Executive', icon: <Briefcase className="w-3.5 h-3.5" />, desc: 'Formal, polite, client-ready' },
-  { id: 'technical_precision', label: 'Technical & Git', icon: <Terminal className="w-3.5 h-3.5" />, desc: 'Developer repos, code & spec tone' },
-  { id: 'concise', label: 'Concise', icon: <Scissors className="w-3.5 h-3.5" />, desc: 'Punchy bullet points, no fluff' },
-  { id: 'natural', label: 'Casual & Slang', icon: <Smile className="w-3.5 h-3.5" />, desc: 'Natural voice, preserves slang & idioms' },
+  { id: 'casual', label: 'Casual & Slangs', icon: <Smile className="w-3.5 h-3.5" />, desc: 'Conversational, relaxed, slang-friendly' },
+  { id: 'developer_notes', label: 'Open Source & Repos', icon: <GitBranch className="w-3.5 h-3.5" />, desc: 'Git commit & PR format' },
+  { id: 'technical_precision', label: 'Technical Spec', icon: <Terminal className="w-3.5 h-3.5" />, desc: 'Precise developer & syntax tone' },
+  { id: 'concise', label: 'Concise Bullets', icon: <Scissors className="w-3.5 h-3.5" />, desc: 'Punchy bullet points, no fluff' },
   { id: 'prompt', label: 'AI Prompt', icon: <Lightbulb className="w-3.5 h-3.5" />, desc: 'Structured high-performance prompt' },
   { id: 'light_correction', label: 'Clean & Fix', icon: <PenTool className="w-3.5 h-3.5" />, desc: 'Grammar, punctuation & flow' },
 ];
@@ -74,6 +75,10 @@ export const ToneRewriterWidget: React.FC<ToneRewriterWidgetProps> = ({ lastTran
         if (mode === 'professional') {
           const capitalized = raw.charAt(0).toUpperCase() + raw.slice(1);
           setResultText(`I would appreciate your review on this matter: ${capitalized} Please let me know your thoughts.`);
+        } else if (mode === 'casual') {
+          setResultText(raw.replace(/\bgoing to\b/gi, 'gonna').replace(/\bwant to\b/gi, 'wanna').replace(/\bkind of\b/gi, 'kinda'));
+        } else if (mode === 'developer_notes') {
+          setResultText(`feat/fix: ${raw}\n\n- Repos & components updated\n- Verified locally with zero regressions`);
         } else if (mode === 'concise') {
           const sentences = raw.split('. ').filter(Boolean);
           const bullets = sentences.map((s) => `• ${s.trim().replace(/^\*/, '').trim()}`).join('\n');

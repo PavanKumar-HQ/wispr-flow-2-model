@@ -5,6 +5,7 @@ import { FocusTimerWidget } from './capsule/FocusTimerWidget';
 import { MediaWidget } from './capsule/MediaWidget';
 import { ClipboardHistoryWidget } from './capsule/ClipboardHistoryWidget';
 import { ScheduleWidget } from './capsule/ScheduleWidget';
+import { ToneRewriterWidget } from './capsule/ToneRewriterWidget';
 import { SessionSnapshot } from '../types';
 import { safeInvoke } from '../lib/ipc';
 
@@ -119,10 +120,10 @@ export const UtilitiesTab: React.FC<UtilitiesTabProps> = ({ session, onCopy, onS
                 type="button"
                 onClick={handleLaunchSquirrel}
                 className="px-3 py-1.5 rounded-xl text-xs font-bold bg-stone-100 dark:bg-darkTealSurface hover:bg-stone-200 dark:hover:bg-darkTealElevated text-charcoal dark:text-cream border border-charcoal/15 dark:border-darkTealBorder flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-2xs"
-                title="Open Squirrel native storage cleaner application"
+                title="Open native storage cleaner application"
               >
                 <ExternalLink className="w-3.5 h-3.5 text-darkTeal dark:text-mint" />
-                <span>{squirrelStatus || 'Open Squirrel App'}</span>
+                <span>{squirrelStatus || 'Open Storage Cleaner'}</span>
               </button>
             )}
 
@@ -231,6 +232,20 @@ export const UtilitiesTab: React.FC<UtilitiesTabProps> = ({ session, onCopy, onS
             <span>Voice Clipboard History</span>
           </div>
           <ClipboardHistoryWidget lastTranscript={session.last_transcript} onCopy={onCopy} />
+        </div>
+
+        {/* Tool 5: AI Multi-Tone & Voice Rewriter */}
+        <div className="space-y-2 lg:col-span-2">
+          <div className="text-[11px] font-extrabold uppercase tracking-wider text-charcoal/60 dark:text-sage flex items-center justify-between px-1">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-darkTeal dark:bg-[#34A89E]" />
+              <span>AI Multi-Tone & Smart Voice Rewriter</span>
+            </div>
+            <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-darkTeal/10 text-darkTeal font-bold border border-darkTeal/20">
+              On-Demand • Zero Idle Battery
+            </span>
+          </div>
+          <ToneRewriterWidget lastTranscript={session.last_transcript} onCopy={onCopy} />
         </div>
       </div>
     </div>

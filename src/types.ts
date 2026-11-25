@@ -146,6 +146,8 @@ export type EnhancementMode =
   | 'professional'
   | 'concise'
   | 'natural'
+  | 'casual'
+  | 'developer_notes'
   | 'improve_clarity'
   | 'keep_tone'
   | 'prompt'

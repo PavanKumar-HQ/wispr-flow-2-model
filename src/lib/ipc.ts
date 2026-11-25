@@ -347,7 +347,7 @@ export async function safeInvoke<T>(cmd: string, args?: Record<string, unknown>)
       } as unknown as T;
     }
     case 'get_system_clipboard_cmd': {
-      return 'VoxQuest Sovereign Voice OS' as unknown as T;
+      return 'VoxQuest OS' as unknown as T;
     }
     case 'get_dataset_stats_cmd': {
       return {

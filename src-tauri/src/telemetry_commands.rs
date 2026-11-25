@@ -341,7 +341,7 @@ pub fn run_system_clean_and_boost_cmd(_state: State<'_, AppState>) -> Result<Sys
     }
 
     if squirrel_found {
-        items.push("Squirrel Storage Cleaner detected and ready".to_string());
+        items.push("Integrated with Squirrel Storage Cleaner".to_string());
     }
 
     Ok(SystemCleanResult {
@@ -367,10 +367,10 @@ pub fn launch_squirrel_cleaner_cmd() -> Result<String, String> {
     for p in &possible_squirrel_paths {
         if p.exists() {
             let _ = std::process::Command::new("open").arg(p).spawn().map_err(|e| e.to_string())?;
-            return Ok("Squirrel Launched".to_string());
+            return Ok("Squirrel Storage Cleaner launched".to_string());
         }
     }
 
-    Err("Squirrel.app not found in Downloads or Applications".to_string())
+    Err("Squirrel Storage Cleaner is not installed".to_string())
 }
 

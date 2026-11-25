@@ -78,3 +78,4 @@ export async function relaunchToApplyUpdate(): Promise<void> {
     console.error('Failed to relaunch:', err);
   }
 }
+

@@ -107,18 +107,18 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
       </div>
 
       <div className="grid gap-5">
-        {/* Appearance & Sovereign Theme Display */}
+        {/* Appearance & Theme Display */}
         <div className="p-5 rounded-2xl border border-charcoal/15 bg-white shadow-xs space-y-3.5">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal font-mono flex items-center gap-1.5">
               <Palette className="w-3.5 h-3.5" /> Appearance & Theme
             </h3>
             <span className="text-[10px] font-mono font-bold text-darkTeal bg-darkTeal/10 px-2 py-0.5 rounded-full border border-darkTeal/20">
-              Sovereign Palette
+              Warm Linen
             </span>
           </div>
           <p className="text-xs text-charcoal/70 leading-relaxed">
-            VoxQuest is permanently styled in the signature Warm Linen aesthetic with Sovereign Teal typography and tactile paper surfaces.
+            VoxQuest is styled in the signature Warm Linen aesthetic with Deep Teal typography and tactile paper surfaces.
           </p>
 
           <div className="pt-1">
@@ -133,13 +133,13 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                     <span className="text-[10px] font-mono font-bold text-darkTeal bg-white px-2 py-0.5 rounded border border-darkTeal/20">Active</span>
                   </div>
                   <p className="text-[11px] text-charcoal/70 leading-tight mt-0.5">
-                    Warm linen paper canvas (#DFDFD4) with Sovereign Teal ink (#07514C) and crisp card containers.
+                    Warm linen paper canvas (#DFDFD4) with Deep Teal ink (#07514C) and crisp card containers.
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="w-5 h-5 rounded-full border border-charcoal/20" style={{ backgroundColor: '#DFDFD4' }} title="#DFDFD4 (Linen Canvas)" />
-                <span className="w-5 h-5 rounded-full" style={{ backgroundColor: '#07514C' }} title="#07514C (Sovereign Teal)" />
+                <span className="w-5 h-5 rounded-full" style={{ backgroundColor: '#07514C' }} title="#07514C (Deep Teal)" />
                 <span className="w-5 h-5 rounded-full" style={{ backgroundColor: '#DA6C4C' }} title="#DA6C4C (Terracotta)" />
               </div>
             </div>
@@ -586,7 +586,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
               <DownloadCloud className="w-3.5 h-3.5" /> Software Updates & Release Channel
             </h3>
             <span className="text-[10px] font-mono font-bold bg-[#EAF2F1] text-darkTeal border border-[#07514C]/20 px-2 py-0.5 rounded-full">
-              v0.1.0 Sovereign
+              v0.1.0
             </span>
           </div>
 
