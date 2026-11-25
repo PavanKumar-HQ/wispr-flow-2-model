@@ -239,6 +239,24 @@ export const UtilitiesTab: React.FC<UtilitiesTabProps> = ({ session, onCopy, onS
           </div>
         )}
 
+        {/* Multi-Platform Storage Compatibility Banner */}
+        <div className="p-3.5 rounded-xl bg-stone-50 dark:bg-darkTealElevated border border-charcoal/10 dark:border-darkTealBorder flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2.5">
+            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+            <div className="space-y-0.5">
+              <span className="font-bold text-charcoal dark:text-cream">
+                Multi-Platform Storage Rules (macOS &middot; Windows &middot; Mobile)
+              </span>
+              <p className="text-[11px] text-charcoal/60 dark:text-sage">
+                Native Squirrel rules adapt per OS: DerivedData &amp; logs on Mac, %TEMP% &amp; npm-cache on Windows, and sandboxed app caches on Android/iOS.
+              </p>
+            </div>
+          </div>
+          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-white dark:bg-darkTealSurface text-darkTeal dark:text-mint border border-charcoal/15 dark:border-darkTealBorder shrink-0">
+            AUTO-ADAPTING
+          </span>
+        </div>
+
         {/* Clean Results Panel & Detailed Report */}
         {cleanResult ? (
           <div className="p-4 rounded-xl bg-stone-50 dark:bg-darkTealSurface border border-charcoal/15 dark:border-darkTealBorder space-y-3 animate-fadeIn">

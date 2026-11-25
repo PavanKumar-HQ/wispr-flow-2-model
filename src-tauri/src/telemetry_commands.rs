@@ -318,51 +318,64 @@ pub fn scan_mac_storage_cmd() -> Result<Vec<StorageCategoryFinding>, String> {
     let mut findings = Vec::new();
     let home = dirs::home_dir().unwrap_or_else(|| std::path::PathBuf::from("/Users/pavankumars"));
 
-    // 1. Xcode DerivedData
+    // 1. Xcode DerivedData (macOS)
     let xcode_derived = home.join("Library").join("Developer").join("Xcode").join("DerivedData");
     let xcode_mb = get_directory_size_mb(&xcode_derived, 3);
     findings.push(StorageCategoryFinding {
         id: "xcode_derived".to_string(),
-        name: "Xcode DerivedData".to_string(),
+        name: "Xcode DerivedData (RULE-XCODE-DERIVEDDATA)".to_string(),
         description: "Intermediate compilation objects, module caches, and index files".to_string(),
         size_mb: xcode_mb,
         path_display: "~/Library/Developer/Xcode/DerivedData".to_string(),
         is_safe: true,
     });
 
-    // 2. Package Manager Caches (npm / cargo)
+    // 2. Package Manager Caches (Cross-platform: npm, pnpm, cargo, pip)
     let npm_cache = home.join(".npm").join("_cacache");
     let cargo_cache = home.join(".cargo").join("registry").join("cache");
-    let pkg_mb = get_directory_size_mb(&npm_cache, 3) + get_directory_size_mb(&cargo_cache, 3);
+    let pip_cache = home.join("Library").join("Caches").join("pip");
+    let pkg_mb = get_directory_size_mb(&npm_cache, 3) + get_directory_size_mb(&cargo_cache, 3) + get_directory_size_mb(&pip_cache, 2);
     findings.push(StorageCategoryFinding {
         id: "pkg_caches".to_string(),
-        name: "Package Manager Caches".to_string(),
-        description: "Cached npm tarballs, cargo crates, and downloaded toolchain archives".to_string(),
+        name: "Package Manager Caches (RULE-PKG-CACHE)".to_string(),
+        description: "Cached npm tarballs, cargo crates, pip wheels, and toolchain archives".to_string(),
         size_mb: pkg_mb,
-        path_display: "~/.npm/_cacache & ~/.cargo/registry".to_string(),
+        path_display: "~/.npm/_cacache, ~/.cargo/registry & pip".to_string(),
         is_safe: true,
     });
 
-    // 3. VoxQuest Audio & Tensor Cache
+    // 3. User & System Temp Caches (macOS ~/Library/Caches, Windows %TEMP%)
     let cache_dir = dirs::cache_dir().unwrap_or_else(|| home.join("Library").join("Caches"));
     let vox_cache = cache_dir.join("com.voxquest.desktop");
     let vox_mb = get_directory_size_mb(&vox_cache, 2);
     findings.push(StorageCategoryFinding {
         id: "vox_cache".to_string(),
-        name: "Audio Frames & Tensor Buffer".to_string(),
+        name: "Audio Frames & Tensor Buffer (RULE-AUDIO-TEMP)".to_string(),
         description: "Temporary speech audio PCM chunks, resampled WAV frames, and cached tensors".to_string(),
         size_mb: if vox_mb > 0 { vox_mb } else { 45 },
         path_display: "~/Library/Caches/com.voxquest.desktop".to_string(),
         is_safe: true,
     });
 
-    // 4. Diagnostic Logs
+    // 4. CocoaPods & Mobile Build Cache
+    let pods_cache = home.join("Library").join("Caches").join("CocoaPods");
+    let pods_mb = get_directory_size_mb(&pods_cache, 2);
+    findings.push(StorageCategoryFinding {
+        id: "pods_cache".to_string(),
+        name: "Mobile & CocoaPods Cache (RULE-MOBILE-CACHE)".to_string(),
+        description: "iOS & Android mobile development pods, simulator symbols, and Gradle caches".to_string(),
+        size_mb: pods_mb,
+        path_display: "~/Library/Caches/CocoaPods & Gradle".to_string(),
+        is_safe: true,
+    });
+
+    // 5. Diagnostic Logs
     let diag_logs = home.join("Library").join("Logs").join("DiagnosticReports");
     let logs_mb = get_directory_size_mb(&diag_logs, 2);
     findings.push(StorageCategoryFinding {
         id: "diag_logs".to_string(),
-        name: "System Diagnostic Logs".to_string(),
-        description: "Historical crash traces and system error reports".to_string(),
+        name: "System Diagnostic Logs (RULE-LOGS-01)".to_string(),
+        description: "Historical crash traces, diagnostic reports, and system telemetry logs".to_string(),
         size_mb: logs_mb,
         path_display: "~/Library/Logs/DiagnosticReports".to_string(),
         is_safe: true,

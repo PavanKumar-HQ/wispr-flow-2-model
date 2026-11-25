@@ -41,3 +41,4 @@ On mobile smartphones, there are no physical keyboards. Mobile assistants must p
 - 100% on-device speech processing.
 - Zero audio data transmitted over the internet (unlike Wispr Flow which streams all mobile audio to cloud servers).
 - Fully air-gapped and GDPR/HIPAA compliant.
+

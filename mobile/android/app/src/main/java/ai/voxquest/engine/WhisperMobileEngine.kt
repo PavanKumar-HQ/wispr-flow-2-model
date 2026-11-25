@@ -24,3 +24,4 @@ object WhisperMobileEngine {
         return "Spoken thought converted to text on-device with zero latency."
     }
 }
+

@@ -73,3 +73,4 @@ class VoxAccessibilityService : AccessibilityService() {
 
     override fun onInterrupt() {}
 }
+

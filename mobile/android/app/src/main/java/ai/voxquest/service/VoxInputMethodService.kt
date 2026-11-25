@@ -32,3 +32,4 @@ class VoxInputMethodService : InputMethodService() {
         ic.commitText(transcript, 1)
     }
 }
+

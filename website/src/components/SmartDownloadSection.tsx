@@ -59,12 +59,12 @@ const DEFAULT_PLATFORMS: Record<PlatformKey, PlatformInfo> = {
     osFamily: 'mac',
     architecture: 'Intel (x86_64)',
     format: '.dmg installer (6.0 MB)',
-    recommendedFilename: 'VoxQuest_0.1.0_aarch64.dmg',
-    downloadUrl: `${basePath}/downloads/VoxQuest_0.1.0_aarch64.dmg`,
-    directDownloadUrl: `${basePath}/downloads/VoxQuest_0.1.0_aarch64.dmg`,
+    recommendedFilename: 'VoxQuest_0.1.0_x64.dmg',
+    downloadUrl: `${basePath}/downloads/VoxQuest_0.1.0_x64.dmg`,
+    directDownloadUrl: `${basePath}/downloads/VoxQuest_0.1.0_x64.dmg`,
     checksum: 'Verified Native Binary &bull; 6.0 MB',
     instructions: [
-      'Open the downloaded VoxQuest_0.1.0_aarch64.dmg file.',
+      'Open the downloaded VoxQuest_0.1.0_x64.dmg file.',
       'Drag VoxQuest to your Applications folder.',
       'Open VoxQuest and grant Accessibility & Microphone permissions.',
       'Press shortcut or click the floating pill to dictate anywhere!'
@@ -78,13 +78,14 @@ const DEFAULT_PLATFORMS: Record<PlatformKey, PlatformInfo> = {
     architecture: 'x64 (AMD64)',
     format: '.exe installer',
     recommendedFilename: 'VoxQuest_0.1.0_x64-setup.exe',
-    downloadUrl: `${basePath}/downloads/VoxQuest_0.1.0_aarch64.dmg`,
-    directDownloadUrl: `${basePath}/downloads/VoxQuest_0.1.0_aarch64.dmg`,
-    checksum: 'Direct Native Installer',
+    downloadUrl: `${basePath}/downloads/VoxQuest_0.1.0_x64-setup.exe`,
+    directDownloadUrl: `${basePath}/downloads/VoxQuest_0.1.0_x64-setup.exe`,
+    checksum: 'Direct Native Installer (NSIS)',
     instructions: [
-      'Run the VoxQuest installer.',
-      'Allow microphone access for speech capture.',
-      'Press shortcut to dictate into any Windows application.'
+      'Run the VoxQuest_0.1.0_x64-setup.exe installer.',
+      'Follow the setup wizard to install VoxQuest into your user programs directory.',
+      'Launch VoxQuest from your Desktop or Start Menu.',
+      'Dictate into Notepad, VS Code, Slack, or any Windows application!'
     ],
   },
   'linux': {
@@ -95,8 +96,8 @@ const DEFAULT_PLATFORMS: Record<PlatformKey, PlatformInfo> = {
     architecture: 'x86_64',
     format: '.AppImage',
     recommendedFilename: 'VoxQuest_0.1.0_amd64.AppImage',
-    downloadUrl: `${basePath}/downloads/VoxQuest_0.1.0_aarch64.dmg`,
-    directDownloadUrl: `${basePath}/downloads/VoxQuest_0.1.0_aarch64.dmg`,
+    downloadUrl: `${basePath}/downloads/VoxQuest_0.1.0_amd64.AppImage`,
+    directDownloadUrl: `${basePath}/downloads/VoxQuest_0.1.0_amd64.AppImage`,
     checksum: 'Direct Native Package',
     instructions: [
       'Make the package executable: chmod +x VoxQuest*.AppImage',
@@ -148,8 +149,18 @@ export function SmartDownloadSection() {
 
   // 2. Initiate Direct Binary Download (Served Directly from Website)
   const handleDownload = (platform: PlatformInfo) => {
-    const directUrl = platform.directDownloadUrl || platform.downloadUrl;
+    let directUrl = platform.directDownloadUrl || platform.downloadUrl;
     
+    if (typeof window !== 'undefined') {
+      const pathname = window.location.pathname;
+      const isSubpath = pathname.startsWith('/wispr-flow-2-model');
+      if (isSubpath && !directUrl.startsWith('/wispr-flow-2-model')) {
+        directUrl = `/wispr-flow-2-model${directUrl.startsWith('/') ? '' : '/'}${directUrl}`;
+      } else if (!isSubpath && directUrl.startsWith('/wispr-flow-2-model')) {
+        directUrl = directUrl.replace(/^\/wispr-flow-2-model/, '') || '/';
+      }
+    }
+
     setDownloadModal({
       isOpen: true,
       platform,
