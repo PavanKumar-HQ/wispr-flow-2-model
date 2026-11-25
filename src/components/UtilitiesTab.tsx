@@ -166,7 +166,7 @@ export const UtilitiesTab: React.FC<UtilitiesTabProps> = ({ session, onCopy, onS
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-bold text-charcoal dark:text-cream">Quick Clean & System Boost</h3>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/50">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-darkTeal/10 dark:bg-darkTealElevated text-darkTeal dark:text-cream border border-darkTeal/20 dark:border-darkTealBorder">
                   Ready
                 </span>
               </div>
@@ -242,7 +242,7 @@ export const UtilitiesTab: React.FC<UtilitiesTabProps> = ({ session, onCopy, onS
         {/* Multi-Platform Storage Compatibility Banner */}
         <div className="p-3.5 rounded-xl bg-stone-50 dark:bg-darkTealElevated border border-charcoal/10 dark:border-darkTealBorder flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2.5">
-            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+            <div className="w-2 h-2 rounded-full bg-[#07514C] dark:bg-amber animate-pulse shrink-0" />
             <div className="space-y-0.5">
               <span className="font-bold text-charcoal dark:text-cream">
                 Multi-Platform Storage Rules (macOS &middot; Windows &middot; Mobile)
@@ -313,7 +313,7 @@ export const UtilitiesTab: React.FC<UtilitiesTabProps> = ({ session, onCopy, onS
                       className="px-2.5 py-1 rounded-md text-[11px] font-mono font-bold bg-stone-100 dark:bg-darkTealSurface hover:bg-stone-200 dark:hover:bg-darkTealCanvas text-charcoal dark:text-cream border border-charcoal/15 dark:border-darkTealBorder flex items-center gap-1 transition-all cursor-pointer"
                       title="Copy raw audit log JSON to clipboard"
                     >
-                      {reportCopied ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                      {reportCopied ? <Check className="w-3 h-3 text-darkTeal dark:text-amber" /> : <Copy className="w-3 h-3" />}
                       <span>{reportCopied ? 'Copied' : 'Copy JSON'}</span>
                     </button>
                     <button
@@ -349,7 +349,7 @@ export const UtilitiesTab: React.FC<UtilitiesTabProps> = ({ session, onCopy, onS
                               +{item.size_mb} MB
                             </span>
                           )}
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40">
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-darkTeal/10 dark:bg-darkTealElevated text-darkTeal dark:text-amber border border-darkTeal/20">
                             {item.status}
                           </span>
                         </div>
@@ -416,7 +416,7 @@ export const UtilitiesTab: React.FC<UtilitiesTabProps> = ({ session, onCopy, onS
         {/* Tool 4: Voice Clipboard History */}
         <div className="space-y-2">
           <div className="text-[11px] font-extrabold uppercase tracking-wider text-charcoal/60 dark:text-sage flex items-center gap-1.5 px-1">
-            <span className="w-2 h-2 rounded-full bg-emerald-600 dark:bg-emerald-500" />
+            <span className="w-2 h-2 rounded-full bg-darkTeal dark:bg-[#34A89E]" />
             <span>Voice Clipboard History</span>
           </div>
           <ClipboardHistoryWidget lastTranscript={session.last_transcript} onCopy={onCopy} />

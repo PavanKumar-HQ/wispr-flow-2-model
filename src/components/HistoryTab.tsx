@@ -349,7 +349,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
                     {item.user_edited_text && item.user_edited_text !== item.original_text && (
                       <>
                         <span>•</span>
-                        <span className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-md font-bold text-[10px] whitespace-nowrap border border-emerald-200 dark:border-emerald-800">
+                        <span className="bg-darkTeal/10 dark:bg-darkTealElevated text-darkTeal dark:text-cream px-2 py-0.5 rounded-md font-mono font-bold text-[10px] whitespace-nowrap border border-darkTeal/20">
                           Synced from Edit
                         </span>
                       </>

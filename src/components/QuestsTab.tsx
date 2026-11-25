@@ -11,8 +11,7 @@ import {
   Sparkles,
   Flame,
   Star,
-  ArrowRight,
-  Target
+  ArrowRight
 } from 'lucide-react';
 import { InsightsData, HistoryRecord } from '../types';
 
@@ -145,7 +144,7 @@ export const QuestsTab: React.FC<QuestsTabProps> = ({
     },
   ];
 
-  // Beginner Milestones & Badges (specifically featuring the 50-word milestone)
+  // Beginner Milestones & Badges
   const beginnerBadges: BeginnerBadge[] = [
     {
       id: 'badge-first-words-50',
@@ -216,44 +215,44 @@ export const QuestsTab: React.FC<QuestsTabProps> = ({
 
   const renderIcon = (type: QuestCard['icon']) => {
     switch (type) {
-      case 'zap': return <Zap className="w-5 h-5 text-[#07514C]" />;
-      case 'wand': return <Wand2 className="w-5 h-5 text-[#BA8330]" />;
-      case 'scroll': return <Scroll className="w-5 h-5 text-[#DA6C4C]" />;
-      case 'shield': return <Shield className="w-5 h-5 text-[#07514C]" />;
-      case 'compass': return <Compass className="w-5 h-5 text-[#07514C]" />;
-      case 'flame': return <Flame className="w-5 h-5 text-[#DA6C4C]" />;
-      case 'star': return <Star className="w-5 h-5 text-[#DDA44D]" />;
-      default: return <Trophy className="w-5 h-5 text-[#07514C]" />;
+      case 'zap': return <Zap className="w-5 h-5 text-[#07514C] dark:text-[#DFDFD4]" />;
+      case 'wand': return <Wand2 className="w-5 h-5 text-[#DDA44D] dark:text-[#DDA44D]" />;
+      case 'scroll': return <Scroll className="w-5 h-5 text-[#DA6C4C] dark:text-[#DA6C4C]" />;
+      case 'shield': return <Shield className="w-5 h-5 text-[#07514C] dark:text-[#DFDFD4]" />;
+      case 'compass': return <Compass className="w-5 h-5 text-[#07514C] dark:text-[#DFDFD4]" />;
+      case 'flame': return <Flame className="w-5 h-5 text-[#DA6C4C] dark:text-[#DA6C4C]" />;
+      case 'star': return <Star className="w-5 h-5 text-[#DDA44D] dark:text-[#DDA44D]" />;
+      default: return <Trophy className="w-5 h-5 text-[#07514C] dark:text-[#DFDFD4]" />;
     }
   };
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto pb-12 font-sans select-none animate-fadeIn">
+    <div className="space-y-7 max-w-5xl mx-auto pb-16 font-sans select-none animate-fadeIn">
       {/* Top Banner Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 rounded-2xl bg-white dark:bg-darkTealSurface border border-charcoal/15 dark:border-darkTealBorder shadow-xs">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 rounded-2xl bg-[#DFDFD4]/60 dark:bg-darkTealSurface border-2 border-charcoal shadow-[4px_4px_0px_#212121]">
         <div className="space-y-1.5">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber/20 dark:bg-amber/30 text-charcoal dark:text-amber font-mono text-[10px] font-bold border border-amber/40">
-            <Trophy className="w-3.5 h-3.5 text-amber" />
-            <span>PROGRESSION &amp; REPUTATION</span>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-sm bg-[#07514C] text-[#DFDFD4] font-mono text-[10px] font-bold border border-charcoal">
+            <Trophy className="w-3.5 h-3.5 text-[#DDA44D]" />
+            <span>SOVEREIGN PROGRESSION &amp; REPUTATION</span>
           </div>
-          <h2 className="text-xl font-bold text-darkTeal dark:text-cream tracking-tight">
-            Quests &amp; Habit Milestones
+          <h2 className="text-2xl font-bold font-mono text-[#07514C] dark:text-cream tracking-tight">
+            Quests &amp; Habit Badges
           </h2>
-          <p className="text-xs text-charcoal/70 dark:text-sage leading-relaxed max-w-xl">
-            Build your high-speed spoken workflow. Earn XP, unlock badges, and master hands-free dictation. All metrics are calculated 100% on-device.
+          <p className="text-xs font-mono text-charcoal/80 dark:text-sage leading-relaxed max-w-xl">
+            Build your high-speed spoken workflow. Earn XP, unlock milestone badges, and master hands-free voice dictation 100% on-device.
           </p>
         </div>
 
         {/* Player Level Banner */}
-        <div className="flex items-center gap-3.5 p-3.5 rounded-xl bg-darkTeal dark:bg-[#0D6E67] text-white border border-darkTeal/30 dark:border-darkTealBorder shadow-xs shrink-0">
-          <div className="p-2 rounded-lg bg-amber text-charcoal shadow-xs">
+        <div className="flex items-center gap-3.5 p-3.5 rounded-xl bg-[#07514C] text-white border-2 border-charcoal shadow-[3px_3px_0px_#212121] shrink-0">
+          <div className="p-2 rounded-lg bg-[#DDA44D] text-[#212121] border border-charcoal shadow-xs">
             <Award className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-[10px] font-mono text-amber font-bold tracking-wider">
+            <div className="text-[10px] font-mono text-[#DDA44D] font-bold tracking-wider">
               TIER {rankTier} &middot; {rankName.toUpperCase()}
             </div>
-            <div className="text-sm font-extrabold text-white">
+            <div className="text-sm font-extrabold font-mono text-white">
               {totalEarnedXp} / {totalPossibleXp} XP
             </div>
           </div>
@@ -261,58 +260,57 @@ export const QuestsTab: React.FC<QuestsTabProps> = ({
       </div>
 
       {/* Beginner Milestones & 50-Word Badge Ribbon */}
-      <div className="p-5 rounded-2xl bg-white dark:bg-darkTealSurface border border-charcoal/15 dark:border-darkTealBorder shadow-xs space-y-3.5">
+      <div className="p-5 rounded-2xl bg-[#ECECE5] dark:bg-darkTealSurface border-2 border-charcoal shadow-[4px_4px_0px_#212121] space-y-3.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Star className="w-4 h-4 text-amber fill-amber" />
+            <Star className="w-4 h-4 text-[#DDA44D] fill-[#DDA44D]" />
             <h3 className="text-xs font-bold uppercase tracking-wider text-charcoal dark:text-cream font-mono">
-              Beginner Milestones &amp; Badges
+              Beginner Milestones (e.g. First 50 Words)
             </h3>
           </div>
-          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/50">
+          <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-sm bg-[#07514C] text-[#DFDFD4] border border-charcoal">
             {unlockedBadges.length} / {beginnerBadges.length} UNLOCKED
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
           {beginnerBadges.map((badge) => {
             const pct = Math.min(100, Math.round((badge.currentValue / badge.targetValue) * 100));
             return (
               <div
                 key={badge.id}
-                className={`p-3.5 rounded-xl border transition-all ${
+                className={`p-3.5 rounded-xl border-2 transition-all ${
                   badge.isUnlocked
-                    ? 'bg-amber/5 dark:bg-amber/10 border-amber/40 shadow-xs'
-                    : 'bg-stone-50 dark:bg-darkTealElevated border-charcoal/10 dark:border-darkTealBorder opacity-80'
+                    ? 'bg-[#DFDFD4] dark:bg-darkTealElevated border-charcoal shadow-[3px_3px_0px_#07514C]'
+                    : 'bg-[#ECECE5]/80 dark:bg-darkTealSurface border-charcoal/40 opacity-85'
                 }`}
               >
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-1.5 truncate">
                     {badge.isUnlocked ? (
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                      <CheckCircle2 className="w-3.5 h-3.5 text-[#07514C] dark:text-[#DDA44D] shrink-0" />
                     ) : (
-                      <Target className="w-3.5 h-3.5 text-charcoal/40 dark:text-sage shrink-0" />
+                      <span className="w-2.5 h-2.5 rounded-full bg-charcoal/30 shrink-0" />
                     )}
-                    <span className="text-xs font-bold text-charcoal dark:text-cream truncate">
+                    <span className="text-xs font-bold font-mono text-charcoal dark:text-cream truncate">
                       {badge.title}
                     </span>
                   </div>
-                  <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber/20 text-charcoal dark:text-amber shrink-0 ml-1">
+                  <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-sm bg-[#DDA44D] text-[#212121] border border-charcoal shrink-0 ml-1">
                     +{badge.xp} XP
                   </span>
                 </div>
-                <p className="text-[11px] text-charcoal/70 dark:text-sage mb-2.5 leading-snug line-clamp-2">
+                <p className="text-[11px] font-mono text-charcoal/80 dark:text-sage mb-2.5 leading-snug line-clamp-2">
                   {badge.requirement}
                 </p>
                 <div className="flex items-center justify-between text-[10px] font-mono text-charcoal/70 dark:text-sage mb-1">
                   <span>{badge.currentValue} / {badge.targetValue}</span>
                   <span>{pct}%</span>
                 </div>
-                <div className="w-full h-1.5 bg-stone-200 dark:bg-black/30 rounded-full overflow-hidden">
+                {/* Retro Segmented Bar */}
+                <div className="w-full h-3 border border-charcoal bg-[#212121] p-0.5 overflow-hidden">
                   <div
-                    className={`h-full rounded-full transition-all duration-500 ${
-                      badge.isUnlocked ? 'bg-emerald-500' : 'bg-amber'
-                    }`}
+                    className="h-full transition-all duration-500 bg-[#DDA44D] bg-[linear-gradient(90deg,transparent_4px,#212121_4px,#212121_6px)] bg-[length:6px_100%]"
                     style={{ width: `${pct}%` }}
                   />
                 </div>
@@ -322,13 +320,18 @@ export const QuestsTab: React.FC<QuestsTabProps> = ({
         </div>
       </div>
 
-      {/* The 6 Canonical Pixel Quest Cards Grid (Sleek, No Overlap, Premium Look) */}
-      <div className="space-y-3">
-        <div className="text-xs font-bold font-mono uppercase tracking-wider text-charcoal/60 dark:text-sage px-1">
-          Active Quest Catalog
+      {/* The 6 Canonical Pixel Quest Cards Grid (Pixel-Perfect Recreation of Attached Reference) */}
+      <div className="space-y-3.5">
+        <div className="flex items-center justify-between px-1">
+          <div className="text-xs font-bold font-mono uppercase tracking-widest text-charcoal dark:text-cream">
+            Active Quest Catalog
+          </div>
+          <span className="text-[11px] font-mono text-charcoal/60 dark:text-sage">
+            {completedQuests.length} of {quests.length} Completed
+          </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {quests.map((quest) => {
             const pct = Math.min(100, Math.round((quest.currentCount / quest.targetCount) * 100));
             const isDone = quest.isCompleted;
@@ -336,70 +339,72 @@ export const QuestsTab: React.FC<QuestsTabProps> = ({
             return (
               <div
                 key={quest.id}
-                className={`p-5 rounded-2xl border transition-all duration-200 flex flex-col justify-between ${
-                  isDone
-                    ? 'bg-white dark:bg-darkTealSurface border-amber/50 dark:border-amber/40 shadow-xs ring-1 ring-amber/20'
-                    : 'bg-white dark:bg-darkTealSurface border-charcoal/15 dark:border-darkTealBorder hover:border-darkTeal/40 dark:hover:border-[#34A89E]/40 shadow-xs hover:shadow-md'
-                }`}
+                className="p-5 rounded-xl border-2 border-charcoal bg-[#ECECE5] dark:bg-darkTealSurface shadow-[4px_4px_0px_#212121] flex flex-col justify-between transition-transform hover:-translate-y-0.5"
               >
                 <div>
-                  {/* Clean Top Header Row (No Overlapping Elements) */}
+                  {/* Top Header Row with Category, XP and Card Number / Done status */}
                   <div className="flex items-center justify-between gap-2 mb-3.5">
                     <div className="flex items-center gap-1.5">
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-darkTeal dark:bg-[#0D6E67] text-white tracking-wide">
+                      {/* Category Badge */}
+                      <span className="px-2.5 py-0.5 border border-charcoal bg-[#07514C] text-[#DFDFD4] font-mono text-[10px] font-bold uppercase tracking-wider rounded-xs">
                         {quest.category}
                       </span>
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-amber/20 dark:bg-amber/30 text-charcoal dark:text-amber border border-amber/40">
+                      {/* XP Badge */}
+                      <span className="px-2.5 py-0.5 border border-charcoal bg-[#DDA44D] text-[#212121] font-mono text-[10px] font-bold tracking-wider rounded-xs">
                         +{quest.xpReward} XP
                       </span>
                     </div>
 
+                    {/* Top Right: Status & Number (#01 .. #06) */}
                     <div className="flex items-center gap-2">
                       {isDone && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/50">
-                          <CheckCircle2 className="w-3 h-3" />
+                        <span className="inline-flex items-center gap-1 text-[11px] font-mono font-bold text-[#07514C] dark:text-[#DDA44D]">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#07514C] dark:text-[#DDA44D]" />
                           <span>DONE</span>
                         </span>
                       )}
-                      <span className="font-mono font-bold text-xs text-charcoal/40 dark:text-sage/60">
+                      <span className="font-mono font-bold text-xs text-charcoal/60 dark:text-sage/70">
                         {quest.number}
                       </span>
                     </div>
                   </div>
 
-                  {/* Icon & Title & Description */}
-                  <div className="flex items-start gap-3.5">
-                    <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 shadow-2xs ${
-                      isDone
-                        ? 'bg-amber/15 border-amber/40 text-amber'
-                        : 'bg-stone-100 dark:bg-darkTealElevated border-charcoal/15 dark:border-darkTealBorder'
-                    }`}>
+                  {/* Icon Box + Title + Description */}
+                  <div className="flex items-start gap-3.5 mt-2">
+                    <div className="w-11 h-11 border-2 border-charcoal bg-[#D5DFD9] dark:bg-darkTealElevated flex items-center justify-center shrink-0 rounded-xs shadow-xs">
                       {renderIcon(quest.icon)}
                     </div>
                     <div className="space-y-1">
-                      <h3 className="font-bold text-sm text-charcoal dark:text-cream leading-snug">
+                      <h4 className="font-mono font-bold text-sm text-[#212121] dark:text-cream leading-tight">
                         {quest.title}
-                      </h3>
-                      <p className="text-xs text-charcoal/70 dark:text-sage leading-relaxed font-sans">
+                      </h4>
+                      <p className="font-mono text-[11px] text-[#212121]/80 dark:text-sage leading-relaxed">
                         {quest.description}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Progress Bar Container */}
-                <div className="mt-5 pt-3 border-t border-charcoal/10 dark:border-darkTealBorder">
-                  <div className="flex items-center justify-between text-[11px] font-mono font-semibold text-charcoal/70 dark:text-sage mb-1.5">
-                    <span>Progress: <strong className="text-charcoal dark:text-cream">{quest.currentCount}</strong></span>
-                    <span>Target: <strong className="text-charcoal dark:text-cream">{quest.targetCount}</strong></span>
+                {/* Black Solid Divider Line */}
+                <div className="w-full h-[1.5px] bg-charcoal dark:bg-darkTealBorder my-3.5" />
+
+                {/* Bottom Section: Progress Labels & Segmented Retro Bar */}
+                <div>
+                  <div className="flex items-center justify-between text-[10px] font-mono font-bold tracking-wider text-[#212121] dark:text-cream mb-1.5 uppercase">
+                    <span>PROGRESS</span>
+                    <span>TARGET: {quest.targetCount}</span>
                   </div>
-                  <div className="w-full h-2 rounded-full bg-stone-100 dark:bg-black/30 overflow-hidden border border-charcoal/10 dark:border-darkTealBorder">
-                    <div
-                      className={`h-full rounded-full transition-all duration-500 ${
-                        isDone ? 'bg-emerald-500' : 'bg-amber'
-                      }`}
-                      style={{ width: `${pct}%` }}
-                    />
+
+                  {/* Segmented Pixel Bar Container */}
+                  <div className="w-full h-4 border-2 border-charcoal bg-[#212121] p-0.5 flex items-center overflow-hidden">
+                    {pct > 0 ? (
+                      <div
+                        className="h-full bg-[#DDA44D] bg-[linear-gradient(90deg,transparent_5px,#212121_5px,#212121_7px)] bg-[length:7px_100%] transition-all duration-500"
+                        style={{ width: `${pct}%` }}
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-[#212121]" />
+                    )}
                   </div>
                 </div>
               </div>
@@ -408,17 +413,17 @@ export const QuestsTab: React.FC<QuestsTabProps> = ({
         </div>
       </div>
 
-      {/* Repetitive Habit Motivation Callout */}
-      <div className="p-5 rounded-2xl bg-gradient-to-r from-darkTeal to-[#0A5650] text-cream border border-darkTeal/40 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
+      {/* Habit Motivation Callout with Sovereign Branding */}
+      <div className="p-5 rounded-2xl bg-[#07514C] text-[#DFDFD4] border-2 border-charcoal shadow-[4px_4px_0px_#212121] flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
-          <div className="p-2.5 rounded-xl bg-amber text-charcoal shrink-0 shadow-xs">
+          <div className="p-2.5 rounded-xl bg-[#DDA44D] text-[#212121] border border-charcoal shrink-0 shadow-xs">
             <Sparkles className="w-5 h-5" />
           </div>
-          <div className="space-y-0.5 font-sans">
+          <div className="space-y-0.5 font-mono">
             <div className="font-bold text-white text-sm">
               Daily Spoken Habit: 3x Speed Advantage
             </div>
-            <p className="text-cream/80 text-xs max-w-xl">
+            <p className="text-[#DFDFD4]/80 text-xs max-w-xl font-sans">
               Speaking aloud produces 150+ words per minute versus 40 WPM manual keyboard typing. Dictating your daily notes, slack messages, and docs builds fluency effortlessly.
             </p>
           </div>
@@ -427,7 +432,7 @@ export const QuestsTab: React.FC<QuestsTabProps> = ({
         <button
           type="button"
           onClick={() => onNavigateTab('home')}
-          className="px-4 py-2.5 rounded-xl bg-amber hover:bg-amber/90 text-charcoal font-bold text-xs shadow-xs transition-all active:scale-95 shrink-0 flex items-center gap-1.5 cursor-pointer"
+          className="px-5 py-2.5 rounded-xl bg-[#DDA44D] hover:bg-[#c9923e] text-[#212121] font-mono font-bold text-xs border border-charcoal shadow-[2px_2px_0px_#212121] transition-all active:scale-95 shrink-0 flex items-center gap-1.5 cursor-pointer"
         >
           <span>Dictate Now</span>
           <ArrowRight className="w-3.5 h-3.5" />

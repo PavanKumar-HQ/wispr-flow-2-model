@@ -247,7 +247,7 @@ export const EnhanceReviewCard: React.FC<EnhanceReviewCardProps> = ({
                     <span>{isEditing ? 'Done Editing' : 'Edit Draft'}</span>
                   </button>
                   {result.changes_made ? (
-                    <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-darkTealCanvas text-emerald-700 dark:text-mint border border-emerald-200 dark:border-darkTealBorder">
+                    <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full bg-darkTeal/10 dark:bg-darkTealCanvas text-darkTeal dark:text-mint border border-darkTeal/20 dark:border-darkTealBorder">
                       Refined
                     </span>
                   ) : (

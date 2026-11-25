@@ -384,7 +384,7 @@ export const TrainModelTab: React.FC<TrainModelTabProps> = ({ session, onToggleD
 
       {statusBanner && (
         <div className="p-4 bg-darkTeal text-white text-xs font-bold rounded-xl shadow-xs flex items-center gap-2.5 animate-fadeIn">
-          <CheckCircle2 className="w-5 h-5 text-emerald-300 shrink-0" />
+          <CheckCircle2 className="w-5 h-5 text-amber shrink-0" />
           <span>{statusBanner}</span>
         </div>
       )}

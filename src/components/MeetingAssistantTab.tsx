@@ -64,7 +64,6 @@ const PLATFORMS = [
 export const MeetingAssistantTab: React.FC = () => {
   const [activePlatform, setActivePlatform] = useState<string>('google_meet');
   const [meetingTitle, setMeetingTitle] = useState<string>('Product & Engineering Sync');
-  const [meetingUrl, setMeetingUrl] = useState<string>('https://meet.google.com/xyz-vox-flow');
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [durationSecs, setDurationSecs] = useState<number>(0);
   const [currentSession, setCurrentSession] = useState<MeetingSession | null>(null);
@@ -116,7 +115,7 @@ export const MeetingAssistantTab: React.FC = () => {
       const res = await safeInvoke<MeetingSession>('start_meeting_recording_cmd', {
         title: meetingTitle,
         platform: activePlatform,
-        meetingUrl: meetingUrl.trim() ? meetingUrl : null,
+        meetingUrl: null,
       });
       if (res) {
         setCurrentSession(res);
@@ -129,7 +128,7 @@ export const MeetingAssistantTab: React.FC = () => {
         id: `meet_${Date.now()}`,
         title: meetingTitle,
         platform: activePlatform,
-        meeting_url: meetingUrl,
+        meeting_url: null,
         is_recording: true,
         start_time_epoch_ms: Date.now(),
         duration_seconds: 0,
@@ -336,69 +335,55 @@ export const MeetingAssistantTab: React.FC = () => {
           </div>
         </div>
 
-        {/* Middle Row: Meeting Inputs & Action Button */}
+        {/* Middle Row: Meeting Title & Action Button */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-          <div className="md:col-span-5 space-y-1.5">
+          <div className="md:col-span-8 space-y-1.5">
             <label className="text-[11px] font-mono font-bold uppercase tracking-wider text-charcoal/60 dark:text-sage">
-              Meeting Title
+              Meeting Topic / Title
             </label>
             <input
               type="text"
               value={meetingTitle}
               onChange={(e) => setMeetingTitle(e.target.value)}
               disabled={isRecording}
-              placeholder="e.g. Sprint Review & Roadmap"
-              className="w-full text-xs font-medium px-3.5 py-2.5 rounded-xl bg-stone-50 dark:bg-darkTealElevated border border-charcoal/20 dark:border-darkTealBorder text-charcoal dark:text-cream focus:outline-hidden focus:border-darkTeal transition-colors"
+              placeholder="e.g. Sprint Planning, Customer Demo, 1:1 Sync"
+              className="w-full text-xs font-medium px-4 py-3 rounded-xl bg-stone-50 dark:bg-darkTealElevated border border-charcoal/20 dark:border-darkTealBorder text-charcoal dark:text-cream focus:outline-hidden focus:border-darkTeal transition-colors"
             />
           </div>
 
-          <div className="md:col-span-4 space-y-1.5">
-            <label className="text-[11px] font-mono font-bold uppercase tracking-wider text-charcoal/60 dark:text-sage">
-              Meeting URL (Optional)
-            </label>
-            <input
-              type="text"
-              value={meetingUrl}
-              onChange={(e) => setMeetingUrl(e.target.value)}
-              disabled={isRecording}
-              placeholder="https://meet.google.com/..."
-              className="w-full text-xs font-mono px-3.5 py-2.5 rounded-xl bg-stone-50 dark:bg-darkTealElevated border border-charcoal/20 dark:border-darkTealBorder text-charcoal dark:text-cream focus:outline-hidden focus:border-darkTeal transition-colors truncate"
-            />
-          </div>
-
-          <div className="md:col-span-3">
+          <div className="md:col-span-4">
             {!isRecording ? (
               <button
                 type="button"
                 onClick={handleStartMeeting}
-                className="w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-darkTeal hover:bg-[#0D6E67] text-white font-mono text-xs font-bold shadow-xs transition-all active:scale-95 cursor-pointer"
+                className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-darkTeal hover:bg-[#0D6E67] text-white font-mono text-xs font-bold shadow-xs transition-all active:scale-95 cursor-pointer"
               >
                 <Play className="w-4 h-4 fill-white" />
-                <span>Start Capture</span>
+                <span>Start Meeting Capture</span>
               </button>
             ) : (
               <button
                 type="button"
                 onClick={handleStopMeeting}
-                className="w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-terracotta hover:bg-[#c95b3b] text-white font-mono text-xs font-bold shadow-xs transition-all active:scale-95 cursor-pointer animate-pulse"
+                className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-terracotta hover:bg-[#c95b3b] text-white font-mono text-xs font-bold shadow-xs transition-all active:scale-95 cursor-pointer animate-pulse"
               >
                 <Square className="w-4 h-4 fill-white" />
-                <span>Stop ({formatTimer(durationSecs)})</span>
+                <span>Stop &amp; Synthesize ({formatTimer(durationSecs)})</span>
               </button>
             )}
           </div>
         </div>
 
-        {/* Bottom Audio Channels Status */}
-        <div className="flex items-center justify-between pt-3 border-t border-charcoal/10 dark:border-darkTealBorder text-xs text-charcoal/70 dark:text-sage">
+        {/* Bottom Audio Channels Status & Mechanism Explanation */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-3 border-t border-charcoal/10 dark:border-darkTealBorder text-xs text-charcoal/70 dark:text-sage">
           <div className="flex items-center gap-2">
-            <Radio className="w-3.5 h-3.5 text-amber" />
+            <Radio className="w-3.5 h-3.5 text-amber shrink-0" />
             <span>
-              Audio Source: <strong className="text-charcoal dark:text-cream">Dual-Stream (Microphone + System Audio Loopback)</strong>
+              <strong>Direct Machine Audio:</strong> Captures computer audio output (attendees) + microphone (you). <em>No external bot joins your call.</em>
             </span>
           </div>
-          <span className="font-mono text-[11px] text-charcoal/50 dark:text-sage/60">
-            {isRecording ? 'Listening active...' : 'Ready to capture call'}
+          <span className="font-mono text-[11px] text-charcoal/50 dark:text-sage/60 shrink-0">
+            {isRecording ? 'Listening live...' : '100% On-Device &middot; Zero Cloud Leakage'}
           </span>
         </div>
       </div>

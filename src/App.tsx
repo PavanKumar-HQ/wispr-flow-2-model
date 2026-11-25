@@ -12,9 +12,8 @@ import { TrainModelTab } from './components/TrainModelTab';
 import { UtilitiesTab } from './components/UtilitiesTab';
 import { QuestsTab } from './components/QuestsTab';
 import { MeetingAssistantTab } from './components/MeetingAssistantTab';
-import { MobileModeTab } from './components/MobileModeTab';
 import { ModelInfo, AppSettings, HistoryRecord, SessionSnapshot, InsightsData } from './types';
-import { Home, Layers, History, Settings as SettingsIcon, BookA, BarChart2, LocateFixed, GraduationCap, LayoutGrid, Trophy, Video, Smartphone } from 'lucide-react';
+import { Home, Layers, History, Settings as SettingsIcon, BookA, BarChart2, LocateFixed, GraduationCap, LayoutGrid, Trophy, Video } from 'lucide-react';
 import { applyTheme } from './lib/theme';
 
 export default function App() {
@@ -36,7 +35,7 @@ export default function App() {
     }
   }, [isPillOnlyWindow]);
 
-  const [activeTab, setActiveTab] = useState<'home' | 'meetings' | 'mobile' | 'utilities' | 'train' | 'quests' | 'insights' | 'models' | 'dictionary' | 'history' | 'settings'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'meetings' | 'utilities' | 'train' | 'quests' | 'insights' | 'models' | 'dictionary' | 'history' | 'settings'>('home');
   const [insights, setInsights] = useState<InsightsData | null>(null);
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [settings, setSettings] = useState<AppSettings>({
@@ -415,7 +414,6 @@ export default function App() {
             {[
               { id: 'home', label: 'Home', icon: Home },
               { id: 'meetings', label: 'Meetings', icon: Video },
-              { id: 'mobile', label: 'Mobile', icon: Smartphone },
               { id: 'utilities', label: 'Utilities', icon: LayoutGrid },
               { id: 'train', label: 'Train the Model', icon: GraduationCap },
               { id: 'quests', label: 'Quests & Badges', icon: Trophy },
@@ -468,7 +466,7 @@ export default function App() {
 
           <div className="hidden md:flex px-1 items-center justify-between text-[10px] text-charcoal/70 dark:text-sage font-medium">
             <span className="flex items-center gap-1 font-semibold text-darkTeal dark:text-cream">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> 100% Offline
+              <span className="w-1.5 h-1.5 rounded-full bg-amber animate-pulse" /> 100% Offline
             </span>
             <span className="font-mono">v0.1.0</span>
           </div>
@@ -512,8 +510,6 @@ export default function App() {
           )}
 
           {activeTab === 'meetings' && <MeetingAssistantTab />}
-
-          {activeTab === 'mobile' && <MobileModeTab />}
 
           {activeTab === 'utilities' && (
             <UtilitiesTab

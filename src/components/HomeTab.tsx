@@ -16,8 +16,7 @@ import {
   Radio,
   Edit3,
   Trophy,
-  Video,
-  Smartphone
+  Video
 } from 'lucide-react';
 import { InsightsData, HistoryRecord, SessionSnapshot } from '../types';
 import { AudioWaveform } from './AudioWaveform';
@@ -36,7 +35,7 @@ interface HomeTabProps {
   onDeleteHistory: (id: number) => void;
   onClearHistory: () => void;
   onToggleDictation: () => void;
-  onNavigateTab: (tab: 'home' | 'meetings' | 'mobile' | 'utilities' | 'train' | 'quests' | 'insights' | 'history' | 'dictionary' | 'models' | 'settings') => void;
+  onNavigateTab: (tab: 'home' | 'meetings' | 'utilities' | 'train' | 'quests' | 'insights' | 'history' | 'dictionary' | 'models' | 'settings') => void;
   onSummonPill: () => void;
 }
 
@@ -392,7 +391,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
         </div>
       </div>
 
-      {/* Feature Spotlight: Meeting Assistant (Wispr Parity) & Mobile Trigger Architecture */}
+      {/* Feature Spotlight: Meeting Assistant & System Utilities */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Card 1: Meeting Assistant */}
         <div
@@ -409,41 +408,41 @@ export const HomeTab: React.FC<HomeTabProps> = ({
               </span>
             </div>
             <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-darkTeal/10 text-darkTeal dark:bg-darkTealElevated dark:text-amber border border-darkTeal/20">
-              NEW FEATURE
+              LOCAL AUDIO
             </span>
           </div>
           <p className="text-[11px] text-charcoal/70 dark:text-sage leading-relaxed mb-3">
             Auto-capture Google Meet, Zoom &amp; Teams calls. Dual-stream transcription, executive summaries, and action items with 100% on-device privacy.
           </p>
           <div className="flex items-center justify-between text-[11px] font-mono font-semibold text-darkTeal dark:text-amber">
-            <span>Launch Meeting Notetaker</span>
+            <span>Open Meeting Notetaker</span>
             <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
           </div>
         </div>
 
-        {/* Card 2: Mobile Mode Companion */}
+        {/* Card 2: System Storage & Cache Cleaner */}
         <div
-          onClick={() => onNavigateTab('mobile')}
-          className="p-4 rounded-2xl bg-white dark:bg-darkTealSurface border border-charcoal/15 dark:border-darkTealBorder hover:border-amber/60 transition-all cursor-pointer shadow-xs group"
+          onClick={() => onNavigateTab('utilities')}
+          className="p-4 rounded-2xl bg-white dark:bg-darkTealSurface border border-charcoal/15 dark:border-darkTealBorder hover:border-darkTeal/40 dark:hover:border-amber/40 transition-all cursor-pointer shadow-xs group"
         >
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <div className="p-2 rounded-xl bg-amber/20 dark:bg-amber/30 text-charcoal dark:text-amber">
-                <Smartphone className="w-4 h-4" />
+                <Sliders className="w-4 h-4 text-charcoal dark:text-amber" />
               </div>
               <span className="text-xs font-bold text-charcoal dark:text-cream">
-                Mobile &amp; Android Trigger
+                System Storage Cleaner
               </span>
             </div>
-            <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber/20 text-charcoal dark:text-amber">
-              NEW ARCHITECTURE
+            <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber/20 text-charcoal dark:text-amber border border-amber/30">
+              SQUIRREL RULES
             </span>
           </div>
           <p className="text-[11px] text-charcoal/70 dark:text-sage leading-relaxed mb-3">
-            No physical laptop keys on phone? Use our Floating Omnipresent Bubble, Custom Voice IME, and Hardware Key remapper with zero clipboard hijacking.
+            Clean DerivedData, package caches, temporary tensor buffers, and kill dead dev processes in 1 click without opening external windows.
           </p>
-          <div className="flex items-center justify-between text-[11px] font-mono font-semibold text-amber-800 dark:text-amber">
-            <span>Configure Mobile Mode</span>
+          <div className="flex items-center justify-between text-[11px] font-mono font-semibold text-darkTeal dark:text-amber">
+            <span>Run System Clean</span>
             <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
           </div>
         </div>
@@ -540,7 +539,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                         title={isCopied ? 'Copied to clipboard!' : 'Copy to clipboard'}
                         aria-label="Copy text"
                       >
-                        {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-darkTeal dark:text-[#34A89E]" />}
+                        {isCopied ? <Check className="w-3.5 h-3.5 text-darkTeal dark:text-amber" /> : <Copy className="w-3.5 h-3.5 text-darkTeal dark:text-[#34A89E]" />}
                       </button>
 
                       {/* 4. Teach - Ghost action */}

@@ -658,7 +658,7 @@ export const DictionaryTab: React.FC = () => {
           {capsuleResult && (
             <div className="p-3.5 rounded-xl border border-amber/40 bg-amber/10 dark:bg-amber/20 space-y-2 animate-fadeIn">
               <span className="text-xs font-bold text-charcoal dark:text-cream flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-mint" />
+                <CheckCircle2 className="w-4 h-4 text-darkTeal dark:text-mint" />
                 Successfully Ingested {capsuleResult.terms_ingested} terms for project "{capsuleResult.project_name}":
               </span>
               <div className="flex flex-wrap items-center gap-1.5 pt-1">
@@ -898,7 +898,7 @@ export const DictionaryTab: React.FC = () => {
                   return (
                     <div
                       key={`edit-${entry.id}`}
-                      className="py-3 px-2 bg-emerald-50/40 rounded-xl space-y-2.5 border border-darkTeal/20 transition-all"
+                      className="py-3 px-2 bg-darkTeal/10 dark:bg-darkTealElevated rounded-xl space-y-2.5 border border-darkTeal/20 transition-all"
                     >
                       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                         <div className="flex-1">
