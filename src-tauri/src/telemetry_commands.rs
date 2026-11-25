@@ -341,7 +341,7 @@ pub fn run_system_clean_and_boost_cmd(_state: State<'_, AppState>) -> Result<Sys
     }
 
     if squirrel_found {
-        items.push(format!("Integrated with Squirrel Storage Cleaner ({})", squirrel_path));
+        items.push("Squirrel Storage Cleaner detected and ready".to_string());
     }
 
     Ok(SystemCleanResult {
@@ -367,7 +367,7 @@ pub fn launch_squirrel_cleaner_cmd() -> Result<String, String> {
     for p in &possible_squirrel_paths {
         if p.exists() {
             let _ = std::process::Command::new("open").arg(p).spawn().map_err(|e| e.to_string())?;
-            return Ok(format!("Launched Squirrel from {}", p.display()));
+            return Ok("Squirrel Launched".to_string());
         }
     }
 

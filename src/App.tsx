@@ -404,7 +404,6 @@ export default function App() {
                 <span className="font-extrabold text-sm text-darkTeal dark:text-white tracking-wide">VOXQUEST</span>
                 <span className="w-2 h-2 rounded-full bg-amber animate-pulse" />
               </div>
-              <p className="text-[10px] text-charcoal/80 dark:text-cream/80 font-sans font-medium">Sovereign Voice</p>
             </div>
           </div>
 
