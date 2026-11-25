@@ -58,20 +58,27 @@ export default function HomePage() {
             </div>
 
             {/* Action CTAs */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-4">
               <Link
                 href="/download"
-                className="arcade-btn arcade-btn-primary w-full sm:w-auto text-xs py-4 px-8 flex items-center justify-center gap-2"
+                className="arcade-btn arcade-btn-primary w-full sm:w-auto text-xs py-4 px-8 flex items-center justify-center gap-2 group shadow-pixel-sm hover:scale-105 transition-all"
               >
-                <Download className="w-4 h-4 text-[#212121]" />
-                <span>EXPLORE ALPHA CLIENT</span>
+                <Download className="w-4 h-4 text-[#212121] group-hover:translate-y-0.5 transition-transform" />
+                <span>DOWNLOAD VOXQUEST FREE</span>
               </Link>
               <Link
                 href="/open-source"
-                className="arcade-btn arcade-btn-ghost w-full sm:w-auto text-xs py-4 px-6 flex items-center justify-center gap-2 bg-[#DFDFD4]/85 backdrop-blur-sm"
+                className="arcade-btn arcade-btn-ghost w-full sm:w-auto text-xs py-4 px-6 flex items-center justify-center gap-2 bg-[#DFDFD4]/85 backdrop-blur-sm hover:bg-[#DFDFD4]"
               >
                 <FileCode className="w-4 h-4" />
                 <span>INSPECT REPO SOURCE</span>
+              </Link>
+            </div>
+
+            <div className="mb-8">
+              <Link href="/download" className="inline-flex items-center gap-2 font-mono text-xs text-[#DDA44D] hover:underline bg-[#0F5B57]/60 px-3 py-1.5 border border-[#212121]">
+                <span className="w-2 h-2 rounded-full bg-[#34D399] animate-pulse" />
+                <span>Auto-detects macOS (Apple Silicon), Windows & Linux &rarr;</span>
               </Link>
             </div>
 
