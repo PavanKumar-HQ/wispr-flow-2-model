@@ -24,20 +24,21 @@ export function AnimatedVoxelBackground() {
     camera.position.set(0, 16, 52);
     camera.lookAt(0, 8, -40);
 
-    // --- 2. WebGL Renderer ---
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
+    // --- 2. WebGL Renderer (Energy-Efficient & Thermal-Optimized) ---
+    const renderer = new THREE.WebGLRenderer({ 
+      antialias: false, 
+      alpha: false, 
+      powerPreference: 'low-power',
+      precision: 'mediump'
+    });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.25));
+    renderer.shadowMap.enabled = false;
     container.appendChild(renderer.domElement);
 
     // --- 3. Dynamic Lighting ---
     const sunLight = new THREE.DirectionalLight(0xFFF2D6, 2.2);
     sunLight.position.set(70, 100, 60);
-    sunLight.castShadow = true;
-    sunLight.shadow.mapSize.width = 1024;
-    sunLight.shadow.mapSize.height = 1024;
     scene.add(sunLight);
 
     const ambientLight = new THREE.AmbientLight(0x0F5B57, 1.4);
@@ -210,12 +211,22 @@ export function AnimatedVoxelBackground() {
     window.addEventListener('scroll', handleScroll, { passive: true });
     window.addEventListener('mousemove', handleMouseMove, { passive: true });
 
-    // --- 9. Animation Loop ---
+    // --- 9. Thermal-Guarded 30 FPS Animation Loop ---
     let animationId: number;
+    let isPageVisible = !document.hidden;
+    let lastRenderTime = performance.now();
+    const TARGET_FRAME_MS = 1000 / 30; // Cap at 30 FPS to prevent GPU heat buildup
     const clock = new THREE.Clock();
 
-    const animate = () => {
+    const animate = (currentTime: number) => {
       animationId = requestAnimationFrame(animate);
+
+      if (!isPageVisible || document.hidden) return;
+
+      const elapsedMs = currentTime - lastRenderTime;
+      if (elapsedMs < TARGET_FRAME_MS) return;
+      lastRenderTime = currentTime - (elapsedMs % TARGET_FRAME_MS);
+
       const elapsed = clock.getElapsedTime();
 
       // Smooth scroll interpolation
@@ -243,7 +254,15 @@ export function AnimatedVoxelBackground() {
       renderer.render(scene, camera);
     };
 
-    animate();
+    const handleVisibilityChange = () => {
+      isPageVisible = !document.hidden;
+      if (isPageVisible) {
+        lastRenderTime = performance.now();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    animate(performance.now());
 
     // --- 10. Resize ---
     const handleResize = () => {
@@ -256,6 +275,7 @@ export function AnimatedVoxelBackground() {
     window.addEventListener('resize', handleResize);
 
     return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('mousemove', handleMouseMove);
