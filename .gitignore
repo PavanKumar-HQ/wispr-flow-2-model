@@ -1,3 +1,8 @@
+# Signing keys & secrets
+*.key
+*.pem
+*.secret
+
 # Logs
 logs
 *.log

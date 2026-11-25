@@ -68,6 +68,23 @@ export default function App() {
   });
   const [downloadProgress, setDownloadProgress] = useState<{ [id: string]: { percent: number; downloaded: number; total: number } }>({});
   const [smokeTestLog, setSmokeTestLog] = useState<string | null>(null);
+  const [updateAvailableVersion, setUpdateAvailableVersion] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isPillOnlyWindow) return;
+    const timer = setTimeout(async () => {
+      try {
+        const { checkForAppUpdates } = await import('./lib/updater');
+        const res = await checkForAppUpdates();
+        if ((res.available || res.downloaded) && res.version) {
+          setUpdateAvailableVersion(res.version);
+        }
+      } catch (err) {
+        // silent check on startup
+      }
+    }, 4500);
+    return () => clearTimeout(timer);
+  }, [isPillOnlyWindow]);
 
   useEffect(() => {
     if (isPillOnlyWindow) {
@@ -456,6 +473,22 @@ export default function App() {
       {/* Main Tab Content (Fluid Responsive Padding) */}
       <main className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8 bg-cream dark:bg-darkTealCanvas">
         <div className="max-w-5xl mx-auto w-full">
+          {updateAvailableVersion && (
+            <div className="mb-4 p-3 bg-darkTeal text-white rounded-xl shadow-xs flex items-center justify-between gap-3 text-xs font-semibold animate-fadeIn">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-amber animate-pulse" />
+                <span>VoxQuest v{updateAvailableVersion} update is ready to install!</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => import('./lib/updater').then((m) => m.relaunchToApplyUpdate())}
+                className="px-3 py-1 bg-white text-darkTeal rounded-lg text-xs font-bold hover:bg-neutral-100 transition-all shadow-xs active:scale-95 cursor-pointer"
+              >
+                Restart to Apply
+              </button>
+            </div>
+          )}
+
           {activeTab === 'home' && (
             <HomeTab
               insights={insights}

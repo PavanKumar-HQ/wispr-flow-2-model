@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VoxQuest — Sovereign Native Voice Typing</title>
+  <meta name="description" content="Ultra-fast, private, 100% on-device speech-to-text dictation utility for macOS, Ubuntu Linux, and Windows.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-canvas: #DFDFD4;
+      --bg-surface: #F6F6F2;
+      --bg-card: #FFFFFF;
+      --text-charcoal: #212121;
+      --text-muted: #595959;
+      --teal-primary: #07514C;
+      --teal-hover: #053C38;
+      --teal-tint: #EAF2F1;
+      --border-subtle: rgba(33, 33, 33, 0.12);
+      --border-teal: rgba(7, 81, 76, 0.25);
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+      --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.06);
+      --radius-sm: 10px;
+      --radius-md: 16px;
+      --radius-lg: 24px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-canvas);
+      color: var(--text-charcoal);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 24px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text-charcoal);
+    }
+
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      background: var(--teal-primary);
+      color: #FFFFFF;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 20px;
+      box-shadow: 0 4px 12px rgba(7, 81, 76, 0.2);
+    }
+
+    .brand-name {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .nav-link {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.15s ease;
+    }
+
+    .nav-link:hover {
+      color: var(--teal-primary);
+    }
+
+    .hero {
+      flex: 1;
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 0 24px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--teal-tint);
+      color: var(--teal-primary);
+      border: 1px solid var(--border-teal);
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 24px;
+    }
+
+    .hero-title {
+      font-size: clamp(38px, 6vw, 64px);
+      font-weight: 800;
+      letter-spacing: -1.5px;
+      line-height: 1.1;
+      color: var(--text-charcoal);
+      margin-bottom: 20px;
+    }
+
+    .hero-title span {
+      color: var(--teal-primary);
+    }
+
+    .hero-desc {
+      font-size: clamp(16px, 2.5vw, 19px);
+      color: var(--text-muted);
+      max-width: 660px;
+      margin-bottom: 36px;
+      font-weight: 500;
+    }
+
+    .download-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 36px;
+      width: 100%;
+      max-width: 620px;
+      box-shadow: var(--shadow-md);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .primary-btn {
+      background: var(--teal-primary);
+      color: #FFFFFF;
+      text-decoration: none;
+      font-size: 16px;
+      font-weight: 700;
+      padding: 16px 36px;
+      border-radius: var(--radius-md);
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 6px 20px rgba(7, 81, 76, 0.25);
+      transition: all 0.2s ease;
+      cursor: pointer;
+      border: none;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .primary-btn:hover {
+      background: var(--teal-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(7, 81, 76, 0.35);
+    }
+
+    .primary-btn:active {
+      transform: translateY(0);
+    }
+
+    .os-detected-meta {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .other-platforms-divider {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 8px 0;
+    }
+
+    .other-platforms-divider::before,
+    .other-platforms-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border-subtle);
+    }
+
+    .platform-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .chip {
+      background: var(--bg-surface);
+      color: var(--text-charcoal);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .chip:hover {
+      background: #FFFFFF;
+      border-color: var(--teal-primary);
+      color: var(--teal-primary);
+      transform: translateY(-1px);
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+      width: 100%;
+      max-width: 1000px;
+      margin: 60px auto 40px;
+      padding: 0 24px;
+    }
+
+    .feature-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 24px;
+      text-align: left;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .feature-icon {
+      font-size: 24px;
+      margin-bottom: 12px;
+    }
+
+    .feature-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .feature-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    footer {
+      text-align: center;
+      padding: 32px;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 500;
+      border-top: 1px solid var(--border-subtle);
+      margin-top: auto;
+    }
+
+    footer a {
+      color: var(--teal-primary);
+      text-decoration: none;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a href="#" class="brand">
+      <div class="brand-icon">V</div>
+      <div class="brand-name">VoxQuest</div>
+    </a>
+    <div class="nav-links">
+      <a href="https://github.com/PavanKumar-HQ/wispr-flow-2-model" target="_blank" class="nav-link">GitHub</a>
+      <a href="https://github.com/PavanKumar-HQ/wispr-flow-2-model/releases" target="_blank" class="nav-link">Releases</a>
+    </div>
+  </header>
+
+  <main class="hero">
+    <div class="badge">
+      ⚡ Sovereign Voice Engine • 100% Offline
+    </div>
+
+    <h1 class="hero-title">
+      Speak naturally.<br>
+      <span>Type anywhere instantly.</span>
+    </h1>
+
+    <p class="hero-desc">
+      Ultra-fast, zero-cloud speech-to-text with auto-punctuation, acoustic repair, and instant system-wide text insertion across all your favorite applications.
+    </p>
+
+    <div class="download-card">
+      <a id="primary-download-btn" href="#" class="primary-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+        <span id="primary-btn-text">Download for macOS (.dmg)</span>
+      </a>
+
+      <div id="os-meta" class="os-detected-meta">
+        Detected OS: macOS • Automatic Updates Enabled
+      </div>
+
+      <div class="other-platforms-divider">
+        Or download for other platforms
+      </div>
+
+      <div class="platform-chips">
+        <a id="link-mac-arm" href="#" class="chip">🍎 Apple Silicon (.dmg)</a>
+        <a id="link-mac-intel" href="#" class="chip">🍏 Intel Mac (.dmg)</a>
+        <a id="link-ubuntu" href="#" class="chip">🐧 Ubuntu / Debian (.deb)</a>
+        <a id="link-appimage" href="#" class="chip">📦 Linux AppImage</a>
+        <a id="link-windows" href="#" class="chip">🪟 Windows (.msi)</a>
+      </div>
+    </div>
+
+    <div class="feature-grid">
+      <div class="feature-box">
+        <div class="feature-icon">🛡️</div>
+        <div class="feature-title">100% Privacy & Local AI</div>
+        <div class="feature-desc">Every word is processed on your device's Metal/Vulkan GPU engine. Zero telemetry, zero cloud streaming.</div>
+      </div>
+      <div class="feature-box">
+        <div class="feature-icon">🔄</div>
+        <div class="feature-title">Seamless In-App Updates</div>
+        <div class="feature-desc">Cryptographically signed updates download in the background and auto-install without disrupting your workflow.</div>
+      </div>
+      <div class="feature-box">
+        <div class="feature-icon">🎯</div>
+        <div class="feature-title">Adaptive Self-Learning</div>
+        <div class="feature-desc">Learns technical slang, developer packages, Next.js, framework code syntax, and your personal dictionary on the fly.</div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <p>VoxQuest Sovereign Voice • Released under MIT License on <a href="https://github.com/PavanKumar-HQ/wispr-flow-2-model" target="_blank">GitHub</a></p>
+  </footer>
+
+  <script>
+    // GitHub repository endpoint
+    const REPO = 'PavanKumar-HQ/wispr-flow-2-model';
+    const GITHUB_API = `https://api.github.com/repos/${REPO}/releases/latest`;
+    const GITHUB_RELEASES_PAGE = `https://github.com/${REPO}/releases/latest`;
+
+    // Detect Client Platform
+    function detectOS() {
+      const userAgent = navigator.userAgent.toLowerCase();
+      const platform = navigator.platform ? navigator.platform.toLowerCase() : '';
+
+      if (userAgent.includes('mac') || platform.includes('mac')) {
+        // Check for Apple Silicon / M1 / M2 / M3
+        const isAppleSilicon = navigator.userAgentData 
+          ? navigator.userAgentData.brands.some(b => b.brand.includes('Apple'))
+          : true; // Default modern Macs to Apple Silicon ARM64
+        return { os: 'mac', arch: isAppleSilicon ? 'arm64' : 'x64' };
+      }
+      if (userAgent.includes('win') || platform.includes('win')) {
+        return { os: 'windows', arch: 'x64' };
+      }
+      if (userAgent.includes('linux') || platform.includes('linux') || userAgent.includes('ubuntu')) {
+        return { os: 'linux', arch: 'x64' };
+      }
+      return { os: 'unknown', arch: 'unknown' };
+    }
+
+    async function initDownloads() {
+      const detected = detectOS();
+      const btn = document.getElementById('primary-download-btn');
+      const btnText = document.getElementById('primary-btn-text');
+      const meta = document.getElementById('os-meta');
+
+      let fallbackUrls = {
+        macArm: `${GITHUB_RELEASES_PAGE}/download/VoxQuest_aarch64.dmg`,
+        macIntel: `${GITHUB_RELEASES_PAGE}/download/VoxQuest_x64.dmg`,
+        ubuntu: `${GITHUB_RELEASES_PAGE}/download/voxquest_amd64.deb`,
+        appImage: `${GITHUB_RELEASES_PAGE}/download/VoxQuest.AppImage`,
+        windows: `${GITHUB_RELEASES_PAGE}/download/VoxQuest.msi`
+      };
+
+      try {
+        const res = await fetch(GITHUB_API);
+        if (res.ok) {
+          const data = await res.json();
+          const assets = data.assets || [];
+
+          assets.forEach(a => {
+            const name = a.name.toLowerCase();
+            if (name.endsWith('.dmg') && (name.includes('aarch64') || name.includes('arm64'))) {
+              fallbackUrls.macArm = a.browser_download_url;
+            } else if (name.endsWith('.dmg') && (name.includes('x64') || name.includes('x86_64'))) {
+              fallbackUrls.macIntel = a.browser_download_url;
+            } else if (name.endsWith('.deb')) {
+              fallbackUrls.ubuntu = a.browser_download_url;
+            } else if (name.endsWith('.appimage')) {
+              fallbackUrls.appImage = a.browser_download_url;
+            } else if (name.endsWith('.msi') || (name.endsWith('.exe') && name.includes('setup'))) {
+              fallbackUrls.windows = a.browser_download_url;
+            }
+          });
+        }
+      } catch (err) {
+        console.warn('Could not query GitHub Releases API, using direct download routes:', err);
+      }
+
+      // Assign direct links to chips
+      document.getElementById('link-mac-arm').href = fallbackUrls.macArm;
+      document.getElementById('link-mac-intel').href = fallbackUrls.macIntel;
+      document.getElementById('link-ubuntu').href = fallbackUrls.ubuntu;
+      document.getElementById('link-appimage').href = fallbackUrls.appImage;
+      document.getElementById('link-windows').href = fallbackUrls.windows;
+
+      // Smart Primary Button
+      if (detected.os === 'mac') {
+        btnText.innerText = 'Download for macOS (.dmg)';
+        btn.href = detected.arch === 'arm64' ? fallbackUrls.macArm : fallbackUrls.macIntel;
+        meta.innerText = 'Detected OS: macOS (' + (detected.arch === 'arm64' ? 'Apple Silicon' : 'Intel') + ') • Auto-updates enabled';
+      } else if (detected.os === 'linux') {
+        btnText.innerText = 'Download for Ubuntu / Linux (.deb)';
+        btn.href = fallbackUrls.ubuntu;
+        meta.innerText = 'Detected OS: Linux (Ubuntu/Debian) • Auto-updates enabled';
+      } else if (detected.os === 'windows') {
+        btnText.innerText = 'Download for Windows (.msi)';
+        btn.href = fallbackUrls.windows;
+        meta.innerText = 'Detected OS: Windows • Auto-updates enabled';
+      } else {
+        btnText.innerText = 'Download VoxQuest for Desktop';
+        btn.href = GITHUB_RELEASES_PAGE;
+        meta.innerText = 'Cross-platform native voice typing for Mac, Linux, and Windows';
+      }
+    }
+
+    initDownloads();
+  </script>
+</body>
+</html>

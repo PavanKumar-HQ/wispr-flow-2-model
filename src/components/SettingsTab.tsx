@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Keyboard, Mic, Sliders, Shield, Target, CheckCircle2, AlertTriangle, ExternalLink, RotateCcw, BookOpen, Radio, Palette, Sun } from 'lucide-react';
+import { Keyboard, Mic, Sliders, Shield, Target, CheckCircle2, AlertTriangle, ExternalLink, RotateCcw, BookOpen, Radio, Palette, Sun, RefreshCw, DownloadCloud } from 'lucide-react';
 import { AppSettings } from '../types';
 import { safeInvoke } from '../lib/ipc';
+import { checkForAppUpdates, relaunchToApplyUpdate, UpdateStatus } from '../lib/updater';
 
 interface SettingsTabProps {
   settings: AppSettings;
@@ -16,6 +17,27 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
 }) => {
   const [accessChecked, setAccessChecked] = useState<boolean | null>(null);
   const [isRecordingShortcut, setIsRecordingShortcut] = useState<boolean>(false);
+  const [isCheckingUpdate, setIsCheckingUpdate] = useState<boolean>(false);
+  const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
+  const [updateMsg, setUpdateMsg] = useState<string | null>(null);
+
+  const handleCheckUpdate = async () => {
+    setIsCheckingUpdate(true);
+    setUpdateMsg('Checking for VoxQuest updates...');
+    try {
+      const res = await checkForAppUpdates((progress) => setUpdateMsg(progress));
+      setUpdateStatus(res);
+      if (!res.available && !res.downloaded) {
+        setUpdateMsg('You are on the latest version of VoxQuest.');
+      } else if (res.downloaded) {
+        setUpdateMsg(`VoxQuest v${res.version} has been downloaded and verified!`);
+      }
+    } catch (err) {
+      setUpdateMsg(`Update check error: ${err}`);
+    } finally {
+      setIsCheckingUpdate(false);
+    }
+  };
 
   const handleRequestAccess = async () => {
     try {
@@ -554,6 +576,60 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
             <div className="p-3.5 rounded-xl bg-neutral-50 dark:bg-darkTealCanvas border border-charcoal/10 dark:border-darkTealBorder text-[11px] text-charcoal/80 dark:text-cream/80 leading-relaxed shadow-xs">
               <strong className="text-darkTeal dark:text-mint">100% Private:</strong> Your speech is processed entirely on your Mac and discarded from memory immediately after transcription. Your voice is never recorded to disk and never leaves your computer.
             </div>
+          </div>
+        </div>
+
+        {/* Software Updates & System Release */}
+        <div className="p-5 rounded-2xl border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface shadow-xs space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal dark:text-mint font-mono flex items-center gap-1.5">
+              <DownloadCloud className="w-3.5 h-3.5" /> Software Updates & Release Channel
+            </h3>
+            <span className="text-[10px] font-mono font-bold bg-[#EAF2F1] text-darkTeal border border-[#07514C]/20 px-2 py-0.5 rounded-full">
+              v0.1.0 Sovereign
+            </span>
+          </div>
+
+          <p className="text-xs text-charcoal/80 dark:text-cream/80 leading-relaxed">
+            VoxQuest checks for cryptographically signed release updates directly from GitHub. Seamless background installation guarantees zero workflow interruption.
+          </p>
+
+          {updateMsg && (
+            <div className="p-3 rounded-xl bg-neutral-50 dark:bg-darkTealCanvas border border-charcoal/10 dark:border-darkTealBorder text-xs text-charcoal dark:text-cream font-medium">
+              {updateMsg}
+            </div>
+          )}
+
+          <div className="flex items-center gap-3">
+            {updateStatus?.downloaded ? (
+              <button
+                type="button"
+                onClick={relaunchToApplyUpdate}
+                className="px-4 py-2 text-xs font-bold rounded-xl bg-darkTeal text-white hover:bg-teal-800 transition-all shadow-xs cursor-pointer active:scale-95 flex items-center gap-2"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Restart to Apply Update</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleCheckUpdate}
+                disabled={isCheckingUpdate}
+                className="px-4 py-2 text-xs font-bold rounded-xl border border-charcoal/20 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface hover:bg-neutral-50 dark:hover:bg-darkTealElevated text-charcoal dark:text-cream transition-all shadow-xs cursor-pointer active:scale-95 flex items-center gap-2 disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 text-darkTeal ${isCheckingUpdate ? 'animate-spin' : ''}`} />
+                <span>{isCheckingUpdate ? 'Checking GitHub...' : 'Check for Updates'}</span>
+              </button>
+            )}
+            <a
+              href="https://github.com/PavanKumar-HQ/wispr-flow-2-model/releases"
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs font-semibold text-darkTeal hover:underline flex items-center gap-1"
+            >
+              <span>View Release Notes</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
           </div>
         </div>
       </div>

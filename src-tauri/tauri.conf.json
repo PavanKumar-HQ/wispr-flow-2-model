@@ -27,6 +27,7 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "createUpdaterArtifacts": true,
     "macOS": {
       "infoPlist": "Info.plist"
     },
@@ -37,5 +38,13 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ]
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEIxOUFBOUVFMUQxNTI1MDQKUldRRUpSVWQ3cW1hc2ZBZi9iRUpNbzVsaTg0anhrL0diMG9SbmFhdERNUWpOK0ZKTWwxYUUzajMK",
+      "endpoints": [
+        "https://github.com/PavanKumar-HQ/wispr-flow-2-model/releases/latest/download/latest.json"
+      ]
+    }
   }
 }
