@@ -302,10 +302,10 @@ export const EnhanceReviewCard: React.FC<EnhanceReviewCardProps> = ({
             <div className="p-3.5 rounded-xl border-2 border-darkTeal/20 dark:border-darkTealBorder bg-[#F8F8F5] dark:bg-darkTealElevated space-y-2 animate-fadeIn">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-charcoal dark:text-cream flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-700 dark:text-mint" />
+                  <ShieldCheck className="w-3.5 h-3.5 text-darkTeal dark:text-mint" />
                   Intent Integrity Verification
                 </span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-darkTealCanvas text-emerald-800 dark:text-mint border border-emerald-300 dark:border-darkTealBorder">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-darkTeal/10 dark:bg-darkTealCanvas text-darkTeal dark:text-mint border border-darkTeal/20 dark:border-darkTealBorder">
                   {result.intent_audit.missing_constraints.length === 0 ? 'Verified Safe & Intact' : 'Warning: Modified'}
                 </span>
               </div>
@@ -313,7 +313,7 @@ export const EnhanceReviewCard: React.FC<EnhanceReviewCardProps> = ({
               <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
                 {result.intent_audit.preserved_negations.map((neg, i) => (
                   <span key={i} className="px-2 py-0.5 rounded-lg bg-white dark:bg-darkTealSurface border border-darkTeal/30 dark:border-darkTealBorder text-darkTeal dark:text-mint font-mono font-bold flex items-center gap-1 shadow-xs">
-                    <Check className="w-2.5 h-2.5 text-emerald-600 dark:text-mint" />
+                    <Check className="w-2.5 h-2.5 text-darkTeal dark:text-mint" />
                     <span>Negation: "{neg}"</span>
                   </span>
                 ))}
@@ -325,7 +325,7 @@ export const EnhanceReviewCard: React.FC<EnhanceReviewCardProps> = ({
                 ))}
                 {result.intent_audit.preserved_numbers.map((num, i) => (
                   <span key={i} className="px-2 py-0.5 rounded-lg bg-white dark:bg-darkTealSurface border border-charcoal/20 dark:border-darkTealBorder text-charcoal dark:text-cream font-mono font-bold flex items-center gap-1 shadow-xs">
-                    <Check className="w-2.5 h-2.5 text-emerald-600 dark:text-mint" />
+                    <Check className="w-2.5 h-2.5 text-darkTeal dark:text-mint" />
                     <span>Constant: {num}</span>
                   </span>
                 ))}
@@ -374,7 +374,7 @@ export const EnhanceReviewCard: React.FC<EnhanceReviewCardProps> = ({
             className="tactile-btn tactile-btn-surface px-3 py-1.5 text-xs font-bold"
             title="Copy enhanced text to clipboard"
           >
-            {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-darkTeal" />}
+            {copied ? <Check className="w-3.5 h-3.5 text-darkTeal dark:text-mint" /> : <Copy className="w-3.5 h-3.5 text-darkTeal" />}
             <span className="hidden sm:inline">{copied ? 'Copied' : 'Copy'}</span>
           </button>
 

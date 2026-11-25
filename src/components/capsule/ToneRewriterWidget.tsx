@@ -182,7 +182,7 @@ export const ToneRewriterWidget: React.FC<ToneRewriterWidgetProps> = ({ lastTran
               onClick={handleCopy}
               className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-stone-100 hover:bg-stone-200 text-charcoal flex items-center gap-1 transition-all active:scale-95 cursor-pointer border border-charcoal/15"
             >
-              {copied ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+              {copied ? <Check className="w-3 h-3 text-darkTeal" /> : <Copy className="w-3 h-3" />}
               <span>{copied ? 'Copied' : 'Copy'}</span>
             </button>
             <button

@@ -165,7 +165,7 @@ export const VoiceSnippetsWidget: React.FC = () => {
                 className="p-1 rounded-lg bg-stone-100 hover:bg-stone-200 text-charcoal text-[10px] font-bold flex items-center transition-all cursor-pointer border border-charcoal/10"
                 title="Copy snippet"
               >
-                {copiedId === snip.id ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                {copiedId === snip.id ? <Check className="w-3 h-3 text-darkTeal" /> : <Copy className="w-3 h-3" />}
               </button>
               <button
                 onClick={() => handlePasteToApp(snip)}
