@@ -413,3 +413,4 @@ export function SmartDownloadSection() {
     </div>
   );
 }
+
