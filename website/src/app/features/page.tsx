@@ -1,7 +1,22 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Navbar, Footer } from '@/components/Navigation';
 import { AnimatedVoxelBackground } from '@/components/AnimatedVoxelBackground';
+
+export const metadata: Metadata = {
+  title: 'Features Matrix & Wispr Flow Parity',
+  description:
+    'Comprehensive feature breakdown of VoxQuest: on-device Whisper Metal transcription, real-time filler word stripping, custom technical vocabularies, AI meeting notetaker, and local storage cleaner.',
+  keywords: [
+    'voxquest features',
+    'wispr flow comparison',
+    'speech to text features',
+    'filler word removal',
+    'offline whisper models',
+    'developer voice dictation',
+  ],
+};
 
 const FEATURES = [
   {

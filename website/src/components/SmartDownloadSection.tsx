@@ -7,12 +7,9 @@ import {
   Monitor, 
   Terminal, 
   CheckCircle2, 
-  ExternalLink, 
   ShieldCheck, 
-  Sparkles,
-  Info,
-  X,
-  FileCheck
+  Smartphone,
+  X 
 } from 'lucide-react';
 
 export type PlatformKey = 'mac-arm' | 'mac-intel' | 'windows' | 'linux';
@@ -109,7 +106,7 @@ const DEFAULT_PLATFORMS: Record<PlatformKey, PlatformInfo> = {
 
 export function SmartDownloadSection() {
   const [detectedKey, setDetectedKey] = useState<PlatformKey>('mac-arm');
-  const [isClient, setIsClient] = useState(false);
+  const [isMobileDevice, setIsMobileDevice] = useState<boolean>(false);
   const [downloadModal, setDownloadModal] = useState<{
     isOpen: boolean;
     platform: PlatformInfo;
@@ -123,11 +120,13 @@ export function SmartDownloadSection() {
 
   // 1. Detect Client Operating System & Architecture
   useEffect(() => {
-    setIsClient(true);
     if (typeof window === 'undefined') return;
 
     const ua = navigator.userAgent.toLowerCase();
     const platform = (navigator.platform || '').toLowerCase();
+
+    const isMobile = /android|iphone|ipad|ipod|mobile/.test(ua);
+    setIsMobileDevice(isMobile);
 
     let detected: PlatformKey = 'mac-arm';
 
@@ -147,7 +146,7 @@ export function SmartDownloadSection() {
     setDetectedKey(detected);
   }, []);
 
-  // 2. Initiate Direct Binary Download (Served Directly from Website)
+  // 2. Initiate Direct Binary Download
   const handleDownload = (platform: PlatformInfo) => {
     let directUrl = platform.directDownloadUrl || platform.downloadUrl;
     
@@ -182,48 +181,65 @@ export function SmartDownloadSection() {
   const detectedPlatform = platforms[detectedKey];
 
   return (
-    <div className="w-full space-y-10 font-sans">
+    <div className="w-full space-y-8 sm:space-y-10 font-sans">
+      {/* Mobile Notice if user is browsing from a phone */}
+      {isMobileDevice && (
+        <div className="p-4 sm:p-5 rounded-2xl bg-[#07514C]/90 border border-[#DDA44D]/40 text-white flex items-start gap-3 shadow-lg">
+          <div className="p-2 bg-[#DDA44D] text-[#212121] rounded-xl shrink-0 mt-0.5">
+            <Smartphone className="w-4 h-4" />
+          </div>
+          <div className="space-y-1 text-xs">
+            <span className="font-bold text-[#DDA44D] uppercase font-mono tracking-wider">
+              Mobile Browser Detected
+            </span>
+            <p className="text-white/85 leading-relaxed">
+              VoxQuest desktop client is designed for macOS, Windows, and Linux. For Android smartphones, install the native companion build with the floating trigger bubble.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* HERO AUTO-DETECTED PLATFORM CARD */}
-      <div className="p-8 sm:p-10 rounded-2xl bg-white/[0.06] backdrop-blur-xl border border-white/15 shadow-2xl">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
-          <div className="space-y-3 flex-1">
+      <div className="p-5 sm:p-8 md:p-10 rounded-2xl bg-white/[0.06] backdrop-blur-xl border border-white/15 shadow-2xl">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 sm:gap-8">
+          <div className="space-y-3 flex-1 w-full">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500/20 text-emerald-300 font-mono text-xs font-bold rounded-full border border-emerald-500/40">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse inline-block" />
-                <span>AUTO-DETECTED FOR YOUR SYSTEM</span>
+              <span className="flex items-center gap-1.5 px-3 py-1 bg-[#DDA44D]/20 text-[#DDA44D] font-mono text-[11px] font-bold rounded-full border border-[#DDA44D]/40">
+                <span className="w-2 h-2 rounded-full bg-[#DDA44D] animate-pulse inline-block" />
+                <span>RECOMMENDED FOR YOUR SYSTEM</span>
               </span>
-              <span className="px-2.5 py-0.5 rounded-full bg-[#DDA44D]/20 text-[#DDA44D] border border-[#DDA44D]/40 font-mono text-xs font-bold">
+              <span className="px-2.5 py-0.5 rounded-full bg-white/10 text-white border border-white/20 font-mono text-[11px] font-bold">
                 {detectedPlatform.badge}
               </span>
             </div>
 
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            <h2 className="text-xl sm:text-3xl font-extrabold text-white tracking-tight">
               {detectedPlatform.name}
             </h2>
 
-            <p className="text-sm text-white/80 leading-relaxed max-w-2xl">
+            <p className="text-xs sm:text-sm text-white/80 leading-relaxed max-w-2xl">
               Native application installer optimized for your hardware. Runs 100% on-device with zero cloud streaming and complete offline Whisper voice dictation.
             </p>
 
-            <div className="flex flex-wrap gap-4 pt-1 font-mono text-xs text-white/70">
+            <div className="flex flex-wrap items-center gap-3 pt-1 font-mono text-[11px] sm:text-xs text-white/70">
               <span className="flex items-center gap-1.5 text-white">
-                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                <ShieldCheck className="w-4 h-4 text-[#DDA44D]" />
                 Format: <strong>{detectedPlatform.format}</strong>
               </span>
               <span>&bull;</span>
               <span>Arch: <strong>{detectedPlatform.architecture}</strong></span>
               <span>&bull;</span>
-              <span className="text-emerald-400 font-bold">Direct Software Download</span>
+              <span className="text-[#DDA44D] font-bold">Direct Standalone Binary</span>
             </div>
           </div>
 
           {/* Primary Direct Download Action */}
-          <div className="flex-shrink-0 w-full md:w-auto flex flex-col items-stretch gap-2.5">
+          <div className="w-full md:w-auto flex flex-col items-stretch gap-2.5 shrink-0">
             <button
               onClick={() => handleDownload(detectedPlatform)}
-              className="px-8 py-4 rounded-xl bg-gradient-to-r from-[#DDA44D] to-[#C99039] hover:from-[#E5B25F] hover:to-[#DDA44D] text-[#212121] font-bold text-sm tracking-wide shadow-xl hover:shadow-[#DDA44D]/30 hover:scale-[1.02] transition-all flex items-center justify-center gap-2.5 cursor-pointer active:scale-95"
+              className="w-full sm:w-auto px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl bg-gradient-to-r from-[#DDA44D] to-[#C99039] hover:from-[#E5B25F] hover:to-[#DDA44D] text-[#212121] font-bold text-xs sm:text-sm tracking-wide shadow-xl hover:shadow-[#DDA44D]/30 transition-all flex items-center justify-center gap-2.5 cursor-pointer active:scale-95"
             >
-              <Download className="w-5 h-5 text-[#212121]" />
+              <Download className="w-4 h-4 sm:w-5 sm:h-5 text-[#212121]" />
               <span>DOWNLOAD VOXQUEST FREE</span>
             </button>
             <div className="text-[11px] font-mono text-center text-white/60">
@@ -236,8 +252,8 @@ export function SmartDownloadSection() {
       {/* ALL PLATFORMS CATALOG */}
       <div className="space-y-4">
         <div className="flex items-center justify-between text-xs font-mono font-bold text-white/70 uppercase px-1">
-          <span>All Available OS Releases</span>
-          <span>Offline Installers</span>
+          <span>All OS Releases</span>
+          <span>Offline Packages</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -248,36 +264,36 @@ export function SmartDownloadSection() {
             return (
               <div
                 key={p.id}
-                className={`p-5 rounded-xl border transition-all flex flex-col justify-between ${
+                className={`p-4 sm:p-5 rounded-xl border transition-all flex flex-col justify-between ${
                   isSelected
                     ? 'bg-white/[0.08] border-[#DDA44D]/60 shadow-lg ring-1 ring-[#DDA44D]/30'
                     : 'bg-white/[0.03] border-white/10 hover:border-white/25'
                 }`}
               >
                 <div>
-                  <div className="flex items-center justify-between gap-2 mb-3">
+                  <div className="flex items-center justify-between gap-2 mb-2 sm:mb-3">
                     <div className="flex items-center gap-2">
-                      {p.osFamily === 'mac' && <Apple className="w-5 h-5 text-[#DDA44D]" />}
-                      {p.osFamily === 'windows' && <Monitor className="w-5 h-5 text-blue-400" />}
-                      {p.osFamily === 'linux' && <Terminal className="w-5 h-5 text-amber-400" />}
-                      <span className="font-bold text-sm text-white">{p.name}</span>
+                      {p.osFamily === 'mac' && <Apple className="w-4 h-4 sm:w-5 sm:h-5 text-[#DDA44D]" />}
+                      {p.osFamily === 'windows' && <Monitor className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />}
+                      {p.osFamily === 'linux' && <Terminal className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />}
+                      <span className="font-bold text-xs sm:text-sm text-white">{p.name}</span>
                     </div>
                     {isSelected && (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                        YOUR OS
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#DDA44D]/20 text-[#DDA44D] border border-[#DDA44D]/40 shrink-0">
+                        DETECTED
                       </span>
                     )}
                   </div>
-                  <div className="text-xs text-white/70 font-mono mb-4">
+                  <div className="text-[11px] sm:text-xs text-white/70 font-mono mb-4">
                     {p.format} &bull; {p.architecture}
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-3 border-t border-white/10">
-                  <span className="text-[11px] font-mono text-white/50">{p.checksum}</span>
+                <div className="flex items-center justify-between pt-3 border-t border-white/10 gap-2">
+                  <span className="text-[10px] sm:text-[11px] font-mono text-white/50 truncate">{p.checksum}</span>
                   <button
                     onClick={() => handleDownload(p)}
-                    className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-white/10 hover:bg-white/20 text-white border border-white/15 transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+                    className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-white/10 hover:bg-white/20 text-white border border-white/15 transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shrink-0"
                   >
                     <Download className="w-3.5 h-3.5 text-[#DDA44D]" />
                     <span>Download</span>
@@ -292,31 +308,32 @@ export function SmartDownloadSection() {
       {/* DOWNLOAD SUCCESS & INSTALLATION MODAL */}
       {downloadModal.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fadeIn">
-          <div className="relative w-full max-w-lg p-6 sm:p-8 rounded-2xl bg-[#0D2422] border border-white/20 text-white shadow-2xl space-y-5">
+          <div className="relative w-full max-w-lg p-5 sm:p-8 rounded-2xl bg-[#0D2422] border border-white/20 text-white shadow-2xl space-y-4 sm:space-y-5 max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setDownloadModal((prev) => ({ ...prev, isOpen: false }))}
               className="absolute top-4 right-4 p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-colors"
+              aria-label="Close modal"
             >
               <X className="w-4 h-4" />
             </button>
 
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-[#DDA44D]/20 text-[#DDA44D] border border-[#DDA44D]/40 flex items-center justify-center shrink-0">
                 <CheckCircle2 className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-bold text-base text-white">
-                  Download Started!
+                <h3 className="font-bold text-sm sm:text-base text-white">
+                  Download Initiated!
                 </h3>
-                <p className="text-xs text-white/70 font-mono">
-                  {downloadModal.platform.recommendedFilename} (6.0 MB)
+                <p className="text-[11px] sm:text-xs text-white/70 font-mono truncate max-w-[240px] sm:max-w-none">
+                  {downloadModal.platform.recommendedFilename}
                 </p>
               </div>
             </div>
 
-            <div className="p-4 rounded-xl bg-white/[0.04] border border-white/10 space-y-2 text-xs">
+            <div className="p-3.5 sm:p-4 rounded-xl bg-white/[0.04] border border-white/10 space-y-2 text-xs">
               <div className="font-bold text-white uppercase tracking-wider font-mono text-[11px]">
-                Installation Steps ({downloadModal.platform.name})
+                Setup Instructions ({downloadModal.platform.name})
               </div>
               <ol className="list-decimal list-inside space-y-1.5 text-white/80 leading-relaxed font-sans">
                 {downloadModal.platform.instructions.map((step, idx) => (
@@ -325,17 +342,17 @@ export function SmartDownloadSection() {
               </ol>
             </div>
 
-            <div className="flex items-center justify-between text-xs pt-1">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs pt-1">
               <a
                 href={downloadModal.platform.directDownloadUrl}
                 download={downloadModal.platform.recommendedFilename}
-                className="text-[#DDA44D] hover:underline font-mono"
+                className="text-[#DDA44D] hover:underline font-mono text-center sm:text-left"
               >
-                Download didn't start? Click here to retry &rarr;
+                Download didn't start? Click here &rarr;
               </a>
               <button
                 onClick={() => setDownloadModal((prev) => ({ ...prev, isOpen: false }))}
-                className="px-4 py-2 rounded-xl bg-white text-[#212121] font-bold text-xs hover:bg-neutral-200 transition-all cursor-pointer"
+                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-white text-[#212121] font-bold text-xs hover:bg-neutral-200 transition-all cursor-pointer"
               >
                 Close
               </button>

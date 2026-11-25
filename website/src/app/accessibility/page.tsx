@@ -1,7 +1,20 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import { Navbar, Footer } from '@/components/Navigation';
 import { AnimatedVoxelBackground } from '@/components/AnimatedVoxelBackground';
 import { Eye } from 'lucide-react';
+
+export const metadata: Metadata = {
+  title: 'Accessibility Statement & Inclusive Design',
+  description:
+    'VoxQuest accessibility pledge: full keyboard navigation, high contrast modes, WCAG 2.1 AA compliance, and voice-first computing for individuals with motor or visual impairments.',
+  keywords: [
+    'accessible voice dictation',
+    'motor impairment speech typing',
+    'wcag 2.1 voice software',
+    'hands-free computing',
+  ],
+};
 
 export default function AccessibilityPage() {
   return (

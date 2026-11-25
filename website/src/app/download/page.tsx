@@ -1,57 +1,79 @@
-'use client';
-
 import React from 'react';
+import type { Metadata } from 'next';
 import { Navbar, Footer } from '@/components/Navigation';
 import { AnimatedVoxelBackground } from '@/components/AnimatedVoxelBackground';
 import { SmartDownloadSection } from '@/components/SmartDownloadSection';
 import { ShieldCheck, Zap, Laptop, Lock } from 'lucide-react';
 
+export const metadata: Metadata = {
+  title: 'Download VoxQuest — Native Desktop Client for Mac, Windows & Linux',
+  description:
+    'Download the official native client of VoxQuest. Available for Apple Silicon (M1/M2/M3/M4 DMG), Intel Mac, Windows 10/11 (setup.exe), and Linux (AppImage). Free, open-source, and 100% offline.',
+  keywords: [
+    'download voxquest',
+    'voxquest mac installer',
+    'voxquest windows exe',
+    'whisper ai download',
+    'offline dictation mac dmg',
+    'windows speech to text installer',
+    'wispr flow free download alternative',
+  ],
+};
+
 export default function DownloadPage() {
   return (
     <div className="min-h-screen flex flex-col relative overflow-x-hidden font-sans">
-      {/* Zero-Lag Ambient Background */}
+      {/* Zero-Lag Ambient Voxel Background */}
       <AnimatedVoxelBackground />
 
       <Navbar />
 
-      <main className="flex-1 pt-28 pb-14 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto w-full relative z-10">
-        <div className="text-center max-w-3xl mx-auto mb-10">
+      <main className="flex-1 pt-24 sm:pt-28 pb-14 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto w-full relative z-10">
+        <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#DDA44D]/20 text-[#DDA44D] border border-[#DDA44D]/40 font-mono text-xs font-bold mb-3 uppercase">
             <Zap className="w-3.5 h-3.5 text-[#DA6C4C]" />
-            <span>NATIVE APPLICATION DOWNLOAD</span>
+            <span>DIRECT NATIVE CLIENT DOWNLOAD</span>
           </div>
-          <h1 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
-            Download VoxQuest
+          <h1 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight mb-4">
+            Install VoxQuest for Your OS
           </h1>
-          <p className="mt-3 text-sm sm:text-base text-white/80 leading-relaxed max-w-xl mx-auto font-sans">
-            Push-to-talk voice dictation with zero cloud streaming, instant text injection, and full offline Whisper inference.
+          <p className="text-sm sm:text-base text-white/80 max-w-xl mx-auto leading-relaxed">
+            Direct standalone installer with integrated local Whisper acoustic models. No cloud dependencies, no account registration required.
           </p>
         </div>
 
-        {/* Smart OS Auto-Detection & Direct Software Binary Downloads */}
+        {/* Smart Client Platform Auto-Detection & Direct Installer Downloads */}
         <SmartDownloadSection />
 
-        {/* Verification & Air-Gapped Security Guarantee */}
-        <div className="mt-12 p-6 sm:p-8 rounded-2xl bg-white/[0.04] backdrop-blur-xl border border-white/10 space-y-3">
-          <h3 className="text-sm font-bold text-white flex items-center gap-2 font-mono uppercase tracking-wide">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span>Integrity &amp; Privacy Verification</span>
-          </h3>
-          <p className="text-xs text-white/75 leading-relaxed">
-            All VoxQuest releases are self-contained standalone installers. The application runs entirely within your system sandbox, requires zero network connections after download, and processes all microphone audio locally via Apple Silicon Metal acceleration.
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs font-mono text-white/80">
-            <div className="p-3 rounded-xl bg-white/5 border border-white/10">
-              <div className="text-emerald-400 font-bold mb-0.5">100% OFFLINE</div>
-              <p className="text-[11px] text-white/60">Works without an internet connection or Wi-Fi.</p>
+        {/* Guarantee Banner */}
+        <div className="mt-12 sm:mt-16 p-6 rounded-2xl bg-white/[0.05] border border-white/10 backdrop-blur-md grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-white/80">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-lg bg-[#07514C] text-[#DDA44D] shrink-0 border border-white/10">
+              <ShieldCheck className="w-5 h-5" />
             </div>
-            <div className="p-3 rounded-xl bg-white/5 border border-white/10">
-              <div className="text-[#DDA44D] font-bold mb-0.5">ZERO TELEMETRY</div>
-              <p className="text-[11px] text-white/60">No audio packets are ever recorded or uploaded.</p>
+            <div>
+              <h3 className="font-bold text-white text-sm mb-1">100% Air-Gapped</h3>
+              <p className="leading-relaxed">All voice recognition models execute locally on your GPU/Metal cores. Zero voice data is transmitted over the internet.</p>
             </div>
-            <div className="p-3 rounded-xl bg-white/5 border border-white/10">
-              <div className="text-blue-400 font-bold mb-0.5">COMPACT 6.0 MB</div>
-              <p className="text-[11px] text-white/60">Lightweight native binary with minimal storage impact.</p>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-lg bg-[#07514C] text-[#DDA44D] shrink-0 border border-white/10">
+              <Laptop className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-bold text-white text-sm mb-1">System-Wide Dictation</h3>
+              <p className="leading-relaxed">Works out of the box in VS Code, Obsidian, Notion, Slack, Discord, Google Docs, and browser inputs.</p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-lg bg-[#07514C] text-[#DDA44D] shrink-0 border border-white/10">
+              <Lock className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-bold text-white text-sm mb-1">Permissive Apache 2.0</h3>
+              <p className="leading-relaxed">Free for personal, academic, and enterprise usage. You retain complete ownership of your code, voice, and models.</p>
             </div>
           </div>
         </div>

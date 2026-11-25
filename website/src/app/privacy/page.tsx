@@ -1,7 +1,20 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import { Navbar, Footer } from '@/components/Navigation';
 import { AnimatedVoxelBackground } from '@/components/AnimatedVoxelBackground';
 import { ShieldCheck } from 'lucide-react';
+
+export const metadata: Metadata = {
+  title: 'Zero-Retention Privacy Pledge',
+  description:
+    'Our strict zero-retention guarantee: no audio recordings ever leave your machine, no tracking SDKs or ad networks, no cloud storage, and zero data monetization.',
+  keywords: [
+    'zero audio retention',
+    'private voice pledge',
+    'no cloud eavesdropping',
+    'open source privacy dictation',
+  ],
+};
 
 export default function PrivacyPage() {
   return (

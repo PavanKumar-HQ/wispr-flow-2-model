@@ -28,13 +28,14 @@ export function AnimatedVoxelBackground() {
     scene.background = new THREE.Color(0x07514C);
     scene.fog = new THREE.FogExp2(0x07514C, 0.008);
 
+    const isMobileInitial = window.innerWidth < 768;
     const camera = new THREE.PerspectiveCamera(
-      52,
+      isMobileInitial ? 66 : 52,
       window.innerWidth / window.innerHeight,
       1,
       800
     );
-    camera.position.set(0, 18, 52);
+    camera.position.set(0, isMobileInitial ? 20 : 18, isMobileInitial ? 60 : 52);
     camera.lookAt(0, 8, -35);
 
     // --- 2. Hardware-Accelerated Low-Power WebGL Renderer ---
@@ -334,9 +335,11 @@ export function AnimatedVoxelBackground() {
 
     animate();
 
-    // --- 10. Resize Handler ---
+    // --- 10. Resize Handler (Responsive FOV for Mobile & Desktop) ---
     const handleResize = () => {
       if (!container) return;
+      const isMobile = window.innerWidth < 768;
+      camera.fov = isMobile ? 66 : 52;
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);

@@ -1,7 +1,19 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import { Navbar, Footer } from '@/components/Navigation';
 import { AnimatedVoxelBackground } from '@/components/AnimatedVoxelBackground';
 import { FileText } from 'lucide-react';
+
+export const metadata: Metadata = {
+  title: 'Terms of Service',
+  description:
+    'Terms of service and software use agreement for VoxQuest. Transparent, free from lock-in, and governed by the Apache 2.0 open-source license.',
+  keywords: [
+    'voxquest terms',
+    'open source terms of service',
+    'apache 2.0 license terms',
+  ],
+};
 
 export default function TermsPage() {
   return (

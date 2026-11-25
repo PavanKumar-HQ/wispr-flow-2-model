@@ -1,7 +1,20 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import { Navbar, Footer } from '@/components/Navigation';
 import { AnimatedVoxelBackground } from '@/components/AnimatedVoxelBackground';
 import { Shield } from 'lucide-react';
+
+export const metadata: Metadata = {
+  title: 'Security Architecture & Threat Model',
+  description:
+    'VoxQuest security architecture: air-gapped voice processing, local memory sanitization, zero network sockets for audio, and complete protection against cloud eavesdropping.',
+  keywords: [
+    'air-gapped voice security',
+    'private speech to text',
+    'zero audio telemetry',
+    'enterprise local dictation',
+  ],
+};
 
 export default function SecurityPage() {
   return (

@@ -7,6 +7,7 @@ import { FaqSection } from '@/components/FaqSection';
 import { AnimatedVoxelBackground } from '@/components/AnimatedVoxelBackground';
 import { ScrollReveal } from '@/components/ScrollReveal';
 import { PixelLogo } from '@/components/PixelIcons';
+import { FAQS } from '@/lib/constants';
 import { 
   Download, 
   FileCode, 
@@ -32,8 +33,27 @@ import {
 } from 'lucide-react';
 
 export default function HomePage() {
+  const jsonLdFaq = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: FAQS.map((faq) => ({
+      '@type': 'Question',
+      name: faq.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: faq.answer,
+      },
+    })),
+  };
+
   return (
     <div className="min-h-screen flex flex-col relative overflow-x-hidden font-sans">
+      {/* FAQ Schema for Google Rich Search Results */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdFaq) }}
+      />
+
       {/* 1. Procedural 3D Voxel Canvas with Scroll & Mouse Parallax */}
       <AnimatedVoxelBackground />
 
@@ -84,14 +104,14 @@ export default function HomePage() {
 
             <div className="mb-10">
               <Link href="/download" className="inline-flex items-center gap-2 font-mono text-xs text-[#DDA44D] hover:underline bg-black/40 px-3.5 py-1.5 rounded-full border border-white/10 backdrop-blur-md">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-[#DDA44D] animate-pulse" />
                 <span>Auto-detects macOS (Apple Silicon 6.0 MB), Windows & Linux &rarr;</span>
               </Link>
             </div>
 
             {/* Platform Badges */}
-            <div className="flex flex-wrap items-center justify-center gap-2.5 text-xs font-mono">
-              <span className="px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-white">MACOS UNIVERSAL (M1/M2/M3/M4)</span>
+            <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 text-[11px] sm:text-xs font-mono">
+              <span className="px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-white">MACOS UNIVERSAL</span>
               <span className="px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-white">LINUX X86_64</span>
               <span className="px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-white">WINDOWS 11</span>
               <span className="px-3 py-1 rounded-full bg-[#DA6C4C]/90 text-white font-bold">100% OFFLINE WHISPER</span>
@@ -102,139 +122,146 @@ export default function HomePage() {
         {/* =========================================================================
             SECTION 2: WHY VOXQUEST OVERTAKES WISPR FLOW (Interactive Matrix)
            ========================================================================= */}
-        <section id="compare" className="py-20 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto scroll-mt-24">
+        <section id="compare" className="py-16 sm:py-20 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto scroll-mt-24">
           <ScrollReveal>
-            <div className="text-center max-w-3xl mx-auto mb-14">
+            <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-14">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#DDA44D]/20 text-[#DDA44D] border border-[#DDA44D]/40 font-mono text-xs font-bold mb-3 uppercase">
                 <ShieldCheck className="w-4 h-4" />
                 <span>DIRECT PLATFORM COMPARISON</span>
               </div>
-              <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+              <h2 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
                 Why Builders Choose VoxQuest Over Wispr Flow
               </h2>
-              <p className="mt-3 text-sm text-white/80 leading-relaxed">
+              <p className="mt-3 text-xs sm:text-sm text-white/80 leading-relaxed">
                 Compare sovereign on-device engineering against closed cloud subscription services.
               </p>
             </div>
 
-            <div className="rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl overflow-hidden shadow-2xl">
-              <div className="grid grid-cols-3 p-4 sm:p-6 bg-black/30 border-b border-white/10 text-xs font-mono font-bold tracking-wider uppercase text-white/70">
-                <div>CAPABILITY</div>
-                <div className="text-center text-[#DA6C4C]">WISPR FLOW</div>
-                <div className="text-center text-[#34D399] font-extrabold">VOXQUEST (LOCAL)</div>
-              </div>
+            {/* Mobile swipe helper */}
+            <div className="md:hidden text-center text-[11px] font-mono text-[#DDA44D] mb-3 flex items-center justify-center gap-1.5">
+              <span>&larr; Scroll horizontally to view full matrix &rarr;</span>
+            </div>
 
-              <div className="divide-y divide-white/10 text-xs sm:text-sm">
-                {/* Row 1 */}
-                <div className="grid grid-cols-3 p-4 sm:p-5 items-center hover:bg-white/[0.03] transition-colors">
-                  <div>
-                    <div className="font-bold text-white">Transcription Engine</div>
-                    <div className="text-xs text-white/60">Where audio is processed</div>
-                  </div>
-                  <div className="text-center text-white/80 flex flex-col items-center gap-1">
-                    <span className="text-xs text-red-300 font-mono flex items-center gap-1">
-                      <X className="w-3.5 h-3.5 text-red-400" /> Cloud Streaming
-                    </span>
-                    <span className="text-[11px] text-white/50">High latency, breaks offline</span>
-                  </div>
-                  <div className="text-center flex flex-col items-center gap-1">
-                    <span className="text-xs text-emerald-400 font-mono font-bold flex items-center gap-1">
-                      <Check className="w-3.5 h-3.5 text-emerald-400" /> 100% On-Device Metal
-                    </span>
-                    <span className="text-[11px] text-white/80">Zero packets leave device</span>
-                  </div>
+            <div className="rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl overflow-x-auto shadow-2xl">
+              <div className="min-w-[620px]">
+                <div className="grid grid-cols-3 p-4 sm:p-6 bg-black/30 border-b border-white/10 text-xs font-mono font-bold tracking-wider uppercase text-white/70">
+                  <div>CAPABILITY</div>
+                  <div className="text-center text-[#DA6C4C]">WISPR FLOW</div>
+                  <div className="text-center text-[#DDA44D] font-extrabold">VOXQUEST (LOCAL)</div>
                 </div>
 
-                {/* Row 2 */}
-                <div className="grid grid-cols-3 p-4 sm:p-5 items-center hover:bg-white/[0.03] transition-colors">
-                  <div>
-                    <div className="font-bold text-white">Pricing &amp; Cost</div>
-                    <div className="text-xs text-white/60">Subscription model</div>
+                <div className="divide-y divide-white/10 text-xs sm:text-sm">
+                  {/* Row 1 */}
+                  <div className="grid grid-cols-3 p-4 sm:p-5 items-center hover:bg-white/[0.03] transition-colors">
+                    <div>
+                      <div className="font-bold text-white">Transcription Engine</div>
+                      <div className="text-xs text-white/60">Where audio is processed</div>
+                    </div>
+                    <div className="text-center text-white/80 flex flex-col items-center gap-1">
+                      <span className="text-xs text-red-300 font-mono flex items-center gap-1">
+                        <X className="w-3.5 h-3.5 text-red-400" /> Cloud Streaming
+                      </span>
+                      <span className="text-[11px] text-white/50">High latency, breaks offline</span>
+                    </div>
+                    <div className="text-center flex flex-col items-center gap-1">
+                      <span className="text-xs text-[#DDA44D] font-mono font-bold flex items-center gap-1">
+                        <Check className="w-3.5 h-3.5 text-[#DDA44D]" /> 100% On-Device Metal
+                      </span>
+                      <span className="text-[11px] text-white/80">Zero packets leave device</span>
+                    </div>
                   </div>
-                  <div className="text-center text-white/80 font-mono">
-                    <div className="text-red-300 font-bold">$12 - $15 / month</div>
-                    <div className="text-[11px] text-white/50">$180 recurring annually</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-emerald-400 font-mono font-bold">$0 &middot; Free Forever</div>
-                    <div className="text-[11px] text-white/80">Sovereign &amp; Open-Source</div>
-                  </div>
-                </div>
 
-                {/* Row 3 */}
-                <div className="grid grid-cols-3 p-4 sm:p-5 items-center hover:bg-white/[0.03] transition-colors">
-                  <div>
-                    <div className="font-bold text-white">Developer &amp; Terminal Syntax</div>
-                    <div className="text-xs text-white/60">Code, CLI flags, casing</div>
+                  {/* Row 2 */}
+                  <div className="grid grid-cols-3 p-4 sm:p-5 items-center hover:bg-white/[0.03] transition-colors">
+                    <div>
+                      <div className="font-bold text-white">Pricing &amp; Cost</div>
+                      <div className="text-xs text-white/60">Subscription model</div>
+                    </div>
+                    <div className="text-center text-white/80 font-mono">
+                      <div className="text-red-300 font-bold">$12 - $15 / month</div>
+                      <div className="text-[11px] text-white/50">$180 recurring annually</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-[#DDA44D] font-mono font-bold">$0 &middot; Free Forever</div>
+                      <div className="text-[11px] text-white/80">Sovereign &amp; Open-Source</div>
+                    </div>
                   </div>
-                  <div className="text-center text-white/60 text-xs">
-                    <span className="text-red-300">Basic prose only</span>
-                    <div className="text-[11px] text-white/40">"docker run dash i t"</div>
-                  </div>
-                  <div className="text-center text-emerald-300 text-xs font-bold">
-                    <span>Native Terminal Engine</span>
-                    <div className="text-[11px] text-white/80">Auto camelCase &amp; CLI flags</div>
-                  </div>
-                </div>
 
-                {/* Row 4 */}
-                <div className="grid grid-cols-3 p-4 sm:p-5 items-center hover:bg-white/[0.03] transition-colors">
-                  <div>
-                    <div className="font-bold text-white">Meeting Assistant &amp; Notetaker</div>
-                    <div className="text-xs text-white/60">Google Meet, Zoom, Teams calls</div>
+                  {/* Row 3 */}
+                  <div className="grid grid-cols-3 p-4 sm:p-5 items-center hover:bg-white/[0.03] transition-colors">
+                    <div>
+                      <div className="font-bold text-white">Developer &amp; Terminal Syntax</div>
+                      <div className="text-xs text-white/60">Code, CLI flags, casing</div>
+                    </div>
+                    <div className="text-center text-white/60 text-xs">
+                      <span className="text-red-300">Basic prose only</span>
+                      <div className="text-[11px] text-white/40">&ldquo;docker run dash i t&rdquo;</div>
+                    </div>
+                    <div className="text-center text-[#DDA44D] text-xs font-bold">
+                      <span>Native Terminal Engine</span>
+                      <div className="text-[11px] text-white/80">Auto camelCase &amp; CLI flags</div>
+                    </div>
                   </div>
-                  <div className="text-center text-white/80 flex flex-col items-center gap-1">
-                    <span className="text-xs text-red-300 font-mono flex items-center gap-1">
-                      <X className="w-3.5 h-3.5 text-red-400" /> Cloud Audio Eavesdropping
-                    </span>
-                    <span className="text-[11px] text-white/50">Streams NDA calls to server</span>
-                  </div>
-                  <div className="text-center flex flex-col items-center gap-1">
-                    <span className="text-xs text-emerald-400 font-mono font-bold flex items-center gap-1">
-                      <Check className="w-3.5 h-3.5 text-emerald-400" /> 100% On-Device VoxMeeting
-                    </span>
-                    <span className="text-[11px] text-white/80">Verbatim notes + action items locally</span>
-                  </div>
-                </div>
 
-                {/* Row 5 */}
-                <div className="grid grid-cols-3 p-4 sm:p-5 items-center hover:bg-white/[0.03] transition-colors">
-                  <div>
-                    <div className="font-bold text-white">Mobile Mode Trigger Strategy</div>
-                    <div className="text-xs text-white/60">Android &amp; iOS hands-free dictation</div>
+                  {/* Row 4 */}
+                  <div className="grid grid-cols-3 p-4 sm:p-5 items-center hover:bg-white/[0.03] transition-colors">
+                    <div>
+                      <div className="font-bold text-white">Meeting Assistant &amp; Notetaker</div>
+                      <div className="text-xs text-white/60">Google Meet, Zoom, Teams calls</div>
+                    </div>
+                    <div className="text-center text-white/80 flex flex-col items-center gap-1">
+                      <span className="text-xs text-red-300 font-mono flex items-center gap-1">
+                        <X className="w-3.5 h-3.5 text-red-400" /> Cloud Eavesdropping
+                      </span>
+                      <span className="text-[11px] text-white/50">Streams NDA calls to server</span>
+                    </div>
+                    <div className="text-center flex flex-col items-center gap-1">
+                      <span className="text-xs text-[#DDA44D] font-mono font-bold flex items-center gap-1">
+                        <Check className="w-3.5 h-3.5 text-[#DDA44D]" /> 100% On-Device VoxMeeting
+                      </span>
+                      <span className="text-[11px] text-white/80">Verbatim notes + action items locally</span>
+                    </div>
                   </div>
-                  <div className="text-center text-white/60 text-xs">
-                    <span className="text-red-300">Closed proprietary cloud app</span>
-                  </div>
-                  <div className="text-center text-emerald-400 text-xs font-bold">
-                    <span>Floating Pill + AccessibilityService</span>
-                    <div className="text-[11px] text-white/80">Injects into WhatsApp, Slack, Gmail</div>
-                  </div>
-                </div>
 
-                {/* Row 6 */}
-                <div className="grid grid-cols-3 p-4 sm:p-5 items-center hover:bg-white/[0.03] transition-colors">
-                  <div>
-                    <div className="font-bold text-white">Mac Storage Cleaner</div>
-                    <div className="text-xs text-white/60">System utility suite</div>
+                  {/* Row 5 */}
+                  <div className="grid grid-cols-3 p-4 sm:p-5 items-center hover:bg-white/[0.03] transition-colors">
+                    <div>
+                      <div className="font-bold text-white">Mobile Mode Strategy</div>
+                      <div className="text-xs text-white/60">Android &amp; iOS hands-free dictation</div>
+                    </div>
+                    <div className="text-center text-white/60 text-xs">
+                      <span className="text-red-300">Proprietary cloud app</span>
+                    </div>
+                    <div className="text-center text-[#DDA44D] text-xs font-bold">
+                      <span>Floating Pill + Accessibility</span>
+                      <div className="text-[11px] text-white/80">Injects into WhatsApp, Slack, Gmail</div>
+                    </div>
                   </div>
-                  <div className="text-center text-white/40 text-xs">None</div>
-                  <div className="text-center text-emerald-400 text-xs font-bold">
-                    <span>Integrated Squirrel Rules</span>
-                    <div className="text-[11px] text-white/80">DerivedData &amp; cache cleaner</div>
-                  </div>
-                </div>
 
-                {/* Row 7 */}
-                <div className="grid grid-cols-3 p-4 sm:p-5 items-center hover:bg-white/[0.03] transition-colors">
-                  <div>
-                    <div className="font-bold text-white">Gamification &amp; Quests</div>
-                    <div className="text-xs text-white/60">Habit motivation system</div>
+                  {/* Row 6 */}
+                  <div className="grid grid-cols-3 p-4 sm:p-5 items-center hover:bg-white/[0.03] transition-colors">
+                    <div>
+                      <div className="font-bold text-white">Storage Cleaner</div>
+                      <div className="text-xs text-white/60">System utility suite</div>
+                    </div>
+                    <div className="text-center text-white/40 text-xs">None</div>
+                    <div className="text-center text-[#DDA44D] text-xs font-bold">
+                      <span>Integrated Squirrel Rules</span>
+                      <div className="text-[11px] text-white/80">DerivedData &amp; cache cleaner</div>
+                    </div>
                   </div>
-                  <div className="text-center text-white/40 text-xs">None</div>
-                  <div className="text-center text-emerald-400 text-xs font-bold">
-                    <span>Retro Pixel Quests &amp; Badges</span>
-                    <div className="text-[11px] text-white/80">50-word milestone calibration</div>
+
+                  {/* Row 7 */}
+                  <div className="grid grid-cols-3 p-4 sm:p-5 items-center hover:bg-white/[0.03] transition-colors">
+                    <div>
+                      <div className="font-bold text-white">Gamification &amp; Quests</div>
+                      <div className="text-xs text-white/60">Habit motivation system</div>
+                    </div>
+                    <div className="text-center text-white/40 text-xs">None</div>
+                    <div className="text-center text-[#DDA44D] text-xs font-bold">
+                      <span>Retro Pixel Quests &amp; Badges</span>
+                      <div className="text-[11px] text-white/80">50-word milestone calibration</div>
+                    </div>
                   </div>
                 </div>
               </div>

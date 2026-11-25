@@ -1,8 +1,21 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Navbar, Footer } from '@/components/Navigation';
 import { AnimatedVoxelBackground } from '@/components/AnimatedVoxelBackground';
 import { Github, Scale, GitPullRequest, Terminal } from 'lucide-react';
+
+export const metadata: Metadata = {
+  title: 'Open Source Software & Licensing',
+  description:
+    'VoxQuest is 100% free and open-source under the Apache 2.0 license. Inspect the code, verify the zero-network sandbox, and contribute freely.',
+  keywords: [
+    'open source speech to text',
+    'apache 2.0 voice software',
+    'inspectable whisper client',
+    'sovereign open source dictation',
+  ],
+};
 
 export default function OpenSourcePage() {
   return (

@@ -1,8 +1,21 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Navbar, Footer } from '@/components/Navigation';
 import { AnimatedVoxelBackground } from '@/components/AnimatedVoxelBackground';
 import { CheckCircle } from 'lucide-react';
+
+export const metadata: Metadata = {
+  title: 'Changelog & Version History',
+  description:
+    'Detailed release notes and updates for VoxQuest: native Windows installer (.exe), universal Mac DMG, cross-platform storage cleaner, and VoxMeeting assistant.',
+  keywords: [
+    'voxquest changelog',
+    'release notes voice dictation',
+    'offline whisper updates',
+    'windows installer voxquest',
+  ],
+};
 
 const RELEASES = [
   {

@@ -1,8 +1,22 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Navbar, Footer } from '@/components/Navigation';
 import { AnimatedVoxelBackground } from '@/components/AnimatedVoxelBackground';
 import { Mic, Cpu, Wand2, MonitorCheck } from 'lucide-react';
+
+export const metadata: Metadata = {
+  title: 'Architecture & Inference Pipeline',
+  description:
+    'Deep dive into the VoxQuest technical architecture: CoreAudio loopback, GGML Whisper Metal acceleration, local SQLite persistence, and zero-telemetry audio pipelines.',
+  keywords: [
+    'whisper architecture',
+    'metal ggml inference',
+    'coreaudio loopback',
+    'local speech pipeline',
+    'tauri voice engine',
+  ],
+};
 
 export default function HowItWorksPage() {
   return (

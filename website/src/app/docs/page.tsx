@@ -1,8 +1,22 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Navbar, Footer } from '@/components/Navigation';
 import { AnimatedVoxelBackground } from '@/components/AnimatedVoxelBackground';
 import { InteractiveDocs } from '@/components/InteractiveDocs';
+
+export const metadata: Metadata = {
+  title: 'Documentation & User Manual',
+  description:
+    'Full documentation for VoxQuest: quickstart installation guide, global hotkey mapping, acoustic model calibration, custom developer dictionary configuration, and troubleshooting.',
+  keywords: [
+    'voxquest docs',
+    'voice typing manual',
+    'whisper model setup',
+    'custom vocabulary guide',
+    'developer hotkey setup',
+  ],
+};
 
 export default function DocsPage() {
   return (

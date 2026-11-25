@@ -1,8 +1,21 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Navbar, Footer } from '@/components/Navigation';
 import { AnimatedVoxelBackground } from '@/components/AnimatedVoxelBackground';
 import { Users, MessageSquare, Github, Heart, Layers, Bug } from 'lucide-react';
+
+export const metadata: Metadata = {
+  title: 'Community Guild & Open Collaboration',
+  description:
+    'Join the VoxQuest open-source community. Contribute code, suggest dictionary terms, report bugs, and build the future of sovereign voice AI together.',
+  keywords: [
+    'voxquest community',
+    'open source voice AI',
+    'whisper contributors',
+    'voice OS discord github',
+  ],
+};
 
 export default function CommunityPage() {
   return (
