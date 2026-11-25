@@ -9,14 +9,24 @@ import { ToneRewriterWidget } from './capsule/ToneRewriterWidget';
 import { SessionSnapshot } from '../types';
 import { safeInvoke } from '../lib/ipc';
 
+interface StorageCategoryFinding {
+  id: string;
+  name: string;
+  description: string;
+  size_mb: number;
+  path_display: string;
+  is_safe: boolean;
+}
+
 interface CleanResult {
   ram_reclaimed_mb: number;
   disk_cache_cleared_mb: number;
   ports_checked: number[];
   ports_freed: string[];
   squirrel_app_found: boolean;
-  squirrel_path: string;
+  squirrel_app_name: string;
   items_cleaned: string[];
+  findings?: StorageCategoryFinding[];
 }
 
 interface UtilitiesTabProps {
@@ -27,7 +37,9 @@ interface UtilitiesTabProps {
 
 export const UtilitiesTab: React.FC<UtilitiesTabProps> = ({ session, onCopy, onSummonPill }) => {
   const [isCleaning, setIsCleaning] = useState<boolean>(false);
+  const [isScanning, setIsScanning] = useState<boolean>(false);
   const [cleanResult, setCleanResult] = useState<CleanResult | null>(null);
+  const [storageFindings, setStorageFindings] = useState<StorageCategoryFinding[] | null>(null);
   const [squirrelStatus, setSquirrelStatus] = useState<string>('');
 
   const handleFloatPill = () => {
@@ -38,12 +50,28 @@ export const UtilitiesTab: React.FC<UtilitiesTabProps> = ({ session, onCopy, onS
     }
   };
 
+  const handleScanStorage = async () => {
+    if (isScanning) return;
+    setIsScanning(true);
+    try {
+      const findings = await safeInvoke<StorageCategoryFinding[]>('scan_mac_storage_cmd');
+      setStorageFindings(findings);
+    } catch (err) {
+      console.warn('Scan storage error:', err);
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
   const handleRunClean = async () => {
     if (isCleaning) return;
     setIsCleaning(true);
     try {
       const res = await safeInvoke<CleanResult>('run_system_clean_and_boost_cmd');
       setCleanResult(res);
+      if (res.findings) {
+        setStorageFindings(res.findings);
+      }
     } catch (err) {
       console.warn('Clean error:', err);
     } finally {
@@ -54,7 +82,7 @@ export const UtilitiesTab: React.FC<UtilitiesTabProps> = ({ session, onCopy, onS
   const handleLaunchSquirrel = async () => {
     try {
       const res = await safeInvoke<string>('launch_squirrel_cleaner_cmd');
-      setSquirrelStatus(res || 'Squirrel launched');
+      setSquirrelStatus(res || 'Squirrel Cleaner active');
       setTimeout(() => setSquirrelStatus(''), 4000);
     } catch {
       setSquirrelStatus('Could not launch Squirrel');
@@ -115,15 +143,26 @@ export const UtilitiesTab: React.FC<UtilitiesTabProps> = ({ session, onCopy, onS
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              disabled={isScanning || isCleaning}
+              onClick={handleScanStorage}
+              className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-stone-100 dark:bg-darkTealElevated hover:bg-stone-200 dark:hover:bg-darkTealSurface text-charcoal dark:text-cream border border-charcoal/15 dark:border-darkTealBorder flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-2xs"
+              title="Scan Mac caches and reclaimable developer storage"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-darkTeal dark:text-mint ${isScanning ? 'animate-spin' : ''}`} />
+              <span>{isScanning ? 'Scanning...' : 'Scan Storage'}</span>
+            </button>
+
             {cleanResult?.squirrel_app_found && (
               <button
                 type="button"
                 onClick={handleLaunchSquirrel}
-                className="px-3 py-1.5 rounded-xl text-xs font-bold bg-stone-100 dark:bg-darkTealSurface hover:bg-stone-200 dark:hover:bg-darkTealElevated text-charcoal dark:text-cream border border-charcoal/15 dark:border-darkTealBorder flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-2xs"
-                title="Open native storage cleaner application"
+                className="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber/20 hover:bg-amber/30 text-charcoal dark:text-cream border border-amber/50 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-2xs"
+                title="Launch standalone Mac storage cleaner application"
               >
-                <ExternalLink className="w-3.5 h-3.5 text-darkTeal dark:text-mint" />
-                <span>{squirrelStatus || 'Open Storage Cleaner'}</span>
+                <ExternalLink className="w-3.5 h-3.5 text-darkTeal" />
+                <span>{squirrelStatus || 'Launch Squirrel App'}</span>
               </button>
             )}
 
@@ -140,17 +179,43 @@ export const UtilitiesTab: React.FC<UtilitiesTabProps> = ({ session, onCopy, onS
               {isCleaning ? (
                 <>
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                  <span>Scanning & Cleaning...</span>
+                  <span>Cleaning & Boosting...</span>
                 </>
               ) : (
                 <>
-                  <RefreshCw className="w-3.5 h-3.5" />
+                  <Activity className="w-3.5 h-3.5 text-amber" />
                   <span>Quick Clean & Boost</span>
                 </>
               )}
             </button>
           </div>
         </div>
+
+        {/* Live Scanned Storage Categories Breakdown */}
+        {storageFindings && storageFindings.length > 0 && (
+          <div className="p-3.5 rounded-xl bg-stone-50 dark:bg-darkTealElevated border border-charcoal/15 dark:border-darkTealBorder space-y-2.5 animate-fadeIn">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-charcoal dark:text-cream">Reclaimable Cache Categories</span>
+              <span className="font-mono text-[11px] font-bold text-darkTeal dark:text-mint">
+                Total Detected: {storageFindings.reduce((s, f) => s + f.size_mb, 0)} MB
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+              {storageFindings.map((finding) => (
+                <div key={finding.id} className="p-2.5 rounded-lg bg-white dark:bg-darkTealSurface border border-charcoal/10 dark:border-darkTealBorder">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[11px] font-bold text-charcoal dark:text-cream truncate">{finding.name}</span>
+                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-darkTeal/10 dark:bg-darkTealElevated text-darkTeal dark:text-mint">
+                      {finding.size_mb} MB
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-charcoal/60 dark:text-sage line-clamp-1">{finding.description}</div>
+                  <div className="text-[9px] font-mono text-charcoal/40 dark:text-sage/60 mt-1">{finding.path_display}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Clean Results Panel */}
         {cleanResult ? (
@@ -179,12 +244,12 @@ export const UtilitiesTab: React.FC<UtilitiesTabProps> = ({ session, onCopy, onS
               ))}
             </div>
           </div>
-        ) : (
+        ) : !storageFindings ? (
           <div className="flex items-center justify-between p-2.5 rounded-xl bg-[#F8F8F5] dark:bg-darkTealSurface border border-charcoal/15 dark:border-darkTealBorder text-xs text-charcoal/70 dark:text-cream/70">
-            <span>Optimize system resources and terminate stale dev servers in 1 click.</span>
+            <span>Optimize system resources, scan Mac caches, and terminate stale dev servers in 1 click.</span>
             <span className="font-mono text-[10px] text-charcoal/50 dark:text-cream/50">Ports: 3000, 5173, 8080</span>
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* Main Utilities Grid (Comfortable 2-Column Responsive Layout) */}

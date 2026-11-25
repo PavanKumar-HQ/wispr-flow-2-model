@@ -14,7 +14,8 @@ import {
   Sliders,
   ArrowRight,
   Radio,
-  Edit3
+  Edit3,
+  Trophy
 } from 'lucide-react';
 import { InsightsData, HistoryRecord, SessionSnapshot } from '../types';
 import { AudioWaveform } from './AudioWaveform';
@@ -33,7 +34,7 @@ interface HomeTabProps {
   onDeleteHistory: (id: number) => void;
   onClearHistory: () => void;
   onToggleDictation: () => void;
-  onNavigateTab: (tab: 'home' | 'utilities' | 'train' | 'insights' | 'history' | 'dictionary' | 'models' | 'settings') => void;
+  onNavigateTab: (tab: 'home' | 'utilities' | 'train' | 'quests' | 'insights' | 'history' | 'dictionary' | 'models' | 'settings') => void;
   onSummonPill: () => void;
 }
 
@@ -343,6 +344,49 @@ export const HomeTab: React.FC<HomeTabProps> = ({
             </div>
             <div className="text-[11px] font-bold text-terracotta dark:text-[#FF8A65] uppercase tracking-wider mt-1">STREAK</div>
           </div>
+        </div>
+      </div>
+
+      {/* Active Quest & Beginner Milestone Card */}
+      <div 
+        onClick={() => onNavigateTab('quests')}
+        className="p-4 rounded-2xl bg-[#EAEAE0] dark:bg-darkTealSurface border-2 border-charcoal/20 dark:border-darkTealBorder hover:border-amber/80 transition-all cursor-pointer shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 select-none"
+      >
+        <div className="flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-amber/30 text-charcoal border-2 border-charcoal flex items-center justify-center shrink-0">
+            <Trophy className="w-5 h-5 text-darkTeal" />
+          </div>
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-2">
+              <span className="text-[9px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-darkTeal text-amber">
+                {totalWords < 50 ? 'BEGINNER QUEST' : 'ACTIVE QUEST'}
+              </span>
+              <span className="text-xs font-bold text-charcoal dark:text-cream">
+                {totalWords < 50 ? 'Word Explorer: Calibrate Spoken Flow' : 'Voice Initiate: Master Hands-Free Dictation'}
+              </span>
+            </div>
+            <p className="text-xs text-charcoal/70 dark:text-sage font-mono">
+              {totalWords < 50 
+                ? `Progress: ${Math.min(50, totalWords)} / 50 words dictated (+75 XP)`
+                : `Progress: ${Math.min(1, history.length)} / 1 session completed (+100 XP)`}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 self-end sm:self-center shrink-0">
+          <div className="w-28 sm:w-36 h-2.5 bg-charcoal/15 dark:bg-black/30 rounded-full overflow-hidden border border-charcoal/20">
+            <div 
+              className="h-full bg-amber transition-all duration-500"
+              style={{ width: `${totalWords < 50 ? Math.min(100, Math.round((totalWords / 50) * 100)) : 100}%` }}
+            />
+          </div>
+          <button
+            type="button"
+            className="px-3 py-1 rounded-lg bg-darkTeal hover:bg-darkTeal/90 text-white font-bold text-xs flex items-center gap-1 shadow-2xs cursor-pointer"
+          >
+            <span>Quests</span>
+            <ArrowRight className="w-3 h-3 text-amber" />
+          </button>
         </div>
       </div>
 

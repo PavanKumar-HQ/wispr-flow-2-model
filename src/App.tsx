@@ -10,8 +10,9 @@ import { SettingsTab } from './components/SettingsTab';
 import { DictionaryTab } from './components/DictionaryTab';
 import { TrainModelTab } from './components/TrainModelTab';
 import { UtilitiesTab } from './components/UtilitiesTab';
+import { QuestsTab } from './components/QuestsTab';
 import { ModelInfo, AppSettings, HistoryRecord, SessionSnapshot, InsightsData } from './types';
-import { Home, Layers, History, Settings as SettingsIcon, BookA, BarChart2, LocateFixed, GraduationCap, LayoutGrid } from 'lucide-react';
+import { Home, Layers, History, Settings as SettingsIcon, BookA, BarChart2, LocateFixed, GraduationCap, LayoutGrid, Trophy } from 'lucide-react';
 import { applyTheme } from './lib/theme';
 
 export default function App() {
@@ -33,7 +34,7 @@ export default function App() {
     }
   }, [isPillOnlyWindow]);
 
-  const [activeTab, setActiveTab] = useState<'home' | 'utilities' | 'train' | 'insights' | 'models' | 'dictionary' | 'history' | 'settings'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'utilities' | 'train' | 'quests' | 'insights' | 'models' | 'dictionary' | 'history' | 'settings'>('home');
   const [insights, setInsights] = useState<InsightsData | null>(null);
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [settings, setSettings] = useState<AppSettings>({
@@ -413,6 +414,7 @@ export default function App() {
               { id: 'home', label: 'Home', icon: Home },
               { id: 'utilities', label: 'Utilities', icon: LayoutGrid },
               { id: 'train', label: 'Train the Model', icon: GraduationCap },
+              { id: 'quests', label: 'Quests & Badges', icon: Trophy },
               { id: 'insights', label: 'Insights', icon: BarChart2 },
               { id: 'history', label: 'History', icon: History, badge: pendingRecoveryCount > 0 ? `${pendingRecoveryCount}` : null },
               { id: 'dictionary', label: 'Dictionary', icon: BookA },
@@ -543,6 +545,14 @@ export default function App() {
               session={session}
               onToggleDictation={handleToggleDictation}
               onNavigateTab={(tab) => setActiveTab(tab as any)}
+            />
+          )}
+
+          {activeTab === 'quests' && (
+            <QuestsTab
+              insights={insights}
+              history={history}
+              onNavigateTab={(tab) => setActiveTab(tab)}
             />
           )}
 

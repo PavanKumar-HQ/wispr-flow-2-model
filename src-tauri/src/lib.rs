@@ -541,6 +541,7 @@ pub fn run() {
             commands::compose_thought_to_spec_cmd,
             commands::ingest_project_context_capsule_cmd,
             commands::send_system_notification_cmd,
+            commands::scan_mac_storage_cmd,
             commands::run_system_clean_and_boost_cmd,
             commands::launch_squirrel_cleaner_cmd
         ])
