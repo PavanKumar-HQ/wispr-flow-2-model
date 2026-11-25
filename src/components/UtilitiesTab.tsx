@@ -1,5 +1,19 @@
 import React, { useState } from 'react';
-import { LayoutGrid, LocateFixed, CheckCircle2, RefreshCw, ExternalLink, ShieldCheck, Activity } from 'lucide-react';
+import { 
+  LayoutGrid, 
+  LocateFixed, 
+  CheckCircle2, 
+  RefreshCw, 
+  ShieldCheck, 
+  Activity, 
+  FileText, 
+  ChevronDown, 
+  ChevronUp, 
+  Copy, 
+  Download, 
+  Check, 
+  Sparkles 
+} from 'lucide-react';
 import { CalendarClockWidget } from './capsule/CalendarClockWidget';
 import { FocusTimerWidget } from './capsule/FocusTimerWidget';
 import { MediaWidget } from './capsule/MediaWidget';
@@ -18,14 +32,24 @@ interface StorageCategoryFinding {
   is_safe: boolean;
 }
 
+interface CleanedItemDetail {
+  name: string;
+  category: string;
+  path_display: string;
+  size_mb: number;
+  rule_id: string;
+  status: string;
+}
+
 interface CleanResult {
   ram_reclaimed_mb: number;
   disk_cache_cleared_mb: number;
   ports_checked: number[];
   ports_freed: string[];
-  squirrel_app_found: boolean;
-  squirrel_app_name: string;
+  summary_headline?: string;
+  timestamp_rfc3339?: string;
   items_cleaned: string[];
+  detailed_items?: CleanedItemDetail[];
   findings?: StorageCategoryFinding[];
 }
 
@@ -40,7 +64,8 @@ export const UtilitiesTab: React.FC<UtilitiesTabProps> = ({ session, onCopy, onS
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const [cleanResult, setCleanResult] = useState<CleanResult | null>(null);
   const [storageFindings, setStorageFindings] = useState<StorageCategoryFinding[] | null>(null);
-  const [squirrelStatus, setSquirrelStatus] = useState<string>('');
+  const [showDetailedReport, setShowDetailedReport] = useState<boolean>(false);
+  const [reportCopied, setReportCopied] = useState<boolean>(false);
 
   const handleFloatPill = () => {
     if (onSummonPill) {
@@ -79,15 +104,24 @@ export const UtilitiesTab: React.FC<UtilitiesTabProps> = ({ session, onCopy, onS
     }
   };
 
-  const handleLaunchSquirrel = async () => {
-    try {
-      const res = await safeInvoke<string>('launch_squirrel_cleaner_cmd');
-      setSquirrelStatus(res || 'Squirrel Cleaner active');
-      setTimeout(() => setSquirrelStatus(''), 4000);
-    } catch {
-      setSquirrelStatus('Could not launch Squirrel');
-      setTimeout(() => setSquirrelStatus(''), 4000);
-    }
+  const handleCopyReport = () => {
+    if (!cleanResult) return;
+    const reportText = JSON.stringify(cleanResult, null, 2);
+    onCopy(reportText);
+    setReportCopied(true);
+    setTimeout(() => setReportCopied(false), 2000);
+  };
+
+  const handleDownloadReport = () => {
+    if (!cleanResult) return;
+    const reportText = JSON.stringify(cleanResult, null, 2);
+    const blob = new Blob([reportText], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `voxquest-storage-cleanup-report-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -154,18 +188,6 @@ export const UtilitiesTab: React.FC<UtilitiesTabProps> = ({ session, onCopy, onS
               <span>{isScanning ? 'Scanning...' : 'Scan Storage'}</span>
             </button>
 
-            {cleanResult?.squirrel_app_found && (
-              <button
-                type="button"
-                onClick={handleLaunchSquirrel}
-                className="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber/20 hover:bg-amber/30 text-charcoal dark:text-cream border border-amber/50 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-2xs"
-                title="Launch standalone Mac storage cleaner application"
-              >
-                <ExternalLink className="w-3.5 h-3.5 text-darkTeal" />
-                <span>{squirrelStatus || 'Launch Squirrel App'}</span>
-              </button>
-            )}
-
             <button
               type="button"
               disabled={isCleaning}
@@ -179,12 +201,12 @@ export const UtilitiesTab: React.FC<UtilitiesTabProps> = ({ session, onCopy, onS
               {isCleaning ? (
                 <>
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                  <span>Cleaning & Boosting...</span>
+                  <span>Cleaning via Squirrel Rules...</span>
                 </>
               ) : (
                 <>
                   <Activity className="w-3.5 h-3.5 text-amber" />
-                  <span>Quick Clean & Boost</span>
+                  <span>Clean & Boost</span>
                 </>
               )}
             </button>
@@ -217,13 +239,15 @@ export const UtilitiesTab: React.FC<UtilitiesTabProps> = ({ session, onCopy, onS
           </div>
         )}
 
-        {/* Clean Results Panel */}
+        {/* Clean Results Panel & Detailed Report */}
         {cleanResult ? (
           <div className="p-4 rounded-xl bg-stone-50 dark:bg-darkTealSurface border border-charcoal/15 dark:border-darkTealBorder space-y-3 animate-fadeIn">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-darkTeal dark:text-mint shrink-0" />
-                <span className="text-xs font-bold text-charcoal dark:text-cream">Clean & Boost Complete</span>
+                <span className="text-xs font-bold text-charcoal dark:text-cream">
+                  {cleanResult.summary_headline || 'Clean & Boost Complete'}
+                </span>
               </div>
               <div className="flex items-center gap-3 text-xs font-mono">
                 <span className="px-2 py-0.5 rounded bg-darkTeal/10 dark:bg-darkTealElevated text-darkTeal dark:text-cream font-bold border border-darkTeal/20 dark:border-darkTealBorder">
@@ -235,14 +259,95 @@ export const UtilitiesTab: React.FC<UtilitiesTabProps> = ({ session, onCopy, onS
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-charcoal/80 dark:text-cream/90 pt-1">
-              {cleanResult.items_cleaned.map((item, idx) => (
-                <div key={idx} className="flex items-center gap-2">
-                  <ShieldCheck className="w-3.5 h-3.5 text-darkTeal dark:text-mint shrink-0" />
-                  <span>{item}</span>
-                </div>
-              ))}
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-charcoal/10 dark:border-darkTealBorder">
+              <div className="flex items-center gap-2 text-xs text-charcoal/80 dark:text-cream/90">
+                <Sparkles className="w-3.5 h-3.5 text-amber shrink-0" />
+                <span>Cleaned safely using internal Squirrel rules (zero external window).</span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowDetailedReport(!showDetailedReport)}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-white dark:bg-darkTealElevated hover:bg-neutral-100 dark:hover:bg-darkTealCanvas border border-charcoal/15 dark:border-darkTealBorder text-darkTeal dark:text-cream transition-all cursor-pointer shadow-2xs"
+              >
+                <FileText className="w-3.5 h-3.5 text-amber" />
+                <span>{showDetailedReport ? 'Hide Detailed Report' : 'View Detailed Audit Report'}</span>
+                {showDetailedReport ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              </button>
             </div>
+
+            {/* Expandable Detailed Audit Report */}
+            {showDetailedReport && (
+              <div className="mt-3 p-4 rounded-xl bg-white dark:bg-darkTealElevated border border-charcoal/15 dark:border-darkTealBorder space-y-3 animate-fadeIn">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <h4 className="text-xs font-bold text-charcoal dark:text-cream font-mono uppercase tracking-wide">
+                      Comprehensive Cleanup Audit Journal
+                    </h4>
+                    <p className="text-[11px] text-charcoal/60 dark:text-sage">
+                      Itemized breakdown of targets sanitized according to evidence-based safety criteria.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleCopyReport}
+                      className="px-2.5 py-1 rounded-md text-[11px] font-mono font-bold bg-stone-100 dark:bg-darkTealSurface hover:bg-stone-200 dark:hover:bg-darkTealCanvas text-charcoal dark:text-cream border border-charcoal/15 dark:border-darkTealBorder flex items-center gap-1 transition-all cursor-pointer"
+                      title="Copy raw audit log JSON to clipboard"
+                    >
+                      {reportCopied ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                      <span>{reportCopied ? 'Copied' : 'Copy JSON'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDownloadReport}
+                      className="px-2.5 py-1 rounded-md text-[11px] font-mono font-bold bg-darkTeal text-white hover:bg-darkTeal/90 flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
+                      title="Download report JSON file"
+                    >
+                      <Download className="w-3 h-3 text-amber" />
+                      <span>Export Report</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="divide-y divide-charcoal/10 dark:divide-darkTealBorder text-xs">
+                  {cleanResult.detailed_items && cleanResult.detailed_items.length > 0 ? (
+                    cleanResult.detailed_items.map((item, idx) => (
+                      <div key={idx} className="py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-charcoal dark:text-cream">{item.name}</span>
+                            <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-darkTeal/10 dark:bg-darkTealSurface text-darkTeal dark:text-mint">
+                              {item.rule_id}
+                            </span>
+                          </div>
+                          <div className="text-[10px] font-mono text-charcoal/50 dark:text-sage/70">
+                            {item.path_display} &bull; {item.category}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2.5 shrink-0">
+                          {item.size_mb > 0 && (
+                            <span className="font-mono font-bold text-darkTeal dark:text-mint">
+                              +{item.size_mb} MB
+                            </span>
+                          )}
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40">
+                            {item.status}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    cleanResult.items_cleaned.map((item, idx) => (
+                      <div key={idx} className="py-1.5 flex items-center gap-2 text-xs text-charcoal/80 dark:text-cream/90">
+                        <ShieldCheck className="w-3.5 h-3.5 text-darkTeal dark:text-mint shrink-0" />
+                        <span>{item}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         ) : !storageFindings ? (
           <div className="flex items-center justify-between p-2.5 rounded-xl bg-[#F8F8F5] dark:bg-darkTealSurface border border-charcoal/15 dark:border-darkTealBorder text-xs text-charcoal/70 dark:text-cream/70">

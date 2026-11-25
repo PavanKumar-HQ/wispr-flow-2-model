@@ -230,27 +230,27 @@ export const QuestsTab: React.FC<QuestsTabProps> = ({
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-12 font-sans select-none animate-fadeIn">
       {/* Top Banner Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5 rounded-2xl bg-[#EBEBE4] dark:bg-darkTealSurface border-2 border-[#212121] dark:border-darkTealBorder shadow-xs">
-        <div className="space-y-1">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-[#DDA44D] text-[#212121] font-mono text-[10px] font-bold border border-[#212121]">
-            <Trophy className="w-3.5 h-3.5" />
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 rounded-2xl bg-white dark:bg-darkTealSurface border border-charcoal/15 dark:border-darkTealBorder shadow-xs">
+        <div className="space-y-1.5">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber/20 dark:bg-amber/30 text-charcoal dark:text-amber font-mono text-[10px] font-bold border border-amber/40">
+            <Trophy className="w-3.5 h-3.5 text-amber" />
             <span>PROGRESSION &amp; REPUTATION</span>
           </div>
-          <h2 className="text-xl font-extrabold text-[#212121] dark:text-[#DFDFD4] tracking-wide">
-            VOXQUEST QUESTS &amp; ACHIEVEMENTS
+          <h2 className="text-xl font-bold text-darkTeal dark:text-cream tracking-tight">
+            Quests &amp; Habit Milestones
           </h2>
-          <p className="text-xs font-mono text-[#212121]/70 dark:text-[#DFDFD4]/70">
-            Complete pixel quests, earn XP, and unlock badges. All calculations are 100% on-device.
+          <p className="text-xs text-charcoal/70 dark:text-sage leading-relaxed max-w-xl">
+            Build your high-speed spoken workflow. Earn XP, unlock badges, and master hands-free dictation. All metrics are calculated 100% on-device.
           </p>
         </div>
 
         {/* Player Level Banner */}
-        <div className="flex items-center gap-3.5 p-3 rounded-xl bg-[#07514C] text-[#DFDFD4] border-2 border-[#212121] shrink-0">
-          <div className="p-2 rounded-lg bg-[#DDA44D] text-[#212121] shadow-xs">
+        <div className="flex items-center gap-3.5 p-3.5 rounded-xl bg-darkTeal dark:bg-[#0D6E67] text-white border border-darkTeal/30 dark:border-darkTealBorder shadow-xs shrink-0">
+          <div className="p-2 rounded-lg bg-amber text-charcoal shadow-xs">
             <Award className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-[10px] font-mono text-[#DDA44D] font-bold tracking-wider">
+            <div className="text-[10px] font-mono text-amber font-bold tracking-wider">
               TIER {rankTier} &middot; {rankName.toUpperCase()}
             </div>
             <div className="text-sm font-extrabold text-white">
@@ -261,15 +261,15 @@ export const QuestsTab: React.FC<QuestsTabProps> = ({
       </div>
 
       {/* Beginner Milestones & 50-Word Badge Ribbon */}
-      <div className="p-4 rounded-xl bg-[#DFDFD4] dark:bg-darkTealElevated border-2 border-[#212121] dark:border-darkTealBorder space-y-3">
+      <div className="p-5 rounded-2xl bg-white dark:bg-darkTealSurface border border-charcoal/15 dark:border-darkTealBorder shadow-xs space-y-3.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Star className="w-4 h-4 text-[#DDA44D] fill-[#DDA44D]" />
-            <h3 className="text-xs font-bold font-mono uppercase tracking-wider text-[#212121] dark:text-[#DFDFD4]">
-              Beginner Badges &amp; Quick Milestones
+            <Star className="w-4 h-4 text-amber fill-amber" />
+            <h3 className="text-xs font-bold uppercase tracking-wider text-charcoal dark:text-cream font-mono">
+              Beginner Milestones &amp; Badges
             </h3>
           </div>
-          <span className="text-[10px] font-mono font-bold text-[#07514C] dark:text-[#34D399]">
+          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/50">
             {unlockedBadges.length} / {beginnerBadges.length} UNLOCKED
           </span>
         </div>
@@ -280,38 +280,38 @@ export const QuestsTab: React.FC<QuestsTabProps> = ({
             return (
               <div
                 key={badge.id}
-                className={`p-3 rounded-lg border-2 transition-all ${
+                className={`p-3.5 rounded-xl border transition-all ${
                   badge.isUnlocked
-                    ? 'bg-white dark:bg-darkTealSurface border-[#DDA44D] shadow-xs'
-                    : 'bg-white/60 dark:bg-darkTealSurface/60 border-[#212121]/30 opacity-80'
+                    ? 'bg-amber/5 dark:bg-amber/10 border-amber/40 shadow-xs'
+                    : 'bg-stone-50 dark:bg-darkTealElevated border-charcoal/10 dark:border-darkTealBorder opacity-80'
                 }`}
               >
                 <div className="flex items-center justify-between mb-1.5">
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 truncate">
                     {badge.isUnlocked ? (
-                      <CheckCircle2 className="w-3.5 h-3.5 text-[#07514C] dark:text-[#34D399]" />
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                     ) : (
-                      <Target className="w-3.5 h-3.5 text-[#212121]/50" />
+                      <Target className="w-3.5 h-3.5 text-charcoal/40 dark:text-sage shrink-0" />
                     )}
-                    <span className="text-[11px] font-bold text-[#212121] dark:text-white">
+                    <span className="text-xs font-bold text-charcoal dark:text-cream truncate">
                       {badge.title}
                     </span>
                   </div>
-                  <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-[#DDA44D]/20 text-[#212121] dark:text-[#DDA44D]">
+                  <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber/20 text-charcoal dark:text-amber shrink-0 ml-1">
                     +{badge.xp} XP
                   </span>
                 </div>
-                <p className="text-[10px] text-[#212121]/70 dark:text-[#DFDFD4]/70 mb-2 leading-tight">
+                <p className="text-[11px] text-charcoal/70 dark:text-sage mb-2.5 leading-snug line-clamp-2">
                   {badge.requirement}
                 </p>
-                <div className="flex items-center justify-between text-[9px] font-mono font-bold text-[#212121]/80 dark:text-[#DFDFD4]/80 mb-1">
+                <div className="flex items-center justify-between text-[10px] font-mono text-charcoal/70 dark:text-sage mb-1">
                   <span>{badge.currentValue} / {badge.targetValue}</span>
                   <span>{pct}%</span>
                 </div>
-                <div className="w-full h-1.5 bg-[#212121]/20 dark:bg-black/40 rounded-full overflow-hidden">
+                <div className="w-full h-1.5 bg-stone-200 dark:bg-black/30 rounded-full overflow-hidden">
                   <div
-                    className={`h-full transition-all duration-500 ${
-                      badge.isUnlocked ? 'bg-[#07514C] dark:bg-[#34D399]' : 'bg-[#DDA44D]'
+                    className={`h-full rounded-full transition-all duration-500 ${
+                      badge.isUnlocked ? 'bg-emerald-500' : 'bg-amber'
                     }`}
                     style={{ width: `${pct}%` }}
                   />
@@ -322,76 +322,81 @@ export const QuestsTab: React.FC<QuestsTabProps> = ({
         </div>
       </div>
 
-      {/* The 6 Canonical Pixel Quest Cards Grid (verbatim matching screenshot) */}
-      <div className="space-y-2">
-        <div className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#212121]/70 dark:text-[#DFDFD4]/70 px-1">
+      {/* The 6 Canonical Pixel Quest Cards Grid (Sleek, No Overlap, Premium Look) */}
+      <div className="space-y-3">
+        <div className="text-xs font-bold font-mono uppercase tracking-wider text-charcoal/60 dark:text-sage px-1">
           Active Quest Catalog
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {quests.map((quest) => {
             const pct = Math.min(100, Math.round((quest.currentCount / quest.targetCount) * 100));
+            const isDone = quest.isCompleted;
 
             return (
               <div
                 key={quest.id}
-                className={`p-5 rounded-lg border-2 border-[#212121] dark:border-darkTealBorder flex flex-col justify-between transition-all relative shadow-sm ${
-                  quest.isCompleted
-                    ? 'bg-[#EAEAE0] dark:bg-darkTealSurface border-[#212121]'
-                    : 'bg-[#DFDFD4] dark:bg-darkTealSurface'
+                className={`p-5 rounded-2xl border transition-all duration-200 flex flex-col justify-between ${
+                  isDone
+                    ? 'bg-white dark:bg-darkTealSurface border-amber/50 dark:border-amber/40 shadow-xs ring-1 ring-amber/20'
+                    : 'bg-white dark:bg-darkTealSurface border-charcoal/15 dark:border-darkTealBorder hover:border-darkTeal/40 dark:hover:border-[#34A89E]/40 shadow-xs hover:shadow-md'
                 }`}
-                style={{
-                  boxShadow: '4px 4px 0px 0px #212121',
-                }}
               >
-                {/* Card Number (#01, #02, etc.) */}
-                <div className="absolute top-4 right-4 font-mono font-bold text-xs text-[#212121]/60 dark:text-[#DFDFD4]/60">
-                  {quest.number}
-                </div>
-
                 <div>
-                  {/* Category Pill and XP Pill */}
-                  <div className="flex items-center gap-2 mb-4">
-                    <span className="px-2.5 py-0.5 rounded-sm text-[10px] font-mono font-bold bg-[#07514C] text-[#DFDFD4] uppercase border border-[#212121]">
-                      {quest.category}
-                    </span>
-                    <span className="px-2.5 py-0.5 rounded-sm text-[10px] font-mono font-bold bg-[#DDA44D] text-[#212121] border border-[#212121]">
-                      +{quest.xpReward} XP
-                    </span>
-                    {quest.isCompleted && (
-                      <span className="flex items-center gap-1 text-[10px] font-mono font-bold text-[#07514C] dark:text-[#34D399] ml-auto">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>DONE</span>
+                  {/* Clean Top Header Row (No Overlapping Elements) */}
+                  <div className="flex items-center justify-between gap-2 mb-3.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-darkTeal dark:bg-[#0D6E67] text-white tracking-wide">
+                        {quest.category}
                       </span>
-                    )}
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-amber/20 dark:bg-amber/30 text-charcoal dark:text-amber border border-amber/40">
+                        +{quest.xpReward} XP
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {isDone && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/50">
+                          <CheckCircle2 className="w-3 h-3" />
+                          <span>DONE</span>
+                        </span>
+                      )}
+                      <span className="font-mono font-bold text-xs text-charcoal/40 dark:text-sage/60">
+                        {quest.number}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Icon & Title & Description */}
                   <div className="flex items-start gap-3.5">
-                    <div className="w-10 h-10 border-2 border-[#212121] rounded-md bg-[#B8CBC3]/50 flex items-center justify-center shrink-0">
+                    <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 shadow-2xs ${
+                      isDone
+                        ? 'bg-amber/15 border-amber/40 text-amber'
+                        : 'bg-stone-100 dark:bg-darkTealElevated border-charcoal/15 dark:border-darkTealBorder'
+                    }`}>
                       {renderIcon(quest.icon)}
                     </div>
-                    <div>
-                      <h3 className="font-extrabold text-sm text-[#212121] dark:text-white leading-tight font-sans">
+                    <div className="space-y-1">
+                      <h3 className="font-bold text-sm text-charcoal dark:text-cream leading-snug">
                         {quest.title}
                       </h3>
-                      <p className="text-xs font-mono text-[#212121]/80 dark:text-[#DFDFD4]/80 mt-1 leading-snug">
+                      <p className="text-xs text-charcoal/70 dark:text-sage leading-relaxed font-sans">
                         {quest.description}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Progress Bar Container matching pixel screenshot */}
-                <div className="mt-5 pt-3 border-t border-[#212121]/20 dark:border-darkTealBorder">
-                  <div className="flex items-center justify-between text-[11px] font-mono font-bold text-[#212121] dark:text-[#DFDFD4] mb-1.5">
-                    <span>PROGRESS</span>
-                    <span>TARGET: {quest.targetCount}</span>
+                {/* Progress Bar Container */}
+                <div className="mt-5 pt-3 border-t border-charcoal/10 dark:border-darkTealBorder">
+                  <div className="flex items-center justify-between text-[11px] font-mono font-semibold text-charcoal/70 dark:text-sage mb-1.5">
+                    <span>Progress: <strong className="text-charcoal dark:text-cream">{quest.currentCount}</strong></span>
+                    <span>Target: <strong className="text-charcoal dark:text-cream">{quest.targetCount}</strong></span>
                   </div>
-                  <div className="w-full h-4 bg-[#212121] border-2 border-[#212121] rounded-none p-0.5 overflow-hidden">
+                  <div className="w-full h-2 rounded-full bg-stone-100 dark:bg-black/30 overflow-hidden border border-charcoal/10 dark:border-darkTealBorder">
                     <div
-                      className={`h-full transition-all duration-500 ${
-                        quest.isCompleted ? 'bg-[#DDA44D]' : 'bg-[#DDA44D]'
+                      className={`h-full rounded-full transition-all duration-500 ${
+                        isDone ? 'bg-emerald-500' : 'bg-amber'
                       }`}
                       style={{ width: `${pct}%` }}
                     />
@@ -404,17 +409,17 @@ export const QuestsTab: React.FC<QuestsTabProps> = ({
       </div>
 
       {/* Repetitive Habit Motivation Callout */}
-      <div className="p-4 rounded-xl bg-[#07514C] text-[#DFDFD4] border-2 border-[#212121] flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-[#DDA44D] text-[#212121] shrink-0">
+      <div className="p-5 rounded-2xl bg-gradient-to-r from-darkTeal to-[#0A5650] text-cream border border-darkTeal/40 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="p-2.5 rounded-xl bg-amber text-charcoal shrink-0 shadow-xs">
             <Sparkles className="w-5 h-5" />
           </div>
-          <div className="font-mono text-xs">
-            <div className="font-extrabold text-white text-sm">
-              DAILY DICTATION HABIT: 3x SPEED MULTIPLIER
+          <div className="space-y-0.5 font-sans">
+            <div className="font-bold text-white text-sm">
+              Daily Spoken Habit: 3x Speed Advantage
             </div>
-            <p className="text-[#DFDFD4]/80 text-[11px] mt-0.5">
-              Speaking your thoughts instead of typing saves over 45 minutes per day. Keep your streak active to unlock Master tier!
+            <p className="text-cream/80 text-xs max-w-xl">
+              Speaking aloud produces 150+ words per minute versus 40 WPM manual keyboard typing. Dictating your daily notes, slack messages, and docs builds fluency effortlessly.
             </p>
           </div>
         </div>
@@ -422,7 +427,7 @@ export const QuestsTab: React.FC<QuestsTabProps> = ({
         <button
           type="button"
           onClick={() => onNavigateTab('home')}
-          className="px-4 py-2 rounded-lg bg-[#DDA44D] hover:bg-[#DDA44D]/90 text-[#212121] font-bold text-xs border-2 border-[#212121] transition-all active:scale-95 shrink-0 flex items-center gap-1.5 cursor-pointer"
+          className="px-4 py-2.5 rounded-xl bg-amber hover:bg-amber/90 text-charcoal font-bold text-xs shadow-xs transition-all active:scale-95 shrink-0 flex items-center gap-1.5 cursor-pointer"
         >
           <span>Dictate Now</span>
           <ArrowRight className="w-3.5 h-3.5" />

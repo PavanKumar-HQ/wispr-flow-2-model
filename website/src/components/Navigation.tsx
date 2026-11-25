@@ -20,19 +20,19 @@ export function Navbar() {
   ];
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-[#07514C]/95 backdrop-blur-md border-b-4 border-[#212121] shadow-pixel">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-[#07514C]/90 backdrop-blur-xl border-b border-white/10 shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Logo & Brand */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="p-1.5 bg-[#DDA44D] border-2 border-[#212121] shadow-pixel-sm group-hover:scale-105 transition-transform">
-              <PixelLogo className="w-8 h-8" />
+            <div className="p-2 bg-[#DDA44D] rounded-xl border border-white/20 shadow-md group-hover:scale-105 transition-transform">
+              <PixelLogo className="w-7 h-7" />
             </div>
             <div>
-              <span className="font-pixel text-lg sm:text-xl tracking-wider text-[#DFDFD4] drop-shadow-[2px_2px_0px_#212121]">
+              <span className="font-extrabold text-lg sm:text-xl tracking-tight text-white">
                 VOXQUEST
               </span>
-              <div className="text-[10px] font-mono font-bold text-[#DDA44D] tracking-widest uppercase">
+              <div className="text-[10px] font-mono font-bold text-[#DDA44D] tracking-wider uppercase">
                 Voice Platform
               </div>
             </div>

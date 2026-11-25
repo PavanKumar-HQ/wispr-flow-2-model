@@ -13,18 +13,27 @@ import {
   Lock, 
   Wand2, 
   Terminal, 
-  ArrowRight,
-  Shield,
-  Layers,
-  Zap,
-  GraduationCap,
-  Code2,
-  BookOpen
+  ArrowRight, 
+  Shield, 
+  Layers, 
+  Zap, 
+  GraduationCap, 
+  Code2, 
+  BookOpen,
+  Check,
+  X,
+  Sparkles,
+  Cpu,
+  ShieldCheck,
+  Gauge,
+  Flame,
+  Globe,
+  Trash2
 } from 'lucide-react';
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen flex flex-col relative overflow-x-hidden">
+    <div className="min-h-screen flex flex-col relative overflow-x-hidden font-sans">
       {/* 1. Procedural 3D Voxel Canvas with Scroll & Mouse Parallax */}
       <AnimatedVoxelBackground />
 
@@ -33,92 +42,165 @@ export default function HomePage() {
 
       <main className="flex-1 relative z-10 pt-20">
         {/* =========================================================================
-            SECTION 1: HERO & PIXEL-ART WORLD
+            SECTION 1: HERO & MODERN PRODUCT ANNOUNCEMENT
            ========================================================================= */}
-        <section className="relative pt-12 pb-24 px-4 sm:px-6 lg:px-8 text-center">
+        <section className="relative pt-16 pb-24 px-4 sm:px-6 lg:px-8 text-center">
           <div className="max-w-5xl mx-auto">
-            {/* Top Badge with subtle hover lift */}
-            <div className="inline-flex items-center gap-2 arcade-badge bg-[#DDA44D] text-[#212121] mb-6 hover:scale-105 transition-transform cursor-default">
-              <Zap className="w-3.5 h-3.5 text-[#DA6C4C]" />
-              <span>VOXQUEST &middot; VOICE-FIRST EXPLORATION</span>
+            {/* Top Pill with subtle glow */}
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[#DDA44D] text-xs font-mono font-bold mb-8 hover:scale-105 transition-transform shadow-lg cursor-default">
+              <Sparkles className="w-4 h-4 text-[#DDA44D]" />
+              <span>VOXQUEST &middot; 100% AIR-GAPPED ON-DEVICE VOICE OS</span>
             </div>
 
-            {/* Main Headline */}
-            <h1 className="font-pixel text-3xl sm:text-5xl lg:text-6xl text-[#DFDFD4] tracking-wider leading-tight mb-6 drop-shadow-[5px_5px_0px_#212121]">
-              YOUR VOICE. <br />
-              <span className="text-[#DDA44D]">YOUR WORDS. </span>
-              <span className="text-[#DA6C4C]">YOUR WORLD.</span>
+            {/* Main Crisp Headline */}
+            <h1 className="font-extrabold text-4xl sm:text-6xl lg:text-7xl text-white tracking-tight leading-[1.1] mb-6 drop-shadow-md">
+              Speak at 150 WPM. <br />
+              <span className="bg-gradient-to-r from-[#DDA44D] via-[#F3C474] to-[#DA6C4C] bg-clip-text text-transparent">
+                Zero Cloud. Zero Subscriptions.
+              </span>
             </h1>
 
             {/* Intro Pitch */}
-            <div className="max-w-2xl mx-auto arcade-panel-dark arcade-panel-hoverable p-5 mb-8 bg-[#0F5B57]/80 backdrop-blur-md">
-              <p className="font-mono text-sm sm:text-base text-[#DFDFD4] leading-relaxed">
-                Speak naturally. Turn your thoughts into clean, useful text without cloud lock-in. Spend less time typing and more time building.
-              </p>
-            </div>
+            <p className="max-w-2xl mx-auto text-base sm:text-lg text-white/90 leading-relaxed font-medium mb-8 drop-shadow-sm">
+              Dictate notes, code, and messages into any application with zero lag. Powered by on-device Apple Silicon Whisper models with 100% private local consensus.
+            </p>
 
             {/* Action CTAs */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-4">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-5">
               <Link
                 href="/download"
-                className="arcade-btn arcade-btn-primary w-full sm:w-auto text-xs py-4 px-8 flex items-center justify-center gap-2 group shadow-pixel-sm hover:scale-105 transition-all"
+                className="arcade-btn arcade-btn-primary w-full sm:w-auto text-sm py-4 px-8 flex items-center justify-center gap-2.5 group shadow-xl hover:scale-105 transition-all"
               >
                 <Download className="w-4 h-4 text-[#212121] group-hover:translate-y-0.5 transition-transform" />
                 <span>DOWNLOAD VOXQUEST FREE</span>
               </Link>
               <Link
                 href="/open-source"
-                className="arcade-btn arcade-btn-ghost w-full sm:w-auto text-xs py-4 px-6 flex items-center justify-center gap-2 bg-[#DFDFD4]/85 backdrop-blur-sm hover:bg-[#DFDFD4]"
+                className="arcade-btn arcade-btn-ghost w-full sm:w-auto text-sm py-4 px-6 flex items-center justify-center gap-2.5 bg-white/90 backdrop-blur-md hover:bg-white"
               >
                 <FileCode className="w-4 h-4" />
-                <span>INSPECT REPO SOURCE</span>
+                <span>VIEW SOURCE (APACHE 2.0)</span>
               </Link>
             </div>
 
-            <div className="mb-8">
-              <Link href="/download" className="inline-flex items-center gap-2 font-mono text-xs text-[#DDA44D] hover:underline bg-[#0F5B57]/60 px-3 py-1.5 border border-[#212121]">
-                <span className="w-2 h-2 rounded-full bg-[#34D399] animate-pulse" />
-                <span>Auto-detects macOS (Apple Silicon), Windows & Linux &rarr;</span>
+            <div className="mb-10">
+              <Link href="/download" className="inline-flex items-center gap-2 font-mono text-xs text-[#DDA44D] hover:underline bg-black/40 px-3.5 py-1.5 rounded-full border border-white/10 backdrop-blur-md">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>Auto-detects macOS (Apple Silicon 6.0 MB), Windows & Linux &rarr;</span>
               </Link>
             </div>
 
-            {/* Platform Compatibility Badges */}
-            <div className="flex flex-wrap items-center justify-center gap-3 text-xs">
-              <span className="arcade-badge bg-[#DFDFD4]/90 backdrop-blur-sm text-[#212121]">MACOS UNIVERSAL</span>
-              <span className="arcade-badge bg-[#DFDFD4]/90 backdrop-blur-sm text-[#212121]">LINUX X86_64</span>
-              <span className="arcade-badge bg-[#DFDFD4]/90 backdrop-blur-sm text-[#212121]">WINDOWS 11</span>
-              <span className="arcade-badge bg-[#DA6C4C] text-white">100% LOCAL WHISPER</span>
+            {/* Platform Badges */}
+            <div className="flex flex-wrap items-center justify-center gap-2.5 text-xs font-mono">
+              <span className="px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-white">MACOS UNIVERSAL (M1/M2/M3/M4)</span>
+              <span className="px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-white">LINUX X86_64</span>
+              <span className="px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-white">WINDOWS 11</span>
+              <span className="px-3 py-1 rounded-full bg-[#DA6C4C]/90 text-white font-bold">100% OFFLINE WHISPER</span>
             </div>
           </div>
         </section>
 
         {/* =========================================================================
-            SECTION 2: THE PROBLEM (with ScrollReveal)
+            SECTION 2: WHY VOXQUEST OVERTAKES WISPR FLOW (Interactive Matrix)
            ========================================================================= */}
-        <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+        <section id="compare" className="py-20 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto scroll-mt-24">
           <ScrollReveal>
-            <div className="arcade-panel arcade-panel-hoverable p-8 sm:p-12 bg-[#DFDFD4]/85 backdrop-blur-md">
-              <div className="flex flex-col md:flex-row gap-8 items-center">
-                <div className="flex-1 space-y-4">
-                  <span className="arcade-badge bg-[#DA6C4C] text-white text-[9px]">THE BOTTLENECK</span>
-                  <h2 className="font-pixel text-xl sm:text-3xl text-[#212121] leading-tight">
-                    YOUR IDEAS MOVE FASTER THAN YOUR FINGERS.
-                  </h2>
-                  <p className="font-mono text-xs sm:text-sm text-[#212121]/90 leading-relaxed font-medium">
-                    The average person types at 40 words per minute, but speaks comfortably at 150 words per minute.
-                    When wrestling with complex ideas, essays, or code architecture, typing becomes a friction barrier.
-                  </p>
-                  <div className="grid grid-cols-2 gap-4 pt-2 font-mono text-xs">
-                    <div className="p-3 border-2 border-[#212121] bg-[#DFDFD4] hover:translate-y-[-2px] transition-transform">
-                      <div className="font-pixel text-[10px] text-[#DA6C4C]">TYPING LIMIT</div>
-                      <div className="font-bold text-lg text-[#212121]">40 WPM</div>
-                      <div className="text-[10px] text-[#212121]/70">Fatigue & backspacing</div>
-                    </div>
-                    <div className="p-3 border-2 border-[#212121] bg-[#07514C] text-[#DFDFD4] hover:translate-y-[-2px] transition-transform">
-                      <div className="font-pixel text-[10px] text-[#DDA44D]">VOXQUEST FLOW</div>
-                      <div className="font-bold text-lg text-[#DFDFD4]">150+ WPM</div>
-                      <div className="text-[10px] text-[#B8CBC3]">Spoken thought speed</div>
-                    </div>
+            <div className="text-center max-w-3xl mx-auto mb-14">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#DDA44D]/20 text-[#DDA44D] border border-[#DDA44D]/40 font-mono text-xs font-bold mb-3 uppercase">
+                <ShieldCheck className="w-4 h-4" />
+                <span>DIRECT PLATFORM COMPARISON</span>
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                Why Builders Choose VoxQuest Over Wispr Flow
+              </h2>
+              <p className="mt-3 text-sm text-white/80 leading-relaxed">
+                Compare sovereign on-device engineering against closed cloud subscription services.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl overflow-hidden shadow-2xl">
+              <div className="grid grid-cols-3 p-4 sm:p-6 bg-black/30 border-b border-white/10 text-xs font-mono font-bold tracking-wider uppercase text-white/70">
+                <div>CAPABILITY</div>
+                <div className="text-center text-[#DA6C4C]">WISPR FLOW</div>
+                <div className="text-center text-[#34D399] font-extrabold">VOXQUEST (LOCAL)</div>
+              </div>
+
+              <div className="divide-y divide-white/10 text-xs sm:text-sm">
+                {/* Row 1 */}
+                <div className="grid grid-cols-3 p-4 sm:p-5 items-center hover:bg-white/[0.03] transition-colors">
+                  <div>
+                    <div className="font-bold text-white">Transcription Engine</div>
+                    <div className="text-xs text-white/60">Where audio is processed</div>
+                  </div>
+                  <div className="text-center text-white/80 flex flex-col items-center gap-1">
+                    <span className="text-xs text-red-300 font-mono flex items-center gap-1">
+                      <X className="w-3.5 h-3.5 text-red-400" /> Cloud Streaming
+                    </span>
+                    <span className="text-[11px] text-white/50">High latency, breaks offline</span>
+                  </div>
+                  <div className="text-center flex flex-col items-center gap-1">
+                    <span className="text-xs text-emerald-400 font-mono font-bold flex items-center gap-1">
+                      <Check className="w-3.5 h-3.5 text-emerald-400" /> 100% On-Device Metal
+                    </span>
+                    <span className="text-[11px] text-white/80">Zero packets leave device</span>
+                  </div>
+                </div>
+
+                {/* Row 2 */}
+                <div className="grid grid-cols-3 p-4 sm:p-5 items-center hover:bg-white/[0.03] transition-colors">
+                  <div>
+                    <div className="font-bold text-white">Pricing &amp; Cost</div>
+                    <div className="text-xs text-white/60">Subscription model</div>
+                  </div>
+                  <div className="text-center text-white/80 font-mono">
+                    <div className="text-red-300 font-bold">$12 - $15 / month</div>
+                    <div className="text-[11px] text-white/50">$180 recurring annually</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-emerald-400 font-mono font-bold">$0 &middot; Free Forever</div>
+                    <div className="text-[11px] text-white/80">Sovereign &amp; Open-Source</div>
+                  </div>
+                </div>
+
+                {/* Row 3 */}
+                <div className="grid grid-cols-3 p-4 sm:p-5 items-center hover:bg-white/[0.03] transition-colors">
+                  <div>
+                    <div className="font-bold text-white">Developer &amp; Terminal Syntax</div>
+                    <div className="text-xs text-white/60">Code, CLI flags, casing</div>
+                  </div>
+                  <div className="text-center text-white/60 text-xs">
+                    <span className="text-red-300">Basic prose only</span>
+                    <div className="text-[11px] text-white/40">"docker run dash i t"</div>
+                  </div>
+                  <div className="text-center text-emerald-300 text-xs font-bold">
+                    <span>Native Terminal Engine</span>
+                    <div className="text-[11px] text-white/80">Auto camelCase &amp; CLI flags</div>
+                  </div>
+                </div>
+
+                {/* Row 4 */}
+                <div className="grid grid-cols-3 p-4 sm:p-5 items-center hover:bg-white/[0.03] transition-colors">
+                  <div>
+                    <div className="font-bold text-white">Mac Storage Cleaner</div>
+                    <div className="text-xs text-white/60">System utility suite</div>
+                  </div>
+                  <div className="text-center text-white/40 text-xs">None</div>
+                  <div className="text-center text-emerald-400 text-xs font-bold">
+                    <span>Integrated Squirrel Rules</span>
+                    <div className="text-[11px] text-white/80">DerivedData &amp; cache cleaner</div>
+                  </div>
+                </div>
+
+                {/* Row 5 */}
+                <div className="grid grid-cols-3 p-4 sm:p-5 items-center hover:bg-white/[0.03] transition-colors">
+                  <div>
+                    <div className="font-bold text-white">Gamification &amp; Quests</div>
+                    <div className="text-xs text-white/60">Habit motivation system</div>
+                  </div>
+                  <div className="text-center text-white/40 text-xs">None</div>
+                  <div className="text-center text-emerald-400 text-xs font-bold">
+                    <span>Retro Pixel Quests &amp; Badges</span>
+                    <div className="text-[11px] text-white/80">50-word milestone calibration</div>
                   </div>
                 </div>
               </div>
@@ -127,7 +209,7 @@ export default function HomePage() {
         </section>
 
         {/* =========================================================================
-            SECTION 3: WORKFLOW SHOWCASE (with ScrollReveal)
+            SECTION 3: WORKFLOW SHOWCASE
            ========================================================================= */}
         <section id="workflow" className="py-16 px-4 sm:px-6 lg:px-8 scroll-mt-24">
           <ScrollReveal delay={50}>
@@ -136,37 +218,37 @@ export default function HomePage() {
         </section>
 
         {/* =========================================================================
-            SECTION 4: FEATURES & CAPABILITY OVERVIEW
+            SECTION 4: SYSTEM CAPABILITIES
            ========================================================================= */}
         <section id="features" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto scroll-mt-24">
           <ScrollReveal>
             <div className="text-center max-w-3xl mx-auto mb-16">
               <span className="arcade-badge bg-[#DDA44D] text-[#212121] mb-3">SYSTEM CAPABILITIES</span>
-              <h2 className="font-pixel text-2xl sm:text-4xl text-[#DFDFD4] drop-shadow-[4px_4px_0px_#212121]">
-                ENGINEERED FOR REAL PRODUCTIVITY
+              <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
+                Engineered for Real Productivity
               </h2>
-              <p className="mt-4 font-mono text-xs sm:text-sm text-[#DFDFD4] leading-relaxed drop-shadow-[2px_2px_0px_#212121]">
+              <p className="mt-4 text-sm sm:text-base text-white/80 leading-relaxed font-sans">
                 Everything you need for effortless voice writing without privacy compromises.
               </p>
             </div>
           </ScrollReveal>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <ScrollReveal delay={100}>
-              <div className="arcade-panel arcade-panel-hoverable p-6 flex flex-col justify-between bg-[#DFDFD4]/80 backdrop-blur-md h-full">
+              <div className="arcade-panel arcade-panel-hoverable p-6 flex flex-col justify-between h-full">
                 <div>
-                  <div className="w-12 h-12 border-3 border-[#212121] bg-[#B8CBC3] flex items-center justify-center mb-6 shadow-pixel-sm">
-                    <Lock className="w-6 h-6 text-[#07514C]" />
+                  <div className="w-12 h-12 rounded-xl bg-[#07514C] text-[#DDA44D] flex items-center justify-center mb-5 shadow-sm">
+                    <Lock className="w-6 h-6" />
                   </div>
-                  <div className="arcade-badge bg-[#07514C] text-[#DFDFD4] text-[8px] mb-2">PRIVACY FIRST</div>
-                  <h3 className="font-pixel text-sm text-[#212121] mb-2">ZERO CLOUD RETENTION</h3>
-                  <p className="font-mono text-xs text-[#212121]/90 leading-relaxed font-semibold">
+                  <div className="arcade-badge bg-[#07514C] text-[#DFDFD4] text-[9px] mb-2">PRIVACY FIRST</div>
+                  <h3 className="font-bold text-base text-[#212121] mb-2 font-sans">ZERO CLOUD RETENTION</h3>
+                  <p className="text-xs text-[#212121]/80 leading-relaxed">
                     Audio never trains a third-party commercial model. Run 100% on-device Whisper models with zero background network pings.
                   </p>
                 </div>
-                <div className="mt-6 pt-4 border-t-2 border-[#212121] text-[10px] font-pixel text-[#07514C]">
+                <div className="mt-6 pt-4 border-t border-[#212121]/15 text-xs font-bold text-[#07514C]">
                   <Link href="/privacy" className="hover:underline flex items-center gap-1 group">
-                    <span>INSPECT PRIVACY PLEDGE</span>
+                    <span>Inspect Privacy Architecture</span>
                     <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                   </Link>
                 </div>
@@ -174,20 +256,20 @@ export default function HomePage() {
             </ScrollReveal>
 
             <ScrollReveal delay={200}>
-              <div className="arcade-panel arcade-panel-hoverable p-6 flex flex-col justify-between bg-[#DFDFD4]/80 backdrop-blur-md h-full">
+              <div className="arcade-panel arcade-panel-hoverable p-6 flex flex-col justify-between h-full">
                 <div>
-                  <div className="w-12 h-12 border-3 border-[#212121] bg-[#DDA44D] flex items-center justify-center mb-6 shadow-pixel-sm">
-                    <Wand2 className="w-6 h-6 text-[#212121]" />
+                  <div className="w-12 h-12 rounded-xl bg-[#DDA44D] text-[#212121] flex items-center justify-center mb-5 shadow-sm">
+                    <Wand2 className="w-6 h-6" />
                   </div>
-                  <div className="arcade-badge bg-[#DDA44D] text-[#212121] text-[8px] mb-2">INTELLIGENT REFINERY</div>
-                  <h3 className="font-pixel text-sm text-[#212121] mb-2">DETERMINISTIC CLEANER</h3>
-                  <p className="font-mono text-xs text-[#212121]/90 leading-relaxed font-semibold">
-                    Automatically strip hesitation markers ("um", "uh", "you know") without mangling names, numbers, or code syntax.
+                  <div className="arcade-badge bg-[#DDA44D] text-[#212121] text-[9px] mb-2">INTELLIGENT REFINERY</div>
+                  <h3 className="font-bold text-base text-[#212121] mb-2 font-sans">DETERMINISTIC CLEANER</h3>
+                  <p className="text-xs text-[#212121]/80 leading-relaxed">
+                    Automatically strip hesitation markers ("um", "uh", "you know") without mangling technical acronyms, variable names, or numbers.
                   </p>
                 </div>
-                <div className="mt-6 pt-4 border-t-2 border-[#212121] text-[10px] font-pixel text-[#07514C]">
+                <div className="mt-6 pt-4 border-t border-[#212121]/15 text-xs font-bold text-[#07514C]">
                   <Link href="/features" className="hover:underline flex items-center gap-1 group">
-                    <span>FEATURE MATRIX</span>
+                    <span>Explore Formatting Rules</span>
                     <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                   </Link>
                 </div>
@@ -195,20 +277,20 @@ export default function HomePage() {
             </ScrollReveal>
 
             <ScrollReveal delay={300}>
-              <div className="arcade-panel arcade-panel-hoverable p-6 flex flex-col justify-between bg-[#DFDFD4]/80 backdrop-blur-md h-full">
+              <div className="arcade-panel arcade-panel-hoverable p-6 flex flex-col justify-between h-full">
                 <div>
-                  <div className="w-12 h-12 border-3 border-[#212121] bg-[#DA6C4C] flex items-center justify-center mb-6 shadow-pixel-sm">
-                    <Terminal className="w-6 h-6 text-white" />
+                  <div className="w-12 h-12 rounded-xl bg-[#DA6C4C] text-white flex items-center justify-center mb-5 shadow-sm">
+                    <Terminal className="w-6 h-6" />
                   </div>
-                  <div className="arcade-badge bg-[#DA6C4C] text-white text-[8px] mb-2">CROSS-PLATFORM</div>
-                  <h3 className="font-pixel text-sm text-[#212121] mb-2">GLOBAL HOTKEY INJECTION</h3>
-                  <p className="font-mono text-xs text-[#212121]/90 leading-relaxed font-semibold">
-                    Hold shortcut in any editor, terminal, or browser. Text pastes right where your cursor is blinking.
+                  <div className="arcade-badge bg-[#DA6C4C] text-white text-[9px] mb-2">CROSS-PLATFORM</div>
+                  <h3 className="font-bold text-base text-[#212121] mb-2 font-sans">GLOBAL SHORTCUT INJECTION</h3>
+                  <p className="text-xs text-[#212121]/80 leading-relaxed">
+                    Hold shortcut in any editor, terminal, or browser. Text pastes right where your cursor is blinking without clipboard pollution.
                   </p>
                 </div>
-                <div className="mt-6 pt-4 border-t-2 border-[#212121] text-[10px] font-pixel text-[#07514C]">
+                <div className="mt-6 pt-4 border-t border-[#212121]/15 text-xs font-bold text-[#07514C]">
                   <Link href="/docs" className="hover:underline flex items-center gap-1 group">
-                    <span>SYSTEM SHORTCUTS</span>
+                    <span>System Hotkey Guide</span>
                     <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                   </Link>
                 </div>
@@ -218,140 +300,50 @@ export default function HomePage() {
         </section>
 
         {/* =========================================================================
-            SECTION 5: DEDICATED SECTIONS FOR STUDENTS & DEVELOPERS
-           ========================================================================= */}
-        <section id="audiences" className="py-20 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto scroll-mt-24">
-          <ScrollReveal>
-            <div className="text-center max-w-3xl mx-auto mb-16">
-              <span className="arcade-badge bg-[#DDA44D] text-[#212121] mb-3">WHO IT IS FOR</span>
-              <h2 className="font-pixel text-2xl sm:text-4xl text-[#DFDFD4] drop-shadow-[4px_4px_0px_#212121]">
-                BUILT FOR STUDENTS &amp; BUILDERS
-              </h2>
-            </div>
-          </ScrollReveal>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <ScrollReveal delay={100}>
-              <div className="arcade-panel arcade-panel-hoverable p-8 bg-[#DFDFD4]/85 backdrop-blur-md flex flex-col justify-between h-full">
-                <div>
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 bg-[#DDA44D] border-2 border-[#212121]">
-                      <GraduationCap className="w-6 h-6 text-[#212121]" />
-                    </div>
-                    <div>
-                      <h3 className="font-pixel text-base text-[#212121]">FOR STUDENTS</h3>
-                      <div className="text-[10px] font-mono text-[#07514C] font-bold">Essays &bull; Brainstorming &bull; Notes</div>
-                    </div>
-                  </div>
-                  <p className="font-mono text-xs text-[#212121]/90 leading-relaxed mb-4">
-                    Overcome the blank page syndrome. Dictate your thesis argument, summarize lectures in your own words, and draft long essays in minutes instead of hours.
-                  </p>
-                  <ul className="space-y-2 font-mono text-xs text-[#212121]">
-                    <li className="flex items-center gap-2">
-                      <span className="w-2 h-2 bg-[#07514C]" />
-                      <span>Free-flow brainstorming without backspace friction</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className="w-2 h-2 bg-[#07514C]" />
-                      <span>Study notes dictated straight into Notion or Docs</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className="w-2 h-2 bg-[#07514C]" />
-                      <span>Reduces late-night essay-writing physical fatigue</span>
-                    </li>
-                  </ul>
-                </div>
-                <div className="mt-6 pt-4 border-t-2 border-[#212121]">
-                  <span className="arcade-badge bg-[#07514C] text-[#DFDFD4] text-[8px]">ACADEMIC FLOW</span>
-                </div>
-              </div>
-            </ScrollReveal>
-
-            <ScrollReveal delay={200}>
-              <div className="arcade-panel arcade-panel-hoverable p-8 bg-[#DFDFD4]/85 backdrop-blur-md flex flex-col justify-between h-full">
-                <div>
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 bg-[#07514C] border-2 border-[#212121]">
-                      <Code2 className="w-6 h-6 text-[#DDA44D]" />
-                    </div>
-                    <div>
-                      <h3 className="font-pixel text-base text-[#212121]">FOR DEVELOPERS</h3>
-                      <div className="text-[10px] font-mono text-[#07514C] font-bold">Commits &bull; PRs &bull; Tech Specs</div>
-                    </div>
-                  </div>
-                  <p className="font-mono text-xs text-[#212121]/90 leading-relaxed mb-4">
-                    Write detailed PR summaries, ADRs, Slack explanations, and commit logs without context switching away from your IDE or CLI.
-                  </p>
-                  <ul className="space-y-2 font-mono text-xs text-[#212121]">
-                    <li className="flex items-center gap-2">
-                      <span className="w-2 h-2 bg-[#DA6C4C]" />
-                      <span>Custom dictionary for camelCase, Docker, PostgreSQL</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className="w-2 h-2 bg-[#DA6C4C]" />
-                      <span>Types directly into VS Code, Zed, Neovim, or Terminal</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className="w-2 h-2 bg-[#DA6C4C]" />
-                      <span>Offline Whisper inference with zero cloud telemetry</span>
-                    </li>
-                  </ul>
-                </div>
-                <div className="mt-6 pt-4 border-t-2 border-[#212121]">
-                  <span className="arcade-badge bg-[#DA6C4C] text-white text-[8px]">DEVELOPER READY</span>
-                </div>
-              </div>
-            </ScrollReveal>
-          </div>
-        </section>
-
-        {/* =========================================================================
-            SECTION 6: QUESTS & PROGRESSION BOARD
+            SECTION 5: QUESTS & PROGRESSION BOARD
            ========================================================================= */}
         <ScrollReveal>
           <QuestBoard />
         </ScrollReveal>
 
         {/* =========================================================================
-            SECTION 7: OPEN SOURCE & COMMUNITY GUILD
+            SECTION 6: OPEN SOURCE GUILD
            ========================================================================= */}
         <section id="community" className="py-20 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto scroll-mt-24">
           <ScrollReveal>
-            <div className="arcade-panel arcade-panel-hoverable p-8 sm:p-12 bg-[#DFDFD4]/85 backdrop-blur-md space-y-6">
+            <div className="arcade-panel arcade-panel-hoverable p-8 sm:p-12 space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                <div className="p-3 bg-[#07514C] border-2 border-[#212121] w-fit shadow-pixel-sm">
-                  <FileCode className="w-6 h-6 text-[#DDA44D]" />
+                <div className="p-3 bg-[#07514C] rounded-xl text-[#DDA44D] w-fit shadow-sm">
+                  <FileCode className="w-6 h-6" />
                 </div>
-                <div className="space-y-2">
-                  <div>
-                    <span className="arcade-badge bg-[#07514C] text-[#DFDFD4] text-[8px]">OPEN ECOSYSTEM</span>
-                  </div>
-                  <h2 className="font-pixel text-lg sm:text-2xl text-[#212121] leading-snug">
-                    OPEN SOURCE &amp; COMMUNITY
+                <div className="space-y-1">
+                  <span className="arcade-badge bg-[#07514C] text-[#DFDFD4] text-[9px]">SOVEREIGN ECOSYSTEM</span>
+                  <h2 className="text-2xl font-bold text-[#212121] font-sans">
+                    Open Source &amp; Community First
                   </h2>
                 </div>
               </div>
 
-              <p className="font-mono text-xs sm:text-sm text-[#212121]/90 leading-relaxed">
-                VoxQuest is designed to be free, inspectable, and community-governed. No hidden analytics SDKs, no cloud tracking beacons, and no bait-and-switch subscription walls.
+              <p className="text-xs sm:text-sm text-[#212121]/90 leading-relaxed font-sans">
+                VoxQuest is built to be inspectable and community-governed. No hidden analytics SDKs, no audio telemetry pings, and no commercial subscription walls.
               </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 font-mono text-xs">
-                <div className="p-4 border-2 border-[#212121] bg-[#DFDFD4] hover:translate-y-[-2px] transition-transform">
-                  <div className="font-pixel text-[10px] text-[#07514C] mb-1">APACHE 2.0</div>
-                  <p className="text-[11px] text-[#212121]/80">Permissive license allowing personal, academic, and enterprise usage.</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 text-xs font-sans">
+                <div className="p-4 rounded-xl border border-charcoal/15 bg-white/60">
+                  <div className="font-bold text-[#07514C] text-xs mb-1 font-mono">APACHE 2.0</div>
+                  <p className="text-[11px] text-[#212121]/80">Permissive license allowing personal, academic, and enterprise modification.</p>
                 </div>
-                <div className="p-4 border-2 border-[#212121] bg-[#DFDFD4] hover:translate-y-[-2px] transition-transform">
-                  <div className="font-pixel text-[10px] text-[#DDA44D] mb-1">LOCAL-FIRST</div>
-                  <p className="text-[11px] text-[#212121]/80">Whisper GGML inference runs on your own device with zero network calls.</p>
+                <div className="p-4 rounded-xl border border-charcoal/15 bg-white/60">
+                  <div className="font-bold text-[#DDA44D] text-xs mb-1 font-mono">LOCAL-FIRST</div>
+                  <p className="text-[11px] text-[#212121]/80">Whisper Metal inference runs entirely on your hardware with 0 network calls.</p>
                 </div>
-                <div className="p-4 border-2 border-[#212121] bg-[#DFDFD4] hover:translate-y-[-2px] transition-transform">
-                  <div className="font-pixel text-[10px] text-[#DA6C4C] mb-1">EXTENSIBLE</div>
-                  <p className="text-[11px] text-[#212121]/80">Contribute vocabulary dictionaries, shortcuts, and platform integrations.</p>
+                <div className="p-4 rounded-xl border border-charcoal/15 bg-white/60">
+                  <div className="font-bold text-[#DA6C4C] text-xs mb-1 font-mono">EXTENSIBLE</div>
+                  <p className="text-[11px] text-[#212121]/80">Contribute custom technical vocabularies, shortcuts, and dictionary rules.</p>
                 </div>
               </div>
 
-              <div className="pt-4 flex flex-wrap gap-4 border-t-2 border-[#212121]">
+              <div className="pt-4 flex flex-wrap gap-4 border-t border-charcoal/15">
                 <a
                   href="https://github.com/PavanKumar-HQ/wispr-flow-2-model"
                   target="_blank"
@@ -363,9 +355,9 @@ export default function HomePage() {
                 </a>
                 <Link
                   href="/open-source"
-                  className="arcade-btn arcade-btn-ghost text-xs py-3 px-6 flex items-center gap-2 bg-[#DFDFD4]"
+                  className="arcade-btn arcade-btn-ghost text-xs py-3 px-6 flex items-center gap-2 bg-white"
                 >
-                  <span>READ CONTRIBUTION GUIDE</span>
+                  <span>CONTRIBUTION GUIDE</span>
                 </Link>
               </div>
             </div>
@@ -373,35 +365,35 @@ export default function HomePage() {
         </section>
 
         {/* =========================================================================
-            SECTION 8: FAQ & TRANSPARENT STATUS
+            SECTION 7: FAQ SECTION
            ========================================================================= */}
         <ScrollReveal>
           <FaqSection />
         </ScrollReveal>
 
         {/* =========================================================================
-            SECTION 9: FINAL CTA BANNER
+            SECTION 8: FINAL CTA BANNER
            ========================================================================= */}
         <section className="py-20 px-4 sm:px-6 lg:px-8 text-center relative">
           <ScrollReveal>
-            <div className="max-w-3xl mx-auto arcade-panel arcade-panel-hoverable p-8 sm:p-12 relative bg-[#DFDFD4]/85 backdrop-blur-md">
-              <h2 className="font-pixel text-xl sm:text-3xl text-[#212121] mb-4">
-                READY TO EXPLORE VOXQUEST?
+            <div className="max-w-3xl mx-auto arcade-panel arcade-panel-hoverable p-8 sm:p-12 relative">
+              <h2 className="text-2xl sm:text-4xl font-extrabold text-[#212121] mb-3 font-sans">
+                Experience Sovereign Voice Typing
               </h2>
-              <p className="font-mono text-xs sm:text-sm text-[#212121] mb-8 max-w-xl mx-auto leading-relaxed font-bold">
-                Join the open-source movement bringing sovereign, private voice dictation to computers everywhere.
+              <p className="text-xs sm:text-sm text-[#212121]/80 mb-8 max-w-xl mx-auto leading-relaxed font-sans font-medium">
+                Download the native desktop release for Apple Silicon and start speaking at the speed of thought.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Link
                   href="/download"
-                  className="arcade-btn arcade-btn-primary w-full sm:w-auto text-xs py-4 px-8 flex items-center justify-center gap-2"
+                  className="arcade-btn arcade-btn-primary w-full sm:w-auto text-xs py-4 px-8 flex items-center justify-center gap-2 shadow-lg"
                 >
                   <Download className="w-4 h-4 text-[#212121]" />
-                  <span>EXPLORE ALPHA BUILDS</span>
+                  <span>DOWNLOAD VOXQUEST FREE</span>
                 </Link>
                 <Link
                   href="/docs"
-                  className="arcade-btn arcade-btn-ghost w-full sm:w-auto text-xs py-4 px-6 flex items-center justify-center gap-2 bg-[#DFDFD4]/90"
+                  className="arcade-btn arcade-btn-ghost w-full sm:w-auto text-xs py-4 px-6 flex items-center justify-center gap-2 bg-white"
                 >
                   <BookOpen className="w-4 h-4" />
                   <span>READ DOCUMENTATION</span>
@@ -412,7 +404,7 @@ export default function HomePage() {
         </section>
       </main>
 
-      {/* SECTION 10: FOOTER */}
+      {/* FOOTER */}
       <Footer />
     </div>
   );
