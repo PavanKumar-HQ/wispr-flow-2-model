@@ -14,7 +14,7 @@ import {
   Radio,
 } from 'lucide-react';
 import { SessionSnapshot, NowPlayingInfo } from '../types';
-import { Mascot, MascotAvatar, MascotAction } from './Mascot';
+import { MascotAvatar } from './Mascot';
 import { AudioWaveform } from './AudioWaveform';
 import { CapsuleTray } from './capsule/CapsuleTray';
 import { safeInvoke, safeListen, isNativeTauri } from '../lib/ipc';
@@ -52,66 +52,11 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
     }
   });
 
-  const [isMascotMode, setIsMascotMode] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem('voxquest_mascot_mode') === 'true';
-    } catch {
-      return false;
-    }
-  });
-
-  const [mascotAction, setMascotAction] = useState<MascotAction>('float');
-  const actionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Autonomous idle pet behavior: float -> sit (after 12s) -> sleep (after 35s)
   useEffect(() => {
-    if (!isMascotMode || status.state === 'recording' || status.state === 'transcribing') {
-      setMascotAction('float');
-      return;
-    }
-
-    const resetToIdle = () => {
-      setMascotAction('float');
-      if (actionTimerRef.current) clearTimeout(actionTimerRef.current);
-      actionTimerRef.current = setTimeout(() => {
-        setMascotAction('sit');
-        actionTimerRef.current = setTimeout(() => {
-          setMascotAction('sleep');
-        }, 23000);
-      }, 12000);
-    };
-
-    resetToIdle();
-
-    const handleUserActivity = () => {
-      if (mascotAction === 'sleep' || mascotAction === 'sit') {
-        resetToIdle();
-      }
-    };
-
-    window.addEventListener('mousemove', handleUserActivity);
-    return () => {
-      if (actionTimerRef.current) clearTimeout(actionTimerRef.current);
-      window.removeEventListener('mousemove', handleUserActivity);
-    };
-  }, [isMascotMode, status.state, mascotAction]);
-
-  const handleMascotClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setMascotAction('jump');
-    setTimeout(() => {
-      onToggle();
-    }, 180);
-  };
-
-  const handleToggleMascotMode = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const next = !isMascotMode;
-    setIsMascotMode(next);
     try {
-      localStorage.setItem('voxquest_mascot_mode', String(next));
+      localStorage.setItem('voxquest_mascot_mode', 'false');
     } catch {}
-  };
+  }, []);
 
   const handleCycleAvatar = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -131,8 +76,6 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
       try {
         const storedAvatar = (localStorage.getItem('voxquest_mascot_avatar') as MascotAvatar) || 'bot';
         setSelectedAvatar(storedAvatar);
-        const storedMode = localStorage.getItem('voxquest_mascot_mode') === 'true';
-        setIsMascotMode(storedMode);
       } catch {}
     };
 
@@ -312,82 +255,11 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
       } select-none bg-transparent`}
       style={{ background: 'transparent' }}
     >
-      {/* Pill Capsule or Free-Floating Mascot Companion */}
-      {isMascotMode && !isRecording && !isTranscribing && (!isDone || isDismissed) && (!nowPlaying || !nowPlaying.is_playing) ? (
-        /* TRUE LIVING DESKTOP MASCOT COMPANION (WHEN IDLE ONLY) WITH DEDICATED HUB BUTTON */
-        <div
-          data-tauri-drag-region
-          onMouseDown={handleMouseDown}
-          className="group relative flex items-center justify-center cursor-pointer select-none pt-6 pb-2 px-4 gap-3 overflow-visible border-none"
-          title={`${selectedAvatar.toUpperCase()} Companion • Click to speak`}
-        >
-          {/* Living Mascot */}
-          <div
-            onClick={handleMascotClick}
-            className="flex flex-col items-center justify-center shrink-0 cursor-pointer"
-          >
-            <div className={`${
-              mascotAction === 'walk' ? 'anim-mascot-walk' :
-              mascotAction === 'jump' ? 'anim-mascot-jump' :
-              mascotAction === 'sit' ? 'anim-mascot-sit' :
-              mascotAction === 'sleep' ? 'anim-mascot-sleep' :
-              'anim-mascot-float'
-            } group-hover:scale-105 active:scale-95 transition-transform duration-200 overflow-visible`}>
-              <Mascot
-                size={54}
-                state="idle"
-                avatar={selectedAvatar}
-                action={mascotAction}
-                interactive
-              />
-            </div>
-            {/* Floating ground shadow */}
-            <div className="w-10 h-1.5 bg-black/35 rounded-full blur-[1px] mt-1 anim-shadow-pulse pointer-events-none" />
-          </div>
-
-          {/* Floating quick avatar, action & pill switch controls (shows on hover) */}
-          <div className="absolute -bottom-7 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-30 bg-[#07514C]/90 backdrop-blur-md px-2 py-0.5 rounded-full border border-[#DDA44D]/30 shadow-lg">
-            <button
-              data-tauri-no-drag
-              onClick={handleCycleAvatar}
-              className="text-[#DDA44D] hover:text-white text-[8px] font-pixel px-1.5 py-0.5 rounded cursor-pointer transition-colors"
-              title="Cycle Avatar (Bot -> Owl -> Cat)"
-            >
-              {selectedAvatar.toUpperCase()}
-            </button>
-            <span className="text-white/30 text-[8px]">•</span>
-            {(['float', 'walk', 'jump', 'sit', 'sleep'] as MascotAction[]).map((act) => (
-              <button
-                key={act}
-                data-tauri-no-drag
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setMascotAction(act);
-                }}
-                className={`text-[8px] font-pixel px-1 py-0.5 rounded uppercase transition-colors ${
-                  mascotAction === act ? 'bg-[#DDA44D] text-[#212121] font-bold' : 'text-white/70 hover:text-white'
-                }`}
-                title={`Make pet ${act}`}
-              >
-                {act}
-              </button>
-            ))}
-            <span className="text-white/30 text-[8px]">•</span>
-            <button
-              data-tauri-no-drag
-              onClick={handleToggleMascotMode}
-              className="text-[#DA6C4C] hover:text-[#FF8A65] text-[8px] font-pixel px-1.5 py-0.5 rounded cursor-pointer transition-colors"
-              title="Switch to Full Pill"
-            >
-              PILL
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div
-          data-tauri-drag-region
-          onMouseDown={handleMouseDown}
-          className={`voxquest-pill-capsule flex items-center justify-between gap-2 px-3.5 py-1.5 rounded-full border-2 transition-all duration-300 ease-out cursor-grab active:cursor-grabbing ${
+      {/* Sovereign Pill Capsule */}
+      <div
+        data-tauri-drag-region
+        onMouseDown={handleMouseDown}
+        className={`voxquest-pill-capsule flex items-center justify-between gap-2 px-3.5 py-1.5 rounded-full border-2 transition-all duration-300 ease-out cursor-grab active:cursor-grabbing ${
             isRecording
               ? 'w-[316px] bg-cream dark:bg-darkTealSurface border-terracotta dark:border-[#FF7A59] shadow-lg dark:shadow-[0_0_16px_rgba(255,122,89,0.4)]'
               : isTranscribing
@@ -761,10 +633,10 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
               <button
                 data-tauri-no-drag
                 onMouseDown={(e) => e.stopPropagation()}
-                onClick={handleToggleMascotMode}
+                onClick={handleCycleAvatar}
                 className="p-1.5 rounded-full bg-black/5 dark:bg-darkTealElevated hover:bg-amber hover:text-charcoal text-charcoal/80 dark:text-[#DFDFD4] transition-all cursor-pointer active:scale-95 shrink-0"
-                title="Switch to VoxBot Companion Mode"
-                aria-label="Switch to VoxBot Companion Mode"
+                title={`Companion Persona: ${selectedAvatar.toUpperCase()} (Click to cycle Bot/Owl/Cat)`}
+                aria-label="Cycle Companion Persona"
               >
                 <Bot className="w-3.5 h-3.5 text-darkTeal dark:text-amber shrink-0" />
               </button>
@@ -792,7 +664,6 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
           </>
         )}
       </div>
-      )}
 
       {/* Expandable Productivity Hub Tray */}
       {isTrayExpanded && (

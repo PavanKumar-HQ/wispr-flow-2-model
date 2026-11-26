@@ -431,6 +431,10 @@ pub fn get_session_snapshot(state: State<'_, AppState>) -> SessionSnapshot {
 
 #[tauri::command]
 pub fn start_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<SessionSnapshot, String> {
+    start_dictation_internal(&state, &app)
+}
+
+pub fn start_dictation_internal(state: &AppState, app: &AppHandle) -> Result<SessionSnapshot, String> {
     // Automatically pause any background music/YouTube so mic audio is crystal clear
     pause_media_for_dictation();
 
@@ -646,7 +650,7 @@ pub fn start_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Ses
     };
     if mode == "push_to_talk" && crate::is_session_started_by_hotkey() && !crate::is_shortcut_physically_held(&shortcut_str) {
         println!("VoxQuest: Shortcut was physically released during initialization -> stopping dictation");
-        return stop_dictation(state, app);
+        return stop_dictation_internal(state, app);
     }
 
     Ok(snap)
@@ -654,6 +658,10 @@ pub fn start_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Ses
 
 #[tauri::command]
 pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<SessionSnapshot, String> {
+    stop_dictation_internal(&state, &app)
+}
+
+pub fn stop_dictation_internal(state: &AppState, app: &AppHandle) -> Result<SessionSnapshot, String> {
     crate::reset_shortcut_held();
     let t_stop_requested = Instant::now();
 

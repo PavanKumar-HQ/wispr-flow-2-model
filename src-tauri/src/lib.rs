@@ -52,6 +52,7 @@ pub mod meeting_service;
 pub mod destination_sync_service;
 pub mod cloud_speech_service;
 pub mod settings_service;
+pub mod wake_word_service;
 pub mod action_engine;
 pub mod media_commands;
 pub mod telemetry_commands;
@@ -200,6 +201,7 @@ pub fn reset_shortcut_held() {
     }
 }
 
+#[derive(Clone)]
 pub struct AppState {
     pub audio: Arc<Mutex<AudioCaptureService>>,
     pub whisper: Arc<Mutex<WhisperEngine>>,
@@ -211,6 +213,7 @@ pub struct AppState {
     pub destination_sync: Arc<destination_sync_service::DestinationSyncService>,
     pub calibration_mode: Arc<Mutex<bool>>,
     pub meeting: Arc<meeting_service::MeetingService>,
+    pub wake_word: Arc<wake_word_service::WakeWordService>,
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -224,6 +227,7 @@ pub fn run() {
     let destination_sync = Arc::new(destination_sync_service::DestinationSyncService::new());
     let calibration_mode = Arc::new(Mutex::new(false));
     let meeting_service = Arc::new(meeting_service::MeetingService::new());
+    let wake_word_service = Arc::new(wake_word_service::WakeWordService::new());
     let active_session = Arc::new(Mutex::new(SessionSnapshot {
         session_id: String::new(),
         sequence: 0,
@@ -250,6 +254,7 @@ pub fn run() {
         destination_sync: Arc::clone(&destination_sync),
         calibration_mode: Arc::clone(&calibration_mode),
         meeting: Arc::clone(&meeting_service),
+        wake_word: Arc::clone(&wake_word_service),
     };
 
     let initial_shortcut_str = {
@@ -378,6 +383,11 @@ pub fn run() {
                     eprintln!("Invalid shortcut string '{}': {:?}", initial_shortcut_str, e);
                 }
             }
+
+            // Start Hands-Free Assistant Wake Word listener on Ready state
+            let app_state_arc = Arc::new(app.state::<AppState>().inner().clone());
+            let wake_word = Arc::clone(&app_state_arc.wake_word);
+            wake_word.start(app.handle().clone(), app_state_arc);
 
             // Intercept close button on main window: hide instead of exiting so background hotkey stays alive
             if let Some(main_win) = app.get_webview_window("main") {

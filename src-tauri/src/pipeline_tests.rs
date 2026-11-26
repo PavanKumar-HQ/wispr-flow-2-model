@@ -44,6 +44,7 @@ mod pipeline_tests {
             destination_sync: Arc::new(crate::destination_sync_service::DestinationSyncService::new()),
             calibration_mode: Arc::new(Mutex::new(false)),
             meeting: Arc::new(crate::meeting_service::MeetingService::new()),
+            wake_word: Arc::new(crate::wake_word_service::WakeWordService::new()),
         };
 
         // When recording is already in progress, audio.start_recording() returns Err
