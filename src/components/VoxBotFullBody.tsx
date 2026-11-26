@@ -83,7 +83,7 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
       }}
     >
       <svg
-        viewBox="-12 -14 224 268"
+        viewBox="-12 -20 224 274"
         width={size}
         height={height}
         className="overflow-visible"
@@ -125,7 +125,7 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
           </radialGradient>
 
           <radialGradient id="vb3dAntennaGlow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor={isListening ? '#52E5D8' : '#FFD07B'} stopOpacity="0.85" />
+            <stop offset="0%" stopColor={isListening ? '#DA6C4C' : isTranscribing ? '#FFD07B' : '#34A89E'} stopOpacity="0.85" />
             <stop offset="55%" stopColor={coreColor} stopOpacity="0.3" />
             <stop offset="100%" stopColor={coreColor} stopOpacity="0" />
           </radialGradient>
@@ -507,7 +507,7 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
               cx="100"
               cy="14"
               r="7.5"
-              fill={isListening ? '#34A89E' : isTranscribing ? '#42D4C8' : '#FFB84D'}
+              fill={isListening ? '#DA6C4C' : isTranscribing ? '#DDA44D' : '#34A89E'}
               filter="url(#vbLedGlow)"
             />
             <circle cx="97.5" cy="11.5" r="2.5" fill="#FFF7DF" opacity="0.9" />
