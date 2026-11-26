@@ -403,7 +403,7 @@ export default function App() {
             <Mascot size={32} />
             <div className="hidden md:block">
               <div className="flex items-center gap-1.5">
-                <span className="font-extrabold text-sm text-darkTeal dark:text-white tracking-wide">VOXQUEST</span>
+                <span className="font-pixel text-[11px] text-darkTeal dark:text-white tracking-wider">VOXQUEST</span>
                 <span className="w-2 h-2 rounded-full bg-amber animate-pulse" />
               </div>
             </div>

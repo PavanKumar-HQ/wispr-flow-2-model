@@ -43,8 +43,9 @@ export default {
         }
       },
       fontFamily: {
-        sans: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
+        pixel: ['"Press Start 2P"', 'monospace', 'cursive'],
         mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+        sans: ['"JetBrains Mono"', '"Plus Jakarta Sans"', '-apple-system', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
         'pixel-sm': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',

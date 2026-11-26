@@ -213,7 +213,7 @@ export function SmartDownloadSection() {
               </span>
             </div>
 
-            <h2 className="text-xl sm:text-3xl font-extrabold text-white tracking-tight">
+            <h2 className="font-pixel text-base sm:text-xl text-white tracking-tight leading-relaxed">
               {detectedPlatform.name}
             </h2>
 
@@ -237,7 +237,7 @@ export function SmartDownloadSection() {
           <div className="w-full md:w-auto flex flex-col items-stretch gap-2.5 shrink-0">
             <button
               onClick={() => handleDownload(detectedPlatform)}
-              className="w-full sm:w-auto px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl bg-gradient-to-r from-[#DDA44D] to-[#C99039] hover:from-[#E5B25F] hover:to-[#DDA44D] text-[#212121] font-bold text-xs sm:text-sm tracking-wide shadow-xl hover:shadow-[#DDA44D]/30 transition-all flex items-center justify-center gap-2.5 cursor-pointer active:scale-95"
+              className="w-full sm:w-auto px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl bg-gradient-to-r from-[#DDA44D] to-[#C99039] hover:from-[#E5B25F] hover:to-[#DDA44D] text-[#212121] font-pixel text-[10px] sm:text-[11px] tracking-wide shadow-xl hover:shadow-[#DDA44D]/30 transition-all flex items-center justify-center gap-2.5 cursor-pointer active:scale-95"
             >
               <Download className="w-4 h-4 sm:w-5 sm:h-5 text-[#212121]" />
               <span>DOWNLOAD VOXQUEST FREE</span>
@@ -276,7 +276,7 @@ export function SmartDownloadSection() {
                       {p.osFamily === 'mac' && <Apple className="w-4 h-4 sm:w-5 sm:h-5 text-[#DDA44D]" />}
                       {p.osFamily === 'windows' && <Monitor className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />}
                       {p.osFamily === 'linux' && <Terminal className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />}
-                      <span className="font-bold text-xs sm:text-sm text-white">{p.name}</span>
+                      <span className="font-pixel text-[11px] sm:text-xs text-white">{p.name}</span>
                     </div>
                     {isSelected && (
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#DDA44D]/20 text-[#DDA44D] border border-[#DDA44D]/40 shrink-0">

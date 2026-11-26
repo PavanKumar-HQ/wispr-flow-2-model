@@ -72,11 +72,11 @@ export default function HomePage() {
               <span>VOXQUEST &middot; 100% AIR-GAPPED ON-DEVICE VOICE OS</span>
             </div>
 
-            {/* Main Crisp Headline */}
-            <h1 className="font-extrabold text-4xl sm:text-6xl lg:text-7xl text-white tracking-tight leading-[1.1] mb-6 drop-shadow-md">
+            {/* Main Crisp Headline with Pixel Typography */}
+            <h1 className="font-pixel text-xl sm:text-3xl lg:text-4xl text-white leading-relaxed sm:leading-loose mb-6 drop-shadow-[4px_4px_0px_#212121]">
               Speak at 150 WPM. <br />
               <span className="bg-gradient-to-r from-[#DDA44D] via-[#F3C474] to-[#DA6C4C] bg-clip-text text-transparent">
-                Zero Cloud. Zero Subscriptions.
+                Zero Cloud. Zero Subs.
               </span>
             </h1>
 
@@ -285,10 +285,10 @@ export default function HomePage() {
           <ScrollReveal>
             <div className="text-center max-w-3xl mx-auto mb-16">
               <span className="arcade-badge bg-[#DDA44D] text-[#212121] mb-3">SYSTEM CAPABILITIES</span>
-              <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
+              <h2 className="font-pixel text-base sm:text-2xl text-white tracking-tight leading-relaxed drop-shadow-[3px_3px_0px_#212121]">
                 Engineered for Real Productivity
               </h2>
-              <p className="mt-4 text-sm sm:text-base text-white/80 leading-relaxed font-sans">
+              <p className="mt-4 text-xs sm:text-sm text-white/80 leading-relaxed font-mono">
                 Everything you need for effortless voice writing without privacy compromises.
               </p>
             </div>
@@ -302,12 +302,12 @@ export default function HomePage() {
                     <Lock className="w-6 h-6" />
                   </div>
                   <div className="arcade-badge bg-[#07514C] text-[#DFDFD4] text-[9px] mb-2">PRIVACY FIRST</div>
-                  <h3 className="font-bold text-base text-[#212121] mb-2 font-sans">ZERO CLOUD RETENTION</h3>
-                  <p className="text-xs text-[#212121]/80 leading-relaxed">
+                  <h3 className="font-pixel text-xs sm:text-sm text-[#212121] mb-2 leading-relaxed">ZERO CLOUD RETENTION</h3>
+                  <p className="text-xs text-[#212121]/80 leading-relaxed font-mono">
                     Audio never trains a third-party commercial model. Run 100% on-device Whisper models with zero background network pings.
                   </p>
                 </div>
-                <div className="mt-6 pt-4 border-t border-[#212121]/15 text-xs font-bold text-[#07514C]">
+                <div className="mt-6 pt-4 border-t border-[#212121]/15 text-xs font-bold text-[#07514C] font-mono">
                   <Link href="/privacy" className="hover:underline flex items-center gap-1 group">
                     <span>Inspect Privacy Architecture</span>
                     <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
@@ -323,12 +323,12 @@ export default function HomePage() {
                     <Wand2 className="w-6 h-6" />
                   </div>
                   <div className="arcade-badge bg-[#DDA44D] text-[#212121] text-[9px] mb-2">INTELLIGENT REFINERY</div>
-                  <h3 className="font-bold text-base text-[#212121] mb-2 font-sans">DETERMINISTIC CLEANER</h3>
-                  <p className="text-xs text-[#212121]/80 leading-relaxed">
+                  <h3 className="font-pixel text-xs sm:text-sm text-[#212121] mb-2 leading-relaxed">DETERMINISTIC CLEANER</h3>
+                  <p className="text-xs text-[#212121]/80 leading-relaxed font-mono">
                     Automatically strip hesitation markers ("um", "uh", "you know") without mangling technical acronyms, variable names, or numbers.
                   </p>
                 </div>
-                <div className="mt-6 pt-4 border-t border-[#212121]/15 text-xs font-bold text-[#07514C]">
+                <div className="mt-6 pt-4 border-t border-[#212121]/15 text-xs font-bold text-[#07514C] font-mono">
                   <Link href="/features" className="hover:underline flex items-center gap-1 group">
                     <span>Explore Formatting Rules</span>
                     <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
@@ -344,12 +344,12 @@ export default function HomePage() {
                     <Terminal className="w-6 h-6" />
                   </div>
                   <div className="arcade-badge bg-[#DA6C4C] text-white text-[9px] mb-2">CROSS-PLATFORM</div>
-                  <h3 className="font-bold text-base text-[#212121] mb-2 font-sans">GLOBAL SHORTCUT INJECTION</h3>
-                  <p className="text-xs text-[#212121]/80 leading-relaxed">
+                  <h3 className="font-pixel text-xs sm:text-sm text-[#212121] mb-2 leading-relaxed">GLOBAL SHORTCUT INJECTION</h3>
+                  <p className="text-xs text-[#212121]/80 leading-relaxed font-mono">
                     Hold shortcut in any editor, terminal, or browser. Text pastes right where your cursor is blinking without clipboard pollution.
                   </p>
                 </div>
-                <div className="mt-6 pt-4 border-t border-[#212121]/15 text-xs font-bold text-[#07514C]">
+                <div className="mt-6 pt-4 border-t border-[#212121]/15 text-xs font-bold text-[#07514C] font-mono">
                   <Link href="/docs" className="hover:underline flex items-center gap-1 group">
                     <span>System Hotkey Guide</span>
                     <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
@@ -379,17 +379,17 @@ export default function HomePage() {
                 </div>
                 <div className="space-y-1">
                   <span className="arcade-badge bg-[#07514C] text-[#DFDFD4] text-[9px]">SOVEREIGN ECOSYSTEM</span>
-                  <h2 className="text-2xl font-bold text-[#212121] font-sans">
+                  <h2 className="font-pixel text-base sm:text-2xl text-[#212121] leading-relaxed">
                     Open Source &amp; Community First
                   </h2>
                 </div>
               </div>
 
-              <p className="text-xs sm:text-sm text-[#212121]/90 leading-relaxed font-sans">
+              <p className="text-xs sm:text-sm text-[#212121]/90 leading-relaxed font-mono">
                 VoxQuest is built to be inspectable and community-governed. No hidden analytics SDKs, no audio telemetry pings, and no commercial subscription walls.
               </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 text-xs font-sans">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 text-xs font-mono">
                 <div className="p-4 rounded-xl border border-charcoal/15 bg-white/60">
                   <div className="font-bold text-[#07514C] text-xs mb-1 font-mono">APACHE 2.0</div>
                   <p className="text-[11px] text-[#212121]/80">Permissive license allowing personal, academic, and enterprise modification.</p>
@@ -436,7 +436,7 @@ export default function HomePage() {
         <section className="py-20 px-4 sm:px-6 lg:px-8 text-center relative">
           <ScrollReveal>
             <div className="max-w-3xl mx-auto arcade-panel arcade-panel-hoverable p-8 sm:p-12 relative">
-              <h2 className="text-2xl sm:text-4xl font-extrabold text-[#212121] mb-3 font-sans">
+              <h2 className="font-pixel text-base sm:text-2xl text-[#212121] mb-4 leading-relaxed">
                 Experience Sovereign Voice Typing
               </h2>
               <p className="text-xs sm:text-sm text-[#212121]/80 mb-8 max-w-xl mx-auto leading-relaxed font-sans font-medium">

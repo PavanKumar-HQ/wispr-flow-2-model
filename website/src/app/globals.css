@@ -26,22 +26,23 @@ html {
 body {
   background-color: #07514C;
   color: #DFDFD4;
-  font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+  font-family: 'JetBrains Mono', -apple-system, monospace, sans-serif;
   letter-spacing: normal;
   word-spacing: normal;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-.font-pixel {
+h1, h2, h3, h4, .font-pixel {
   font-family: 'Press Start 2P', monospace, cursive;
+  letter-spacing: 0.02em;
 }
 
 .font-mono-code {
   font-family: 'JetBrains Mono', monospace;
 }
 
-/* Sleek, Modern Glassmorphism Panels with Subtle Retro Accent */
+/* Sleek, Modern Glassmorphism Panels with Authentic Retro Accent */
 .arcade-panel {
   background: rgba(223, 223, 212, 0.92);
   color: #212121;
@@ -74,16 +75,17 @@ body {
   box-shadow: 0 12px 32px -8px rgba(221, 164, 77, 0.3);
 }
 
-/* Modern High-Performance Push Buttons */
+/* Unified Arcade Pixel Push Buttons */
 .arcade-btn {
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: 'Press Start 2P', monospace, cursive;
   font-weight: 700;
-  font-size: 13px;
-  letter-spacing: 0.02em;
+  font-size: 11px;
+  line-height: 1.4;
+  letter-spacing: 0.05em;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 12px 24px;
+  padding: 14px 24px;
   border-radius: 0.875rem;
   cursor: pointer;
   user-select: none;
@@ -141,10 +143,11 @@ body {
 
 /* Level Badges */
 .arcade-badge {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Press Start 2P', monospace;
   font-weight: 700;
-  font-size: 10px;
-  padding: 4px 10px;
+  font-size: 9px;
+  line-height: 1.4;
+  padding: 6px 12px;
   border-radius: 9999px;
   border: 1px solid rgba(33, 33, 33, 0.2);
   display: inline-flex;

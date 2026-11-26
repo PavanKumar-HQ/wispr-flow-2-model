@@ -29,11 +29,11 @@ export function Navbar() {
               <PixelLogo className="w-7 h-7" />
             </div>
             <div>
-              <span className="font-extrabold text-lg sm:text-xl tracking-tight text-white">
+              <span className="font-pixel text-sm sm:text-base tracking-wider text-white">
                 VOXQUEST
               </span>
-              <div className="text-[10px] font-mono font-bold text-[#DDA44D] tracking-wider uppercase">
-                Voice Platform
+              <div className="text-[8px] sm:text-[9px] font-pixel text-[#DDA44D] tracking-wider uppercase mt-0.5">
+                VOICE OS
               </div>
             </div>
           </Link>
