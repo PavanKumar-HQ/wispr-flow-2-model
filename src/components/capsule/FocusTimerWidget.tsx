@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, Play, Pause, RotateCcw } from 'lucide-react';
+import { safeInvoke } from '../../lib/ipc';
 
 export const FocusTimerWidget: React.FC = () => {
   const [initialSeconds, setInitialSeconds] = useState<number>(25 * 60);
@@ -15,6 +16,10 @@ export const FocusTimerWidget: React.FC = () => {
         setSecondsLeft((prev) => {
           if (prev <= 1) {
             setIsRunning(false);
+            safeInvoke('send_system_notification_cmd', {
+              title: '⏱️ Focus Timer Complete',
+              message: mode === 'focus' ? 'Deep Focus session complete! Time for a break.' : 'Break finished! Ready to resume.',
+            });
             return 0;
           }
           return prev - 1;

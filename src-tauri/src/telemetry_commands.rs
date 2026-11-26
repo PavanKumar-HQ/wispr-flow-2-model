@@ -238,7 +238,19 @@ pub fn launch_app_or_url_cmd(target: String) -> Result<String, String> {
 }
 
 #[tauri::command]
-pub fn send_system_notification_cmd(title: String, message: String) -> Result<(), String> {
+pub fn send_system_notification_cmd(app: tauri::AppHandle, title: String, message: String) -> Result<(), String> {
+    use tauri::{Emitter, Manager};
+    let payload = serde_json::json!({
+        "title": title,
+        "message": message,
+    });
+    let _ = app.emit("voxquest-reminder-alert", &payload);
+    for label in ["main", "floating-indicator", "desktop-companion"] {
+        if let Some(w) = app.get_webview_window(label) {
+            let _ = w.emit("voxquest-reminder-alert", &payload);
+        }
+    }
+
     #[cfg(target_os = "macos")]
     {
         let clean_title = title.replace('"', "\\\"").replace('\'', "\\'");
@@ -250,6 +262,9 @@ pub fn send_system_notification_cmd(title: String, message: String) -> Result<()
         let _ = std::process::Command::new("osascript")
             .arg("-e")
             .arg(script)
+            .spawn();
+        let _ = std::process::Command::new("afplay")
+            .arg("/System/Library/Sounds/Glass.aiff")
             .spawn();
     }
     Ok(())

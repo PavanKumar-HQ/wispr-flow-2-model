@@ -11,6 +11,13 @@ interface MarkedDateItem {
   lastNotifiedDate?: string;
 }
 
+function toLocalDateStr(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 export const CalendarClockWidget: React.FC = () => {
   // 12-Hour vs 24-Hour Format
   const [is24Hour, setIs24Hour] = useState<boolean>(() => {
@@ -27,10 +34,7 @@ export const CalendarClockWidget: React.FC = () => {
 
   // Calendar state
   const [viewDate, setViewDate] = useState<Date>(new Date());
-  const [selectedDateStr, setSelectedDateStr] = useState<string>(() => {
-    const today = new Date();
-    return today.toISOString().slice(0, 10);
-  });
+  const [selectedDateStr, setSelectedDateStr] = useState<string>(() => toLocalDateStr(new Date()));
 
   const [markedDates, setMarkedDates] = useState<MarkedDateItem[]>(() => {
     try {
@@ -64,11 +68,23 @@ export const CalendarClockWidget: React.FC = () => {
     setReminderEnabled(existing?.reminderEnabled !== false);
   }, [selectedDateStr, markedDates]);
 
-  // Automated background reminder check for tasks (runs every 30s)
+  // Sync when voice commands or background reminder checker update localStorage
+  useEffect(() => {
+    const reload = () => {
+      try {
+        const stored = localStorage.getItem('voxquest_marked_calendar_dates');
+        if (stored) setMarkedDates(JSON.parse(stored));
+      } catch {}
+    };
+    window.addEventListener('voxquest-utility-updated', reload);
+    return () => window.removeEventListener('voxquest-utility-updated', reload);
+  }, []);
+
+  // Automated background reminder check for tasks (runs every 10s while open)
   useEffect(() => {
     const checkReminders = async () => {
       const today = new Date();
-      const todayStr = today.toISOString().slice(0, 10);
+      const todayStr = toLocalDateStr(today);
       const currentHours = String(today.getHours()).padStart(2, '0');
       const currentMins = String(today.getMinutes()).padStart(2, '0');
       const currentTime = `${currentHours}:${currentMins}`;

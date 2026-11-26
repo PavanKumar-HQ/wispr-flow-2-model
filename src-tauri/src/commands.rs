@@ -546,7 +546,13 @@ pub fn start_dictation_internal(state: &AppState, app: &AppHandle) -> Result<Ses
         }
     });
 
-    // Realtime audio visualizer waveform stream for Wispr Flow audio effect
+    let mode = {
+        let s = state.settings.lock().unwrap();
+        s.interaction_mode.clone()
+    };
+    let auto_stop_on_silence = mode == "toggle" || !crate::is_session_started_by_hotkey();
+
+    // Realtime audio visualizer waveform stream + Smart End-of-Utterance auto-stop (for robot-click / toggle commands)
     {
         let app_level_emitter = app.clone();
         let state_audio = Arc::clone(&state.audio);
@@ -555,6 +561,9 @@ pub fn start_dictation_internal(state: &AppState, app: &AppHandle) -> Result<Ses
 
         tauri::async_runtime::spawn(async move {
             let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(50));
+            let mut speech_ticks: u32 = 0;
+            let mut heard_speech = false;
+            let mut silent_ticks: u32 = 0;
             loop {
                 interval.tick().await;
                 let is_rec = {
@@ -569,6 +578,27 @@ pub fn start_dictation_internal(state: &AppState, app: &AppHandle) -> Result<Ses
                     audio.get_current_audio_level()
                 };
                 let _ = app_level_emitter.emit("audio-level", level);
+
+                if auto_stop_on_silence {
+                    if level >= 0.14 {
+                        speech_ticks += 1;
+                        if speech_ticks >= 2 {
+                            heard_speech = true;
+                        }
+                        silent_ticks = 0;
+                    } else if heard_speech && level < 0.10 {
+                        silent_ticks += 1;
+                        // ~1.2s of natural silence after speech -> auto-stop and execute/transcribe!
+                        if silent_ticks >= 24 {
+                            if let Some(state_w) = app_level_emitter.try_state::<AppState>() {
+                                let _ = stop_dictation(state_w, app_level_emitter.clone());
+                            }
+                            break;
+                        }
+                    } else if level >= 0.12 {
+                        silent_ticks = 0;
+                    }
+                }
             }
         });
     }
@@ -598,10 +628,6 @@ pub fn start_dictation_internal(state: &AppState, app: &AppHandle) -> Result<Ses
 
     // In push-to-talk mode, spawn a native hardware key release watcher
     // to detect when the physical shortcut key is left, independent of frontmost app or Carbon hotkey events!
-    let mode = {
-        let s = state.settings.lock().unwrap();
-        s.interaction_mode.clone()
-    };
     if mode == "push_to_talk" && crate::is_session_started_by_hotkey() {
         let app_release_watcher = app.clone();
         let sess_release_check = session_id.clone();
@@ -1146,8 +1172,16 @@ pub fn stop_dictation_internal(state: &AppState, app: &AppHandle) -> Result<Sess
     let voice_action = crate::action_engine::detect_voice_action(&formatted_transcript);
 
     if let Some(ref act) = voice_action {
+        if let Some(ref payload) = act.utility_payload {
+            let _ = app.emit("voxquest-voice-utility", payload);
+            for label in ["main", "floating-indicator", "desktop-companion"] {
+                if let Some(w) = app.get_webview_window(label) {
+                    let _ = w.emit("voxquest-voice-utility", payload);
+                }
+            }
+        }
         if act.suppress_paste {
-            // System command was executed natively (e.g. "open Spotify", "search ...", "play ...")
+            // System command was executed natively (e.g. "open Spotify", "search ...", "play ...", "remind me ...", "schedule ...")
             if settings.retain_history {
                 record_id = state.history.insert_record(
                     &raw_transcript,
@@ -1171,6 +1205,27 @@ pub fn stop_dictation_internal(state: &AppState, app: &AppHandle) -> Result<Sess
             if let Some(w) = app.get_webview_window("floating-indicator") {
                 let _ = w.emit("dictation-session-changed", &snap);
             }
+            let app_idle = app.clone();
+            let target_id = session_lock.session_id.clone();
+            tauri::async_runtime::spawn(async move {
+                tokio::time::sleep(tokio::time::Duration::from_millis(1600)).await;
+                if let Some(state) = app_idle.try_state::<AppState>() {
+                    let mut sess = state.active_session.lock().unwrap();
+                    if sess.session_id != target_id || sess.state.is_active() {
+                        return;
+                    }
+                    sess.state = SessionState::Idle;
+                    sess.message = Some("Ready to dictate. Press shortcut or click pill.".to_string());
+                    sess.last_transcript = None;
+                    sess.sequence += 1;
+                    let snap = sess.clone();
+                    let _ = app_idle.emit("dictation-session-changed", &snap);
+                    if let Some(w) = app_idle.get_webview_window("floating-indicator") {
+                        let _ = w.emit("dictation-session-changed", &snap);
+                    }
+                    state.wake_word.resume();
+                }
+            });
             return Ok(snap);
         }
     }

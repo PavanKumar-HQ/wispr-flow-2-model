@@ -10,11 +10,22 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct VoiceUtilityPayload {
+    pub kind: String, // "reminder" | "schedule"
+    pub label: String,
+    pub time_str: Option<String>, // "HH:mm" 24-hour
+    pub offset_minutes: Option<u32>,
+    pub duration_min: Option<u32>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct VoiceActionResult {
-    pub action_type: String, // "system_open", "system_search", "system_music", "system_email", "snippet_expansion"
+    pub action_type: String, // "system_open", "system_search", "system_music", "system_email", "system_reminder", "system_schedule", "snippet_expansion"
     pub feedback_message: String,
     pub expanded_text: Option<String>,
     pub suppress_paste: bool, // If true, do not paste command text into foreground app
+    #[serde(default)]
+    pub utility_payload: Option<VoiceUtilityPayload>,
 }
 
 fn safe_spawn_open(args: &[&str]) {
@@ -125,6 +136,7 @@ pub fn detect_voice_action(input: &str) -> Option<VoiceActionResult> {
                 feedback_message: format!("Opened {}", resolved_app),
                 expanded_text: None,
                 suppress_paste: true,
+                utility_payload: None,
             });
         }
     }
@@ -173,6 +185,7 @@ pub fn detect_voice_action(input: &str) -> Option<VoiceActionResult> {
                 },
                 expanded_text: None,
                 suppress_paste: true,
+                utility_payload: None,
             });
         }
     }
@@ -222,6 +235,7 @@ pub fn detect_voice_action(input: &str) -> Option<VoiceActionResult> {
                     feedback_message: format!("Playing '{}'", final_title),
                     expanded_text: None,
                     suppress_paste: true,
+                    utility_payload: None,
                 });
             }
         }
@@ -257,6 +271,245 @@ pub fn detect_voice_action(input: &str) -> Option<VoiceActionResult> {
                 feedback_message: format!("Drafted email to {}", recipient),
                 expanded_text: None,
                 suppress_paste: true,
+                utility_payload: None,
+            });
+        }
+    }
+
+    // 6. Voice-Triggered Reminders & Schedules
+    if let Some(utility_res) = try_parse_reminder_or_schedule(trimmed, lower_clean) {
+        return Some(utility_res);
+    }
+
+    None
+}
+
+fn parse_spoken_time_token(words: &[&str]) -> Option<(String, usize)> {
+    if words.is_empty() {
+        return None;
+    }
+    let w0 = words[0].trim_matches(|c: char| !c.is_ascii_alphanumeric() && c != ':');
+    let mut consumed = 1usize;
+    let (mut hour, mut minute) = if let Some((h_str, m_str)) = w0.split_once(':') {
+        let h = h_str.parse::<u32>().ok()?;
+        let m_digits: String = m_str.chars().take_while(|c| c.is_ascii_digit()).collect();
+        let m = m_digits.parse::<u32>().ok()?;
+        (h, m)
+    } else {
+        let h = w0.parse::<u32>().ok()?;
+        let mut m = 0u32;
+        if words.len() > 1 {
+            let w1 = words[1].trim_matches(|c: char| !c.is_ascii_alphanumeric());
+            if let Ok(min_candidate) = w1.parse::<u32>() {
+                if min_candidate < 60 && w1.len() <= 2 && words.get(2).map(|w| !w.starts_with("min")).unwrap_or(true) {
+                    m = min_candidate;
+                    consumed = 2;
+                }
+            }
+        }
+        (h, m)
+    };
+
+    if hour > 23 || minute > 59 {
+        return None;
+    }
+
+    let combined_ampm_target = if w0.ends_with("am") || w0.ends_with("pm") {
+        w0.to_lowercase()
+    } else if words.len() > consumed {
+        let next = words[consumed].to_lowercase();
+        let clean_next = next.trim_matches(|c: char| !c.is_ascii_alphabetic());
+        if clean_next == "am" || clean_next == "pm" {
+            consumed += 1;
+            clean_next.to_string()
+        } else if clean_next == "a" && words.get(consumed + 1).map(|s| s.to_lowercase().starts_with('m')).unwrap_or(false) {
+            consumed += 2;
+            "am".to_string()
+        } else if clean_next == "p" && words.get(consumed + 1).map(|s| s.to_lowercase().starts_with('m')).unwrap_or(false) {
+            consumed += 2;
+            "pm".to_string()
+        } else {
+            String::new()
+        }
+    } else {
+        String::new()
+    };
+
+    if combined_ampm_target.ends_with("pm") && hour < 12 {
+        hour += 12;
+    } else if combined_ampm_target.ends_with("am") && hour == 12 {
+        hour = 0;
+    }
+
+    Some((format!("{:02}:{:02}", hour, minute), consumed))
+}
+
+fn try_parse_reminder_or_schedule(trimmed: &str, lower_clean: &str) -> Option<VoiceActionResult> {
+    if looks_like_prose_dictation(trimmed, 18) {
+        return None;
+    }
+
+    const REMINDER_PREFIXES: &[&str] = &[
+        "remind me ",
+        "set a reminder ",
+        "set reminder ",
+        "add a reminder ",
+        "add reminder ",
+        "create a reminder ",
+        "create reminder ",
+    ];
+
+    for prefix in REMINDER_PREFIXES {
+        if let Some(rest) = lower_clean.strip_prefix(prefix) {
+            let words: Vec<&str> = rest.split_whitespace().collect();
+            let mut offset_minutes: Option<u32> = None;
+            let mut time_str: Option<String> = None;
+            let mut label_words: Vec<&str> = Vec::new();
+            let mut i = 0;
+            while i < words.len() {
+                let w = words[i].trim_matches(|c: char| c.is_ascii_punctuation());
+                if w == "in" && i + 2 < words.len() {
+                    if let Ok(mins) = words[i + 1].parse::<u32>() {
+                        let unit = words[i + 2].trim_matches(|c: char| c.is_ascii_punctuation());
+                        if unit.starts_with("min") {
+                            offset_minutes = Some(mins.clamp(1, 720));
+                            i += 3;
+                            continue;
+                        } else if unit.starts_with("hour") || unit.starts_with("hr") {
+                            offset_minutes = Some((mins * 60).clamp(1, 720));
+                            i += 3;
+                            continue;
+                        }
+                    }
+                }
+                if (w == "at" || w == "for") && i + 1 < words.len() && time_str.is_none() {
+                    if let Some((parsed_t, consumed)) = parse_spoken_time_token(&words[i + 1..]) {
+                        time_str = Some(parsed_t);
+                        i += 1 + consumed;
+                        continue;
+                    }
+                }
+                label_words.push(words[i]);
+                i += 1;
+            }
+
+            let raw_label = label_words.join(" ");
+            let clean_label = raw_label
+                .trim_start_matches("to ")
+                .trim_start_matches("about ")
+                .trim_start_matches("that ")
+                .trim_start_matches("for ")
+                .trim()
+                .to_string();
+            let label = if clean_label.is_empty() {
+                "Voice Reminder".to_string()
+            } else {
+                let mut chars = clean_label.chars();
+                match chars.next() {
+                    Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
+                    None => "Voice Reminder".to_string(),
+                }
+            };
+
+            let feedback = if let Some(mins) = offset_minutes {
+                format!("Reminder set in {}m: {}", mins, label)
+            } else if let Some(ref t) = time_str {
+                format!("Reminder set for {}: {}", t, label)
+            } else {
+                format!("Reminder added: {}", label)
+            };
+
+            return Some(VoiceActionResult {
+                action_type: "system_reminder".to_string(),
+                feedback_message: feedback,
+                expanded_text: None,
+                suppress_paste: true,
+                utility_payload: Some(VoiceUtilityPayload {
+                    kind: "reminder".to_string(),
+                    label,
+                    time_str,
+                    offset_minutes,
+                    duration_min: None,
+                }),
+            });
+        }
+    }
+
+    const SCHEDULE_PREFIXES: &[&str] = &[
+        "fix a schedule ",
+        "fix schedule ",
+        "set a schedule ",
+        "set schedule ",
+        "add a schedule ",
+        "add schedule ",
+        "schedule a meeting ",
+        "schedule meeting ",
+        "schedule ",
+    ];
+
+    for prefix in SCHEDULE_PREFIXES {
+        if let Some(rest) = lower_clean.strip_prefix(prefix) {
+            let words: Vec<&str> = rest.split_whitespace().collect();
+            let mut duration_min: Option<u32> = None;
+            let mut time_str: Option<String> = None;
+            let mut label_words: Vec<&str> = Vec::new();
+            let mut i = 0;
+            while i < words.len() {
+                let w = words[i].trim_matches(|c: char| c.is_ascii_punctuation());
+                if w == "for" && i + 2 < words.len() {
+                    if let Ok(mins) = words[i + 1].parse::<u32>() {
+                        let unit = words[i + 2].trim_matches(|c: char| c.is_ascii_punctuation());
+                        if unit.starts_with("min") {
+                            duration_min = Some(mins.clamp(1, 240));
+                            i += 3;
+                            continue;
+                        } else if unit.starts_with("hour") || unit.starts_with("hr") {
+                            duration_min = Some((mins * 60).clamp(1, 240));
+                            i += 3;
+                            continue;
+                        }
+                    }
+                }
+                if (w == "at" || w == "for") && i + 1 < words.len() && time_str.is_none() {
+                    if let Some((parsed_t, consumed)) = parse_spoken_time_token(&words[i + 1..]) {
+                        time_str = Some(parsed_t);
+                        i += 1 + consumed;
+                        continue;
+                    }
+                }
+                label_words.push(words[i]);
+                i += 1;
+            }
+
+            let raw_label = label_words.join(" ");
+            let clean_label = raw_label
+                .trim_start_matches("for ")
+                .trim_start_matches("to ")
+                .trim()
+                .to_string();
+            let label = if clean_label.is_empty() {
+                "Scheduled Focus".to_string()
+            } else {
+                let mut chars = clean_label.chars();
+                match chars.next() {
+                    Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
+                    None => "Scheduled Focus".to_string(),
+                }
+            };
+            let dur = duration_min.unwrap_or(30);
+
+            return Some(VoiceActionResult {
+                action_type: "system_schedule".to_string(),
+                feedback_message: format!("Scheduled {} ({}m)", label, dur),
+                expanded_text: None,
+                suppress_paste: true,
+                utility_payload: Some(VoiceUtilityPayload {
+                    kind: "schedule".to_string(),
+                    label,
+                    time_str,
+                    offset_minutes: None,
+                    duration_min: Some(dur),
+                }),
             });
         }
     }
@@ -286,6 +539,7 @@ fn try_expand_dynamic_snippet(lower_clean: &str) -> Option<VoiceActionResult> {
                 feedback_message: "Expanded Daily Standup template".to_string(),
                 expanded_text: Some(content),
                 suppress_paste: false,
+                utility_payload: None,
             })
         }
         "signature" | "sign off" | "email signature" => {
@@ -295,6 +549,7 @@ fn try_expand_dynamic_snippet(lower_clean: &str) -> Option<VoiceActionResult> {
                 feedback_message: "Inserted email signature".to_string(),
                 expanded_text: Some(content),
                 suppress_paste: false,
+                utility_payload: None,
             })
         }
         "zoom" | "zoom link" => {
@@ -304,6 +559,7 @@ fn try_expand_dynamic_snippet(lower_clean: &str) -> Option<VoiceActionResult> {
                 feedback_message: "Inserted Zoom link".to_string(),
                 expanded_text: Some(content),
                 suppress_paste: false,
+                utility_payload: None,
             })
         }
         "calendly" | "calendar link" => {
@@ -313,6 +569,7 @@ fn try_expand_dynamic_snippet(lower_clean: &str) -> Option<VoiceActionResult> {
                 feedback_message: "Inserted Calendly link".to_string(),
                 expanded_text: Some(content),
                 suppress_paste: false,
+                utility_payload: None,
             })
         }
         _ => None,

@@ -77,11 +77,12 @@ impl AudioCaptureService {
         let channels = supported_config.channels() as usize;
         self.input_sample_rate = sample_rate;
 
-        // Clear previous buffer
+        // Clear previous buffer and arm recording flag BEFORE stream.play() so initial CoreAudio frames are never dropped
         {
             let mut buf = self.buffer.lock().unwrap();
             buf.clear();
         }
+        *rec_lock = true;
 
         let buffer_clone = Arc::clone(&self.buffer);
         let rec_flag = Arc::clone(&self.is_recording);
@@ -213,9 +214,11 @@ impl AudioCaptureService {
             sample_format => return Err(format!("Unsupported audio sample format: {:?}", sample_format)),
         };
 
-        stream.play().map_err(|e| format!("Failed to start audio stream: {}", e))?;
+        if let Err(e) = stream.play() {
+            *rec_lock = false;
+            return Err(format!("Failed to start audio stream: {}", e));
+        }
         self.stream = Some(stream);
-        *rec_lock = true;
         Ok(())
     }
 
@@ -249,7 +252,7 @@ impl AudioCaptureService {
         };
 
         if raw_samples.is_empty() {
-            return Err("Empty audio capture: no audio frames recorded".to_string());
+            return Ok(Vec::new());
         }
 
         let target_samples = if self.input_sample_rate != 16000 {
@@ -348,8 +351,8 @@ pub fn isolate_voice_and_suppress_noise(samples: &[f32], sample_rate: u32) -> Ve
     let noise_floor_idx = (sorted_rms.len() as f32 * 0.25).floor() as usize;
     let noise_floor = sorted_rms.get(noise_floor_idx).copied().unwrap_or(0.001).min(0.003);
 
-    // Adaptive threshold for speech (at least 8% above noise floor, sensitive floor 0.0006 RMS to catch soft speech & low voices)
-    let speech_threshold = (noise_floor * 1.08).clamp(0.0006, 0.0040);
+    // Adaptive threshold for speech (at least 6% above noise floor, sensitive floor 0.0004 RMS to catch soft speech & low voices)
+    let speech_threshold = (noise_floor * 1.06).clamp(0.0004, 0.0035);
 
     // Identify first and last frame containing genuine user speech
     let first_speech_frame = frame_rms.iter().position(|&r| r >= speech_threshold);

@@ -86,6 +86,133 @@ export default function App() {
   const [downloadProgress, setDownloadProgress] = useState<{ [id: string]: { percent: number; downloaded: number; total: number } }>({});
   const [smokeTestLog, setSmokeTestLog] = useState<string | null>(null);
   const [updateAvailableVersion, setUpdateAvailableVersion] = useState<string | null>(null);
+  const [reminderAlert, setReminderAlert] = useState<{ title: string; message: string } | null>(null);
+
+  // Global Background Reminder Checker & Voice Utility Sync (runs even when Utilities tab is closed)
+  useEffect(() => {
+    if (isOverlayWindow) return;
+
+    const toLocalYmd = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+    const checkReminders = () => {
+      try {
+        const stored = localStorage.getItem('voxquest_marked_calendar_dates');
+        if (!stored) return;
+        const items: Array<{
+          dateStr: string;
+          label: string;
+          timeStr?: string;
+          reminderEnabled?: boolean;
+          lastNotifiedDate?: string;
+        }> = JSON.parse(stored);
+        const now = new Date();
+        const todayStr = toLocalYmd(now);
+        const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        let changed = false;
+        const updated = items.map((item) => {
+          if (item.dateStr === todayStr && item.reminderEnabled !== false && item.label?.trim()) {
+            if (item.lastNotifiedDate === todayStr) return item;
+            const targetTime = item.timeStr || '09:00';
+            if (currentTime >= targetTime) {
+              safeInvoke('send_system_notification_cmd', {
+                title: '📅 VoxQuest Task Reminder',
+                message: `Task Due Today: ${item.label}`,
+              });
+              changed = true;
+              return { ...item, lastNotifiedDate: todayStr };
+            }
+          }
+          return item;
+        });
+        if (changed) {
+          localStorage.setItem('voxquest_marked_calendar_dates', JSON.stringify(updated));
+          window.dispatchEvent(new Event('voxquest-utility-updated'));
+        }
+      } catch {}
+    };
+
+    checkReminders();
+    const timer = setInterval(checkReminders, 5000);
+
+    let unlistenUtility: (() => void) | undefined;
+    safeListen<{
+      kind: 'reminder' | 'schedule';
+      label: string;
+      time_str?: string | null;
+      offset_minutes?: number | null;
+      duration_min?: number | null;
+    }>('voxquest-voice-utility', (e) => {
+      const payload = e.payload;
+      if (!payload) return;
+      try {
+        const now = new Date();
+        if (payload.kind === 'reminder') {
+          const targetDate = payload.offset_minutes
+            ? new Date(now.getTime() + payload.offset_minutes * 60000)
+            : now;
+          const dateStr = toLocalYmd(targetDate);
+          const timeStr =
+            payload.time_str ||
+            `${String(targetDate.getHours()).padStart(2, '0')}:${String(targetDate.getMinutes()).padStart(2, '0')}`;
+          const stored = localStorage.getItem('voxquest_marked_calendar_dates');
+          const list = stored ? JSON.parse(stored) : [];
+          list.push({
+            dateStr,
+            label: payload.label,
+            createdAt: Date.now(),
+            timeStr,
+            reminderEnabled: true,
+          });
+          localStorage.setItem('voxquest_marked_calendar_dates', JSON.stringify(list));
+          window.dispatchEvent(new Event('voxquest-utility-updated'));
+          safeInvoke('send_system_notification_cmd', {
+            title: '⏰ Reminder Set',
+            message: `${payload.label} at ${timeStr}`,
+          });
+        } else if (payload.kind === 'schedule') {
+          const durationMins = payload.duration_min || 30;
+          const timeStr = payload.time_str || now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+          const stored = localStorage.getItem('voxquest_saved_commitments');
+          const list = stored ? JSON.parse(stored) : [];
+          list.unshift({
+            id: `voice-${Date.now()}`,
+            title: payload.label,
+            platform: 'Focus Slot',
+            url: 'https://meet.google.com/new',
+            durationMins,
+            timeStr,
+          });
+          localStorage.setItem('voxquest_saved_commitments', JSON.stringify(list));
+          window.dispatchEvent(new Event('voxquest-utility-updated'));
+          safeInvoke('send_system_notification_cmd', {
+            title: '🗓️ Schedule Added',
+            message: `${payload.label} (${durationMins}m)`,
+          });
+        }
+      } catch {}
+    }).then((fn) => {
+      unlistenUtility = fn;
+    });
+
+    let unlistenAlert: (() => void) | undefined;
+    let hideAlertTimer: ReturnType<typeof setTimeout> | undefined;
+    safeListen<{ title: string; message: string }>('voxquest-reminder-alert', (e) => {
+      if (!e.payload) return;
+      setReminderAlert(e.payload);
+      if (hideAlertTimer) clearTimeout(hideAlertTimer);
+      hideAlertTimer = setTimeout(() => setReminderAlert(null), 8000);
+    }).then((fn) => {
+      unlistenAlert = fn;
+    });
+
+    return () => {
+      clearInterval(timer);
+      if (hideAlertTimer) clearTimeout(hideAlertTimer);
+      if (unlistenUtility) unlistenUtility();
+      if (unlistenAlert) unlistenAlert();
+    };
+  }, [isOverlayWindow]);
 
   useEffect(() => {
     if (isOverlayWindow) return;
@@ -618,6 +745,24 @@ export default function App() {
           )}
         </div>
       </main>
+
+      {/* Global In-App Reminder / Schedule Popup */}
+      {!isOverlayWindow && reminderAlert && (
+        <div className="fixed top-4 right-4 z-50 max-w-xs bg-white border-2 border-amber-500 rounded-2xl shadow-xl p-3.5 flex items-start gap-2.5 animate-fadeIn">
+          <span className="text-base leading-none mt-0.5">🔔</span>
+          <div className="flex-1 min-w-0">
+            <div className="text-xs font-extrabold text-charcoal truncate">{reminderAlert.title}</div>
+            <div className="text-[11px] font-medium text-charcoal/80 mt-0.5">{reminderAlert.message}</div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setReminderAlert(null)}
+            className="text-[11px] font-bold text-charcoal/50 hover:text-charcoal cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Floating preview pill only rendered in web browser preview mode (in native Tauri desktop mode, the dedicated floating-indicator window renders the pill) */}
       {!isNativeTauri() && (

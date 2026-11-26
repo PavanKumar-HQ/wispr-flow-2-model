@@ -29,6 +29,7 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
   const [isBlinking, setIsBlinking] = useState<boolean>(false);
   const [showSuccessFlash, setShowSuccessFlash] = useState<boolean>(false);
   const [actionToast, setActionToast] = useState<string | null>(null);
+  const [reminderAlert, setReminderAlert] = useState<{ title: string; message: string } | null>(null);
   const [isMusicPlaying, setIsMusicPlaying] = useState<boolean>(false);
 
   const lastSessionIdRef = useRef<string | null>(null);
@@ -109,6 +110,26 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
       if (unlisten) unlisten();
     };
   }, [status.state]);
+
+  // Show reminder popup above VoxBot whenever a reminder/timer fires
+  useEffect(() => {
+    let cancelled = false;
+    let unlisten: (() => void) | undefined;
+    let hideTimer: ReturnType<typeof setTimeout> | undefined;
+    safeListen<{ title: string; message: string }>('voxquest-reminder-alert', (e) => {
+      if (cancelled || !e.payload) return;
+      setReminderAlert(e.payload);
+      if (hideTimer) clearTimeout(hideTimer);
+      hideTimer = setTimeout(() => setReminderAlert(null), 7000);
+    }).then((fn) => {
+      unlisten = fn;
+    });
+    return () => {
+      cancelled = true;
+      if (hideTimer) clearTimeout(hideTimer);
+      if (unlisten) unlisten();
+    };
+  }, []);
 
   // Low-power gaze & mouse-rest sleep/wake detector (~4Hz awake, ~2Hz sleeping)
   useEffect(() => {
@@ -307,9 +328,18 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
       className="w-screen h-screen flex flex-col items-center justify-end pb-1 pt-2 select-none bg-transparent overflow-visible"
       style={{ background: 'transparent' }}
     >
-      {/* Tiny Sleek Listening / Action Confirmation Pill Above Robot */}
+      {/* Tiny Sleek Listening / Action / Reminder Pill Above Robot */}
       <div className="h-5 flex items-center justify-center mb-0.5 shrink-0">
-        {status.state === 'recording' ? (
+        {reminderAlert ? (
+          <button
+            type="button"
+            onClick={() => setReminderAlert(null)}
+            className="px-2.5 py-[2px] rounded-full text-[9px] font-mono font-bold tracking-tight border border-amber-500 bg-amber-50 text-amber-900 shadow-sm animate-fadeIn max-w-[168px] truncate cursor-pointer"
+            title={`${reminderAlert.title}: ${reminderAlert.message}`}
+          >
+            🔔 {reminderAlert.message.replace('Task Due Today: ', '')}
+          </button>
+        ) : status.state === 'recording' ? (
           <div className="px-2 py-[1px] rounded-full text-[8.5px] font-mono font-bold tracking-wider uppercase border border-terracotta bg-cream/95 text-terracotta shadow-xs animate-fadeIn flex items-center gap-1">
             <span className="w-1 h-1 rounded-full bg-terracotta animate-ping" />
             <span>Listening</span>

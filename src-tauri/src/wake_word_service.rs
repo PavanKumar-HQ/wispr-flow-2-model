@@ -134,7 +134,7 @@ impl WakeWordService {
 
                 // Listening loop while in Idle state
                 while is_running.load(Ordering::Relaxed) {
-                    std::thread::sleep(Duration::from_millis(120));
+                    std::thread::sleep(Duration::from_millis(40));
 
                     // If paused, drop the stream immediately to free CoreAudio hardware
                     if is_paused.load(Ordering::Relaxed) {

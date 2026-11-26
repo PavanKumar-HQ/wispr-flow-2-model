@@ -40,6 +40,17 @@ export const ScheduleWidget: React.FC = () => {
   });
 
   useEffect(() => {
+    const reload = () => {
+      try {
+        const stored = localStorage.getItem('voxquest_saved_commitments');
+        if (stored) setCommitments(JSON.parse(stored));
+      } catch {}
+    };
+    window.addEventListener('voxquest-utility-updated', reload);
+    return () => window.removeEventListener('voxquest-utility-updated', reload);
+  }, []);
+
+  useEffect(() => {
     const target = new Date(Date.now() + selectedDuration * 60000);
     setSlotPreviewTime(target.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }));
   }, [selectedDuration]);
