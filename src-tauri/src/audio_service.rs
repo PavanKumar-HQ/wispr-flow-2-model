@@ -110,10 +110,20 @@ impl AudioCaptureService {
                                 }
                             } else {
                                 for chunk in data.chunks_exact(channels) {
-                                    // Use channel 0 (primary vocal channel on macOS mic arrays) to prevent destructive phase cancellation
-                                    let s = chunk[0];
-                                    buf.push(s);
-                                    sum_sq += s * s;
+                                    // Multi-channel mic / stereo headset / audio interface:
+                                    // Capture the channel with strongest instantaneous magnitude to prevent
+                                    // microphones mapped to Channel 2 (Right) from capturing total silence.
+                                    let mut best = chunk[0];
+                                    let mut max_abs = chunk[0].abs();
+                                    for &ch in chunk.iter().skip(1) {
+                                        let a = ch.abs();
+                                        if a > max_abs {
+                                            max_abs = a;
+                                            best = ch;
+                                        }
+                                    }
+                                    buf.push(best);
+                                    sum_sq += best * best;
                                 }
                             }
                             let count = if channels == 1 { data.len() } else { data.len() / channels };
@@ -145,10 +155,20 @@ impl AudioCaptureService {
                                 }
                             } else {
                                 for chunk in data.chunks_exact(channels) {
-                                    // Use channel 0 (primary vocal channel on macOS mic arrays) to prevent destructive phase cancellation
-                                    let s = chunk[0] as f32 / 32768.0;
-                                    buf.push(s);
-                                    sum_sq += s * s;
+                                    // Multi-channel mic / stereo headset / audio interface:
+                                    // Capture the channel with strongest instantaneous magnitude.
+                                    let mut best = chunk[0] as f32 / 32768.0;
+                                    let mut max_abs = best.abs();
+                                    for &ch in chunk.iter().skip(1) {
+                                        let val = ch as f32 / 32768.0;
+                                        let a = val.abs();
+                                        if a > max_abs {
+                                            max_abs = a;
+                                            best = val;
+                                        }
+                                    }
+                                    buf.push(best);
+                                    sum_sq += best * best;
                                 }
                             }
                             let count = if channels == 1 { data.len() } else { data.len() / channels };
@@ -302,8 +322,8 @@ pub fn isolate_voice_and_suppress_noise(samples: &[f32], sample_rate: u32) -> Ve
     let noise_floor_idx = (sorted_rms.len() as f32 * 0.25).floor() as usize;
     let noise_floor = sorted_rms.get(noise_floor_idx).copied().unwrap_or(0.001).min(0.003);
 
-    // Adaptive threshold for speech (at least 20% above noise floor, min 0.0014 RMS to catch soft initial consonants)
-    let speech_threshold = (noise_floor * 1.20).clamp(0.0014, 0.0065);
+    // Adaptive threshold for speech (at least 12% above noise floor, sensitive floor 0.0010 RMS to catch soft speech & whisper onset)
+    let speech_threshold = (noise_floor * 1.12).clamp(0.0010, 0.0055);
 
     // Identify first and last frame containing genuine user speech
     let first_speech_frame = frame_rms.iter().position(|&r| r >= speech_threshold);
@@ -312,7 +332,7 @@ pub fn isolate_voice_and_suppress_noise(samples: &[f32], sample_rate: u32) -> Ve
     let (start_frame, end_frame) = match (first_speech_frame, last_speech_frame) {
         (Some(start), Some(end)) if end >= start => (start, end),
         _ => {
-            // Ambient rumble with no audible user speech frames is rejected as silence
+            // Ambient rumble with no user speech burst is rejected as silence
             return Vec::new();
         }
     };
@@ -407,7 +427,7 @@ pub fn is_audio_silent_or_too_short(audio_samples: &[f32]) -> bool {
     let peak = audio_samples.iter().fold(0.0f32, |m, &s| m.max(s.abs()));
     let sum_sq: f32 = audio_samples.iter().map(|&s| s * s).sum();
     let rms = (sum_sq / audio_samples.len() as f32).sqrt();
-    peak < 0.0025 || rms < 0.0006
+    peak < 0.0022 || rms < 0.0005
 }
 
 /// Trims dead silence at the beginning and end of a 16kHz speech buffer to speed up Whisper processing and eliminate silence latency.
