@@ -178,38 +178,9 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
           </g>
         )}
 
-        {/* INCOMING LISTENING WAVES: Flow toward both ears & disappear (Terracotta-Orange Pill Theme) */}
-        {isListening && (
-          <g className="pointer-events-none">
-            {/* Soft Terracotta-Amber Antenna Halo */}
-            <circle cx="100" cy="14" r="17" fill="url(#vb3dAntennaGlow)" />
-            <circle
-              cx="100"
-              cy="14"
-              r="15"
-              fill="none"
-              stroke="#DA6C4C"
-              strokeWidth="2"
-              opacity="0.7"
-              className="vb-radar-1"
-            />
-
-            {/* Left Ear: Curved waves gliding INTO the left ear and disappearing */}
-            <path d="M 18 60 Q 11 71 18 82" fill="none" stroke="#DA6C4C" strokeWidth="2.8" strokeLinecap="round" className="vb-ear-in-l-1" />
-            <path d="M 18 62 Q 12 71 18 80" fill="none" stroke="#DDA44D" strokeWidth="2.4" strokeLinecap="round" className="vb-ear-in-l-2" />
-            <path d="M 18 64 Q 13 71 18 78" fill="none" stroke="#DA6C4C" strokeWidth="2" strokeLinecap="round" className="vb-ear-in-l-3" />
-
-            {/* Right Ear: Curved waves gliding INTO the right ear and disappearing */}
-            <path d="M 182 60 Q 189 71 182 82" fill="none" stroke="#DA6C4C" strokeWidth="2.8" strokeLinecap="round" className="vb-ear-in-r-1" />
-            <path d="M 182 62 Q 188 71 182 80" fill="none" stroke="#DDA44D" strokeWidth="2.4" strokeLinecap="round" className="vb-ear-in-r-2" />
-            <path d="M 182 64 Q 187 71 182 78" fill="none" stroke="#DA6C4C" strokeWidth="2" strokeLinecap="round" className="vb-ear-in-r-3" />
-          </g>
-        )}
-
         {/* TRANSCRIBING / THINKING THOUGHT BUBBLE */}
         {isTranscribing && (
           <g className="pointer-events-none">
-            <circle cx="100" cy="14" r="15" fill="url(#vb3dAntennaGlow)" />
             {/* Thought trail dots */}
             <circle cx="144" cy="40" r="3" fill="#E6E2D3" stroke="#08534E" strokeWidth="1.2" />
             <circle cx="151" cy="31" r="4.2" fill="#E6E2D3" stroke="#08534E" strokeWidth="1.2" />
@@ -504,6 +475,38 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
             <line x1="100" y1="36" x2="100" y2="18" stroke="#182222" strokeWidth="5.5" strokeLinecap="round" />
             <line x1="100" y1="36" x2="100" y2="18" stroke="#0E6B64" strokeWidth="3" strokeLinecap="round" />
             <ellipse cx="100" cy="36" rx="10" ry="4" fill="url(#vb3dTeal)" />
+            {/* Antenna Glow & Listening Radar locked inside Head group so it moves & bends with the antenna */}
+            {(isListening || isTranscribing) && (
+              <circle
+                cx="100"
+                cy="14"
+                r={isListening ? 17 : 15}
+                fill="url(#vb3dAntennaGlow)"
+                className="pointer-events-none"
+              />
+            )}
+            {isListening && (
+              <g className="pointer-events-none">
+                <circle
+                  cx="100"
+                  cy="14"
+                  r="15"
+                  fill="none"
+                  stroke="#DA6C4C"
+                  strokeWidth="2"
+                  opacity="0.7"
+                  className="vb-radar-1"
+                />
+                {/* Left Ear: Curved waves gliding INTO the left ear and disappearing */}
+                <path d="M 18 60 Q 11 71 18 82" fill="none" stroke="#DA6C4C" strokeWidth="2.8" strokeLinecap="round" className="vb-ear-in-l-1" />
+                <path d="M 18 62 Q 12 71 18 80" fill="none" stroke="#DDA44D" strokeWidth="2.4" strokeLinecap="round" className="vb-ear-in-l-2" />
+                <path d="M 18 64 Q 13 71 18 78" fill="none" stroke="#DA6C4C" strokeWidth="2" strokeLinecap="round" className="vb-ear-in-l-3" />
+                {/* Right Ear: Curved waves gliding INTO the right ear and disappearing */}
+                <path d="M 182 60 Q 189 71 182 82" fill="none" stroke="#DA6C4C" strokeWidth="2.8" strokeLinecap="round" className="vb-ear-in-r-1" />
+                <path d="M 182 62 Q 188 71 182 80" fill="none" stroke="#DDA44D" strokeWidth="2.4" strokeLinecap="round" className="vb-ear-in-r-2" />
+                <path d="M 182 64 Q 187 71 182 78" fill="none" stroke="#DA6C4C" strokeWidth="2" strokeLinecap="round" className="vb-ear-in-r-3" />
+              </g>
+            )}
             <circle
               cx="100"
               cy="14"
