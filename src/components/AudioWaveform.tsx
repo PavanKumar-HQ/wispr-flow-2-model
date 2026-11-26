@@ -51,27 +51,21 @@ export const AudioWaveform: React.FC<AudioWaveformProps> = ({
 
   useEffect(() => {
     let running = true;
-    let lastRenderTime = 0;
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+    const isIdle = !isRecording && !isTranscribing;
 
-    const render = (currentTime: number) => {
+    const renderFrame = () => {
       if (!running) return;
 
       // Zero-waste: pause rendering entirely when tab or window is hidden
       if (typeof document !== 'undefined' && document.hidden) {
-        animFrameRef.current = requestAnimationFrame(render);
+        if (!isIdle && running) {
+          animFrameRef.current = requestAnimationFrame(renderFrame);
+        }
         return;
       }
 
-      // Energy-conscious throttling: 60fps when active (recording/transcribing),
-      // 20fps when idle. Keeps the ambient breathing wave smooth while drawing virtually 0% CPU.
-      const isIdle = !isRecording && !isTranscribing;
-      if (isIdle && currentTime - lastRenderTime < 50) {
-        animFrameRef.current = requestAnimationFrame(render);
-        return;
-      }
-      lastRenderTime = currentTime;
-
-      timeRef.current += 0.04;
+      timeRef.current += isIdle ? 0.12 : 0.04;
       const t = timeRef.current;
       const rawLevel = liveLevelRef.current;
       smoothedLevelRef.current += (rawLevel - smoothedLevelRef.current) * 0.18;
@@ -130,15 +124,22 @@ export const AudioWaveform: React.FC<AudioWaveformProps> = ({
         }
       }
 
-      if (running) {
-        animFrameRef.current = requestAnimationFrame(render);
+      if (!isIdle && running) {
+        animFrameRef.current = requestAnimationFrame(renderFrame);
       }
     };
 
-    animFrameRef.current = requestAnimationFrame(render);
+    if (isIdle) {
+      // Ultra-low-power 8Hz breathing when idle (eliminates 60Hz RAF GPU wakeups)
+      renderFrame();
+      intervalId = setInterval(renderFrame, 120);
+    } else {
+      animFrameRef.current = requestAnimationFrame(renderFrame);
+    }
 
     return () => {
       running = false;
+      if (intervalId) clearInterval(intervalId);
       if (animFrameRef.current) {
         cancelAnimationFrame(animFrameRef.current);
       }

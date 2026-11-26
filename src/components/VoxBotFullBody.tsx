@@ -131,18 +131,6 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
             <stop offset="55%" stopColor={coreColor} stopOpacity="0.3" />
             <stop offset="100%" stopColor={coreColor} stopOpacity="0" />
           </radialGradient>
-
-          <filter id="vbSoftShadow" x="-20%" y="-20%" width="140%" height="140%">
-            <feDropShadow dx="0" dy="5" stdDeviation="4" floodColor="#0A1414" floodOpacity="0.3" />
-          </filter>
-
-          <filter id="vbLedGlow" x="-35%" y="-35%" width="170%" height="170%">
-            <feGaussianBlur stdDeviation="1.8" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
         </defs>
 
         {/* Ground Shadow (hidden when sitting or flying high) */}
@@ -160,7 +148,7 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
 
         {/* 3D Beveled Sitting Bench (in 'sit' or 'sleep' pose) */}
         {isSitting && (
-          <g filter="url(#vbSoftShadow)">
+          <g>
             <ellipse cx="100" cy="226" rx="48" ry="5.5" fill="#0A1010" opacity="0.2" />
             <rect
               x="44"
@@ -189,7 +177,7 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
 
         {/* INCOMING LISTENING WAVES: Flow toward both ears & disappear (Terracotta-Orange Pill Theme) */}
         {isListening && (
-          <g className="pointer-events-none" filter="url(#vbLedGlow)">
+          <g className="pointer-events-none">
             {/* Soft Terracotta-Amber Antenna Halo */}
             <circle cx="100" cy="14" r="17" fill="url(#vb3dAntennaGlow)" />
             <circle
@@ -217,7 +205,7 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
 
         {/* TRANSCRIBING / THINKING THOUGHT BUBBLE */}
         {isTranscribing && (
-          <g className="pointer-events-none" filter="url(#vbLedGlow)">
+          <g className="pointer-events-none">
             <circle cx="100" cy="14" r="15" fill="url(#vb3dAntennaGlow)" />
             {/* Thought trail dots */}
             <circle cx="144" cy="40" r="3" fill="#E6E2D3" stroke="#08534E" strokeWidth="1.2" />
@@ -241,7 +229,7 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
 
         {/* SLEEPING FLOATING Zzz */}
         {isSleeping && (
-          <g className="pointer-events-none" filter="url(#vbLedGlow)">
+          <g className="pointer-events-none">
             <text x="150" y="34" fill="#FFD07B" className="font-pixel text-[12px] anim-zzz-1 font-bold">
               z
             </text>
@@ -253,7 +241,7 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
 
         {/* FLOATING MUSIC NOTES WHEN VIBING TO YOUTUBE / INSTA / SPOTIFY */}
         {isMusic && (
-          <g className="pointer-events-none" filter="url(#vbLedGlow)">
+          <g className="pointer-events-none">
             <text x="26" y="42" fill="#DDA44D" className="text-[16px] font-bold vb-note-1">
               ♪
             </text>
@@ -265,7 +253,6 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
 
         {/* MAIN ROBOT BODY */}
         <g
-          filter="url(#vbSoftShadow)"
           className={
             isFlying
               ? 'vb-body-fly'
@@ -330,7 +317,7 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
                   <circle cx="68" cy="223" r="2.8" fill="#DDA44D" />
                   {/* Twin Boot Thruster Flame when Flying */}
                   {isFlying && (
-                    <g className="vb-flame-left" filter="url(#vbLedGlow)">
+                    <g className="vb-flame-left">
                       <path d="M 71 238 L 80 262 L 89 238 Z" fill="#34A89E" opacity="0.9" />
                       <path d="M 75 238 L 80 254 L 85 238 Z" fill="#FFD07B" />
                     </g>
@@ -361,7 +348,7 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
                   <rect x="107" y="235" width="26" height="3" rx="1.5" fill="#DA6C4C" />
                   <circle cx="132" cy="223" r="2.8" fill="#DDA44D" />
                   {isFlying && (
-                    <g className="vb-flame-right" filter="url(#vbLedGlow)">
+                    <g className="vb-flame-right">
                       <path d="M 111 238 L 120 262 L 129 238 Z" fill="#34A89E" opacity="0.9" />
                       <path d="M 115 238 L 120 254 L 125 238 Z" fill="#FFD07B" />
                     </g>
@@ -465,7 +452,6 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
               cy="121"
               r="3.2"
               fill={isListening ? '#34A89E' : isTranscribing ? '#42D4C8' : '#DDA44D'}
-              filter="url(#vbLedGlow)"
             />
 
             {/* Concentric Glowing Chest Core — ONLY clickable mic button on VoxBot */}
@@ -488,7 +474,6 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
                 cy="139"
                 r="4.5"
                 fill={coreColor}
-                filter="url(#vbLedGlow)"
                 className={isListening || isTranscribing ? 'animate-pulse' : ''}
               />
             </g>
@@ -521,7 +506,6 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
               cy="14"
               r="7.5"
               fill={isListening ? '#DA6C4C' : isTranscribing ? '#DDA44D' : '#34A89E'}
-              filter="url(#vbLedGlow)"
             />
             <circle cx="97.5" cy="11.5" r="2.5" fill="#FFF7DF" opacity="0.9" />
 
@@ -594,7 +578,6 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
             {/* ================= CLEAN, SPACIOUS LED EXPRESSIONS ================= */}
             <g
               fill={eyeColor}
-              filter="url(#vbLedGlow)"
               style={{
                 transform: `translate(${eyeShiftX}px, ${eyeShiftY}px)`,
                 transition: 'transform 180ms ease-out',

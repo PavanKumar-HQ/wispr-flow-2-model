@@ -196,31 +196,42 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
       ? 'music'
       : effectiveIdlePose;
 
-  // Smooth desktop movement for 'walk' (horizontal) and 'fly' (2D jetpack flight)
+  // Low-power desktop movement for 'walk' (horizontal) and 'fly' (2D jetpack flight)
   useEffect(() => {
     if ((activePose !== 'walk' && activePose !== 'fly') || isHovered) return;
 
     let cancelled = false;
+    let cachedBounds: { screenW: number; screenH: number } | null = null;
+    let currentPos: { x: number; y: number } | null = null;
+
     const step = async () => {
       if (cancelled || document.hidden || pointerDownRef.current) return;
       try {
         const win = getCurrentWindow();
-        const [pos, mon] = await Promise.all([win.outerPosition(), currentMonitor()]);
-        if (!mon || cancelled) return;
-
-        const scale = mon.scaleFactor;
-        const screenW = mon.size.width / scale;
-        const screenH = mon.size.height / scale;
-        const currentX = pos.x / scale;
-        const currentY = pos.y / scale;
+        if (!cachedBounds) {
+          const mon = await currentMonitor();
+          if (!mon || cancelled) return;
+          const scale = mon.scaleFactor;
+          cachedBounds = {
+            screenW: mon.size.width / scale,
+            screenH: mon.size.height / scale,
+          };
+        }
+        if (!currentPos) {
+          const mon = await currentMonitor();
+          const scale = mon?.scaleFactor || 1;
+          const pos = await win.outerPosition();
+          currentPos = { x: pos.x / scale, y: pos.y / scale };
+        }
+        if (cancelled) return;
 
         const minX = 24;
-        const maxX = Math.max(minX + 40, screenW - 185);
-        const minY = 48; // Stay safely below menu bar / notch
-        const maxY = Math.max(minY + 40, screenH - 255); // Stay above Dock
+        const maxX = Math.max(minX + 40, cachedBounds.screenW - 185);
+        const minY = 48;
+        const maxY = Math.max(minY + 40, cachedBounds.screenH - 255);
 
-        let nextX = currentX + walkVecRef.current.vx * 0.65;
-        let nextY = currentY + walkVecRef.current.vy * 0.65;
+        let nextX = currentPos.x + walkVecRef.current.vx * 1.1;
+        let nextY = currentPos.y + walkVecRef.current.vy * 1.1;
 
         if (nextX <= minX) {
           nextX = minX;
@@ -238,12 +249,13 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
           walkVecRef.current.vy = -Math.abs(walkVecRef.current.vy);
         }
 
+        currentPos = { x: nextX, y: nextY };
         setFacing(walkVecRef.current.vx >= 0 ? 'right' : 'left');
         await win.setPosition(new LogicalPosition(nextX, nextY));
       } catch {}
     };
 
-    const timer = setInterval(step, 36);
+    const timer = setInterval(step, 95);
     return () => {
       cancelled = true;
       clearInterval(timer);
