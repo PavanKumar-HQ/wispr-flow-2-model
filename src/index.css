@@ -43,20 +43,14 @@
 }
 
 @keyframes mascotWalk {
-  0% {
-    transform: translateY(0px) rotate(0deg);
+  0%, 100% {
+    transform: translateX(0px) rotate(0deg);
   }
   25% {
-    transform: translateY(-5px) rotate(3deg);
-  }
-  50% {
-    transform: translateY(0px) rotate(0deg);
+    transform: translateX(-5px) rotate(-4deg);
   }
   75% {
-    transform: translateY(-5px) rotate(-3deg);
-  }
-  100% {
-    transform: translateY(0px) rotate(0deg);
+    transform: translateX(5px) rotate(4deg);
   }
 }
 
@@ -126,7 +120,7 @@
 }
 
 .anim-mascot-walk {
-  animation: mascotWalk 0.45s ease-in-out infinite;
+  animation: mascotWalk 1.4s ease-in-out infinite;
 }
 
 .anim-mascot-jump {

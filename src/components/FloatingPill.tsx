@@ -60,115 +60,48 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
     }
   });
 
-  const isRecording = status.state === 'recording' || status.state === 'starting';
-  const isTranscribing =
-    status.state === 'transcribing' ||
-    status.state === 'formatting' ||
-    status.state === 'validating_target' ||
-    status.state === 'inserting' ||
-    status.state === 'stopping';
-  const hasTranscript = Boolean(status.last_transcript && status.last_transcript.trim().length > 0);
-  const isDone = (status.state === 'completed' || status.state === 'recovery_required') && hasTranscript;
-
   const [mascotAction, setMascotAction] = useState<MascotAction>('float');
-  const [mascotX, setMascotX] = useState<number>(0);
-  const [facingRight, setFacingRight] = useState<boolean>(true);
-  const [isWalking, setIsWalking] = useState<boolean>(false);
-  const brainIntervalRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const actionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Autonomous roaming & life engine for living desktop companion (inspired by OpenAI Codex/ChatGPT Pet)
+  // Autonomous idle pet behavior: float -> sit (after 12s) -> sleep (after 35s)
   useEffect(() => {
-    if (!isMascotMode || isRecording || isTranscribing) {
-      if (brainIntervalRef.current) clearTimeout(brainIntervalRef.current);
+    if (!isMascotMode || status.state === 'recording' || status.state === 'transcribing') {
+      setMascotAction('float');
       return;
     }
 
-    const runPetBrain = () => {
-      const r = Math.random();
-      if (r < 0.45) {
-        // Walk smoothly across the patrol zone along the dock
-        const targets = [-80, -50, -20, 0, 30, 60, 85];
-        const nextX = targets[Math.floor(Math.random() * targets.length)];
-        setFacingRight(nextX >= mascotX);
-        setIsWalking(true);
-        setMascotAction('walk');
-        setMascotX(nextX);
-        setTimeout(() => {
-          setIsWalking(false);
-          setMascotAction('float');
-        }, 2200);
-      } else if (r < 0.65) {
-        // Sit down and look around
+    const resetToIdle = () => {
+      setMascotAction('float');
+      if (actionTimerRef.current) clearTimeout(actionTimerRef.current);
+      actionTimerRef.current = setTimeout(() => {
         setMascotAction('sit');
-      } else if (r < 0.82) {
-        // Peaceful snooze with floating zZz bubbles
-        setMascotAction('sleep');
-      } else if (r < 0.92) {
-        // Playful spring hop
-        setMascotAction('jump');
-        setTimeout(() => setMascotAction('float'), 800);
-      } else {
-        setMascotAction('float');
+        actionTimerRef.current = setTimeout(() => {
+          setMascotAction('sleep');
+        }, 23000);
+      }, 12000);
+    };
+
+    resetToIdle();
+
+    const handleUserActivity = () => {
+      if (mascotAction === 'sleep' || mascotAction === 'sit') {
+        resetToIdle();
       }
     };
 
-    const scheduleNext = () => {
-      const delay = 7000 + Math.random() * 8000;
-      brainIntervalRef.current = setTimeout(() => {
-        runPetBrain();
-        scheduleNext();
-      }, delay);
-    };
-
-    scheduleNext();
-
+    window.addEventListener('mousemove', handleUserActivity);
     return () => {
-      if (brainIntervalRef.current) clearTimeout(brainIntervalRef.current);
+      if (actionTimerRef.current) clearTimeout(actionTimerRef.current);
+      window.removeEventListener('mousemove', handleUserActivity);
     };
-  }, [isMascotMode, isRecording, isTranscribing, mascotX]);
-
-  // Keyboard navigation: User can walk the companion left/right or make it jump
-  useEffect(() => {
-    if (!isMascotMode) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-
-      if (e.key === 'ArrowLeft') {
-        setFacingRight(false);
-        setIsWalking(true);
-        setMascotAction('walk');
-        setMascotX((prev) => Math.max(-90, prev - 24));
-        setTimeout(() => {
-          setIsWalking(false);
-          setMascotAction('float');
-        }, 450);
-      } else if (e.key === 'ArrowRight') {
-        setFacingRight(true);
-        setIsWalking(true);
-        setMascotAction('walk');
-        setMascotX((prev) => Math.min(90, prev + 24));
-        setTimeout(() => {
-          setIsWalking(false);
-          setMascotAction('float');
-        }, 450);
-      } else if (e.key === 'ArrowUp' || e.key === ' ') {
-        setMascotAction('jump');
-        setTimeout(() => setMascotAction('float'), 800);
-      } else if (e.key === 'ArrowDown') {
-        setMascotAction('sit');
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isMascotMode]);
+  }, [isMascotMode, status.state, mascotAction]);
 
   const handleMascotClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setMascotAction('jump');
     setTimeout(() => {
       onToggle();
-    }, 120);
+    }, 180);
   };
 
   const handleToggleMascotMode = (e: React.MouseEvent) => {
@@ -247,6 +180,16 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
       setNoSpeechActive(false);
     }
   }, [status.message, status.session_id]);
+
+  const isRecording = status.state === 'recording' || status.state === 'starting';
+  const isTranscribing =
+    status.state === 'transcribing' ||
+    status.state === 'formatting' ||
+    status.state === 'validating_target' ||
+    status.state === 'inserting' ||
+    status.state === 'stopping';
+  const hasTranscript = Boolean(status.last_transcript && status.last_transcript.trim().length > 0);
+  const isDone = (status.state === 'completed' || status.state === 'recovery_required') && hasTranscript;
 
   const currentActiveText = enhancedText || status.last_transcript || '';
 
@@ -370,121 +313,34 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
       style={{ background: 'transparent' }}
     >
       {/* Pill Capsule or Free-Floating Mascot Companion */}
-      {isMascotMode ? (
-        /* TRUE LIVING DESKTOP MASCOT COMPANION (ALL STATES) */
+      {isMascotMode && !isRecording && !isTranscribing && (!isDone || isDismissed) && (!nowPlaying || !nowPlaying.is_playing) ? (
+        /* TRUE LIVING DESKTOP MASCOT COMPANION (WHEN IDLE ONLY) */
         <div
           data-tauri-drag-region
           onMouseDown={handleMouseDown}
-          className="group relative flex items-center justify-center cursor-pointer select-none pt-4 pb-2 px-4 overflow-visible"
-          title={`${selectedAvatar.toUpperCase()} Companion • Drag anywhere, use arrows to walk, click to dictate`}
+          onClick={handleMascotClick}
+          className="group relative flex flex-col items-center justify-center cursor-pointer select-none pt-4 pb-1 px-4 overflow-visible"
+          title={`${selectedAvatar.toUpperCase()} Companion • Click or press hotkey to speak`}
         >
-          {/* Moving Mascot Container with Locomotion Physics */}
-          <div
-            className="flex items-center justify-center gap-2.5 transition-all duration-300"
-            style={{
-              transform: `translateX(${isRecording || isTranscribing || (isDone && !isDismissed) ? 0 : mascotX}px)`,
-              transition: isWalking ? 'transform 2.2s linear' : 'transform 0.3s ease-out'
-            }}
-          >
-            {/* Living Mascot Character */}
-            <div
-              onClick={handleMascotClick}
-              style={{
-                transform: `scaleX(${facingRight ? 1 : -1})`,
-                transition: 'transform 0.25s ease'
-              }}
-              className="flex flex-col items-center justify-center shrink-0 cursor-pointer"
-            >
-              <div className={`${
-                isRecording ? 'anim-mascot-jump' :
-                isTranscribing ? 'anim-mascot-float' :
-                isDone && !isDismissed ? 'anim-mascot-jump' :
-                mascotAction === 'walk' ? 'anim-mascot-walk' :
-                mascotAction === 'jump' ? 'anim-mascot-jump' :
-                mascotAction === 'sit' ? 'anim-mascot-sit' :
-                mascotAction === 'sleep' ? 'anim-mascot-sleep' :
-                'anim-mascot-float'
-              } group-hover:scale-105 active:scale-95 transition-transform duration-200 overflow-visible`}>
-                <Mascot
-                  size={54}
-                  state={isRecording ? 'listening' : isTranscribing ? 'transcribing' : isDone && !isDismissed ? 'success' : 'idle'}
-                  avatar={selectedAvatar}
-                  action={isRecording || isTranscribing ? 'jump' : mascotAction}
-                  interactive
-                />
-              </div>
-              {/* Ground shadow */}
-              <div className="w-10 h-1.5 bg-black/35 rounded-full blur-[1px] mt-1 anim-shadow-pulse pointer-events-none" />
-            </div>
-
-            {/* DYNAMIC COMPANION SPEECH BUBBLE (Appears directly beside the mascot during actions!) */}
-            {isRecording && (
-              <div className="anim-speech-bubble flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#07514C]/95 text-white border border-[#DDA44D]/50 shadow-xl backdrop-blur-md">
-                <span className="relative flex h-2 w-2 items-center justify-center shrink-0">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#DA6C4C] opacity-75" />
-                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#DA6C4C]" />
-                </span>
-                <span className="text-[10px] font-pixel text-[#DDA44D] tracking-wide">
-                  {formatSeconds(status.elapsed_seconds)}
-                </span>
-                <AudioWaveform isRecording={true} isTranscribing={false} barCount={8} theme="dark" />
-                <button
-                  data-tauri-no-drag
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onToggle();
-                  }}
-                  className="hover:scale-110 active:scale-90 transition-transform cursor-pointer text-white/80 hover:text-white pl-0.5"
-                  title="Finish & Transcribe"
-                >
-                  <Square className="w-3 h-3 fill-[#DA6C4C] text-[#DA6C4C]" />
-                </button>
-              </div>
-            )}
-
-            {isTranscribing && (
-              <div className="anim-speech-bubble flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#07514C]/95 text-white border border-[#DDA44D]/50 shadow-xl backdrop-blur-md">
-                <div className="w-3 h-3 rounded-full border-2 border-[#DDA44D] border-t-transparent animate-spin" />
-                <span className="text-[10px] font-pixel text-[#DFDFD4] tracking-wide">Transcribing...</span>
-              </div>
-            )}
-
-            {isDone && !isDismissed && (
-              <div className="anim-speech-bubble flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#07514C]/95 text-white border border-[#34A89E]/50 shadow-xl backdrop-blur-md">
-                <Check className="w-3.5 h-3.5 text-[#34A89E] stroke-[2.5]" />
-                <span className="text-[10px] font-pixel text-[#DFDFD4]">
-                  {status.message?.startsWith('Opened ')
-                    ? 'Opened!'
-                    : status.message?.startsWith('Searching')
-                    ? 'Searching!'
-                    : status.message?.startsWith('Playing')
-                    ? 'Playing!'
-                    : status.message?.startsWith('Drafted')
-                    ? 'Drafted!'
-                    : 'Pasted!'}
-                </span>
-              </div>
-            )}
-
-            {!isRecording && !isTranscribing && (!isDone || isDismissed) && nowPlaying && nowPlaying.is_playing && (
-              <div className="anim-speech-bubble flex items-center gap-2 px-2.5 py-1 rounded-full bg-[#07514C]/95 text-white border border-[#DDA44D]/40 shadow-xl backdrop-blur-md max-w-[200px]">
-                <Radio className="w-3 h-3 text-[#DDA44D] shrink-0 animate-pulse" />
-                <span className="text-[10px] font-sans truncate text-[#DFDFD4] font-medium">
-                  {nowPlaying.title}
-                </span>
-                <button
-                  data-tauri-no-drag
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleMediaControl('playpause');
-                  }}
-                  className="hover:scale-110 active:scale-95 text-white/80 hover:text-white cursor-pointer"
-                >
-                  <Pause className="w-2.5 h-2.5" />
-                </button>
-              </div>
-            )}
+          {/* Living Mascot with dynamic action animation physics & ample headroom */}
+          <div className={`${
+            mascotAction === 'walk' ? 'anim-mascot-walk' :
+            mascotAction === 'jump' ? 'anim-mascot-jump' :
+            mascotAction === 'sit' ? 'anim-mascot-sit' :
+            mascotAction === 'sleep' ? 'anim-mascot-sleep' :
+            'anim-mascot-float'
+          } group-hover:scale-105 active:scale-95 transition-transform duration-200 overflow-visible`}>
+            <Mascot
+              size={54}
+              state="idle"
+              avatar={selectedAvatar}
+              action={mascotAction}
+              interactive
+            />
           </div>
+
+          {/* Floating ground shadow */}
+          <div className="w-10 h-1.5 bg-black/35 rounded-full blur-[1px] mt-1 anim-shadow-pulse pointer-events-none" />
 
           {/* Floating quick avatar, action & pill switch controls (shows on hover) */}
           <div className="absolute -bottom-7 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-30 bg-[#07514C]/90 backdrop-blur-md px-2 py-0.5 rounded-full border border-[#DDA44D]/30 shadow-lg">
@@ -504,16 +360,6 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
                 onClick={(e) => {
                   e.stopPropagation();
                   setMascotAction(act);
-                  if (act === 'walk') {
-                    setIsWalking(true);
-                    const nextX = mascotX > 0 ? -60 : 60;
-                    setFacingRight(nextX > mascotX);
-                    setMascotX(nextX);
-                    setTimeout(() => {
-                      setIsWalking(false);
-                      setMascotAction('float');
-                    }, 2200);
-                  }
                 }}
                 className={`text-[8px] font-pixel px-1 py-0.5 rounded uppercase transition-colors ${
                   mascotAction === act ? 'bg-[#DDA44D] text-[#212121] font-bold' : 'text-white/70 hover:text-white'
