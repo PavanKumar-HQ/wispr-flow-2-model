@@ -312,28 +312,88 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
       style={{ background: 'transparent' }}
     >
       {/* Pill Capsule or Free-Floating Mascot Companion */}
-      {isMascotMode && !isRecording && !isTranscribing && (!isDone || isDismissed) && (!nowPlaying || !nowPlaying.is_playing) ? (
-        /* TRUE LIVING DESKTOP MASCOT COMPANION (NO BUTTON BOX) */
+      {isMascotMode ? (
+        /* TRUE LIVING DESKTOP MASCOT COMPANION WITH FLOATING SPEECH BUBBLE */
         <div
           data-tauri-drag-region
           onMouseDown={handleMouseDown}
           onClick={handleMascotClick}
-          className="group relative flex flex-col items-center justify-center cursor-pointer select-none py-1 px-4"
-          title={`${selectedAvatar.toUpperCase()} Companion (${mascotAction}) • Click or press hotkey to speak`}
+          className="group relative flex items-center justify-center cursor-pointer select-none py-1 px-4 gap-2.5"
+          title={`${selectedAvatar.toUpperCase()} Companion • Click or press hotkey to speak`}
         >
           {/* Living Mascot with dynamic action animation physics */}
-          <div className={`${
-            mascotAction === 'walk' ? 'anim-mascot-walk' :
-            mascotAction === 'jump' ? 'anim-mascot-jump' :
-            mascotAction === 'sit' ? 'anim-mascot-sit' :
-            mascotAction === 'sleep' ? 'anim-mascot-sleep' :
-            'anim-mascot-float'
-          } group-hover:scale-105 active:scale-95 transition-transform duration-200`}>
-            <Mascot size={54} state="idle" avatar={selectedAvatar} action={mascotAction} interactive />
+          <div className="flex flex-col items-center justify-center shrink-0">
+            <div className={`${
+              isRecording ? 'anim-mascot-jump' :
+              isTranscribing ? 'anim-mascot-float' :
+              isDone && !isDismissed ? 'anim-mascot-jump' :
+              mascotAction === 'walk' ? 'anim-mascot-walk' :
+              mascotAction === 'jump' ? 'anim-mascot-jump' :
+              mascotAction === 'sit' ? 'anim-mascot-sit' :
+              mascotAction === 'sleep' ? 'anim-mascot-sleep' :
+              'anim-mascot-float'
+            } group-hover:scale-105 active:scale-95 transition-transform duration-200`}>
+              <Mascot
+                size={54}
+                state={isRecording ? 'listening' : isTranscribing ? 'transcribing' : isDone && !isDismissed ? 'success' : 'idle'}
+                avatar={selectedAvatar}
+                action={isRecording || isTranscribing ? 'jump' : mascotAction}
+                interactive
+              />
+            </div>
+            {/* Floating ground shadow */}
+            <div className="w-10 h-1.5 bg-black/35 rounded-full blur-[1px] mt-1 anim-shadow-pulse pointer-events-none" />
           </div>
 
-          {/* Floating ground shadow */}
-          <div className="w-10 h-1.5 bg-black/35 rounded-full blur-[1px] mt-1 anim-shadow-pulse pointer-events-none" />
+          {/* DYNAMIC SPEECH & WAVEFORM BUBBLE (Expands directly from the mascot!) */}
+          {isRecording ? (
+            <div className="anim-speech-bubble flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#07514C]/95 text-white border border-[#DDA44D]/50 shadow-xl backdrop-blur-md">
+              <span className="relative flex h-2 w-2 items-center justify-center shrink-0">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#DA6C4C] opacity-75" />
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#DA6C4C]" />
+              </span>
+              <span className="text-[10px] font-pixel text-[#DDA44D] tracking-wide">
+                {formatSeconds(status.elapsed_seconds)}
+              </span>
+              <AudioWaveform isRecording={true} isTranscribing={false} barCount={8} theme="dark" />
+              <button
+                data-tauri-no-drag
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggle();
+                }}
+                className="p-1 rounded-full bg-[#DA6C4C] text-white hover:bg-[#DA6C4C]/90 active:scale-95 cursor-pointer ml-0.5"
+                title="Stop recording"
+              >
+                <Square className="w-2.5 h-2.5 fill-current" />
+              </button>
+            </div>
+          ) : isTranscribing ? (
+            <div className="anim-speech-bubble flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#07514C]/95 text-white border border-[#DDA44D]/50 shadow-xl backdrop-blur-md">
+              <span className="w-3 h-3 border-2 border-[#DDA44D] border-t-transparent rounded-full animate-spin shrink-0" />
+              <span className="text-[9px] font-pixel text-[#DDA44D] tracking-wide transcribing-shimmer">
+                TRANSCRIBING...
+              </span>
+            </div>
+          ) : isDone && !isDismissed ? (
+            <div className="anim-speech-bubble flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#07514C]/95 text-white border border-[#DDA44D]/50 shadow-xl backdrop-blur-md">
+              <Check className="w-3 h-3 text-[#DDA44D] shrink-0" />
+              <span className="text-[9px] font-pixel text-[#DFDFD4] tracking-wide max-w-[120px] truncate">
+                {status.message?.startsWith('Opened ') ? 'OPENED' : 'PASTED'}
+              </span>
+              <button
+                data-tauri-no-drag
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCopy();
+                }}
+                className="p-1 rounded-full bg-white/10 hover:bg-white/20 text-[#DDA44D] cursor-pointer"
+                title="Copy text"
+              >
+                {copied ? <Check className="w-2.5 h-2.5 text-[#DDA44D]" /> : <Copy className="w-2.5 h-2.5" />}
+              </button>
+            </div>
+          ) : null}
 
           {/* Floating quick avatar, action & pill switch controls (shows on hover) */}
           <div className="absolute -bottom-7 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-30 bg-[#07514C]/90 backdrop-blur-md px-2 py-0.5 rounded-full border border-[#DDA44D]/30 shadow-lg">
