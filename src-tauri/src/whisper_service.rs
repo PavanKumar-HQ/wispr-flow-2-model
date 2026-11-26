@@ -79,9 +79,10 @@ impl WhisperEngine {
         params.set_print_realtime(false);
         params.set_print_timestamps(false);
         params.set_translate(false);
-        // Preserve context across 30s chunks within the same long dictation session
-        // (each new session starts fresh via initial_prompt)
-        params.set_no_context(false);
+        // Isolate short sessions & wake-word checks (no [_PREV_] bleed), while preserving
+        // intra-session context for long dictations (>30s) that span multiple 30s chunks.
+        let is_long_audio = audio_data.len() > 16000 * 30;
+        params.set_no_context(!is_long_audio);
         params.set_single_segment(false);
         params.set_suppress_blank(true);
         params.set_suppress_nst(true);
