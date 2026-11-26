@@ -251,6 +251,19 @@ pub fn hide_pill_window(app: AppHandle) -> Result<(), String> {
 }
 
 #[tauri::command]
+pub fn show_main_window(app: AppHandle) -> Result<(), String> {
+    let app_handle = app.clone();
+    crate::run_on_main_thread(move || {
+        if let Some(w) = app_handle.get_webview_window("main") {
+            let _ = w.unminimize();
+            let _ = w.show();
+            let _ = w.set_focus();
+        }
+    });
+    Ok(())
+}
+
+#[tauri::command]
 pub fn show_companion_window(app: AppHandle) -> Result<(), String> {
     let app_handle = app.clone();
     crate::run_on_main_thread(move || {

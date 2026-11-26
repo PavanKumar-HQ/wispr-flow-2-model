@@ -574,6 +574,7 @@ pub fn run() {
             commands::import_bundled_lexicon_pack_cmd,
             commands::launch_app_or_url_cmd,
             commands::hide_pill_window,
+            commands::show_main_window,
             commands::show_companion_window,
             commands::hide_companion_window,
             commands::get_companion_gaze,

@@ -245,22 +245,12 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
       className="w-screen h-screen flex flex-col items-center justify-end pb-1 pt-2 select-none bg-transparent overflow-visible"
       style={{ background: 'transparent' }}
     >
-      {/* Compact Status Pill Above Robot */}
-      <div className="h-6 flex items-center justify-center mb-0.5 shrink-0">
-        {(status.state === 'recording' || status.state === 'transcribing') && (
-          <div
-            className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-wider uppercase border shadow-sm animate-fadeIn flex items-center gap-1.5 ${
-              status.state === 'recording'
-                ? 'bg-cream text-terracotta border-terracotta'
-                : 'bg-cream text-darkTeal border-amber'
-            }`}
-          >
-            <span
-              className={`w-1.5 h-1.5 rounded-full ${
-                status.state === 'recording' ? 'bg-terracotta animate-ping' : 'bg-amber animate-pulse'
-              }`}
-            />
-            <span>{status.state === 'recording' ? 'Listening' : 'Transcribing'}</span>
+      {/* Tiny Sleek Listening Pill Above Robot (never show Transcribing text on robot) */}
+      <div className="h-5 flex items-center justify-center mb-0.5 shrink-0">
+        {status.state === 'recording' && (
+          <div className="px-2 py-[1px] rounded-full text-[8.5px] font-mono font-bold tracking-wider uppercase border border-terracotta bg-cream/95 text-terracotta shadow-xs animate-fadeIn flex items-center gap-1">
+            <span className="w-1 h-1 rounded-full bg-terracotta animate-ping" />
+            <span>Listening</span>
           </div>
         )}
       </div>
