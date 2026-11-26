@@ -102,21 +102,41 @@ export const ScheduleWidget: React.FC = () => {
         </div>
       </div>
 
-      {/* Time duration chips */}
-      <div className="grid grid-cols-4 gap-1.5">
-        {[15, 30, 45, 60].map((dur) => (
-          <button
-            key={dur}
-            onClick={() => setSelectedDuration(dur)}
-            className={`py-1 rounded-lg text-[11px] font-bold transition-all text-center cursor-pointer border ${
-              selectedDuration === dur
-                ? 'bg-darkTeal dark:bg-darkTealAccent text-white shadow-xs border-darkTeal dark:border-mint/50 font-extrabold'
-                : 'bg-[#F6F6F2] dark:bg-darkTealElevated text-charcoal dark:text-cream hover:bg-[#EBEBE4] dark:hover:bg-darkTealCanvas border-charcoal/15 dark:border-darkTealBorder'
-            }`}
-          >
-            {dur}m
-          </button>
-        ))}
+      {/* Custom minute input + subtle quick shortcuts (no boxy/pill clutter) */}
+      <div className="flex items-center justify-between gap-3 py-1 border-b border-charcoal/10 dark:border-darkTealBorder">
+        <div className="flex items-center gap-1.5">
+          <span className="text-[11px] text-charcoal/60 dark:text-sage">In</span>
+          <input
+            type="number"
+            min={1}
+            max={240}
+            value={selectedDuration}
+            onChange={(e) => {
+              const v = Math.max(1, Math.min(240, parseInt(e.target.value || '1', 10) || 1));
+              setSelectedDuration(v);
+            }}
+            aria-label="Duration in minutes"
+            className="w-12 text-center bg-transparent text-xs font-mono font-bold text-darkTeal dark:text-cream focus:outline-none border-b border-charcoal/25 focus:border-darkTeal"
+          />
+          <span className="text-[11px] text-charcoal/60 dark:text-sage">min</span>
+        </div>
+
+        <div className="flex items-center gap-2 text-[11px] font-medium">
+          {[8, 17, 30, 45].map((dur) => (
+            <button
+              key={dur}
+              type="button"
+              onClick={() => setSelectedDuration(dur)}
+              className={`px-1 py-0.5 transition-colors cursor-pointer ${
+                selectedDuration === dur
+                  ? 'text-darkTeal dark:text-amber font-bold underline decoration-2 underline-offset-4'
+                  : 'text-charcoal/50 dark:text-sage/70 hover:text-darkTeal'
+              }`}
+            >
+              {dur}m
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Meeting URL input with Save action */}

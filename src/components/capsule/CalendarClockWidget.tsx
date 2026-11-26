@@ -491,85 +491,59 @@ export const CalendarClockWidget: React.FC = () => {
                 };
 
                 return (
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-1.5">
-                      {/* Hour Dropdown */}
-                      <div className="flex items-center rounded-xl border border-charcoal/20 bg-stone-50 px-2 py-1 shadow-2xs">
-                        <select
-                          value={currentH12}
-                          onChange={(e) => updateTime12(parseInt(e.target.value, 10), currentM, currentAmPm)}
-                          className="bg-transparent text-xs font-mono font-bold text-darkTeal focus:outline-none cursor-pointer"
-                        >
-                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((h) => (
-                            <option key={h} value={h}>
-                              {String(h).padStart(2, '0')}
-                            </option>
-                          ))}
-                        </select>
-                        <span className="text-charcoal/40 font-bold px-0.5">:</span>
-                        {/* Minute Dropdown */}
-                        <select
-                          value={currentM}
-                          onChange={(e) => updateTime12(currentH12, e.target.value, currentAmPm)}
-                          className="bg-transparent text-xs font-mono font-bold text-darkTeal focus:outline-none cursor-pointer"
-                        >
-                          {['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'].map((m) => (
-                            <option key={m} value={m}>
-                              {m}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {/* Dedicated AM / PM Buttons */}
-                      <div className="flex items-center rounded-xl border border-charcoal/20 p-0.5 bg-stone-100 shadow-2xs">
-                        <button
-                          type="button"
-                          onClick={() => updateTime12(currentH12, currentM, 'AM')}
-                          className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
-                            currentAmPm === 'AM'
-                              ? 'bg-darkTeal text-white shadow-xs'
-                              : 'text-charcoal/70 hover:text-charcoal'
-                          }`}
-                        >
-                          AM
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => updateTime12(currentH12, currentM, 'PM')}
-                          className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
-                            currentAmPm === 'PM'
-                              ? 'bg-darkTeal text-white shadow-xs'
-                              : 'text-charcoal/70 hover:text-charcoal'
-                          }`}
-                        >
-                          PM
-                        </button>
-                      </div>
-
-                      <span className="text-[11px] font-mono font-bold text-darkTeal bg-darkTeal/10 px-2 py-1 rounded-xl border border-darkTeal/15 ml-auto">
-                        {String(currentH12).padStart(2, '0')}:{currentM} {currentAmPm}
-                      </span>
+                  <div className="flex items-center justify-between gap-2 py-1 border-b border-charcoal/10">
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        min={1}
+                        max={12}
+                        value={currentH12}
+                        onChange={(e) => {
+                          const v = Math.max(1, Math.min(12, parseInt(e.target.value || '1', 10) || 1));
+                          updateTime12(v, currentM, currentAmPm);
+                        }}
+                        aria-label="Hour"
+                        className="w-8 text-center bg-transparent text-xs font-mono font-bold text-darkTeal focus:outline-none border-b border-transparent focus:border-darkTeal"
+                      />
+                      <span className="text-charcoal/40 font-bold">:</span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={59}
+                        value={parseInt(currentM, 10) || 0}
+                        onChange={(e) => {
+                          const v = Math.max(0, Math.min(59, parseInt(e.target.value || '0', 10) || 0));
+                          updateTime12(currentH12, String(v).padStart(2, '0'), currentAmPm);
+                        }}
+                        aria-label="Minute"
+                        className="w-8 text-center bg-transparent text-xs font-mono font-bold text-darkTeal focus:outline-none border-b border-transparent focus:border-darkTeal"
+                      />
                     </div>
 
-                    {/* Quick Preset Buttons */}
-                    <div className="flex items-center gap-1 pt-0.5 overflow-x-auto no-scrollbar">
-                      <span className="text-[10px] font-medium text-charcoal/50 shrink-0">Quick:</span>
-                      {[
-                        { label: '9:00 AM', h: 9, m: '00', ampm: 'AM' as const },
-                        { label: '12:00 PM', h: 12, m: '00', ampm: 'PM' as const },
-                        { label: '3:30 PM', h: 3, m: '30', ampm: 'PM' as const },
-                        { label: '6:00 PM', h: 6, m: '00', ampm: 'PM' as const },
-                      ].map((preset) => (
-                        <button
-                          key={preset.label}
-                          type="button"
-                          onClick={() => updateTime12(preset.h, preset.m, preset.ampm)}
-                          className="px-2 py-0.5 rounded-lg text-[10px] font-semibold bg-stone-100 hover:bg-darkTeal hover:text-white text-charcoal/70 border border-charcoal/10 transition-all cursor-pointer shrink-0"
-                        >
-                          {preset.label}
-                        </button>
-                      ))}
+                    <div className="flex items-center gap-1 text-[11px] font-bold">
+                      <button
+                        type="button"
+                        onClick={() => updateTime12(currentH12, currentM, 'AM')}
+                        className={`px-1.5 py-0.5 rounded transition-colors cursor-pointer ${
+                          currentAmPm === 'AM'
+                            ? 'text-darkTeal underline decoration-2 underline-offset-4'
+                            : 'text-charcoal/45 hover:text-charcoal'
+                        }`}
+                      >
+                        AM
+                      </button>
+                      <span className="text-charcoal/20">/</span>
+                      <button
+                        type="button"
+                        onClick={() => updateTime12(currentH12, currentM, 'PM')}
+                        className={`px-1.5 py-0.5 rounded transition-colors cursor-pointer ${
+                          currentAmPm === 'PM'
+                            ? 'text-darkTeal underline decoration-2 underline-offset-4'
+                            : 'text-charcoal/45 hover:text-charcoal'
+                        }`}
+                      >
+                        PM
+                      </button>
                     </div>
                   </div>
                 );
