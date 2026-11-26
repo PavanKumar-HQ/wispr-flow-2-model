@@ -79,14 +79,15 @@ impl WhisperEngine {
         params.set_print_realtime(false);
         params.set_print_timestamps(false);
         params.set_translate(false);
-        // Single isolated dictation session: do not accumulate historical session tokens
-        params.set_no_context(true);
+        // Single isolated dictation session: allow context pass-through across segments of the same utterance
+        // to prevent dropping soft, conversational words or initial words after brief pauses
+        params.set_no_context(false);
         params.set_single_segment(false);
         params.set_suppress_blank(true);
         params.set_suppress_nst(true);
         // Sensitive thresholds to prevent dropping soft, conversational, or paused speech in between words
-        params.set_no_speech_thold(0.85);
-        params.set_logprob_thold(-1.60);
+        params.set_no_speech_thold(0.92);
+        params.set_logprob_thold(-1.80);
         params.set_entropy_thold(2.80);
         params.set_temperature(0.0);
         params.set_temperature_inc(0.0);

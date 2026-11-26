@@ -181,8 +181,8 @@ impl AudioCaptureService {
             }
         }
 
-        // Allow final hardware audio buffer (150ms) to drain so trailing word syllables are not truncated
-        std::thread::sleep(std::time::Duration::from_millis(150));
+        // Allow final hardware audio buffer (200ms) to drain so trailing word syllables are not truncated
+        std::thread::sleep(std::time::Duration::from_millis(200));
 
         {
             let mut rec_lock = self.is_recording.lock().unwrap();
@@ -302,8 +302,8 @@ pub fn isolate_voice_and_suppress_noise(samples: &[f32], sample_rate: u32) -> Ve
     let noise_floor_idx = (sorted_rms.len() as f32 * 0.25).floor() as usize;
     let noise_floor = sorted_rms.get(noise_floor_idx).copied().unwrap_or(0.001).min(0.003);
 
-    // Adaptive threshold for speech (at least 25% above noise floor, min 0.0015 RMS to catch soft initial consonants)
-    let speech_threshold = (noise_floor * 1.25).clamp(0.0015, 0.0065);
+    // Adaptive threshold for speech (at least 20% above noise floor, min 0.0014 RMS to catch soft initial consonants)
+    let speech_threshold = (noise_floor * 1.20).clamp(0.0014, 0.0065);
 
     // Identify first and last frame containing genuine user speech
     let first_speech_frame = frame_rms.iter().position(|&r| r >= speech_threshold);
@@ -317,10 +317,20 @@ pub fn isolate_voice_and_suppress_noise(samples: &[f32], sample_rate: u32) -> Ve
         }
     };
 
-    // Generous safety pad of ~400ms (20 frames) to fully preserve rapid word boundaries and consonant transients
+    // Generous safety pad of ~400ms (20 frames) to fully preserve rapid word boundaries and consonant transients.
+    // If speech started within the first 500ms (25 frames), keep from frame 0 so initial consonants/words are never clipped.
     let pad_frames = 20;
-    let safe_start_frame = start_frame.saturating_sub(pad_frames);
-    let safe_end_frame = (end_frame + pad_frames + 1).min(num_frames);
+    let safe_start_frame = if start_frame <= 25 {
+        0
+    } else {
+        start_frame.saturating_sub(pad_frames)
+    };
+    // If speech ended near the close of recording, preserve to the final frame so trailing syllables are never cut off.
+    let safe_end_frame = if num_frames.saturating_sub(end_frame) <= 20 {
+        num_frames
+    } else {
+        (end_frame + pad_frames + 1).min(num_frames)
+    };
 
     let start_sample = safe_start_frame * frame_size;
     let end_sample = (safe_end_frame * frame_size).min(hp_samples.len());

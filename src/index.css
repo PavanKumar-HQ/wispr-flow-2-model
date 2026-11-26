@@ -147,6 +147,116 @@
   animation: shadowPulse 2.6s ease-in-out infinite;
 }
 
+/* Animated Rising Sound & Speech Bubbles for Mascot Listening Mode */
+@keyframes bubbleFloat1 {
+  0% {
+    transform: translate(0, 0) scale(0.6);
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.9;
+  }
+  75% {
+    transform: translate(4px, -18px) scale(1.1);
+    opacity: 0.7;
+  }
+  100% {
+    transform: translate(8px, -28px) scale(1.25);
+    opacity: 0;
+  }
+}
+
+@keyframes bubbleFloat2 {
+  0% {
+    transform: translate(0, 0) scale(0.5);
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.85;
+  }
+  75% {
+    transform: translate(-5px, -20px) scale(1.15);
+    opacity: 0.65;
+  }
+  100% {
+    transform: translate(-9px, -30px) scale(1.3);
+    opacity: 0;
+  }
+}
+
+@keyframes bubbleFloat3 {
+  0% {
+    transform: translate(0, 0) scale(0.5);
+    opacity: 0;
+  }
+  35% {
+    opacity: 0.95;
+  }
+  75% {
+    transform: translate(6px, -14px) scale(1.05);
+    opacity: 0.7;
+  }
+  100% {
+    transform: translate(10px, -24px) scale(1.2);
+    opacity: 0;
+  }
+}
+
+@keyframes speechBubblePop {
+  0% {
+    transform: scale(0.4) translateY(6px);
+    opacity: 0;
+  }
+  65% {
+    transform: scale(1.08) translateY(-2px);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.0) translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes bubbleDotPulse {
+  0%, 100% {
+    transform: scale(0.85);
+    opacity: 0.45;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 1;
+  }
+}
+
+.anim-bubble-1 {
+  animation: bubbleFloat1 2.2s ease-out infinite;
+}
+
+.anim-bubble-2 {
+  animation: bubbleFloat2 2.6s ease-out infinite 0.7s;
+}
+
+.anim-bubble-3 {
+  animation: bubbleFloat3 2.0s ease-out infinite 1.3s;
+}
+
+.anim-speech-bubble {
+  animation: speechBubblePop 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  transform-origin: bottom left;
+}
+
+.anim-bubble-dot-1 {
+  animation: bubbleDotPulse 1.2s ease-in-out infinite;
+}
+
+.anim-bubble-dot-2 {
+  animation: bubbleDotPulse 1.2s ease-in-out infinite 0.25s;
+}
+
+.anim-bubble-dot-3 {
+  animation: bubbleDotPulse 1.2s ease-in-out infinite 0.5s;
+}
+
 /* Native desktop drag regions for macOS */
 [data-tauri-drag-region] {
   -webkit-app-region: drag;

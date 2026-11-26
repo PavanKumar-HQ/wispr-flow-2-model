@@ -115,7 +115,7 @@ export const Mascot: React.FC<MascotProps> = ({
 
             {/* DYNAMIC CRT FACE EXPRESSIONS */}
             {state === 'listening' ? (
-              /* CUTE FRIENDLY LISTENING: Wide glowing eyes, cute blush, warm curved smile */
+              /* CUTE FRIENDLY LISTENING: Wide glowing eyes, cute blush, warm curved smile, floating acoustic speech bubble */
               <g>
                 <ellipse cx="37" cy="41" rx="6" ry="7" fill="#DDA44D" />
                 <circle cx="39" cy="39" r="2.5" fill="#FFF2D6" />
@@ -138,6 +138,25 @@ export const Mascot: React.FC<MascotProps> = ({
                 {/* Gentle acoustic radio aura rings above antenna */}
                 <path d="M 40 4 Q 50 -1 60 4" stroke="#DDA44D" strokeWidth="1.5" strokeLinecap="round" fill="none" opacity="0.8" className="animate-pulse" />
                 <path d="M 44 0 Q 50 -4 56 0" stroke="#DDA44D" strokeWidth="1.5" strokeLinecap="round" fill="none" opacity="0.5" className="animate-pulse delay-75" />
+
+                {/* ANIMATED FLOATING LISTENING SPEECH BUBBLE */}
+                <g className="anim-speech-bubble" style={{ transformOrigin: '70px 16px' }}>
+                  {/* Speech bubble pointer notch */}
+                  <polygon points="68,16 75,19 73,12" fill="#07514C" stroke="#DDA44D" strokeWidth="1.2" />
+                  {/* Bubble capsule */}
+                  <rect x="68" y="0" width="30" height="17" rx="6" fill="#07514C" stroke="#DDA44D" strokeWidth="1.5" />
+                  {/* Three animated dancing waveform dots inside bubble */}
+                  <circle cx="76" cy="8.5" r="2.2" fill="#DDA44D" className="anim-bubble-dot-1" />
+                  <circle cx="83" cy="8.5" r="2.2" fill="#DFDFD4" className="anim-bubble-dot-2" />
+                  <circle cx="90" cy="8.5" r="2.2" fill="#DA6C4C" className="anim-bubble-dot-3" />
+                </g>
+
+                {/* SHIMMERING RISING SOUND BUBBLES */}
+                <g pointerEvents="none">
+                  <circle cx="28" cy="20" r="3.5" fill="#DDA44D" fillOpacity="0.65" stroke="#FFF2D6" strokeWidth="1" className="anim-bubble-1" />
+                  <circle cx="24" cy="26" r="2.5" fill="#34A89E" fillOpacity="0.75" stroke="#DFDFD4" strokeWidth="0.8" className="anim-bubble-2" />
+                  <circle cx="75" cy="24" r="3.0" fill="#DDA44D" fillOpacity="0.6" stroke="#FFF2D6" strokeWidth="0.9" className="anim-bubble-3" />
+                </g>
               </g>
             ) : action === 'sleep' ? (
               /* SLEEPING: Serene curved closed eyes (-.-) with floating z Z Z */
@@ -228,11 +247,23 @@ export const Mascot: React.FC<MascotProps> = ({
             <circle cx="62" cy="40" r="13" fill="#07514C" stroke="#212121" strokeWidth="3.5" />
 
             {state === 'listening' ? (
-              <g className="animate-pulse">
+              <g>
                 <circle cx="38" cy="40" r="8" fill="#DDA44D" />
                 <circle cx="62" cy="40" r="8" fill="#DDA44D" />
                 <circle cx="38" cy="40" r="4" fill="#DA6C4C" />
                 <circle cx="62" cy="40" r="4" fill="#DA6C4C" />
+                {/* Listening Speech Bubble */}
+                <g className="anim-speech-bubble" style={{ transformOrigin: '70px 16px' }}>
+                  <polygon points="68,16 75,19 73,12" fill="#07514C" stroke="#DDA44D" strokeWidth="1.2" />
+                  <rect x="68" y="0" width="30" height="17" rx="6" fill="#07514C" stroke="#DDA44D" strokeWidth="1.5" />
+                  <circle cx="76" cy="8.5" r="2.2" fill="#DDA44D" className="anim-bubble-dot-1" />
+                  <circle cx="83" cy="8.5" r="2.2" fill="#DFDFD4" className="anim-bubble-dot-2" />
+                  <circle cx="90" cy="8.5" r="2.2" fill="#DA6C4C" className="anim-bubble-dot-3" />
+                </g>
+                <g pointerEvents="none">
+                  <circle cx="28" cy="20" r="3.0" fill="#DDA44D" fillOpacity="0.65" stroke="#FFF2D6" strokeWidth="1" className="anim-bubble-1" />
+                  <circle cx="74" cy="22" r="2.5" fill="#34A89E" fillOpacity="0.75" stroke="#DFDFD4" strokeWidth="0.8" className="anim-bubble-2" />
+                </g>
               </g>
             ) : state === 'transcribing' ? (
               <g>
@@ -302,10 +333,22 @@ export const Mascot: React.FC<MascotProps> = ({
 
             {/* DYNAMIC CAT VISOR EXPRESSIONS */}
             {state === 'listening' ? (
-              <g className="animate-pulse">
+              <g>
                 <polygon points="32,46 38,40 44,46" fill="#DDA44D" />
                 <polygon points="56,46 62,40 68,46" fill="#DDA44D" />
                 <rect x="46" y="44" width="8" height="6" rx="2" fill="#DA6C4C" />
+                {/* Listening Speech Bubble */}
+                <g className="anim-speech-bubble" style={{ transformOrigin: '70px 16px' }}>
+                  <polygon points="68,16 75,19 73,12" fill="#07514C" stroke="#DDA44D" strokeWidth="1.2" />
+                  <rect x="68" y="0" width="30" height="17" rx="6" fill="#07514C" stroke="#DDA44D" strokeWidth="1.5" />
+                  <circle cx="76" cy="8.5" r="2.2" fill="#DDA44D" className="anim-bubble-dot-1" />
+                  <circle cx="83" cy="8.5" r="2.2" fill="#DFDFD4" className="anim-bubble-dot-2" />
+                  <circle cx="90" cy="8.5" r="2.2" fill="#DA6C4C" className="anim-bubble-dot-3" />
+                </g>
+                <g pointerEvents="none">
+                  <circle cx="26" cy="22" r="3.0" fill="#DDA44D" fillOpacity="0.65" stroke="#FFF2D6" strokeWidth="1" className="anim-bubble-1" />
+                  <circle cx="72" cy="24" r="2.5" fill="#34A89E" fillOpacity="0.75" stroke="#DFDFD4" strokeWidth="0.8" className="anim-bubble-2" />
+                </g>
               </g>
             ) : state === 'transcribing' ? (
               <g>
