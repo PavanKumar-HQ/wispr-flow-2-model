@@ -20,6 +20,7 @@ interface VoxBotFullBodyProps {
   gaze?: { x: number; y: number };
   isHovered?: boolean;
   isBlinking?: boolean;
+  onCoreClick?: () => void;
   className?: string;
 }
 
@@ -37,6 +38,7 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
   gaze = { x: 0, y: 0 },
   isHovered = false,
   isBlinking = false,
+  onCoreClick,
   className = '',
 }) => {
   const isListening = pose === 'listening';
@@ -466,19 +468,30 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
               filter="url(#vbLedGlow)"
             />
 
-            {/* Concentric Glowing Chest Core */}
-            <circle cx="100" cy="139" r="22" fill="url(#vb3dCoreGlow)" />
-            <circle cx="100" cy="139" r="16.5" fill="url(#vb3dDark)" stroke={coreColor} strokeWidth="2.2" />
-            <circle cx="100" cy="139" r="12.5" fill="none" stroke="#8C949E" strokeWidth="1.3" opacity="0.85" />
-            <circle cx="100" cy="139" r="8.5" fill="none" stroke={coreColor} strokeWidth="1.6" opacity="0.9" />
-            <circle
-              cx="100"
-              cy="139"
-              r="4.5"
-              fill={coreColor}
-              filter="url(#vbLedGlow)"
-              className={isListening || isTranscribing ? 'animate-pulse' : ''}
-            />
+            {/* Concentric Glowing Chest Core — ONLY clickable mic button on VoxBot */}
+            <g
+              data-voxbot-core="true"
+              onClick={(e) => {
+                e.stopPropagation();
+                onCoreClick?.();
+              }}
+              className="cursor-pointer hover:opacity-95 active:scale-95 transition-transform"
+              style={{ transformOrigin: '100px 139px' }}
+            >
+              <title>{isListening ? 'Click center button to stop listening' : 'Click center button to start listening'}</title>
+              <circle cx="100" cy="139" r="22" fill="url(#vb3dCoreGlow)" />
+              <circle cx="100" cy="139" r="16.5" fill="url(#vb3dDark)" stroke={coreColor} strokeWidth="2.4" />
+              <circle cx="100" cy="139" r="12.5" fill="none" stroke="#8C949E" strokeWidth="1.3" opacity="0.85" />
+              <circle cx="100" cy="139" r="8.5" fill="none" stroke={coreColor} strokeWidth="1.6" opacity="0.9" />
+              <circle
+                cx="100"
+                cy="139"
+                r="4.5"
+                fill={coreColor}
+                filter="url(#vbLedGlow)"
+                className={isListening || isTranscribing ? 'animate-pulse' : ''}
+              />
+            </g>
 
             <rect x="89" y="102" width="22" height="13" rx="5" fill="url(#vb3dDark)" />
           </g>

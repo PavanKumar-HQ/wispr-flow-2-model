@@ -252,6 +252,10 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.button !== 0) return;
+    // If user clicked the chest core button directly, let its onClick handle toggling without dragging
+    if ((e.target as HTMLElement).closest('[data-voxbot-core="true"]')) {
+      return;
+    }
     pointerDownRef.current = { x: e.clientX, y: e.clientY, dragged: false };
   };
 
@@ -268,12 +272,9 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
     }
   };
 
-  const handleMouseUp = (e: React.MouseEvent) => {
-    const down = pointerDownRef.current;
+  const handleMouseUp = () => {
+    // Clicking outside the chest core does NOT toggle listening (only chest core button toggles)
     pointerDownRef.current = null;
-    if (down && !down.dragged && e.button === 0) {
-      onToggleDictation();
-    }
   };
 
   return (
@@ -302,8 +303,8 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
-        className="cursor-pointer active:cursor-grabbing hover:scale-[1.03] transition-transform shrink-0"
-        title={status.state === 'recording' ? 'Click to stop listening' : 'Click to dictate (drag to move)'}
+        className="cursor-grab active:cursor-grabbing hover:scale-[1.03] transition-transform shrink-0"
+        title="Click center chest core to dictate • Drag anywhere else to move"
       >
         <VoxBotFullBody
           pose={activePose}
@@ -312,6 +313,7 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
           gaze={gaze}
           isHovered={isHovered}
           isBlinking={isBlinking}
+          onCoreClick={onToggleDictation}
         />
       </div>
     </div>
