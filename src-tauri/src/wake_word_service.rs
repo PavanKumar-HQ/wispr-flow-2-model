@@ -155,8 +155,8 @@ impl WakeWordService {
                         break;
                     }
 
-                    // Check buffer energy at regular intervals (every 400ms)
-                    if last_check.elapsed() >= Duration::from_millis(400) {
+                    // Check buffer energy at regular intervals (every 500ms) with a 1.4s cooldown after inference
+                    if last_check.elapsed() >= Duration::from_millis(500) {
                         last_check = Instant::now();
 
                         let samples = match ring_buffer.lock() {
@@ -175,9 +175,11 @@ impl WakeWordService {
                         let rms = (sum_sq / recent_len as f32).sqrt();
                         let peak = recent.iter().copied().fold(0.0f32, |m, s| m.max(s.abs()));
 
-                        // Only evaluate speech with Whisper when clear vocal energy is detected
-                        // (rms >= 0.0080 and peak >= 0.030 prevents ambient noise / fans from triggering CPU inference)
-                        if rms >= 0.0080 && peak >= 0.030 {
+                        // Only evaluate speech with Whisper when clear intentional vocal energy is detected
+                        // (prevents ambient room noise, fans, or distant speech from firing Metal GPU inference)
+                        if rms >= 0.012 && peak >= 0.045 {
+                            // Apply 1.4s cooldown before next Whisper wake evaluation to keep CPU/GPU cool
+                            last_check = Instant::now() + Duration::from_millis(900);
                             let samples_16k = if sample_rate != 16000 {
                                 crate::audio_service::linear_resample(&samples, sample_rate, 16000)
                             } else {

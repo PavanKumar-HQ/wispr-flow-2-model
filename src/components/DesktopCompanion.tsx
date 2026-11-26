@@ -88,7 +88,7 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
     };
 
     checkAudio();
-    const timer = setInterval(checkAudio, 1500);
+    const timer = setInterval(checkAudio, 2500);
     return () => {
       cancelled = true;
       clearInterval(timer);
@@ -104,7 +104,7 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
     }
 
     let cancelled = false;
-    const pollMs = autoPose === 'sleep' && !isHovered ? 480 : 240;
+    const pollMs = autoPose === 'sleep' && !isHovered ? 650 : 320;
 
     const pollGaze = async () => {
       if (cancelled || document.hidden) return;
@@ -315,7 +315,7 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
-        className="cursor-grab active:cursor-grabbing hover:scale-[1.03] transition-transform shrink-0"
+        className="cursor-grab active:cursor-grabbing hover:scale-[1.03] transition-transform shrink-0 will-change-transform"
         title="Click center chest core to dictate • Drag anywhere else to move"
       >
         <VoxBotFullBody
