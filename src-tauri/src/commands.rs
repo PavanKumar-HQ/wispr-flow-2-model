@@ -550,9 +550,8 @@ pub fn start_dictation_internal(state: &AppState, app: &AppHandle) -> Result<Ses
         let s = state.settings.lock().unwrap();
         s.interaction_mode.clone()
     };
-    let auto_stop_on_silence = mode == "toggle" || !crate::is_session_started_by_hotkey();
 
-    // Realtime audio visualizer waveform stream + Smart End-of-Utterance auto-stop (for robot-click / toggle commands)
+    // Realtime audio visualizer waveform stream for Wispr Flow audio effect
     {
         let app_level_emitter = app.clone();
         let state_audio = Arc::clone(&state.audio);
@@ -561,9 +560,6 @@ pub fn start_dictation_internal(state: &AppState, app: &AppHandle) -> Result<Ses
 
         tauri::async_runtime::spawn(async move {
             let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(50));
-            let mut speech_ticks: u32 = 0;
-            let mut heard_speech = false;
-            let mut silent_ticks: u32 = 0;
             loop {
                 interval.tick().await;
                 let is_rec = {
@@ -578,27 +574,6 @@ pub fn start_dictation_internal(state: &AppState, app: &AppHandle) -> Result<Ses
                     audio.get_current_audio_level()
                 };
                 let _ = app_level_emitter.emit("audio-level", level);
-
-                if auto_stop_on_silence {
-                    if level >= 0.14 {
-                        speech_ticks += 1;
-                        if speech_ticks >= 2 {
-                            heard_speech = true;
-                        }
-                        silent_ticks = 0;
-                    } else if heard_speech && level < 0.10 {
-                        silent_ticks += 1;
-                        // ~1.2s of natural silence after speech -> auto-stop and execute/transcribe!
-                        if silent_ticks >= 24 {
-                            if let Some(state_w) = app_level_emitter.try_state::<AppState>() {
-                                let _ = stop_dictation(state_w, app_level_emitter.clone());
-                            }
-                            break;
-                        }
-                    } else if level >= 0.12 {
-                        silent_ticks = 0;
-                    }
-                }
             }
         });
     }
