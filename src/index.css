@@ -453,12 +453,21 @@
   }
 }
 
-@keyframes vbArmWaveRight {
+@keyframes vbArmWaveUpper {
   0%, 100% {
-    transform: rotate(-135deg);
+    transform: rotate(-72deg);
   }
   50% {
-    transform: rotate(-105deg);
+    transform: rotate(-80deg);
+  }
+}
+
+@keyframes vbArmWaveForearm {
+  0%, 100% {
+    transform: rotate(-48deg);
+  }
+  50% {
+    transform: rotate(-82deg);
   }
 }
 
@@ -579,7 +588,12 @@
 
 .vb-arm-wave-right {
   transform-origin: 140px 126px;
-  animation: vbArmWaveRight 0.55s ease-in-out infinite;
+  animation: vbArmWaveUpper 0.55s ease-in-out infinite;
+}
+
+.vb-forearm-wave-right {
+  transform-origin: 147px 148px;
+  animation: vbArmWaveForearm 0.55s ease-in-out infinite;
 }
 
 .vb-ear-in-l-1 {

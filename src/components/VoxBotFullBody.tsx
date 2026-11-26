@@ -395,43 +395,33 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
             </g>
           </g>
 
-          <g
-            className={
-              isWaving
-                ? 'vb-arm-wave-right'
-                : isWalking || isDancing || isMusic
-                ? 'vb-arm-right-walk'
-                : isSitting
-                ? 'vb-arm-right-sit'
-                : isListening
-                ? 'vb-arm-right-listen'
-                : isTranscribing
-                ? ''
-                : 'vb-arm-right-idle'
-            }
-            transform={
-              isFlying
-                ? 'rotate(-24 140 126)'
-                : isTranscribing
-                ? 'rotate(-112 140 126)'
-                : undefined
-            }
-          >
-            <circle cx="140" cy="126" r="9" fill="url(#vb3dDark)" />
-            <rect x="139" y="126" width="15" height="22" rx="7.5" fill="url(#vb3dDark)" />
+          {/* Right Arm (hidden from background layer when waving/thinking so it renders cleanly in FRONT) */}
+          {!isWaving && !isTranscribing && (
             <g
-              className={isWalking ? 'vb-forearm-right-walk' : ''}
-              transform={isTranscribing ? 'rotate(-36 147 148)' : undefined}
+              className={
+                isWalking || isDancing || isMusic
+                  ? 'vb-arm-right-walk'
+                  : isSitting
+                  ? 'vb-arm-right-sit'
+                  : isListening
+                  ? 'vb-arm-right-listen'
+                  : 'vb-arm-right-idle'
+              }
+              transform={isFlying ? 'rotate(-24 140 126)' : undefined}
             >
-              <circle cx="147" cy="148" r="7" fill="url(#vb3dDark)" />
-              <rect x="139" y="149" width="17" height="22" rx="8.5" fill="url(#vb3dCreamArm)" stroke="#2A2D32" strokeWidth="1.4" />
-              <line x1="143" y1="153" x2="143" y2="165" stroke="#FFFFFF" strokeWidth="1.8" strokeLinecap="round" opacity="0.55" />
-              <path
-                d="M 141 169 C 136 172, 136 179, 140 181 C 143 182, 145 179, 146 177 C 146 179, 147 183, 150 183 C 157 183, 160 176, 156 169 Z"
-                fill="url(#vb3dDark)"
-              />
+              <circle cx="140" cy="126" r="9" fill="url(#vb3dDark)" />
+              <rect x="139" y="126" width="15" height="22" rx="7.5" fill="url(#vb3dDark)" />
+              <g className={isWalking ? 'vb-forearm-right-walk' : ''}>
+                <circle cx="147" cy="148" r="7" fill="url(#vb3dDark)" />
+                <rect x="139" y="149" width="17" height="22" rx="8.5" fill="url(#vb3dCreamArm)" stroke="#2A2D32" strokeWidth="1.4" />
+                <line x1="143" y1="153" x2="143" y2="165" stroke="#FFFFFF" strokeWidth="1.8" strokeLinecap="round" opacity="0.55" />
+                <path
+                  d="M 141 169 C 136 172, 136 179, 140 181 C 143 182, 145 179, 146 177 C 146 179, 147 183, 150 183 C 157 183, 160 176, 156 169 Z"
+                  fill="url(#vb3dDark)"
+                />
+              </g>
             </g>
-          </g>
+          )}
 
           {/* ======================== TORSO & PELVIS ======================== */}
           <g>
@@ -695,6 +685,28 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
               )}
             </g>
           </g>
+
+          {/* Foreground Right Arm when Waving or Thinking (renders cleanly in FRONT of body/head) */}
+          {(isWaving || isTranscribing) && (
+            <g
+              className={isWaving ? 'vb-arm-wave-right' : ''}
+              transform={isTranscribing ? 'rotate(-106 140 126)' : undefined}
+            >
+              <circle cx="140" cy="126" r="9" fill="url(#vb3dDark)" />
+              <rect x="139" y="126" width="15" height="22" rx="7.5" fill="url(#vb3dDark)" />
+              <g
+                className={isWaving ? 'vb-forearm-wave-right' : ''}
+                transform={isTranscribing ? 'rotate(-42 147 148)' : undefined}
+              >
+                <circle cx="147" cy="148" r="7" fill="url(#vb3dDark)" />
+                <rect x="139" y="149" width="17" height="22" rx="8.5" fill="url(#vb3dCreamArm)" stroke="#2A2D32" strokeWidth="1.4" />
+                <line x1="143" y1="153" x2="143" y2="165" stroke="#FFFFFF" strokeWidth="1.8" strokeLinecap="round" opacity="0.55" />
+                {/* Friendly Rounded Mitten Palm (not a claw) */}
+                <rect x="138" y="168" width="18" height="14" rx="7" fill="url(#vb3dDark)" />
+                <circle cx="139" cy="172" r="3.5" fill="url(#vb3dDark)" />
+              </g>
+            </g>
+          )}
         </g>
       </svg>
     </div>
