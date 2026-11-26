@@ -237,11 +237,14 @@ export function AnimatedVoxelBackground() {
     const imeshClouds = new THREE.InstancedMesh(boxGeo, matCloud, clouds.length);
     scene.add(imeshClouds);
 
-    // --- 8. Parallax & Smooth Interpolation ---
+    // --- 8. Throttled Input & Parallax Smoothing ---
     let targetScrollY = 0;
     let smoothScrollY = 0;
     let targetMouseX = 0;
     let targetMouseY = 0;
+    let rawMouseX = 0;
+    let rawMouseY = 0;
+    let mouseMoved = false;
     let smoothMouseX = 0;
     let smoothMouseY = 0;
 
@@ -249,18 +252,31 @@ export function AnimatedVoxelBackground() {
       targetScrollY = window.scrollY || window.pageYOffset;
     };
 
+    // Throttled mouse tracking to prevent 500Hz/1000Hz gaming mice from flooding JS thread
     const handleMouseMove = (e: MouseEvent) => {
-      targetMouseX = (e.clientX / window.innerWidth - 0.5) * 2;
-      targetMouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+      rawMouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+      rawMouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+      mouseMoved = true;
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     window.addEventListener('mousemove', handleMouseMove, { passive: true });
 
-    // --- 9. Thermal-Guarded 60 FPS Render Loop ---
+    // --- 9. Thermal-Guarded, 60 FPS Paced Render Loop ---
     let animationId: number;
     let isVisible = !document.hidden;
     const clock = new THREE.Clock();
+    let lastRenderTime = performance.now();
+    const TARGET_FPS = 60;
+    const FRAME_MIN_MS = 1000 / TARGET_FPS; // ~16.66ms pacing
+    let lastWaterUpdate = 0;
+
+    // Isolate canvas on its own hardware composite layer
+    if (renderer.domElement) {
+      renderer.domElement.style.contain = 'strict';
+      renderer.domElement.style.transform = 'translate3d(0, 0, 0)';
+      renderer.domElement.style.backfaceVisibility = 'hidden';
+    }
 
     const updateElementGroup = (
       imesh: THREE.InstancedMesh,
@@ -279,18 +295,41 @@ export function AnimatedVoxelBackground() {
       imesh.instanceMatrix.needsUpdate = true;
     };
 
-    const animate = () => {
+    const animate = (currentTime: number = performance.now()) => {
       animationId = requestAnimationFrame(animate);
 
       if (!isVisible || document.hidden) return;
 
-      const delta = clock.getDelta();
+      // Pacing gate: locks smooth 60 FPS and prevents 120Hz/144Hz/240Hz Windows displays
+      // from over-allocating uniform vertex buffers on DirectX/ANGLE
+      const elapsedSinceLast = currentTime - lastRenderTime;
+      if (elapsedSinceLast < FRAME_MIN_MS - 2.0) {
+        return;
+      }
+      lastRenderTime = currentTime - (elapsedSinceLast % FRAME_MIN_MS);
+
+      const delta = Math.min(clock.getDelta(), 0.08); // Clamped delta avoids jumps
       const elapsed = clock.getElapsedTime();
 
-      // Smooth damped lerp for scroll and cursor
-      smoothScrollY += (targetScrollY - smoothScrollY) * 0.06;
-      smoothMouseX += (targetMouseX - smoothMouseX) * 0.05;
-      smoothMouseY += (targetMouseY - smoothMouseY) * 0.05;
+      // Ingest latest mouse coordinates in single rAF tick
+      if (mouseMoved) {
+        targetMouseX = rawMouseX;
+        targetMouseY = rawMouseY;
+        mouseMoved = false;
+      }
+
+      // Frame-rate independent exponential smoothing for scroll & mouse
+      const scrollFactor = 1 - Math.exp(-14 * delta);
+      const mouseFactor = 1 - Math.exp(-10 * delta);
+
+      smoothScrollY += (targetScrollY - smoothScrollY) * scrollFactor;
+      smoothMouseX += (targetMouseX - smoothMouseX) * mouseFactor;
+      smoothMouseY += (targetMouseY - smoothMouseY) * mouseFactor;
+
+      // Snap micro-deltas when resting to eliminate idle jitter
+      if (Math.abs(targetScrollY - smoothScrollY) < 0.2) {
+        smoothScrollY = targetScrollY;
+      }
 
       // Parallax camera elevation and pan driven by page scroll
       const scrollProgress = Math.min(smoothScrollY / 1400, 2.5);
@@ -321,8 +360,11 @@ export function AnimatedVoxelBackground() {
       });
       imeshClouds.instanceMatrix.needsUpdate = true;
 
-      // Subtle Water Shimmer
-      matWater.opacity = 0.86 + Math.sin(elapsed * 2.0) * 0.04;
+      // Throttle subtle water uniform rebinds (every ~100ms) to reduce D3D uniform thrashing
+      if (elapsed - lastWaterUpdate > 0.1) {
+        matWater.opacity = 0.86 + Math.sin(elapsed * 2.0) * 0.04;
+        lastWaterUpdate = elapsed;
+      }
 
       renderer.render(scene, camera);
     };
@@ -379,6 +421,12 @@ export function AnimatedVoxelBackground() {
     <div
       ref={containerRef}
       className="fixed inset-0 w-full h-full pointer-events-none z-0 overflow-hidden select-none bg-[#07514C]"
+      style={{
+        contain: 'strict',
+        transform: 'translate3d(0, 0, 0)',
+        backfaceVisibility: 'hidden',
+        willChange: 'transform',
+      }}
       aria-hidden="true"
     />
   );
