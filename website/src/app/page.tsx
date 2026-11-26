@@ -23,7 +23,6 @@ import {
   BookOpen,
   Check,
   X,
-  Sparkles,
   Cpu,
   ShieldCheck,
   Gauge,
@@ -66,12 +65,6 @@ export default function HomePage() {
            ========================================================================= */}
         <section className="relative pt-16 pb-24 px-4 sm:px-6 lg:px-8 text-center">
           <div className="max-w-5xl mx-auto">
-            {/* Top Pill with subtle glow */}
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[#DDA44D] text-xs font-mono font-bold mb-8 hover:scale-105 transition-transform shadow-lg cursor-default">
-              <Sparkles className="w-4 h-4 text-[#DDA44D]" />
-              <span>VOXQUEST &middot; 100% AIR-GAPPED ON-DEVICE VOICE OS</span>
-            </div>
-
             {/* Main Crisp Headline with Pixel Typography */}
             <h1 className="font-pixel text-xl sm:text-3xl lg:text-4xl text-white leading-relaxed sm:leading-loose mb-6 drop-shadow-[4px_4px_0px_#212121]">
               Speak at 150 WPM. <br />
@@ -86,7 +79,7 @@ export default function HomePage() {
             </p>
 
             {/* Action CTAs */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-5">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
               <Link
                 href="/download"
                 className="arcade-btn arcade-btn-primary w-full sm:w-auto text-sm py-4 px-8 flex items-center justify-center gap-2.5 group shadow-xl hover:scale-105 transition-all"
@@ -99,13 +92,6 @@ export default function HomePage() {
                 className="arcade-btn arcade-btn-ghost w-full sm:w-auto text-sm py-4 px-6 flex items-center justify-center gap-2.5 bg-white/90 backdrop-blur-md hover:bg-white"
               >
                 <span>GET STARTED FREE</span>
-              </Link>
-            </div>
-
-            <div className="mb-10">
-              <Link href="/download" className="inline-flex items-center gap-2 font-mono text-xs text-[#DDA44D] hover:underline bg-black/40 px-3.5 py-1.5 rounded-full border border-white/10 backdrop-blur-md">
-                <span className="w-2 h-2 rounded-full bg-[#DDA44D] animate-pulse" />
-                <span>Auto-detects macOS (Apple Silicon 6.0 MB), Windows & Linux &rarr;</span>
               </Link>
             </div>
 
