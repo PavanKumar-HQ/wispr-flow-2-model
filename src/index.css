@@ -271,16 +271,36 @@
 
 @keyframes vbBodyWalk {
   0%, 100% {
-    transform: translateY(0px) rotate(1.5deg);
+    transform: translateY(0px) rotate(2.5deg);
   }
   25% {
-    transform: translateY(-2.5px) rotate(1.5deg);
+    transform: translateY(-3.5px) rotate(2.5deg);
   }
   50% {
-    transform: translateY(0px) rotate(1.5deg);
+    transform: translateY(0px) rotate(2.5deg);
   }
   75% {
-    transform: translateY(-2.5px) rotate(1.5deg);
+    transform: translateY(-3.5px) rotate(2.5deg);
+  }
+}
+
+@keyframes vbBodyFly {
+  0%, 100% {
+    transform: translateY(0px) rotate(9deg);
+  }
+  50% {
+    transform: translateY(-5px) rotate(11deg);
+  }
+}
+
+@keyframes vbFlameFlicker {
+  0%, 100% {
+    transform: scaleY(0.88) scaleX(0.95);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scaleY(1.18) scaleX(1.06);
+    opacity: 1;
   }
 }
 
@@ -308,39 +328,85 @@
   }
 }
 
-@keyframes vbLegSwingLeft {
+/* Real 2-joint articulated walking: Hip thigh swing + Knee shin bend */
+@keyframes vbThighSwingLeft {
   0%, 100% {
-    transform: translateY(-3.5px) rotate(-9deg);
+    transform: rotate(-18deg);
   }
   50% {
-    transform: translateY(0.5px) rotate(8deg);
+    transform: rotate(16deg);
   }
 }
 
-@keyframes vbLegSwingRight {
+@keyframes vbThighSwingRight {
   0%, 100% {
-    transform: translateY(0.5px) rotate(8deg);
+    transform: rotate(16deg);
   }
   50% {
-    transform: translateY(-3.5px) rotate(-9deg);
+    transform: rotate(-18deg);
+  }
+}
+
+@keyframes vbShinBendLeft {
+  0% {
+    transform: rotate(6deg);
+  }
+  25% {
+    transform: rotate(28deg);
+  }
+  50% {
+    transform: rotate(4deg);
+  }
+  75% {
+    transform: rotate(18deg);
+  }
+  100% {
+    transform: rotate(6deg);
+  }
+}
+
+@keyframes vbShinBendRight {
+  0% {
+    transform: rotate(4deg);
+  }
+  25% {
+    transform: rotate(18deg);
+  }
+  50% {
+    transform: rotate(6deg);
+  }
+  75% {
+    transform: rotate(28deg);
+  }
+  100% {
+    transform: rotate(4deg);
   }
 }
 
 @keyframes vbArmSwingLeft {
   0%, 100% {
-    transform: rotate(10deg);
+    transform: rotate(16deg);
   }
   50% {
-    transform: rotate(-10deg);
+    transform: rotate(-14deg);
   }
 }
 
 @keyframes vbArmSwingRight {
   0%, 100% {
-    transform: rotate(-10deg);
+    transform: rotate(-14deg);
   }
   50% {
-    transform: rotate(10deg);
+    transform: rotate(16deg);
+  }
+}
+
+@keyframes vbForearmBend {
+  0%, 100% {
+    transform: rotate(-14deg);
+  }
+  50% {
+    transform: rotate(-26deg);
   }
 }
 
@@ -426,8 +492,23 @@
 }
 
 .vb-body-walk {
-  animation: vbBodyWalk 0.62s ease-in-out infinite;
+  animation: vbBodyWalk 0.68s ease-in-out infinite;
   transform-origin: 100px 170px;
+}
+
+.vb-body-fly {
+  animation: vbBodyFly 1.5s ease-in-out infinite;
+  transform-origin: 100px 140px;
+}
+
+.vb-flame-left {
+  transform-origin: 80px 238px;
+  animation: vbFlameFlicker 0.22s ease-in-out infinite;
+}
+
+.vb-flame-right {
+  transform-origin: 120px 238px;
+  animation: vbFlameFlicker 0.22s ease-in-out infinite 0.11s;
 }
 
 .vb-body-dance {
@@ -474,24 +555,44 @@
   animation: vbBodyIdle 1.6s ease-in-out infinite;
 }
 
-.vb-leg-left-walk {
+.vb-thigh-left-walk {
   transform-origin: 81px 174px;
-  animation: vbLegSwingLeft 0.62s ease-in-out infinite;
+  animation: vbThighSwingLeft 0.68s ease-in-out infinite;
 }
 
-.vb-leg-right-walk {
+.vb-shin-left-walk {
+  transform-origin: 81px 199px;
+  animation: vbShinBendLeft 0.68s ease-in-out infinite;
+}
+
+.vb-thigh-right-walk {
   transform-origin: 119px 174px;
-  animation: vbLegSwingRight 0.62s ease-in-out infinite;
+  animation: vbThighSwingRight 0.68s ease-in-out infinite;
+}
+
+.vb-shin-right-walk {
+  transform-origin: 119px 199px;
+  animation: vbShinBendRight 0.68s ease-in-out infinite;
 }
 
 .vb-arm-left-walk {
   transform-origin: 60px 126px;
-  animation: vbArmSwingLeft 0.62s ease-in-out infinite;
+  animation: vbArmSwingLeft 0.68s ease-in-out infinite;
 }
 
 .vb-arm-right-walk {
   transform-origin: 140px 126px;
-  animation: vbArmSwingRight 0.62s ease-in-out infinite;
+  animation: vbArmSwingRight 0.68s ease-in-out infinite;
+}
+
+.vb-forearm-left-walk {
+  transform-origin: 53px 148px;
+  animation: vbForearmBend 0.68s ease-in-out infinite;
+}
+
+.vb-forearm-right-walk {
+  transform-origin: 147px 148px;
+  animation: vbForearmBend 0.68s ease-in-out infinite 0.34s;
 }
 
 .vb-arm-left-idle {

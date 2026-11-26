@@ -3,6 +3,7 @@ import React from 'react';
 export type VoxBotPose =
   | 'idle'
   | 'walk'
+  | 'fly'
   | 'sit'
   | 'sleep'
   | 'wave'
@@ -24,9 +25,9 @@ interface VoxBotFullBodyProps {
 /**
  * Full-Body 3D-Styled Articulated VoxBot Desktop Companion.
  * Matches the Sovereign Pill color theme:
- * - Ready/Idle: Teal/Green (#34A89E)
+ * - Ready/Idle/Walk/Fly: Teal/Green (#34A89E)
  * - Listening: Traditional Pill Terracotta-Orange (#DA6C4C) with incoming ear waves
- * - Transcribing: Warm Amber (#DDA44D)
+ * - Transcribing: Warm Amber (#DDA44D) with neural equalizer wave
  */
 export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
   pose = 'idle',
@@ -39,6 +40,7 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
 }) => {
   const isListening = pose === 'listening';
   const isWalking = pose === 'walk';
+  const isFlying = pose === 'fly';
   const isSitting = pose === 'sit' || pose === 'sleep';
   const isSleeping = pose === 'sleep';
   const isWaving = pose === 'wave';
@@ -139,8 +141,8 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
           </filter>
         </defs>
 
-        {/* Ground Shadow */}
-        {!isSitting && (
+        {/* Ground Shadow (hidden when sitting or flying high) */}
+        {!isSitting && !isFlying && (
           <ellipse
             cx="100"
             cy="242"
@@ -243,7 +245,9 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
         <g
           filter="url(#vbSoftShadow)"
           className={
-            isWalking
+            isFlying
+              ? 'vb-body-fly'
+              : isWalking
               ? 'vb-body-walk'
               : isDancing
               ? 'vb-body-dance'
@@ -258,7 +262,7 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
               : 'vb-body-idle'
           }
         >
-          {/* ======================== LEGS & BOOTS ======================== */}
+          {/* ======================== LEGS & BOOTS (2-JOINT ARTICULATED) ======================== */}
           {isSitting ? (
             <g>
               <g>
@@ -280,41 +284,72 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
             </g>
           ) : (
             <g>
-              <g className={isWalking ? 'vb-leg-left-walk' : ''}>
+              {/* Left Leg: Hip/Thigh -> Knee/Shin/Boot */}
+              <g
+                className={isWalking ? 'vb-thigh-left-walk' : ''}
+                transform={isFlying ? 'rotate(-14 81 174)' : undefined}
+              >
                 <circle cx="81" cy="174" r="8" fill="url(#vb3dDark)" />
                 <rect x="72" y="176" width="18" height="22" rx="7" fill="url(#vb3dCream)" stroke="#2A2D32" strokeWidth="1.4" />
-                <circle cx="81" cy="199" r="7" fill="url(#vb3dDark)" />
-                <rect x="72" y="201" width="18" height="19" rx="7" fill="url(#vb3dCream)" stroke="#2A2D32" strokeWidth="1.4" />
-                <path
-                  d="M 65 221 Q 65 214 81 214 Q 96 214 96 221 L 97 232 Q 97 237 91 237 L 68 237 Q 62 237 63 231 Z"
-                  fill="url(#vb3dTeal)"
-                  stroke="#182222"
-                  strokeWidth="1.4"
-                />
-                <rect x="64" y="229" width="32" height="7" rx="3.5" fill="url(#vb3dCream)" />
-                <rect x="67" y="235" width="26" height="3" rx="1.5" fill="#DA6C4C" />
-                <circle cx="68" cy="223" r="2.8" fill="#DDA44D" />
+                <g
+                  className={isWalking ? 'vb-shin-left-walk' : ''}
+                  transform={isFlying ? 'rotate(24 81 199)' : undefined}
+                >
+                  <circle cx="81" cy="199" r="7" fill="url(#vb3dDark)" />
+                  <rect x="72" y="201" width="18" height="19" rx="7" fill="url(#vb3dCream)" stroke="#2A2D32" strokeWidth="1.4" />
+                  <path
+                    d="M 65 221 Q 65 214 81 214 Q 96 214 96 221 L 97 232 Q 97 237 91 237 L 68 237 Q 62 237 63 231 Z"
+                    fill="url(#vb3dTeal)"
+                    stroke="#182222"
+                    strokeWidth="1.4"
+                  />
+                  <rect x="64" y="229" width="32" height="7" rx="3.5" fill="url(#vb3dCream)" />
+                  <rect x="67" y="235" width="26" height="3" rx="1.5" fill="#DA6C4C" />
+                  <circle cx="68" cy="223" r="2.8" fill="#DDA44D" />
+                  {/* Twin Boot Thruster Flame when Flying */}
+                  {isFlying && (
+                    <g className="vb-flame-left" filter="url(#vbLedGlow)">
+                      <path d="M 71 238 L 80 262 L 89 238 Z" fill="#34A89E" opacity="0.9" />
+                      <path d="M 75 238 L 80 254 L 85 238 Z" fill="#FFD07B" />
+                    </g>
+                  )}
+                </g>
               </g>
 
-              <g className={isWalking ? 'vb-leg-right-walk' : ''}>
+              {/* Right Leg: Hip/Thigh -> Knee/Shin/Boot */}
+              <g
+                className={isWalking ? 'vb-thigh-right-walk' : ''}
+                transform={isFlying ? 'rotate(-8 119 174)' : undefined}
+              >
                 <circle cx="119" cy="174" r="8" fill="url(#vb3dDark)" />
                 <rect x="110" y="176" width="18" height="22" rx="7" fill="url(#vb3dCream)" stroke="#2A2D32" strokeWidth="1.4" />
-                <circle cx="119" cy="199" r="7" fill="url(#vb3dDark)" />
-                <rect x="110" y="201" width="18" height="19" rx="7" fill="url(#vb3dCream)" stroke="#2A2D32" strokeWidth="1.4" />
-                <path
-                  d="M 104 221 Q 104 214 119 214 Q 135 214 135 221 L 137 231 Q 138 237 132 237 L 109 237 Q 103 237 103 232 Z"
-                  fill="url(#vb3dTeal)"
-                  stroke="#182222"
-                  strokeWidth="1.4"
-                />
-                <rect x="104" y="229" width="32" height="7" rx="3.5" fill="url(#vb3dCream)" />
-                <rect x="107" y="235" width="26" height="3" rx="1.5" fill="#DA6C4C" />
-                <circle cx="132" cy="223" r="2.8" fill="#DDA44D" />
+                <g
+                  className={isWalking ? 'vb-shin-right-walk' : ''}
+                  transform={isFlying ? 'rotate(18 119 199)' : undefined}
+                >
+                  <circle cx="119" cy="199" r="7" fill="url(#vb3dDark)" />
+                  <rect x="110" y="201" width="18" height="19" rx="7" fill="url(#vb3dCream)" stroke="#2A2D32" strokeWidth="1.4" />
+                  <path
+                    d="M 104 221 Q 104 214 119 214 Q 135 214 135 221 L 137 231 Q 138 237 132 237 L 109 237 Q 103 237 103 232 Z"
+                    fill="url(#vb3dTeal)"
+                    stroke="#182222"
+                    strokeWidth="1.4"
+                  />
+                  <rect x="104" y="229" width="32" height="7" rx="3.5" fill="url(#vb3dCream)" />
+                  <rect x="107" y="235" width="26" height="3" rx="1.5" fill="#DA6C4C" />
+                  <circle cx="132" cy="223" r="2.8" fill="#DDA44D" />
+                  {isFlying && (
+                    <g className="vb-flame-right" filter="url(#vbLedGlow)">
+                      <path d="M 111 238 L 120 262 L 129 238 Z" fill="#34A89E" opacity="0.9" />
+                      <path d="M 115 238 L 120 254 L 125 238 Z" fill="#FFD07B" />
+                    </g>
+                  )}
+                </g>
               </g>
             </g>
           )}
 
-          {/* ======================== CHUNKY ARTICULATED ARMS ======================== */}
+          {/* ======================== CHUNKY 2-JOINT ARTICULATED ARMS ======================== */}
           <g
             className={
               isWalking || isDancing
@@ -325,16 +360,19 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
                 ? 'vb-arm-left-listen'
                 : 'vb-arm-left-idle'
             }
+            transform={isFlying ? 'rotate(24 60 126)' : undefined}
           >
             <circle cx="60" cy="126" r="9" fill="url(#vb3dDark)" />
             <rect x="46" y="126" width="15" height="22" rx="7.5" fill="url(#vb3dDark)" />
-            <circle cx="53" cy="148" r="7" fill="url(#vb3dDark)" />
-            <rect x="44" y="149" width="17" height="22" rx="8.5" fill="url(#vb3dCreamArm)" stroke="#2A2D32" strokeWidth="1.4" />
-            <line x1="48" y1="153" x2="48" y2="165" stroke="#FFFFFF" strokeWidth="1.8" strokeLinecap="round" opacity="0.55" />
-            <path
-              d="M 44 169 C 40 176, 43 183, 50 183 C 53 183, 54 179, 54 177 C 55 179, 57 182, 60 181 C 64 179, 64 172, 59 169 Z"
-              fill="url(#vb3dDark)"
-            />
+            <g className={isWalking ? 'vb-forearm-left-walk' : ''}>
+              <circle cx="53" cy="148" r="7" fill="url(#vb3dDark)" />
+              <rect x="44" y="149" width="17" height="22" rx="8.5" fill="url(#vb3dCreamArm)" stroke="#2A2D32" strokeWidth="1.4" />
+              <line x1="48" y1="153" x2="48" y2="165" stroke="#FFFFFF" strokeWidth="1.8" strokeLinecap="round" opacity="0.55" />
+              <path
+                d="M 44 169 C 40 176, 43 183, 50 183 C 53 183, 54 179, 54 177 C 55 179, 57 182, 60 181 C 64 179, 64 172, 59 169 Z"
+                fill="url(#vb3dDark)"
+              />
+            </g>
           </g>
 
           <g
@@ -349,16 +387,19 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
                 ? 'vb-arm-right-listen'
                 : 'vb-arm-right-idle'
             }
+            transform={isFlying ? 'rotate(-24 140 126)' : undefined}
           >
             <circle cx="140" cy="126" r="9" fill="url(#vb3dDark)" />
             <rect x="139" y="126" width="15" height="22" rx="7.5" fill="url(#vb3dDark)" />
-            <circle cx="147" cy="148" r="7" fill="url(#vb3dDark)" />
-            <rect x="139" y="149" width="17" height="22" rx="8.5" fill="url(#vb3dCreamArm)" stroke="#2A2D32" strokeWidth="1.4" />
-            <line x1="143" y1="153" x2="143" y2="165" stroke="#FFFFFF" strokeWidth="1.8" strokeLinecap="round" opacity="0.55" />
-            <path
-              d="M 141 169 C 136 172, 136 179, 140 181 C 143 182, 145 179, 146 177 C 146 179, 147 183, 150 183 C 157 183, 160 176, 156 169 Z"
-              fill="url(#vb3dDark)"
-            />
+            <g className={isWalking ? 'vb-forearm-right-walk' : ''}>
+              <circle cx="147" cy="148" r="7" fill="url(#vb3dDark)" />
+              <rect x="139" y="149" width="17" height="22" rx="8.5" fill="url(#vb3dCreamArm)" stroke="#2A2D32" strokeWidth="1.4" />
+              <line x1="143" y1="153" x2="143" y2="165" stroke="#FFFFFF" strokeWidth="1.8" strokeLinecap="round" opacity="0.55" />
+              <path
+                d="M 141 169 C 136 172, 136 179, 140 181 C 143 182, 145 179, 146 177 C 146 179, 147 183, 150 183 C 157 183, 160 176, 156 169 Z"
+                fill="url(#vb3dDark)"
+              />
+            </g>
           </g>
 
           {/* ======================== TORSO & PELVIS ======================== */}
@@ -527,13 +568,24 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
                   />
                 </g>
               ) : isTranscribing ? (
-                /* TRANSCRIBING: Calm focused amber LED eyes + smooth sequential thinking dots */
+                /* TRANSCRIBING: Focused happy arched eyes + sleek 5-bar amber-teal neural wave */
                 <g>
-                  <rect x="69" y="59" width="14" height="10" rx="5" fill="#FFD27D" />
-                  <rect x="117" y="59" width="14" height="10" rx="5" fill="#FFD27D" />
-                  <circle cx="88" cy="80" r="3" fill="#DDA44D" className="anim-bubble-dot-1" />
-                  <circle cx="100" cy="80" r="3" fill="#FFD27D" className="anim-bubble-dot-2" />
-                  <circle cx="112" cy="80" r="3" fill="#DDA44D" className="anim-bubble-dot-3" />
+                  <path d="M 69 63 Q 76 57 83 63" fill="none" stroke="#FFD27D" strokeWidth="3" strokeLinecap="round" />
+                  <path d="M 117 63 Q 124 57 131 63" fill="none" stroke="#FFD27D" strokeWidth="3" strokeLinecap="round" />
+                  <rect x="85" y="75" width="3.5" height="7" rx="1.75" fill="#34A89E" className="anim-bubble-dot-1" />
+                  <rect x="91.5" y="72" width="3.5" height="12" rx="1.75" fill="#DDA44D" className="anim-bubble-dot-2" />
+                  <rect x="98.2" y="70" width="3.5" height="15" rx="1.75" fill="#FFD27D" className="anim-bubble-dot-3" />
+                  <rect x="105" y="72" width="3.5" height="12" rx="1.75" fill="#DDA44D" className="anim-bubble-dot-2" />
+                  <rect x="111.5" y="75" width="3.5" height="7" rx="1.75" fill="#34A89E" className="anim-bubble-dot-1" />
+                </g>
+              ) : isFlying ? (
+                /* FLYING: Excited happy ^ ^ eyes + confident grin */
+                <g>
+                  <rect x="69" y="58" width="12" height="13" rx="6" fill="#FFE08A" />
+                  <circle cx="77" cy="61" r="2.8" fill="#FFFDF5" />
+                  <rect x="119" y="58" width="12" height="13" rx="6" fill="#FFE08A" />
+                  <circle cx="127" cy="61" r="2.8" fill="#FFFDF5" />
+                  <path d="M 88 77 Q 100 86 112 77" fill="none" stroke="#34A89E" strokeWidth="3.2" strokeLinecap="round" />
                 </g>
               ) : isSuccess || isWaving || isDancing ? (
                 /* SUCCESS / WAVE / DANCE: Clean joyful ^ ^ eyes & wide smile */

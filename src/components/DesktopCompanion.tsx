@@ -22,7 +22,7 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
   status,
   onToggleDictation,
 }) => {
-  const [autoPose, setAutoPose] = useState<'idle' | 'walk' | 'sit' | 'sleep' | 'wave' | 'dance'>('idle');
+  const [autoPose, setAutoPose] = useState<'idle' | 'walk' | 'fly' | 'sit' | 'sleep' | 'wave' | 'dance'>('walk');
   const [facing, setFacing] = useState<'left' | 'right'>('right');
   const [gaze, setGaze] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState<boolean>(false);
@@ -113,12 +113,13 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
     };
   }, [status.state, autoPose, isHovered]);
 
-  // Active autonomous behavior while mouse is moving/awake: walk -> wave -> idle -> sit -> dance -> walk
+  // Active autonomous behavior while mouse is moving/awake: walk -> fly -> wave -> idle -> sit -> dance
   useEffect(() => {
     if (status.state !== 'idle' || showSuccessFlash || isHovered || autoPose === 'sleep') return;
 
-    const sequence: Array<'walk' | 'wave' | 'idle' | 'sit' | 'dance'> = [
+    const sequence: Array<'walk' | 'fly' | 'wave' | 'idle' | 'sit' | 'dance'> = [
       'walk',
+      'fly',
       'wave',
       'idle',
       'sit',
@@ -128,14 +129,18 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
 
     const interval = setInterval(() => {
       if (document.hidden) return;
-      // Pick a fresh 2D roam direction whenever starting a walk
       idx = (idx + 1) % sequence.length;
       const next = sequence[idx];
       if (next === 'walk') {
+        // Walk horizontally at current altitude
+        const dir = Math.random() > 0.5 ? 1 : -1;
+        walkVecRef.current = { vx: dir * 2.4, vy: 0 };
+      } else if (next === 'fly') {
+        // Fly freely in 2D across the desktop!
         const angle = Math.random() * Math.PI * 2;
         walkVecRef.current = {
-          vx: Math.cos(angle) * 2.8,
-          vy: Math.sin(angle) * 1.6,
+          vx: Math.cos(angle) * 3.2,
+          vy: Math.sin(angle) * 2.2,
         };
       }
       setAutoPose(next);
@@ -155,9 +160,9 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
       ? 'success'
       : effectiveIdlePose;
 
-  // 2D free-roaming walk across the desktop (up, down, left, right) at ~12fps
+  // Smooth desktop movement for 'walk' (horizontal) and 'fly' (2D jetpack flight)
   useEffect(() => {
-    if (activePose !== 'walk' || isHovered) return;
+    if ((activePose !== 'walk' && activePose !== 'fly') || isHovered) return;
 
     let cancelled = false;
     const step = async () => {

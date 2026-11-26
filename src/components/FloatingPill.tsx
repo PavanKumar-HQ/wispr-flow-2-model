@@ -233,7 +233,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
             isRecording
               ? 'w-[316px] bg-cream dark:bg-darkTealSurface border-terracotta dark:border-[#FF7A59] shadow-lg dark:shadow-[0_0_16px_rgba(255,122,89,0.4)]'
               : isTranscribing
-              ? 'w-[316px] bg-cream dark:bg-darkTealSurface border-darkTeal dark:border-amber shadow-lg dark:shadow-[0_0_16px_rgba(221,164,77,0.4)]'
+              ? 'w-[316px] bg-cream dark:bg-darkTealSurface border-amber dark:border-amber shadow-lg shadow-amber/20'
               : isDone && !isDismissed
               ? status.state === 'recovery_required'
                 ? 'w-[316px] bg-cream dark:bg-darkTealSurface border-amber dark:border-amber shadow-lg'
@@ -287,14 +287,14 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
             </>
           ) : isTranscribing ? (
             <>
-              {/* Left: Clean Transcribing Spinner */}
+              {/* Left: Clean Amber-Teal Transcribing Spinner */}
               <div className="shrink-0 flex items-center gap-2 font-sans pl-1">
-                <span className="w-3.5 h-3.5 border-2 border-darkTeal dark:border-amber border-t-transparent rounded-full animate-spin shrink-0" />
+                <span className="w-3.5 h-3.5 border-2 border-amber border-t-darkTeal rounded-full animate-spin shrink-0" />
                 <span className="text-[11px] font-bold tracking-wide text-darkTeal dark:text-[#DFDFD4] transcribing-shimmer shrink-0">
                   Transcribing...
                 </span>
               </div>
-              {/* Center: Transcribing Soundwave */}
+              {/* Center: Fluid Amber Transcribing Soundwave */}
               <div
                 data-tauri-drag-region
                 className="shrink-0 flex items-center justify-center pointer-events-none px-1"
@@ -306,7 +306,13 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
                   theme={isDark ? 'dark' : 'light'}
                 />
               </div>
-              <div className="w-7 shrink-0" />
+              {/* Right: Subtle Processing Indicator */}
+              <div className="shrink-0 flex items-center gap-1 pr-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber animate-ping" />
+                <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-darkTeal/70">
+                  AI
+                </span>
+              </div>
             </>
           ) : isDone && !isDismissed ? (
             <>
