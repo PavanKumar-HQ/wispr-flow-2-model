@@ -132,15 +132,15 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
       idx = (idx + 1) % sequence.length;
       const next = sequence[idx];
       if (next === 'walk') {
-        // Walk horizontally at current altitude
+        // Walk briskly horizontally at current altitude so stride is clearly visible
         const dir = Math.random() > 0.5 ? 1 : -1;
-        walkVecRef.current = { vx: dir * 2.4, vy: 0 };
+        walkVecRef.current = { vx: dir * 4.2, vy: 0 };
       } else if (next === 'fly') {
         // Fly freely in 2D across the desktop!
         const angle = Math.random() * Math.PI * 2;
         walkVecRef.current = {
-          vx: Math.cos(angle) * 3.2,
-          vy: Math.sin(angle) * 2.2,
+          vx: Math.cos(angle) * 4.4,
+          vy: Math.sin(angle) * 2.8,
         };
       }
       setAutoPose(next);
@@ -183,8 +183,8 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
         const minY = 48; // Stay safely below menu bar / notch
         const maxY = Math.max(minY + 40, screenH - 255); // Stay above Dock
 
-        let nextX = currentX + walkVecRef.current.vx * 0.48;
-        let nextY = currentY + walkVecRef.current.vy * 0.48;
+        let nextX = currentX + walkVecRef.current.vx * 0.65;
+        let nextY = currentY + walkVecRef.current.vy * 0.65;
 
         if (nextX <= minX) {
           nextX = minX;

@@ -475,8 +475,18 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
             <rect x="89" y="102" width="22" height="13" rx="5" fill="url(#vb3dDark)" />
           </g>
 
-          {/* ======================== HEAD & CRT FACE ======================== */}
-          <g transform={isTranscribing ? 'rotate(-4 100 100)' : undefined}>
+          {/* ======================== HEAD & CRT FACE (TURNS WITH GAZE) ======================== */}
+          <g
+            style={{
+              transform: isTranscribing
+                ? 'rotate(-4deg)'
+                : isSleeping
+                ? 'translateY(3px) rotate(4deg)'
+                : `translateX(${rawGazeX * 2.5}px) rotate(${rawGazeX * 2.5}deg)`,
+              transformOrigin: '100px 104px',
+              transition: 'transform 220ms ease-out',
+            }}
+          >
             <line x1="100" y1="36" x2="100" y2="18" stroke="#182222" strokeWidth="5.5" strokeLinecap="round" />
             <line x1="100" y1="36" x2="100" y2="18" stroke="#0E6B64" strokeWidth="3" strokeLinecap="round" />
             <ellipse cx="100" cy="36" rx="10" ry="4" fill="url(#vb3dTeal)" />

@@ -246,14 +246,20 @@
 }
 
 .anim-bubble-dot-1 {
+  transform-box: fill-box;
+  transform-origin: center;
   animation: bubbleDotPulse 1.2s ease-in-out infinite;
 }
 
 .anim-bubble-dot-2 {
+  transform-box: fill-box;
+  transform-origin: center;
   animation: bubbleDotPulse 1.2s ease-in-out infinite 0.25s;
 }
 
 .anim-bubble-dot-3 {
+  transform-box: fill-box;
+  transform-origin: center;
   animation: bubbleDotPulse 1.2s ease-in-out infinite 0.5s;
 }
 
