@@ -17,7 +17,7 @@ export const FocusTimerWidget: React.FC = () => {
           if (prev <= 1) {
             setIsRunning(false);
             safeInvoke('send_system_notification_cmd', {
-              title: '⏱️ Focus Timer Complete',
+              title: 'Focus Timer Complete',
               message: mode === 'focus' ? 'Deep Focus session complete! Time for a break.' : 'Break finished! Ready to resume.',
             });
             return 0;

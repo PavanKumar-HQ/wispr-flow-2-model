@@ -15,6 +15,7 @@ pub struct VoiceUtilityPayload {
     pub label: String,
     pub time_str: Option<String>, // "HH:mm" 24-hour
     pub offset_minutes: Option<u32>,
+    pub day_offset: Option<u32>,
     pub duration_min: Option<u32>,
 }
 
@@ -324,20 +325,14 @@ fn parse_spoken_time_token(words: &[&str]) -> Option<(String, usize)> {
         return None;
     }
 
-    let combined_ampm_target = if w0.ends_with("am") || w0.ends_with("pm") {
-        w0.to_lowercase()
+    let combined_ampm_target = if w0.ends_with("am") || w0.ends_with("pm") || w0.ends_with("a.m.") || w0.ends_with("p.m.") {
+        w0.replace('.', "").to_lowercase()
     } else if words.len() > consumed {
         let next = words[consumed].to_lowercase();
-        let clean_next = next.trim_matches(|c: char| !c.is_ascii_alphabetic());
+        let clean_next: String = next.chars().filter(|c| c.is_ascii_alphabetic()).collect();
         if clean_next == "am" || clean_next == "pm" {
             consumed += 1;
-            clean_next.to_string()
-        } else if clean_next == "a" && words.get(consumed + 1).map(|s| s.to_lowercase().starts_with('m')).unwrap_or(false) {
-            consumed += 2;
-            "am".to_string()
-        } else if clean_next == "p" && words.get(consumed + 1).map(|s| s.to_lowercase().starts_with('m')).unwrap_or(false) {
-            consumed += 2;
-            "pm".to_string()
+            clean_next
         } else {
             String::new()
         }
@@ -376,11 +371,26 @@ fn try_parse_reminder_or_schedule(trimmed: &str, lower_clean: &str) -> Option<Vo
         if let Some(rest) = lower_clean.strip_prefix(prefix) {
             let words: Vec<&str> = rest.split_whitespace().collect();
             let mut offset_minutes: Option<u32> = None;
+            let mut day_offset: Option<u32> = None;
             let mut time_str: Option<String> = None;
             let mut label_words: Vec<&str> = Vec::new();
             let mut i = 0;
             while i < words.len() {
                 let w = words[i].trim_matches(|c: char| c.is_ascii_punctuation());
+                if w == "tomorrow" {
+                    day_offset = Some(1);
+                    i += 1;
+                    continue;
+                }
+                if w == "today" {
+                    day_offset = Some(0);
+                    i += 1;
+                    continue;
+                }
+                if w == "for" && i + 1 < words.len() && words[i + 1].trim_matches(|c: char| c.is_ascii_punctuation()) == "me" {
+                    i += 2;
+                    continue;
+                }
                 if w == "in" && i + 2 < words.len() {
                     if let Ok(mins) = words[i + 1].parse::<u32>() {
                         let unit = words[i + 2].trim_matches(|c: char| c.is_ascii_punctuation());
@@ -395,7 +405,7 @@ fn try_parse_reminder_or_schedule(trimmed: &str, lower_clean: &str) -> Option<Vo
                         }
                     }
                 }
-                if (w == "at" || w == "for") && i + 1 < words.len() && time_str.is_none() {
+                if (w == "at" || w == "for" || w == "after" || w == "around" || w == "by") && i + 1 < words.len() && time_str.is_none() {
                     if let Some((parsed_t, consumed)) = parse_spoken_time_token(&words[i + 1..]) {
                         time_str = Some(parsed_t);
                         i += 1 + consumed;
@@ -424,12 +434,13 @@ fn try_parse_reminder_or_schedule(trimmed: &str, lower_clean: &str) -> Option<Vo
                 }
             };
 
+            let day_label = if day_offset == Some(1) { " tomorrow" } else { "" };
             let feedback = if let Some(mins) = offset_minutes {
                 format!("Reminder set in {}m: {}", mins, label)
             } else if let Some(ref t) = time_str {
-                format!("Reminder set for {}: {}", t, label)
+                format!("Reminder set{} at {}: {}", day_label, t, label)
             } else {
-                format!("Reminder added: {}", label)
+                format!("Reminder added{}: {}", day_label, label)
             };
 
             return Some(VoiceActionResult {
@@ -442,6 +453,7 @@ fn try_parse_reminder_or_schedule(trimmed: &str, lower_clean: &str) -> Option<Vo
                     label,
                     time_str,
                     offset_minutes,
+                    day_offset,
                     duration_min: None,
                 }),
             });
@@ -521,6 +533,7 @@ fn try_parse_reminder_or_schedule(trimmed: &str, lower_clean: &str) -> Option<Vo
                     label,
                     time_str,
                     offset_minutes: None,
+                    day_offset: None,
                     duration_min: Some(dur),
                 }),
             });

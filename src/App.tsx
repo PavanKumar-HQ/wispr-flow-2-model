@@ -14,7 +14,7 @@ import { UtilitiesTab } from './components/UtilitiesTab';
 import { QuestsTab } from './components/QuestsTab';
 import { MeetingAssistantTab } from './components/MeetingAssistantTab';
 import { ModelInfo, AppSettings, HistoryRecord, SessionSnapshot, InsightsData } from './types';
-import { Home, Layers, History, Settings as SettingsIcon, BookA, BarChart2, LocateFixed, GraduationCap, LayoutGrid, Trophy, Video, Bot } from 'lucide-react';
+import { Home, Layers, History, Settings as SettingsIcon, BookA, BarChart2, LocateFixed, GraduationCap, LayoutGrid, Trophy, Video, Bot, Bell } from 'lucide-react';
 import { applyTheme } from './lib/theme';
 
 export default function App() {
@@ -116,7 +116,7 @@ export default function App() {
             const targetTime = item.timeStr || '09:00';
             if (currentTime >= targetTime) {
               safeInvoke('send_system_notification_cmd', {
-                title: '📅 VoxQuest Task Reminder',
+                title: 'VoxQuest Task Reminder',
                 message: `Task Due Today: ${item.label}`,
               });
               changed = true;
@@ -141,6 +141,7 @@ export default function App() {
       label: string;
       time_str?: string | null;
       offset_minutes?: number | null;
+      day_offset?: number | null;
       duration_min?: number | null;
     }>('voxquest-voice-utility', (e) => {
       const payload = e.payload;
@@ -150,7 +151,10 @@ export default function App() {
         if (payload.kind === 'reminder') {
           const targetDate = payload.offset_minutes
             ? new Date(now.getTime() + payload.offset_minutes * 60000)
-            : now;
+            : new Date(now.getTime());
+          if (payload.day_offset && payload.day_offset > 0) {
+            targetDate.setDate(targetDate.getDate() + payload.day_offset);
+          }
           const dateStr = toLocalYmd(targetDate);
           const timeStr =
             payload.time_str ||
@@ -167,8 +171,8 @@ export default function App() {
           localStorage.setItem('voxquest_marked_calendar_dates', JSON.stringify(list));
           window.dispatchEvent(new Event('voxquest-utility-updated'));
           safeInvoke('send_system_notification_cmd', {
-            title: '⏰ Reminder Set',
-            message: `${payload.label} at ${timeStr}`,
+            title: 'Reminder Set',
+            message: `${payload.label} (${dateStr} at ${timeStr})`,
           });
         } else if (payload.kind === 'schedule') {
           const durationMins = payload.duration_min || 30;
@@ -186,7 +190,7 @@ export default function App() {
           localStorage.setItem('voxquest_saved_commitments', JSON.stringify(list));
           window.dispatchEvent(new Event('voxquest-utility-updated'));
           safeInvoke('send_system_notification_cmd', {
-            title: '🗓️ Schedule Added',
+            title: 'Schedule Added',
             message: `${payload.label} (${durationMins}m)`,
           });
         }
@@ -748,11 +752,11 @@ export default function App() {
 
       {/* Global In-App Reminder / Schedule Popup */}
       {!isOverlayWindow && reminderAlert && (
-        <div className="fixed top-4 right-4 z-50 max-w-xs bg-white border-2 border-amber-500 rounded-2xl shadow-xl p-3.5 flex items-start gap-2.5 animate-fadeIn">
-          <span className="text-base leading-none mt-0.5">🔔</span>
+        <div className="fixed top-4 right-4 z-50 max-w-xs bg-[#FAF8F2] border-2 border-[#DDA44D] rounded-2xl shadow-xl p-3.5 flex items-start gap-2.5 animate-fadeIn">
+          <Bell className="w-4 h-4 text-[#DA6C4C] shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
-            <div className="text-xs font-extrabold text-charcoal truncate">{reminderAlert.title}</div>
-            <div className="text-[11px] font-medium text-charcoal/80 mt-0.5">{reminderAlert.message}</div>
+            <div className="text-xs font-extrabold text-[#08534E] truncate">{reminderAlert.title}</div>
+            <div className="text-[11px] font-medium text-charcoal/85 mt-0.5">{reminderAlert.message}</div>
           </div>
           <button
             type="button"

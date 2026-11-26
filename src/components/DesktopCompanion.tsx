@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Bell } from 'lucide-react';
 import { VoxBotFullBody, VoxBotPose } from './VoxBotFullBody';
 import { SessionSnapshot, NowPlayingInfo } from '../types';
 import { safeInvoke, safeListen } from '../lib/ipc';
@@ -146,7 +147,7 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
             const targetTime = item.timeStr || '09:00';
             if (currentTime >= targetTime) {
               safeInvoke('send_system_notification_cmd', {
-                title: '📅 VoxQuest Task Reminder',
+                title: 'VoxQuest Task Reminder',
                 message: `Task Due Today: ${item.label}`,
               });
               changed = true;
@@ -376,10 +377,11 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
           <button
             type="button"
             onClick={() => setReminderAlert(null)}
-            className="px-2.5 py-[2px] rounded-full text-[9px] font-mono font-bold tracking-tight border border-amber-500 bg-amber-50 text-amber-900 shadow-sm animate-fadeIn max-w-[168px] truncate cursor-pointer"
+            className="px-2.5 py-[2px] rounded-full text-[9px] font-mono font-bold tracking-tight border border-[#DDA44D] bg-[#FAF8F2] text-[#08534E] shadow-sm animate-fadeIn max-w-[172px] flex items-center gap-1 cursor-pointer"
             title={`${reminderAlert.title}: ${reminderAlert.message}`}
           >
-            🔔 {reminderAlert.message.replace('Task Due Today: ', '')}
+            <Bell className="w-2.5 h-2.5 text-[#DA6C4C] shrink-0" />
+            <span className="truncate">{reminderAlert.message.replace('Task Due Today: ', '')}</span>
           </button>
         ) : status.state === 'recording' ? (
           <div className="px-2 py-[1px] rounded-full text-[8.5px] font-mono font-bold tracking-wider uppercase border border-terracotta bg-cream/95 text-terracotta shadow-xs animate-fadeIn flex items-center gap-1">

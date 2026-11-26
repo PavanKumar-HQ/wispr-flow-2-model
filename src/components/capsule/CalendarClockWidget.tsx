@@ -100,7 +100,7 @@ export const CalendarClockWidget: React.FC = () => {
           if (currentTime >= targetTime) {
             // Trigger native macOS notification banner with sound
             safeInvoke('send_system_notification_cmd', {
-              title: '📅 VoxQuest Task Reminder',
+              title: 'VoxQuest Task Reminder',
               message: `Task Due Today: ${item.label}`,
             });
 
