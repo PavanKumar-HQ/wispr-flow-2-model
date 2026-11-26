@@ -9,13 +9,14 @@ interface DesktopCompanionProps {
   onToggleDictation: () => void;
 }
 
+const MOUSE_REST_SLEEP_MS = 6000; // Fall asleep after 6s of no mouse movement
+
 /**
  * Autonomous, Battery-Friendly Desktop Companion Window (VoxBot).
- * - Watches the mouse cursor smoothly (~4Hz quantized gaze, 0% when sleeping/hidden).
- * - Single click: immediately starts/stops dictation.
- * - Drag (>5px): smoothly repositions VoxBot anywhere on desktop.
- * - Hovering wakes VoxBot from nap and triggers a friendly reaction.
- * - Autonomously walks across the desktop, sits, naps, and blinks when idle.
+ * - Active whenever the mouse moves; falls asleep after 6s of mouse rest.
+ * - Wakes immediately when the mouse moves again or when hovered/clicked.
+ * - Roams freely in 2D (up, down, left, right) across the desktop when walking.
+ * - Single click: immediately starts/stops dictation; drag (>5px): repositions.
  */
 export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
   status,
@@ -30,7 +31,12 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
 
   const lastSessionIdRef = useRef<string | null>(null);
   const pointerDownRef = useRef<{ x: number; y: number; dragged: boolean } | null>(null);
-  const walkDirRef = useRef<1 | -1>(-1);
+  const lastCursorRef = useRef<{ x: number; y: number; movedAt: number }>({
+    x: -1,
+    y: -1,
+    movedAt: Date.now(),
+  });
+  const walkVecRef = useRef<{ vx: number; vy: number }>({ vx: -2.4, vy: -1.1 });
 
   // Brief celebration on completed transcription
   useEffect(() => {
@@ -46,7 +52,7 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
     }
   }, [status.state, status.session_id]);
 
-  // Natural blinking
+  // Natural blinking when awake
   useEffect(() => {
     if (status.state === 'transcribing' || (autoPose === 'sleep' && !isHovered)) return;
     const blinkInterval = setInterval(() => {
@@ -57,53 +63,80 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
     return () => clearInterval(blinkInterval);
   }, [status.state, autoPose, isHovered]);
 
-  // Low-power quantized mouse-watching gaze (~4Hz, skipped when sleeping or hidden)
+  // Low-power gaze & mouse-rest sleep/wake detector (~4Hz awake, ~2Hz sleeping)
   useEffect(() => {
-    if (status.state === 'transcribing' || (autoPose === 'sleep' && !isHovered)) {
+    if (status.state === 'transcribing') {
       setGaze({ x: 0, y: 0 });
       return;
     }
 
     let cancelled = false;
+    const pollMs = autoPose === 'sleep' && !isHovered ? 480 : 240;
+
     const pollGaze = async () => {
       if (cancelled || document.hidden) return;
       try {
-        const res = await safeInvoke<[number, number]>('get_companion_gaze');
-        if (!cancelled && Array.isArray(res) && res.length === 2) {
-          const [gx, gy] = res;
+        const res = await safeInvoke<[number, number, number, number]>('get_companion_gaze');
+        if (cancelled || !Array.isArray(res) || res.length < 4) return;
+        const [gx, gy, cx, cy] = res;
+        const now = Date.now();
+        const moved =
+          Math.abs(cx - lastCursorRef.current.x) > 2 ||
+          Math.abs(cy - lastCursorRef.current.y) > 2;
+
+        if (moved) {
+          lastCursorRef.current = { x: cx, y: cy, movedAt: now };
+          if (autoPose === 'sleep' && status.state === 'idle') {
+            setAutoPose('idle');
+          }
+        } else if (
+          status.state === 'idle' &&
+          !isHovered &&
+          autoPose !== 'sleep' &&
+          now - lastCursorRef.current.movedAt >= MOUSE_REST_SLEEP_MS
+        ) {
+          setAutoPose('sleep');
+        }
+
+        if (autoPose !== 'sleep' || isHovered) {
           setGaze((prev) => (prev.x === gx && prev.y === gy ? prev : { x: gx, y: gy }));
+        } else {
+          setGaze({ x: 0, y: 0 });
         }
       } catch {}
     };
 
-    const timer = setInterval(pollGaze, 240);
+    const timer = setInterval(pollGaze, pollMs);
     return () => {
       cancelled = true;
       clearInterval(timer);
     };
   }, [status.state, autoPose, isHovered]);
 
-  // Autonomous behavior cycle: walk -> idle -> sit -> sleep -> idle
+  // Active autonomous behavior while mouse is moving/awake: walk -> idle -> sit -> walk
   useEffect(() => {
-    if (status.state !== 'idle' || showSuccessFlash || isHovered) return;
+    if (status.state !== 'idle' || showSuccessFlash || isHovered || autoPose === 'sleep') return;
 
-    const sequence: Array<'idle' | 'walk' | 'idle' | 'sit' | 'sleep'> = [
-      'walk',
-      'idle',
-      'sit',
-      'sleep',
-      'idle',
-    ];
+    const sequence: Array<'walk' | 'idle' | 'sit'> = ['walk', 'idle', 'sit', 'walk'];
     let idx = 0;
 
     const interval = setInterval(() => {
       if (document.hidden) return;
+      // Pick a fresh 2D roam direction whenever starting a walk
       idx = (idx + 1) % sequence.length;
-      setAutoPose(sequence[idx]);
-    }, 6500);
+      const next = sequence[idx];
+      if (next === 'walk') {
+        const angle = Math.random() * Math.PI * 2;
+        walkVecRef.current = {
+          vx: Math.cos(angle) * 2.8,
+          vy: Math.sin(angle) * 1.6,
+        };
+      }
+      setAutoPose(next);
+    }, 5500);
 
     return () => clearInterval(interval);
-  }, [status.state, showSuccessFlash, isHovered]);
+  }, [status.state, showSuccessFlash, isHovered, autoPose]);
 
   const effectiveIdlePose = isHovered && autoPose === 'sleep' ? 'sit' : autoPose;
 
@@ -116,7 +149,7 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
       ? 'success'
       : effectiveIdlePose;
 
-  // Low-power desktop patrol (~12fps) when in 'walk' pose
+  // 2D free-roaming walk across the desktop (up, down, left, right) at ~12fps
   useEffect(() => {
     if (activePose !== 'walk' || isHovered) return;
 
@@ -130,26 +163,36 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
 
         const scale = mon.scaleFactor;
         const screenW = mon.size.width / scale;
+        const screenH = mon.size.height / scale;
         const currentX = pos.x / scale;
         const currentY = pos.y / scale;
 
-        const minX = 30;
+        const minX = 24;
         const maxX = Math.max(minX + 40, screenW - 185);
-        let nextX = currentX + walkDirRef.current * 3.0;
+        const minY = 48; // Stay safely below menu bar / notch
+        const maxY = Math.max(minY + 40, screenH - 255); // Stay above Dock
+
+        let nextX = currentX + walkVecRef.current.vx;
+        let nextY = currentY + walkVecRef.current.vy;
 
         if (nextX <= minX) {
           nextX = minX;
-          walkDirRef.current = 1;
-          setFacing('right');
+          walkVecRef.current.vx = Math.abs(walkVecRef.current.vx);
         } else if (nextX >= maxX) {
           nextX = maxX;
-          walkDirRef.current = -1;
-          setFacing('left');
-        } else {
-          setFacing(walkDirRef.current === 1 ? 'right' : 'left');
+          walkVecRef.current.vx = -Math.abs(walkVecRef.current.vx);
         }
 
-        await win.setPosition(new LogicalPosition(nextX, currentY));
+        if (nextY <= minY) {
+          nextY = minY;
+          walkVecRef.current.vy = Math.abs(walkVecRef.current.vy);
+        } else if (nextY >= maxY) {
+          nextY = maxY;
+          walkVecRef.current.vy = -Math.abs(walkVecRef.current.vy);
+        }
+
+        setFacing(walkVecRef.current.vx >= 0 ? 'right' : 'left');
+        await win.setPosition(new LogicalPosition(nextX, nextY));
       } catch {}
     };
 
@@ -215,6 +258,7 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
       <div
         onMouseEnter={() => {
           setIsHovered(true);
+          lastCursorRef.current.movedAt = Date.now();
           if (autoPose === 'sleep') setAutoPose('idle');
         }}
         onMouseLeave={() => setIsHovered(false)}

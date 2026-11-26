@@ -280,17 +280,17 @@ pub fn hide_companion_window(app: AppHandle) -> Result<(), String> {
     Ok(())
 }
 
-/// Battery-friendly quantized gaze vector (-1 | 0 | 1) from VoxBot's face toward the mouse cursor.
+/// Battery-friendly quantized gaze vector (-1 | 0 | 1) plus integer cursor coordinates for rest/wake detection.
 #[tauri::command]
-pub fn get_companion_gaze(app: AppHandle) -> (i8, i8) {
+pub fn get_companion_gaze(app: AppHandle) -> (i8, i8, i32, i32) {
     let Ok(cursor) = app.cursor_position() else {
-        return (0, 0);
+        return (0, 0, 0, 0);
     };
     let Some(w) = app.get_webview_window("desktop-companion") else {
-        return (0, 0);
+        return (0, 0, cursor.x as i32, cursor.y as i32);
     };
     let (Ok(pos), Ok(size)) = (w.outer_position(), w.outer_size()) else {
-        return (0, 0);
+        return (0, 0, cursor.x as i32, cursor.y as i32);
     };
 
     let face_cx = pos.x as f64 + (size.width as f64 * 0.5);
@@ -300,7 +300,7 @@ pub fn get_companion_gaze(app: AppHandle) -> (i8, i8) {
 
     let gx = if dx < -36.0 { -1 } else if dx > 36.0 { 1 } else { 0 };
     let gy = if dy < -36.0 { -1 } else if dy > 36.0 { 1 } else { 0 };
-    (gx, gy)
+    (gx, gy, cursor.x as i32, cursor.y as i32)
 }
 
 /// Switches desktop overlay visibility between "both", "robot", and "pill".

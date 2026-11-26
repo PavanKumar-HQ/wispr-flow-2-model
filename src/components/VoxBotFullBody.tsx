@@ -167,9 +167,10 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
           </g>
         )}
 
-        {/* GENTLE FRIENDLY LISTENING HALO (soft mint-teal & golden ripples, never creepy) */}
+        {/* GENTLE FRIENDLY LISTENING HALO & EAR AUDIO WAVES */}
         {isListening && (
           <g className="pointer-events-none" filter="url(#vbLedGlow)">
+            {/* Soft Antenna Halo */}
             <circle cx="100" cy="14" r="18" fill="url(#vb3dAntennaGlow)" />
             <circle
               cx="100"
@@ -191,6 +192,18 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
               opacity="0.45"
               className="vb-radar-2"
             />
+
+            {/* Friendly Pill-Style Audio Equalizer Waves Radiating from Both Ears */}
+            <g className="vb-wave-1">
+              <rect x="27" y="63" width="3.2" height="16" rx="1.6" fill="#34A89E" />
+              <rect x="21" y="59" width="3.2" height="24" rx="1.6" fill="#FFD07B" />
+              <rect x="15" y="65" width="3.2" height="12" rx="1.6" fill="#34A89E" opacity="0.75" />
+            </g>
+            <g className="vb-wave-2">
+              <rect x="169.8" y="63" width="3.2" height="16" rx="1.6" fill="#34A89E" />
+              <rect x="175.8" y="59" width="3.2" height="24" rx="1.6" fill="#FFD07B" />
+              <rect x="181.8" y="65" width="3.2" height="12" rx="1.6" fill="#34A89E" opacity="0.75" />
+            </g>
           </g>
         )}
 
