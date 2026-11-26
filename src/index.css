@@ -257,6 +257,215 @@
   animation: bubbleDotPulse 1.2s ease-in-out infinite 0.5s;
 }
 
+/* =========================================================================
+   FULL-BODY VOXBOT ARTICULATED ANIMATIONS
+   ========================================================================= */
+@keyframes vbBodyIdle {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-2.5px);
+  }
+}
+
+@keyframes vbBodyWalk {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-4px) rotate(-1.5deg);
+  }
+  50% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  75% {
+    transform: translateY(-4px) rotate(1.5deg);
+  }
+}
+
+@keyframes vbBodySit {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-1.5px);
+  }
+}
+
+@keyframes vbLegSwingLeft {
+  0%, 100% {
+    transform: rotate(-16deg);
+  }
+  50% {
+    transform: rotate(16deg);
+  }
+}
+
+@keyframes vbLegSwingRight {
+  0%, 100% {
+    transform: rotate(16deg);
+  }
+  50% {
+    transform: rotate(-16deg);
+  }
+}
+
+@keyframes vbArmSwingLeft {
+  0%, 100% {
+    transform: rotate(18deg);
+  }
+  50% {
+    transform: rotate(-18deg);
+  }
+}
+
+@keyframes vbArmSwingRight {
+  0%, 100% {
+    transform: rotate(-18deg);
+  }
+  50% {
+    transform: rotate(18deg);
+  }
+}
+
+@keyframes vbArmIdleLeft {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(3deg);
+  }
+}
+
+@keyframes vbArmIdleRight {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(-3deg);
+  }
+}
+
+@keyframes vbRadarExpand {
+  0% {
+    transform: scale(0.75);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(1.65);
+    opacity: 0;
+  }
+}
+
+@keyframes vbWavePulse {
+  0%, 100% {
+    opacity: 0.35;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+.vb-body-idle {
+  animation: vbBodyIdle 3s ease-in-out infinite;
+}
+
+.vb-body-walk {
+  animation: vbBodyWalk 0.75s ease-in-out infinite;
+  transform-origin: 90px 150px;
+}
+
+.vb-body-sit {
+  animation: vbBodySit 3.4s ease-in-out infinite;
+}
+
+.vb-body-listen {
+  animation: vbBodyIdle 1.6s ease-in-out infinite;
+}
+
+.vb-leg-left-walk {
+  transform-origin: 74px 154px;
+  animation: vbLegSwingLeft 0.75s ease-in-out infinite;
+}
+
+.vb-leg-right-walk {
+  transform-origin: 106px 154px;
+  animation: vbLegSwingRight 0.75s ease-in-out infinite;
+}
+
+.vb-arm-left-walk {
+  transform-origin: 56px 113px;
+  animation: vbArmSwingLeft 0.75s ease-in-out infinite;
+}
+
+.vb-arm-right-walk {
+  transform-origin: 124px 113px;
+  animation: vbArmSwingRight 0.75s ease-in-out infinite;
+}
+
+.vb-arm-left-idle {
+  transform-origin: 56px 113px;
+  animation: vbArmIdleLeft 3s ease-in-out infinite;
+}
+
+.vb-arm-right-idle {
+  transform-origin: 124px 113px;
+  animation: vbArmIdleRight 3s ease-in-out infinite;
+}
+
+.vb-arm-left-sit {
+  transform-origin: 56px 113px;
+  transform: rotate(-18deg) translateY(2px);
+}
+
+.vb-arm-right-sit {
+  transform-origin: 124px 113px;
+  transform: rotate(18deg) translateY(2px);
+}
+
+.vb-arm-left-listen {
+  transform-origin: 56px 113px;
+  transform: rotate(8deg);
+}
+
+.vb-arm-right-listen {
+  transform-origin: 124px 113px;
+  transform: rotate(-8deg);
+}
+
+.vb-radar-1 {
+  transform-origin: 90px 18px;
+  animation: vbRadarExpand 1.6s ease-out infinite;
+}
+
+.vb-radar-2 {
+  transform-origin: 90px 18px;
+  animation: vbRadarExpand 1.6s ease-out infinite 0.55s;
+}
+
+.vb-wave-1 {
+  transform-origin: center;
+  animation: vbWavePulse 1.1s ease-in-out infinite;
+}
+
+.vb-wave-2 {
+  transform-origin: center;
+  animation: vbWavePulse 1.1s ease-in-out infinite 0.3s;
+}
+
+.vb-shadow-walk {
+  animation: shadowPulse 0.75s ease-in-out infinite;
+  transform-origin: 90px 214px;
+}
+
+.vb-shadow-idle {
+  animation: shadowPulse 3s ease-in-out infinite;
+  transform-origin: 90px 214px;
+}
+
 /* Native desktop drag regions for macOS */
 [data-tauri-drag-region] {
   -webkit-app-region: drag;

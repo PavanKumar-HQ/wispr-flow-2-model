@@ -249,3 +249,33 @@ pub fn hide_pill_window(app: AppHandle) -> Result<(), String> {
     });
     Ok(())
 }
+
+#[tauri::command]
+pub fn show_companion_window(app: AppHandle) -> Result<(), String> {
+    let app_handle = app.clone();
+    crate::run_on_main_thread(move || {
+        if let Some(w) = app_handle.get_webview_window("desktop-companion") {
+            let _ = w.show();
+            #[cfg(target_os = "macos")]
+            if let Ok(ns_win) = w.ns_window() {
+                use cocoa::base::id;
+                let ns_win = ns_win as id;
+                unsafe {
+                    let () = objc::msg_send![ns_win, orderFrontRegardless];
+                }
+            }
+        }
+    });
+    Ok(())
+}
+
+#[tauri::command]
+pub fn hide_companion_window(app: AppHandle) -> Result<(), String> {
+    let app_handle = app.clone();
+    crate::run_on_main_thread(move || {
+        if let Some(w) = app_handle.get_webview_window("desktop-companion") {
+            let _ = w.hide();
+        }
+    });
+    Ok(())
+}

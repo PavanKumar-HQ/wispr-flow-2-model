@@ -453,6 +453,55 @@ pub fn run() {
                 }
             }
 
+            // Create full-body Desktop Companion window (VoxBot) in bottom-right corner above Dock
+            if app.get_webview_window("desktop-companion").is_none() {
+                let companion_builder = WebviewWindowBuilder::new(
+                    app,
+                    "desktop-companion",
+                    WebviewUrl::App("index.html#companion".into())
+                )
+                .title("VoxBot Companion")
+                .inner_size(190.0, 225.0)
+                .decorations(false)
+                .always_on_top(true)
+                .transparent(true)
+                .shadow(false)
+                .skip_taskbar(true)
+                .focused(false)
+                .visible(true);
+
+                if let Ok(comp_win) = companion_builder.build() {
+                    if let Ok(Some(monitor)) = comp_win.primary_monitor() {
+                        let size = monitor.size();
+                        let scale = monitor.scale_factor();
+                        let screen_w = size.width as f64 / scale;
+                        let screen_h = size.height as f64 / scale;
+                        let x = (screen_w - 220.0).max(20.0);
+                        let y = (screen_h - 275.0).max(44.0);
+                        let _ = comp_win.set_position(tauri::Position::Logical(tauri::LogicalPosition::new(x, y)));
+                    }
+
+                    #[cfg(target_os = "macos")]
+                    if let Ok(ns_win) = comp_win.ns_window() {
+                        use cocoa::appkit::{NSColor, NSWindow};
+                        use cocoa::base::{id, nil, NO};
+                        let ns_win = ns_win as id;
+                        unsafe {
+                            let behavior: u64 = (1 << 0) | (1 << 8);
+                            let () = objc::msg_send![ns_win, setCollectionBehavior: behavior];
+                            let () = objc::msg_send![ns_win, setLevel: 101i64];
+                            let () = objc::msg_send![ns_win, setHidesOnDeactivate: 0u8];
+                            ns_win.setOpaque_(NO);
+                            ns_win.setBackgroundColor_(NSColor::clearColor(nil));
+                            ns_win.setHasShadow_(NO);
+                            let () = objc::msg_send![ns_win, setMovableByWindowBackground: 1u8];
+                            let () = objc::msg_send![ns_win, setMovable: 1u8];
+                            let () = objc::msg_send![ns_win, orderFrontRegardless];
+                        }
+                    }
+                }
+            }
+
             // Background pre-warming for Whisper model to eliminate first-use inference latency
             if let Some(state) = app.try_state::<AppState>() {
                 let whisper = Arc::clone(&state.whisper);
@@ -525,6 +574,8 @@ pub fn run() {
             commands::import_bundled_lexicon_pack_cmd,
             commands::launch_app_or_url_cmd,
             commands::hide_pill_window,
+            commands::show_companion_window,
+            commands::hide_companion_window,
             commands::get_insights,
             commands::get_dictionary_entries,
             commands::add_dictionary_entry,

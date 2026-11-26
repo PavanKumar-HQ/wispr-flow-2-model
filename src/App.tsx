@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { safeInvoke, safeListen, isNativeTauri } from './lib/ipc';
 import { Mascot } from './components/Mascot';
 import { FloatingPill } from './components/FloatingPill';
+import { DesktopCompanion } from './components/DesktopCompanion';
 import { HomeTab } from './components/HomeTab';
 import { InsightsTab } from './components/InsightsTab';
 import { ModelManagerTab } from './components/ModelManagerTab';
@@ -13,14 +14,16 @@ import { UtilitiesTab } from './components/UtilitiesTab';
 import { QuestsTab } from './components/QuestsTab';
 import { MeetingAssistantTab } from './components/MeetingAssistantTab';
 import { ModelInfo, AppSettings, HistoryRecord, SessionSnapshot, InsightsData } from './types';
-import { Home, Layers, History, Settings as SettingsIcon, BookA, BarChart2, LocateFixed, GraduationCap, LayoutGrid, Trophy, Video } from 'lucide-react';
+import { Home, Layers, History, Settings as SettingsIcon, BookA, BarChart2, LocateFixed, GraduationCap, LayoutGrid, Trophy, Video, Bot } from 'lucide-react';
 import { applyTheme } from './lib/theme';
 
 export default function App() {
   const isPillOnlyWindow = typeof window !== 'undefined' && window.location.hash.includes('pill');
+  const isCompanionWindow = typeof window !== 'undefined' && window.location.hash.includes('companion');
+  const isOverlayWindow = isPillOnlyWindow || isCompanionWindow;
 
   useEffect(() => {
-    if (isPillOnlyWindow) {
+    if (isOverlayWindow) {
       document.documentElement.classList.add('pill-window');
       document.body.classList.add('pill-window');
       document.body.classList.remove('bg-vq-cream');
@@ -30,10 +33,14 @@ export default function App() {
         document.documentElement.style.backgroundColor = 'transparent';
         document.documentElement.style.background = 'transparent';
       }
-      safeInvoke('show_pill_window');
-      safeInvoke('clamp_pill_position_cmd');
+      if (isPillOnlyWindow) {
+        safeInvoke('show_pill_window');
+        safeInvoke('clamp_pill_position_cmd');
+      } else if (isCompanionWindow) {
+        safeInvoke('show_companion_window');
+      }
     }
-  }, [isPillOnlyWindow]);
+  }, [isOverlayWindow, isPillOnlyWindow, isCompanionWindow]);
 
   const [activeTab, setActiveTab] = useState<'home' | 'meetings' | 'utilities' | 'train' | 'quests' | 'insights' | 'models' | 'dictionary' | 'history' | 'settings'>('home');
   const [insights, setInsights] = useState<InsightsData | null>(null);
@@ -73,7 +80,7 @@ export default function App() {
   const [updateAvailableVersion, setUpdateAvailableVersion] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isPillOnlyWindow) return;
+    if (isOverlayWindow) return;
     const timer = setTimeout(async () => {
       try {
         const { checkForAppUpdates } = await import('./lib/updater');
@@ -86,14 +93,14 @@ export default function App() {
       }
     }, 4500);
     return () => clearTimeout(timer);
-  }, [isPillOnlyWindow]);
+  }, [isOverlayWindow]);
 
   useEffect(() => {
-    if (isPillOnlyWindow) {
+    if (isOverlayWindow) {
       document.body.style.backgroundColor = 'transparent';
       document.documentElement.style.backgroundColor = 'transparent';
     }
-  }, [isPillOnlyWindow]);
+  }, [isOverlayWindow]);
 
   // Elapsed timer ticker during recording
   useEffect(() => {
@@ -114,8 +121,8 @@ export default function App() {
   }, [session.state, session.session_id]);
 
   useEffect(() => {
-    if (isPillOnlyWindow) {
-      // In dedicated floating indicator window, only listen to push session updates
+    if (isOverlayWindow) {
+      // In dedicated overlay windows (pill / desktop companion), only listen to push session updates
       const sessionPromise = safeListen<SessionSnapshot>('dictation-session-changed', (e) => {
         setSession(e.payload);
       });
@@ -374,6 +381,15 @@ export default function App() {
     }
   };
 
+  if (isCompanionWindow) {
+    return (
+      <DesktopCompanion
+        status={session}
+        onToggleDictation={handleToggleDictation}
+      />
+    );
+  }
+
   if (isPillOnlyWindow) {
     return (
       <div className="w-screen h-screen flex flex-col items-center justify-center bg-transparent select-none overflow-visible">
@@ -462,6 +478,15 @@ export default function App() {
           >
             <LocateFixed className="w-3.5 h-3.5 shrink-0" />
             <span className="hidden md:inline">Summon Pill</span>
+          </button>
+
+          <button
+            onClick={() => safeInvoke('show_companion_window')}
+            className="w-full flex items-center justify-center gap-1.5 px-2 md:px-3 py-2 text-xs font-semibold rounded-xl border border-charcoal/20 dark:border-darkTealBorder bg-white dark:bg-darkTealElevated text-darkTeal dark:text-cream hover:bg-darkTeal dark:hover:bg-darkTealAccent hover:text-white transition-all shadow-xs active:scale-95 cursor-pointer"
+            title="Summon VoxBot desktop companion"
+          >
+            <Bot className="w-3.5 h-3.5 shrink-0 text-amber" />
+            <span className="hidden md:inline">Summon VoxBot</span>
           </button>
 
           <div className="hidden md:flex px-1 items-center justify-between text-[10px] text-charcoal/70 dark:text-sage font-medium">

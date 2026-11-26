@@ -24,8 +24,8 @@
     <script>
       (function() {
         try {
-          var isPill = window.location.hash.includes('pill');
-          if (isPill) {
+          var isTransparentWin = window.location.hash.includes('pill') || window.location.hash.includes('companion');
+          if (isTransparentWin) {
             document.documentElement.classList.add('pill-window');
             document.documentElement.style.setProperty('background', 'transparent', 'important');
             document.documentElement.style.setProperty('background-color', 'transparent', 'important');
@@ -41,7 +41,7 @@
           document.documentElement.classList.remove('dark');
           document.documentElement.classList.add('light');
           document.documentElement.setAttribute('data-theme', 'light');
-          if (!isPill && document.body) {
+          if (!isTransparentWin && document.body) {
             document.body.style.backgroundColor = '#DFDFD4';
             document.body.style.color = '#212121';
           }
