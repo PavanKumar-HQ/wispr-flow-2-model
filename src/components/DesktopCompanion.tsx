@@ -144,7 +144,7 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
         };
       }
       setAutoPose(next);
-    }, 5200);
+    }, 3200);
 
     return () => clearInterval(interval);
   }, [status.state, showSuccessFlash, isHovered, autoPose]);

@@ -97,19 +97,19 @@ export const AudioWaveform: React.FC<AudioWaveformProps> = ({
           }
         }
       } else if (isTranscribing) {
-        // Fluid golden-amber neural ripple wave across bars (distinct from idle teal)
+        // Fluid ripple wave across bars: Amber in dark mode, dark teal in light mode
         for (let i = 0; i < count; i++) {
           const w = weights[i] || 0.6;
-          const wave = Math.sin(t * 3.0 - i * 0.55) * 0.5 + 0.5;
-          const targetH = 4 + wave * 10 * w;
-          heights[i] += (targetH - heights[i]) * 0.24;
+          const wave = Math.sin(t * 2.6 - i * 0.5) * 0.5 + 0.5;
+          const targetH = 3.5 + wave * 9 * w;
+          heights[i] += (targetH - heights[i]) * 0.2;
 
           const barEl = barsRef.current[i];
           if (barEl) {
             barEl.style.height = `${heights[i].toFixed(1)}px`;
-            barEl.style.backgroundColor = '#DDA44D';
-            barEl.style.opacity = `${(0.7 + wave * 0.3).toFixed(2)}`;
-            barEl.style.boxShadow = '0 0 6px rgba(221, 164, 77, 0.55)';
+            barEl.style.backgroundColor = theme === 'dark' ? '#DDA44D' : '#07514C';
+            barEl.style.opacity = theme === 'dark' ? `${(0.75 + wave * 0.25).toFixed(2)}` : `${(0.6 + wave * 0.4).toFixed(2)}`;
+            barEl.style.boxShadow = theme === 'dark' ? '0 0 6px rgba(221, 164, 77, 0.5)' : 'none';
           }
         }
       } else {

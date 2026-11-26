@@ -211,21 +211,27 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
           </g>
         )}
 
-        {/* TRANSCRIBING HALO */}
+        {/* TRANSCRIBING / THINKING THOUGHT BUBBLE */}
         {isTranscribing && (
           <g className="pointer-events-none" filter="url(#vbLedGlow)">
             <circle cx="100" cy="14" r="15" fill="url(#vb3dAntennaGlow)" />
-            <circle
-              cx="100"
-              cy="14"
-              r="15"
-              fill="none"
-              stroke="#42D4C8"
-              strokeWidth="2"
-              strokeDasharray="6 4"
-              className="animate-spin"
-              style={{ transformOrigin: '100px 14px' }}
+            {/* Thought trail dots */}
+            <circle cx="144" cy="40" r="3" fill="#E6E2D3" stroke="#08534E" strokeWidth="1.2" />
+            <circle cx="151" cy="31" r="4.2" fill="#E6E2D3" stroke="#08534E" strokeWidth="1.2" />
+            {/* Thought Bubble */}
+            <rect
+              x="148"
+              y="4"
+              width="42"
+              height="22"
+              rx="11"
+              fill="#07514C"
+              stroke="#DDA44D"
+              strokeWidth="1.8"
             />
+            <circle cx="160" cy="15" r="2.6" fill="#FFD27D" className="anim-bubble-dot-1" />
+            <circle cx="169" cy="15" r="2.6" fill="#DFDFD4" className="anim-bubble-dot-2" />
+            <circle cx="178" cy="15" r="2.6" fill="#34A89E" className="anim-bubble-dot-3" />
           </g>
         )}
 
@@ -385,13 +391,24 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
                 ? 'vb-arm-right-sit'
                 : isListening
                 ? 'vb-arm-right-listen'
+                : isTranscribing
+                ? ''
                 : 'vb-arm-right-idle'
             }
-            transform={isFlying ? 'rotate(-24 140 126)' : undefined}
+            transform={
+              isFlying
+                ? 'rotate(-24 140 126)'
+                : isTranscribing
+                ? 'rotate(-112 140 126)'
+                : undefined
+            }
           >
             <circle cx="140" cy="126" r="9" fill="url(#vb3dDark)" />
             <rect x="139" y="126" width="15" height="22" rx="7.5" fill="url(#vb3dDark)" />
-            <g className={isWalking ? 'vb-forearm-right-walk' : ''}>
+            <g
+              className={isWalking ? 'vb-forearm-right-walk' : ''}
+              transform={isTranscribing ? 'rotate(-36 147 148)' : undefined}
+            >
               <circle cx="147" cy="148" r="7" fill="url(#vb3dDark)" />
               <rect x="139" y="149" width="17" height="22" rx="8.5" fill="url(#vb3dCreamArm)" stroke="#2A2D32" strokeWidth="1.4" />
               <line x1="143" y1="153" x2="143" y2="165" stroke="#FFFFFF" strokeWidth="1.8" strokeLinecap="round" opacity="0.55" />
@@ -459,7 +476,7 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
           </g>
 
           {/* ======================== HEAD & CRT FACE ======================== */}
-          <g>
+          <g transform={isTranscribing ? 'rotate(-4 100 100)' : undefined}>
             <line x1="100" y1="36" x2="100" y2="18" stroke="#182222" strokeWidth="5.5" strokeLinecap="round" />
             <line x1="100" y1="36" x2="100" y2="18" stroke="#0E6B64" strokeWidth="3" strokeLinecap="round" />
             <ellipse cx="100" cy="36" rx="10" ry="4" fill="url(#vb3dTeal)" />
@@ -568,15 +585,20 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
                   />
                 </g>
               ) : isTranscribing ? (
-                /* TRANSCRIBING: Focused happy arched eyes + sleek 5-bar amber-teal neural wave */
+                /* TRANSCRIBING / THINKING: Eyes glancing up in thought + small thoughtful mouth */
                 <g>
-                  <path d="M 69 63 Q 76 57 83 63" fill="none" stroke="#FFD27D" strokeWidth="3" strokeLinecap="round" />
-                  <path d="M 117 63 Q 124 57 131 63" fill="none" stroke="#FFD27D" strokeWidth="3" strokeLinecap="round" />
-                  <rect x="85" y="75" width="3.5" height="7" rx="1.75" fill="#34A89E" className="anim-bubble-dot-1" />
-                  <rect x="91.5" y="72" width="3.5" height="12" rx="1.75" fill="#DDA44D" className="anim-bubble-dot-2" />
-                  <rect x="98.2" y="70" width="3.5" height="15" rx="1.75" fill="#FFD27D" className="anim-bubble-dot-3" />
-                  <rect x="105" y="72" width="3.5" height="12" rx="1.75" fill="#DDA44D" className="anim-bubble-dot-2" />
-                  <rect x="111.5" y="75" width="3.5" height="7" rx="1.75" fill="#34A89E" className="anim-bubble-dot-1" />
+                  <rect x="70" y="54" width="12" height="14" rx="6" fill="#FFD27D" />
+                  <circle cx="79" cy="57" r="2.8" fill="#FFFDF5" />
+                  <rect x="118" y="54" width="12" height="14" rx="6" fill="#FFD27D" />
+                  <circle cx="127" cy="57" r="2.8" fill="#FFFDF5" />
+                  {/* Thoughtful small curved mouth */}
+                  <path
+                    d="M 94 79 Q 100 76 106 79"
+                    fill="none"
+                    stroke="#DDA44D"
+                    strokeWidth="2.8"
+                    strokeLinecap="round"
+                  />
                 </g>
               ) : isFlying ? (
                 /* FLYING: Excited happy ^ ^ eyes + confident grin */
