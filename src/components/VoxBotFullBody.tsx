@@ -307,13 +307,13 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
               {/* Left Leg: Hip/Thigh -> Knee/Shin/Boot */}
               <g
                 className={isWalking ? 'vb-thigh-left-walk' : ''}
-                transform={isFlying ? 'rotate(-14 81 174)' : undefined}
+                transform={isFlying ? 'rotate(10 81 174)' : undefined}
               >
                 <circle cx="81" cy="174" r="8" fill="url(#vb3dDark)" />
                 <rect x="72" y="176" width="18" height="22" rx="7" fill="url(#vb3dCream)" stroke="#2A2D32" strokeWidth="1.4" />
                 <g
                   className={isWalking ? 'vb-shin-left-walk' : ''}
-                  transform={isFlying ? 'rotate(24 81 199)' : undefined}
+                  transform={isFlying ? 'rotate(6 81 199)' : undefined}
                 >
                   <circle cx="81" cy="199" r="7" fill="url(#vb3dDark)" />
                   <rect x="72" y="201" width="18" height="19" rx="7" fill="url(#vb3dCream)" stroke="#2A2D32" strokeWidth="1.4" />
@@ -339,13 +339,13 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
               {/* Right Leg: Hip/Thigh -> Knee/Shin/Boot */}
               <g
                 className={isWalking ? 'vb-thigh-right-walk' : ''}
-                transform={isFlying ? 'rotate(-8 119 174)' : undefined}
+                transform={isFlying ? 'rotate(8 119 174)' : undefined}
               >
                 <circle cx="119" cy="174" r="8" fill="url(#vb3dDark)" />
                 <rect x="110" y="176" width="18" height="22" rx="7" fill="url(#vb3dCream)" stroke="#2A2D32" strokeWidth="1.4" />
                 <g
                   className={isWalking ? 'vb-shin-right-walk' : ''}
-                  transform={isFlying ? 'rotate(18 119 199)' : undefined}
+                  transform={isFlying ? 'rotate(6 119 199)' : undefined}
                 >
                   <circle cx="119" cy="199" r="7" fill="url(#vb3dDark)" />
                   <rect x="110" y="201" width="18" height="19" rx="7" fill="url(#vb3dCream)" stroke="#2A2D32" strokeWidth="1.4" />
@@ -372,7 +372,9 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
           {/* ======================== CHUNKY 2-JOINT ARTICULATED ARMS ======================== */}
           <g
             className={
-              isWalking || isDancing || isMusic
+              isFlying
+                ? ''
+                : isWalking || isDancing || isMusic
                 ? 'vb-arm-left-walk'
                 : isSitting
                 ? 'vb-arm-left-sit'
@@ -380,7 +382,7 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
                 ? 'vb-arm-left-listen'
                 : 'vb-arm-left-idle'
             }
-            transform={isFlying ? 'rotate(24 60 126)' : undefined}
+            transform={isFlying ? 'rotate(28 60 126)' : undefined}
           >
             <circle cx="60" cy="126" r="9" fill="url(#vb3dDark)" />
             <rect x="46" y="126" width="15" height="22" rx="7.5" fill="url(#vb3dDark)" />
@@ -399,7 +401,9 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
           {!isWaving && !isTranscribing && (
             <g
               className={
-                isWalking || isDancing || isMusic
+                isFlying
+                  ? ''
+                  : isWalking || isDancing || isMusic
                   ? 'vb-arm-right-walk'
                   : isSitting
                   ? 'vb-arm-right-sit'
@@ -407,7 +411,7 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
                   ? 'vb-arm-right-listen'
                   : 'vb-arm-right-idle'
               }
-              transform={isFlying ? 'rotate(-24 140 126)' : undefined}
+              transform={isFlying ? 'rotate(-28 140 126)' : undefined}
             >
               <circle cx="140" cy="126" r="9" fill="url(#vb3dDark)" />
               <rect x="139" y="126" width="15" height="22" rx="7.5" fill="url(#vb3dDark)" />
