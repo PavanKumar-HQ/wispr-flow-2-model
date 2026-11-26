@@ -844,40 +844,40 @@ pub fn stop_dictation_internal(state: &AppState, app: &AppHandle) -> Result<Sess
 
     let had_recent_tech = LAST_TECHNICAL_JARGON_TIME.lock().ok().and_then(|t| *t).map(|t| t.elapsed().as_secs() < 600).unwrap_or(false);
 
-    let current_info = if settings.enable_auto_model_routing || settings.default_model_id == "auto" {
-        let prefers_high_precision = if settings.power_save_mode {
-            false
-        } else {
-            (is_dev_app && had_recent_tech) || duration_sec >= 30.0
-        };
+    let needs_multilingual = !matches!(settings.language.as_str(), "en" | "en-IN" | "en-US");
 
-        if prefers_high_precision {
-            // High-precision: Base-en-q5_1 -> Base-q5_1 -> Tiny-q5_1
-            let candidate_ids = ["whisper-base-en-q5_1", "whisper-base-q5_1", "whisper-tiny-q5_1"];
-            candidate_ids
-                .iter()
-                .filter_map(|id| manifest.iter().find(|m| &m.id == id))
-                .find(|m| models_dir.join(&m.filename).exists())
-                .cloned()
-                .or_else(|| manifest.iter().find(|m| m.recommended).cloned())
-                .ok_or_else(|| "No model manifest found".to_string())?
+    let current_info = if settings.enable_auto_model_routing || settings.default_model_id == "auto" {
+        let candidate_ids = if needs_multilingual {
+            // Multilingual / Indic: prefer multilingual models first before .en fallback
+            ["whisper-base-q5_1", "whisper-tiny-q5_1", "whisper-base-en-q5_1"]
         } else {
-            // Instant/Everyday: Base-en-q5_1 -> Base-q5_1 -> Tiny-q5_1
-            let candidate_ids = ["whisper-base-en-q5_1", "whisper-base-q5_1", "whisper-tiny-q5_1"];
-            candidate_ids
-                .iter()
-                .filter_map(|id| manifest.iter().find(|m| &m.id == id))
-                .find(|m| models_dir.join(&m.filename).exists())
-                .cloned()
-                .or_else(|| manifest.iter().find(|m| m.recommended).cloned())
-                .ok_or_else(|| "No model manifest found".to_string())?
-        }
+            ["whisper-base-en-q5_1", "whisper-base-q5_1", "whisper-tiny-q5_1"]
+        };
+        candidate_ids
+            .iter()
+            .filter_map(|id| manifest.iter().find(|m| &m.id == id))
+            .find(|m| models_dir.join(&m.filename).exists())
+            .cloned()
+            .or_else(|| manifest.iter().find(|m| m.recommended).cloned())
+            .ok_or_else(|| "No model manifest found".to_string())?
     } else {
-        manifest.iter()
+        let selected = manifest.iter()
             .find(|m| m.id == settings.default_model_id)
             .or_else(|| manifest.iter().find(|m| m.recommended))
             .cloned()
-            .ok_or_else(|| "No model manifest found".to_string())?
+            .ok_or_else(|| "No model manifest found".to_string())?;
+        // If user switched to an Indic/multilingual language while an English-only (.en) model is selected,
+        // automatically route to a downloaded multilingual model if available.
+        if needs_multilingual && selected.id.contains("-en") {
+            ["whisper-base-q5_1", "whisper-tiny-q5_1"]
+                .iter()
+                .filter_map(|id| manifest.iter().find(|m| &m.id == id))
+                .find(|m| models_dir.join(&m.filename).exists())
+                .cloned()
+                .unwrap_or(selected)
+        } else {
+            selected
+        }
     };
 
     // Robust fallback: If selected model file is not downloaded, safely fallback to highest-tier downloaded model
