@@ -211,9 +211,11 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
         }
 
         if (!isSleeping || isHovered) {
-          setGaze((prev) => (prev.x === gx && prev.y === gy ? prev : { x: gx, y: gy }));
+          setGaze((prev) =>
+            Math.abs(prev.x - gx) < 0.04 && Math.abs(prev.y - gy) < 0.04 ? prev : { x: gx, y: gy }
+          );
         } else {
-          setGaze({ x: 0, y: 0 });
+          setGaze((prev) => (prev.x === 0 && prev.y === 0 ? prev : { x: 0, y: 0 }));
         }
       } catch {}
     };
@@ -273,69 +275,88 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
       ? 'music'
       : effectiveIdlePose;
 
-  // Low-power desktop movement for 'walk' (horizontal) and 'fly' (2D jetpack flight)
+  // Smooth 30fps GPU-friendly desktop movement for 'walk' (horizontal) and 'fly' (2D jetpack flight)
   useEffect(() => {
     if ((activePose !== 'walk' && activePose !== 'fly') || isHovered) return;
 
     let cancelled = false;
     let cachedBounds: { screenW: number; screenH: number } | null = null;
     let currentPos: { x: number; y: number } | null = null;
+    let lastFacing: 'left' | 'right' | null = null;
+    let inFlight = false;
+    let lastFrameAt = 0;
+    let rafId = 0;
 
-    const step = async () => {
-      if (cancelled || document.hidden || pointerDownRef.current) return;
+    const initAndRun = async () => {
       try {
         const win = getCurrentWindow();
-        if (!cachedBounds) {
-          const mon = await currentMonitor();
-          if (!mon || cancelled) return;
-          const scale = mon.scaleFactor;
-          cachedBounds = {
-            screenW: mon.size.width / scale,
-            screenH: mon.size.height / scale,
-          };
-        }
-        if (!currentPos) {
-          const mon = await currentMonitor();
-          const scale = mon?.scaleFactor || 1;
-          const pos = await win.outerPosition();
-          currentPos = { x: pos.x / scale, y: pos.y / scale };
-        }
+        const mon = await currentMonitor();
+        if (!mon || cancelled) return;
+        const scale = mon.scaleFactor || 1;
+        cachedBounds = {
+          screenW: mon.size.width / scale,
+          screenH: mon.size.height / scale,
+        };
+        const pos = await win.outerPosition();
         if (cancelled) return;
+        currentPos = { x: pos.x / scale, y: pos.y / scale };
 
-        const minX = 24;
-        const maxX = Math.max(minX + 40, cachedBounds.screenW - 185);
-        const minY = 48;
-        const maxY = Math.max(minY + 40, cachedBounds.screenH - 255);
+        const tick = (now: number) => {
+          if (cancelled) return;
+          rafId = requestAnimationFrame(tick);
+          if (document.hidden || pointerDownRef.current || !cachedBounds || !currentPos) return;
+          if (now - lastFrameAt < 32) return; // ~30fps cap for low thermal/CPU load
+          const dt = lastFrameAt ? Math.min((now - lastFrameAt) / 95, 1.5) : 0.35;
+          lastFrameAt = now;
 
-        let nextX = currentPos.x + walkVecRef.current.vx * 1.1;
-        let nextY = currentPos.y + walkVecRef.current.vy * 1.1;
+          const minX = 24;
+          const maxX = Math.max(minX + 40, cachedBounds.screenW - 185);
+          const minY = 48;
+          const maxY = Math.max(minY + 40, cachedBounds.screenH - 255);
 
-        if (nextX <= minX) {
-          nextX = minX;
-          walkVecRef.current.vx = Math.abs(walkVecRef.current.vx);
-        } else if (nextX >= maxX) {
-          nextX = maxX;
-          walkVecRef.current.vx = -Math.abs(walkVecRef.current.vx);
-        }
+          let nextX = currentPos.x + walkVecRef.current.vx * 1.1 * dt;
+          let nextY = currentPos.y + walkVecRef.current.vy * 1.1 * dt;
 
-        if (nextY <= minY) {
-          nextY = minY;
-          walkVecRef.current.vy = Math.abs(walkVecRef.current.vy);
-        } else if (nextY >= maxY) {
-          nextY = maxY;
-          walkVecRef.current.vy = -Math.abs(walkVecRef.current.vy);
-        }
+          if (nextX <= minX) {
+            nextX = minX;
+            walkVecRef.current.vx = Math.abs(walkVecRef.current.vx);
+          } else if (nextX >= maxX) {
+            nextX = maxX;
+            walkVecRef.current.vx = -Math.abs(walkVecRef.current.vx);
+          }
 
-        currentPos = { x: nextX, y: nextY };
-        setFacing(walkVecRef.current.vx >= 0 ? 'right' : 'left');
-        await win.setPosition(new LogicalPosition(nextX, nextY));
+          if (nextY <= minY) {
+            nextY = minY;
+            walkVecRef.current.vy = Math.abs(walkVecRef.current.vy);
+          } else if (nextY >= maxY) {
+            nextY = maxY;
+            walkVecRef.current.vy = -Math.abs(walkVecRef.current.vy);
+          }
+
+          currentPos = { x: nextX, y: nextY };
+          const nextFacing = walkVecRef.current.vx >= 0 ? 'right' : 'left';
+          if (lastFacing !== nextFacing) {
+            lastFacing = nextFacing;
+            setFacing(nextFacing);
+          }
+          if (!inFlight) {
+            inFlight = true;
+            win.setPosition(new LogicalPosition(nextX, nextY))
+              .catch(() => {})
+              .finally(() => {
+                inFlight = false;
+              });
+          }
+        };
+
+        rafId = requestAnimationFrame(tick);
       } catch {}
     };
 
-    const timer = setInterval(step, 95);
+    initAndRun();
     return () => {
       cancelled = true;
-      clearInterval(timer);
+      if (rafId) cancelAnimationFrame(rafId);
     };
   }, [activePose, isHovered]);
 

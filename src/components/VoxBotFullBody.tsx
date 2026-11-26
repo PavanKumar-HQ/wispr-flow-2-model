@@ -81,12 +81,19 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
       style={{
         width: size,
         height,
-        transform: `perspective(520px) rotateY(${gaze.x * 6}deg) rotateX(${-gaze.y * 4}deg) ${
-          facing === 'left' ? 'scaleX(-1)' : ''
-        }`,
+        transform: `perspective(520px) rotateY(${gaze.x * 6}deg) rotateX(${-gaze.y * 4}deg) translateZ(0)`,
         transition: 'transform 260ms ease-out',
+        willChange: 'transform',
       }}
     >
+      <div
+        className="inline-flex items-center justify-center overflow-visible"
+        style={{
+          width: size,
+          height,
+          transform: facing === 'left' ? 'scaleX(-1)' : undefined,
+        }}
+      >
       <svg
         viewBox="-12 -20 224 274"
         width={size}
@@ -715,6 +722,7 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
           )}
         </g>
       </svg>
+      </div>
     </div>
   );
 };
