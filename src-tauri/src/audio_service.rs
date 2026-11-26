@@ -453,7 +453,7 @@ pub fn is_audio_silent_or_too_short(audio_samples: &[f32]) -> bool {
     let peak = audio_samples.iter().fold(0.0f32, |m, &s| m.max(s.abs()));
     let sum_sq: f32 = audio_samples.iter().map(|&s| s * s).sum();
     let rms = (sum_sq / audio_samples.len() as f32).sqrt();
-    peak < 0.0022 || (peak < 0.0040 && rms < 0.0002)
+    peak < 0.0022 || (peak < 0.0040 && rms < 0.0012)
 }
 
 /// Trims dead silence at the beginning and end of a 16kHz speech buffer to speed up Whisper processing and eliminate silence latency.

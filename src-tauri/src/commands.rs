@@ -458,6 +458,10 @@ pub fn start_dictation_internal(state: &AppState, app: &AppHandle) -> Result<Ses
         *target_lock = Some(snapshot);
     }
 
+    // Explicitly pause wake word service and allow 60ms for CoreAudio hardware to release
+    state.wake_word.pause();
+    std::thread::sleep(std::time::Duration::from_millis(60));
+
     // Start physical audio recording using selected microphone device
     {
         let chosen_mic = {
@@ -736,6 +740,7 @@ pub fn stop_dictation_internal(state: &AppState, app: &AppHandle) -> Result<Sess
                 if let Some(w) = app_idle.get_webview_window("floating-indicator") {
                     let _ = w.emit("dictation-session-changed", &snap);
                 }
+                state.wake_word.resume();
             }
         });
         return Ok(snap);
@@ -928,6 +933,16 @@ pub fn stop_dictation_internal(state: &AppState, app: &AppHandle) -> Result<Sess
                 if let Some(w) = app.get_webview_window("floating-indicator") {
                     let _ = w.emit("dictation-session-changed", &snap);
                 }
+
+                // Hands-free assistant activation: seamlessly transition into listening state
+                let app_next = app.clone();
+                tauri::async_runtime::spawn(async move {
+                    tokio::time::sleep(tokio::time::Duration::from_millis(350)).await;
+                    if let Some(state) = app_next.try_state::<AppState>() {
+                        let _ = crate::commands::start_dictation_internal(&state, &app_next);
+                    }
+                });
+
                 return Ok(snap);
             } else {
                 cleaned_transcript = stripped_payload;
@@ -988,6 +1003,7 @@ pub fn stop_dictation_internal(state: &AppState, app: &AppHandle) -> Result<Sess
                 if let Some(w) = app_idle.get_webview_window("floating-indicator") {
                     let _ = w.emit("dictation-session-changed", &snap);
                 }
+                state.wake_word.resume();
             }
         });
         return Ok(snap);
@@ -1540,6 +1556,7 @@ pub fn stop_dictation_internal(state: &AppState, app: &AppHandle) -> Result<Sess
                 if let Some(w) = app_pill.get_webview_window("floating-indicator") {
                     let _ = w.emit("dictation-session-changed", &snap);
                 }
+                state.wake_word.resume();
             }
         });
     }
@@ -1592,6 +1609,7 @@ pub fn cancel_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Se
                 if let Some(w) = app_idle.get_webview_window("floating-indicator") {
                     let _ = w.emit("dictation-session-changed", &snap);
                 }
+                state.wake_word.resume();
             }
         });
         return Ok(snap);

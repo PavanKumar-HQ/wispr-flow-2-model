@@ -28,26 +28,10 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
       return 'bot';
     }
   });
-  const [isMascotMode, setIsMascotMode] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem('voxquest_mascot_mode') === 'true';
-    } catch {
-      return false;
-    }
-  });
-
   const handleSetAvatar = (av: MascotAvatar) => {
     setSelectedAvatar(av);
     try {
       localStorage.setItem('voxquest_mascot_avatar', av);
-      window.dispatchEvent(new Event('storage'));
-    } catch {}
-  };
-
-  const handleSetMascotMode = (mascot: boolean) => {
-    setIsMascotMode(mascot);
-    try {
-      localStorage.setItem('voxquest_mascot_mode', String(mascot));
       window.dispatchEvent(new Event('storage'));
     } catch {}
   };
@@ -188,56 +172,25 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
             </span>
           </div>
           <p className="text-xs text-charcoal/70 leading-relaxed">
-            Choose your preferred desktop companion experience. In <strong>Mascot Mode</strong>, your companion floats freely as an animated pet (no button outlines or card wrappers); click it or press your hotkey to dictate.
+            The <strong>Sovereign Pill Capsule</strong> permanently floats on your desktop with integrated Productivity Hub, real-time waveform visualizer, and instant persona switching.
           </p>
 
-          {/* Mode Selector: Free Mascot vs Full Pill */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-            <div
-              onClick={() => handleSetMascotMode(true)}
-              className={`p-3.5 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${
-                isMascotMode
-                  ? 'bg-amber/10 border-amber shadow-xs ring-1 ring-amber/30'
-                  : 'bg-cream/40 border-charcoal/15 hover:border-charcoal/30'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white border border-charcoal/15 flex items-center justify-center">
-                  <Mascot size={28} avatar={selectedAvatar} />
-                </div>
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-bold text-xs text-charcoal">Free Mascot Companion</span>
-                    {isMascotMode && <CheckCircle2 className="w-3.5 h-3.5 text-amber" />}
-                  </div>
-                  <p className="text-[10px] text-charcoal/70 leading-tight mt-0.5">
-                    Free-floating animated pet with hover physics (no button box). Tap to speak.
-                  </p>
+          {/* Sovereign Pill Capsule Preview */}
+          <div className="p-3.5 rounded-xl border border-darkTeal/40 bg-cream/40 shadow-xs flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-white border border-charcoal/15 flex items-center justify-center">
+                <div className="w-7 h-3.5 rounded-full bg-darkTeal flex items-center justify-end pr-1">
+                  <div className="w-1.5 h-1.5 rounded-full bg-amber" />
                 </div>
               </div>
-            </div>
-
-            <div
-              onClick={() => handleSetMascotMode(false)}
-              className={`p-3.5 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${
-                !isMascotMode
-                  ? 'bg-darkTeal/10 border-darkTeal shadow-xs ring-1 ring-darkTeal/30'
-                  : 'bg-cream/40 border-charcoal/15 hover:border-charcoal/30'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white border border-charcoal/15 flex items-center justify-center">
-                  <div className="w-6 h-3 rounded-full bg-darkTeal" />
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-bold text-xs text-charcoal">Sovereign Pill Capsule with Internal Hub</span>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-darkTeal" />
                 </div>
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-bold text-xs text-charcoal">Dynamic Island Pill</span>
-                    {!isMascotMode && <CheckCircle2 className="w-3.5 h-3.5 text-darkTeal" />}
-                  </div>
-                  <p className="text-[10px] text-charcoal/70 leading-tight mt-0.5">
-                    Classic horizontal floating capsule with live waveform bar.
-                  </p>
-                </div>
+                <p className="text-[10px] text-charcoal/70 leading-tight mt-0.5">
+                  Full floating capsule with integrated Hub, live soundwave, and one-tap voice dictation.
+                </p>
               </div>
             </div>
           </div>
