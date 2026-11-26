@@ -11,6 +11,7 @@ import {
   SkipBack,
   SkipForward,
   Bot,
+  Radio,
 } from 'lucide-react';
 import { SessionSnapshot, NowPlayingInfo } from '../types';
 import { Mascot, MascotAvatar, MascotAction } from './Mascot';
@@ -312,88 +313,34 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
       style={{ background: 'transparent' }}
     >
       {/* Pill Capsule or Free-Floating Mascot Companion */}
-      {isMascotMode ? (
-        /* TRUE LIVING DESKTOP MASCOT COMPANION WITH FLOATING SPEECH BUBBLE */
+      {isMascotMode && !isRecording && !isTranscribing && (!isDone || isDismissed) && (!nowPlaying || !nowPlaying.is_playing) ? (
+        /* TRUE LIVING DESKTOP MASCOT COMPANION (WHEN IDLE ONLY) */
         <div
           data-tauri-drag-region
           onMouseDown={handleMouseDown}
           onClick={handleMascotClick}
-          className="group relative flex items-center justify-center cursor-pointer select-none py-1 px-4 gap-2.5"
+          className="group relative flex flex-col items-center justify-center cursor-pointer select-none pt-4 pb-1 px-4 overflow-visible"
           title={`${selectedAvatar.toUpperCase()} Companion • Click or press hotkey to speak`}
         >
-          {/* Living Mascot with dynamic action animation physics */}
-          <div className="flex flex-col items-center justify-center shrink-0">
-            <div className={`${
-              isRecording ? 'anim-mascot-jump' :
-              isTranscribing ? 'anim-mascot-float' :
-              isDone && !isDismissed ? 'anim-mascot-jump' :
-              mascotAction === 'walk' ? 'anim-mascot-walk' :
-              mascotAction === 'jump' ? 'anim-mascot-jump' :
-              mascotAction === 'sit' ? 'anim-mascot-sit' :
-              mascotAction === 'sleep' ? 'anim-mascot-sleep' :
-              'anim-mascot-float'
-            } group-hover:scale-105 active:scale-95 transition-transform duration-200`}>
-              <Mascot
-                size={54}
-                state={isRecording ? 'listening' : isTranscribing ? 'transcribing' : isDone && !isDismissed ? 'success' : 'idle'}
-                avatar={selectedAvatar}
-                action={isRecording || isTranscribing ? 'jump' : mascotAction}
-                interactive
-              />
-            </div>
-            {/* Floating ground shadow */}
-            <div className="w-10 h-1.5 bg-black/35 rounded-full blur-[1px] mt-1 anim-shadow-pulse pointer-events-none" />
+          {/* Living Mascot with dynamic action animation physics & ample headroom */}
+          <div className={`${
+            mascotAction === 'walk' ? 'anim-mascot-walk' :
+            mascotAction === 'jump' ? 'anim-mascot-jump' :
+            mascotAction === 'sit' ? 'anim-mascot-sit' :
+            mascotAction === 'sleep' ? 'anim-mascot-sleep' :
+            'anim-mascot-float'
+          } group-hover:scale-105 active:scale-95 transition-transform duration-200 overflow-visible`}>
+            <Mascot
+              size={54}
+              state="idle"
+              avatar={selectedAvatar}
+              action={mascotAction}
+              interactive
+            />
           </div>
 
-          {/* DYNAMIC SPEECH & WAVEFORM BUBBLE (Expands directly from the mascot!) */}
-          {isRecording ? (
-            <div className="anim-speech-bubble flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#07514C]/95 text-white border border-[#DDA44D]/50 shadow-xl backdrop-blur-md">
-              <span className="relative flex h-2 w-2 items-center justify-center shrink-0">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#DA6C4C] opacity-75" />
-                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#DA6C4C]" />
-              </span>
-              <span className="text-[10px] font-pixel text-[#DDA44D] tracking-wide">
-                {formatSeconds(status.elapsed_seconds)}
-              </span>
-              <AudioWaveform isRecording={true} isTranscribing={false} barCount={8} theme="dark" />
-              <button
-                data-tauri-no-drag
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggle();
-                }}
-                className="p-1 rounded-full bg-[#DA6C4C] text-white hover:bg-[#DA6C4C]/90 active:scale-95 cursor-pointer ml-0.5"
-                title="Stop recording"
-              >
-                <Square className="w-2.5 h-2.5 fill-current" />
-              </button>
-            </div>
-          ) : isTranscribing ? (
-            <div className="anim-speech-bubble flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#07514C]/95 text-white border border-[#DDA44D]/50 shadow-xl backdrop-blur-md">
-              <span className="w-3 h-3 border-2 border-[#DDA44D] border-t-transparent rounded-full animate-spin shrink-0" />
-              <span className="text-[9px] font-pixel text-[#DDA44D] tracking-wide transcribing-shimmer">
-                TRANSCRIBING...
-              </span>
-            </div>
-          ) : isDone && !isDismissed ? (
-            <div className="anim-speech-bubble flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#07514C]/95 text-white border border-[#DDA44D]/50 shadow-xl backdrop-blur-md">
-              <Check className="w-3 h-3 text-[#DDA44D] shrink-0" />
-              <span className="text-[9px] font-pixel text-[#DFDFD4] tracking-wide max-w-[120px] truncate">
-                {status.message?.startsWith('Opened ') ? 'OPENED' : 'PASTED'}
-              </span>
-              <button
-                data-tauri-no-drag
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleCopy();
-                }}
-                className="p-1 rounded-full bg-white/10 hover:bg-white/20 text-[#DDA44D] cursor-pointer"
-                title="Copy text"
-              >
-                {copied ? <Check className="w-2.5 h-2.5 text-[#DDA44D]" /> : <Copy className="w-2.5 h-2.5" />}
-              </button>
-            </div>
-          ) : null}
+          {/* Floating ground shadow */}
+          <div className="w-10 h-1.5 bg-black/35 rounded-full blur-[1px] mt-1 anim-shadow-pulse pointer-events-none" />
 
           {/* Floating quick avatar, action & pill switch controls (shows on hover) */}
           <div className="absolute -bottom-7 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-30 bg-[#07514C]/90 backdrop-blur-md px-2 py-0.5 rounded-full border border-[#DDA44D]/30 shadow-lg">
@@ -451,21 +398,18 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
         >
           {isRecording ? (
             <>
-              {/* Left: Sovereign Mascot & Recording status */}
-              <div className="shrink-0 flex items-center gap-1.5 font-sans pl-0.5">
-                <Mascot size={22} state="listening" avatar={selectedAvatar} />
-                <div className="flex items-center gap-1.5">
-                  <span className="relative flex h-2.5 w-2.5 items-center justify-center shrink-0">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-terracotta opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-terracotta shadow-xs" />
-                  </span>
-                  <span className="text-[11px] font-bold tracking-wider text-terracotta dark:text-[#FF8A65] uppercase">
-                    Listening
-                  </span>
-                  <span className="text-[11px] font-mono font-bold text-terracotta dark:text-[#FF8A65] bg-terracotta/10 dark:bg-terracotta/20 px-1.5 py-0.5 rounded border border-terracotta/30">
-                    {formatSeconds(status.elapsed_seconds)}
-                  </span>
-                </div>
+              {/* Left: Clean Recording status */}
+              <div className="shrink-0 flex items-center gap-1.5 font-sans pl-1">
+                <span className="relative flex h-2.5 w-2.5 items-center justify-center shrink-0">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-terracotta opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-terracotta shadow-xs" />
+                </span>
+                <span className="text-[11px] font-bold tracking-wider text-terracotta dark:text-[#FF8A65] uppercase">
+                  Listening
+                </span>
+                <span className="text-[11px] font-mono font-bold text-terracotta dark:text-[#FF8A65] bg-terracotta/10 dark:bg-terracotta/20 px-1.5 py-0.5 rounded border border-terracotta/30">
+                  {formatSeconds(status.elapsed_seconds)}
+                </span>
               </div>
               {/* Center: Live Soundwave Visualizer */}
               <div
@@ -498,15 +442,12 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
             </>
           ) : isTranscribing ? (
             <>
-              {/* Left: Sovereign Mascot & Transcribing Spinner */}
-              <div className="shrink-0 flex items-center gap-1.5 font-sans pl-0.5">
-                <Mascot size={22} state="transcribing" avatar={selectedAvatar} />
-                <div className="flex items-center gap-1.5">
-                  <span className="w-3.5 h-3.5 border-2 border-darkTeal dark:border-amber border-t-transparent rounded-full animate-spin shrink-0" />
-                  <span className="text-[11px] font-bold tracking-wide text-darkTeal dark:text-[#DFDFD4] transcribing-shimmer shrink-0">
-                    Transcribing...
-                  </span>
-                </div>
+              {/* Left: Clean Transcribing Spinner */}
+              <div className="shrink-0 flex items-center gap-2 font-sans pl-1">
+                <span className="w-3.5 h-3.5 border-2 border-darkTeal dark:border-amber border-t-transparent rounded-full animate-spin shrink-0" />
+                <span className="text-[11px] font-bold tracking-wide text-darkTeal dark:text-[#DFDFD4] transcribing-shimmer shrink-0">
+                  Transcribing...
+                </span>
               </div>
               {/* Center: Transcribing Soundwave */}
               <div
@@ -524,25 +465,22 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
             </>
           ) : isDone && !isDismissed ? (
             <>
-              {/* Left: Sovereign Mascot & Pasted Status */}
-              <div className="shrink-0 flex items-center gap-1.5 font-sans pl-0.5">
-                <Mascot size={22} state="success" avatar={selectedAvatar} />
-                <div className="flex items-center gap-1.5 pl-1 font-sans">
-                  <Check className="w-3.5 h-3.5 text-darkTeal dark:text-[#34A89E] shrink-0 stroke-[2.5]" />
-                  <span className="text-[11px] font-bold text-darkTeal dark:text-[#DFDFD4] tracking-wide">
-                    {status.message?.startsWith('Opened ')
-                      ? 'Opened'
-                      : status.message?.startsWith('Searching')
-                      ? 'Searching'
-                      : status.message?.startsWith('Playing')
-                      ? 'Playing'
-                      : status.message?.startsWith('Drafted')
-                      ? 'Drafted'
-                      : enhanced
-                      ? 'Enhanced'
-                      : 'Pasted'}
-                  </span>
-                </div>
+              {/* Left: Clean Pasted Status */}
+              <div className="shrink-0 flex items-center gap-1.5 pl-1 font-sans">
+                <Check className="w-3.5 h-3.5 text-darkTeal dark:text-[#34A89E] shrink-0 stroke-[2.5]" />
+                <span className="text-[11px] font-bold text-darkTeal dark:text-[#DFDFD4] tracking-wide">
+                  {status.message?.startsWith('Opened ')
+                    ? 'Opened'
+                    : status.message?.startsWith('Searching')
+                    ? 'Searching'
+                    : status.message?.startsWith('Playing')
+                    ? 'Playing'
+                    : status.message?.startsWith('Drafted')
+                    ? 'Drafted'
+                    : enhanced
+                    ? 'Enhanced'
+                    : 'Pasted'}
+                </span>
               </div>
             {/* Center: Ambient Soundwave */}
             <div
@@ -620,7 +558,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
         ) : nowPlaying && nowPlaying.is_playing ? (
           /* MUTUALLY EXCLUSIVE: When music is PLAYING -> Now Playing Island ONLY */
           <>
-            {/* Left: Mascot */}
+            {/* Left: Hub Trigger */}
             <button
               type="button"
               data-tauri-no-drag
@@ -628,11 +566,11 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
                 e.stopPropagation();
                 handleToggleTray();
               }}
-              className="hover:scale-110 active:scale-95 transition-transform cursor-pointer shrink-0 pl-0.5"
-              title="VoxQuest Mascot • Click to open Hub"
-              aria-label="VoxQuest Mascot"
+              className="hover:scale-110 active:scale-95 transition-transform cursor-pointer shrink-0 pl-1 text-darkTeal dark:text-amber"
+              title="Click to open Hub"
+              aria-label="Open Hub"
             >
-              <Mascot size={22} avatar={selectedAvatar} />
+              <Radio className="w-3.5 h-3.5" />
             </button>
 
             {/* Middle: Source Pill + Track Name */}
@@ -721,8 +659,8 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
         ) : (
           /* MUTUALLY EXCLUSIVE: When music is NOT playing -> Clean Ready State ONLY */
           <>
-            {/* Left: Mascot & Pulsing Ready status */}
-            <div className="shrink-0 flex items-center gap-1.5 font-sans pl-0.5">
+            {/* Left: Clean Hub toggle & Ready status */}
+            <div className="shrink-0 flex items-center gap-1.5 font-sans pl-1">
               <button
                 type="button"
                 data-tauri-no-drag
@@ -730,11 +668,11 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
                   e.stopPropagation();
                   handleToggleTray();
                 }}
-                className="hover:scale-110 active:scale-95 transition-transform cursor-pointer shrink-0"
-                title="VoxQuest Mascot • Click to open Hub"
-                aria-label="VoxQuest Mascot"
+                className="hover:scale-110 active:scale-95 transition-transform cursor-pointer shrink-0 pr-0.5 text-darkTeal dark:text-amber"
+                title="Click to open Hub"
+                aria-label="Open Hub"
               >
-                <Mascot size={22} avatar={selectedAvatar} />
+                <Radio className="w-3.5 h-3.5" />
               </button>
               {noSpeechActive ? (
                 <div className="flex items-center gap-1.5 animate-fadeIn">

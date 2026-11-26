@@ -45,17 +45,17 @@ export const Mascot: React.FC<MascotProps> = ({
   return (
     <div
       onClick={onClick}
-      className={`inline-flex items-center justify-center select-none ${
+      className={`inline-flex items-center justify-center select-none overflow-visible ${
         interactive ? 'cursor-pointer group' : ''
       } ${className}`}
-      style={{ width: size, height: size }}
+      style={{ width: size, height: size * 1.15 }}
       title={interactive ? 'Click to dictate' : 'VoxQuest Companion'}
     >
       <svg
-        viewBox="0 0 100 100"
+        viewBox="0 -10 100 115"
         width={size}
-        height={size}
-        className="w-full h-full overflow-visible drop-shadow-md"
+        height={size * 1.15}
+        className="overflow-visible drop-shadow-md"
       >
         {/* =========================================================================
             AVATAR 1: VOXBOT (Retro Cybernetic Mini Robot)
