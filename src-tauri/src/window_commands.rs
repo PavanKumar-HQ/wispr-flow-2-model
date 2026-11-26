@@ -111,7 +111,7 @@ pub fn resize_pill_window(app: AppHandle, expanded: bool, direction: Option<Stri
                 }
             }
             let target_w = if expanded { 480.0 } else { 340.0 };
-            let target_h = if expanded { 745.0 } else { 70.0 };
+            let target_h = if expanded { 745.0 } else { 115.0 };
 
             if let Ok(pos) = w.outer_position() {
                 if let Ok(Some(monitor)) = w.current_monitor() {
@@ -130,7 +130,7 @@ pub fn resize_pill_window(app: AppHandle, expanded: bool, direction: Option<Stri
 
                     if expanded {
                         if dir == "up" {
-                            let delta = target_h - 70.0;
+                            let delta = target_h - 115.0;
                             let new_y = (current_y - delta).max(44.0);
                             let _ = w.set_position(tauri::Position::Logical(tauri::LogicalPosition::new(adjusted_x, new_y)));
                         } else {

@@ -398,10 +398,11 @@ pub fn run() {
                     WebviewUrl::App("index.html#pill".into())
                 )
                 .title("VoxQuest Status")
-                .inner_size(340.0, 100.0)
+                .inner_size(340.0, 115.0)
                 .decorations(false)
                 .always_on_top(true)
                 .transparent(true)
+                .shadow(false)
                 .skip_taskbar(true)
                 .focused(false)
                 .visible(true);

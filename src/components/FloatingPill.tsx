@@ -319,7 +319,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
           data-tauri-drag-region
           onMouseDown={handleMouseDown}
           onClick={handleMascotClick}
-          className="group relative flex flex-col items-center justify-center cursor-pointer select-none pt-4 pb-1 px-4 overflow-visible"
+          className="group relative flex flex-col items-center justify-center cursor-pointer select-none pt-6 pb-2 px-4 overflow-visible border-none"
           title={`${selectedAvatar.toUpperCase()} Companion • Click or press hotkey to speak`}
         >
           {/* Living Mascot with dynamic action animation physics & ample headroom */}

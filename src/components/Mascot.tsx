@@ -48,13 +48,13 @@ export const Mascot: React.FC<MascotProps> = ({
       className={`inline-flex items-center justify-center select-none overflow-visible ${
         interactive ? 'cursor-pointer group' : ''
       } ${className}`}
-      style={{ width: size, height: size * 1.15 }}
+      style={{ width: size, height: size * 1.2 }}
       title={interactive ? 'Click to dictate' : 'VoxQuest Companion'}
     >
       <svg
-        viewBox="0 -10 100 115"
+        viewBox="0 -16 100 120"
         width={size}
-        height={size * 1.15}
+        height={size * 1.2}
         className="overflow-visible drop-shadow-md"
       >
         {/* =========================================================================
