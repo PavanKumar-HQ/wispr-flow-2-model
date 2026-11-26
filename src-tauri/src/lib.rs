@@ -461,7 +461,7 @@ pub fn run() {
                     WebviewUrl::App("index.html#companion".into())
                 )
                 .title("VoxBot Companion")
-                .inner_size(190.0, 225.0)
+                .inner_size(230.0, 265.0)
                 .decorations(false)
                 .always_on_top(true)
                 .transparent(true)
@@ -476,8 +476,8 @@ pub fn run() {
                         let scale = monitor.scale_factor();
                         let screen_w = size.width as f64 / scale;
                         let screen_h = size.height as f64 / scale;
-                        let x = (screen_w - 220.0).max(20.0);
-                        let y = (screen_h - 275.0).max(44.0);
+                        let x = (screen_w - 255.0).max(20.0);
+                        let y = (screen_h - 315.0).max(44.0);
                         let _ = comp_win.set_position(tauri::Position::Logical(tauri::LogicalPosition::new(x, y)));
                     }
 

@@ -374,8 +374,8 @@
 }
 
 .vb-body-walk {
-  animation: vbBodyWalk 0.75s ease-in-out infinite;
-  transform-origin: 90px 150px;
+  animation: vbBodyWalk 0.72s ease-in-out infinite;
+  transform-origin: 100px 170px;
 }
 
 .vb-body-sit {
@@ -387,62 +387,62 @@
 }
 
 .vb-leg-left-walk {
-  transform-origin: 74px 154px;
-  animation: vbLegSwingLeft 0.75s ease-in-out infinite;
+  transform-origin: 81px 174px;
+  animation: vbLegSwingLeft 0.72s ease-in-out infinite;
 }
 
 .vb-leg-right-walk {
-  transform-origin: 106px 154px;
-  animation: vbLegSwingRight 0.75s ease-in-out infinite;
+  transform-origin: 119px 174px;
+  animation: vbLegSwingRight 0.72s ease-in-out infinite;
 }
 
 .vb-arm-left-walk {
-  transform-origin: 56px 113px;
-  animation: vbArmSwingLeft 0.75s ease-in-out infinite;
+  transform-origin: 60px 126px;
+  animation: vbArmSwingLeft 0.72s ease-in-out infinite;
 }
 
 .vb-arm-right-walk {
-  transform-origin: 124px 113px;
-  animation: vbArmSwingRight 0.75s ease-in-out infinite;
+  transform-origin: 140px 126px;
+  animation: vbArmSwingRight 0.72s ease-in-out infinite;
 }
 
 .vb-arm-left-idle {
-  transform-origin: 56px 113px;
+  transform-origin: 60px 126px;
   animation: vbArmIdleLeft 3s ease-in-out infinite;
 }
 
 .vb-arm-right-idle {
-  transform-origin: 124px 113px;
+  transform-origin: 140px 126px;
   animation: vbArmIdleRight 3s ease-in-out infinite;
 }
 
 .vb-arm-left-sit {
-  transform-origin: 56px 113px;
-  transform: rotate(-18deg) translateY(2px);
+  transform-origin: 60px 126px;
+  transform: rotate(-16deg) translateY(2px);
 }
 
 .vb-arm-right-sit {
-  transform-origin: 124px 113px;
-  transform: rotate(18deg) translateY(2px);
+  transform-origin: 140px 126px;
+  transform: rotate(16deg) translateY(2px);
 }
 
 .vb-arm-left-listen {
-  transform-origin: 56px 113px;
+  transform-origin: 60px 126px;
   transform: rotate(8deg);
 }
 
 .vb-arm-right-listen {
-  transform-origin: 124px 113px;
+  transform-origin: 140px 126px;
   transform: rotate(-8deg);
 }
 
 .vb-radar-1 {
-  transform-origin: 90px 18px;
+  transform-origin: 100px 14px;
   animation: vbRadarExpand 1.6s ease-out infinite;
 }
 
 .vb-radar-2 {
-  transform-origin: 90px 18px;
+  transform-origin: 100px 14px;
   animation: vbRadarExpand 1.6s ease-out infinite 0.55s;
 }
 
@@ -457,13 +457,13 @@
 }
 
 .vb-shadow-walk {
-  animation: shadowPulse 0.75s ease-in-out infinite;
-  transform-origin: 90px 214px;
+  animation: shadowPulse 0.72s ease-in-out infinite;
+  transform-origin: 100px 242px;
 }
 
 .vb-shadow-idle {
   animation: shadowPulse 3s ease-in-out infinite;
-  transform-origin: 90px 214px;
+  transform-origin: 100px 242px;
 }
 
 /* Native desktop drag regions for macOS */
