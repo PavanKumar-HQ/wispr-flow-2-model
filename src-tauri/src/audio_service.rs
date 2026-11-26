@@ -273,6 +273,23 @@ impl AudioCaptureService {
     pub fn is_recording(&self) -> bool {
         *self.is_recording.lock().unwrap()
     }
+
+    /// Non-destructive 16kHz snapshot of the current recording buffer (used to peek for voice commands).
+    pub fn snapshot_16k_for_peek(&self) -> Vec<f32> {
+        let raw_samples = {
+            let buf = self.buffer.lock().unwrap();
+            buf.clone()
+        };
+        if raw_samples.is_empty() {
+            return Vec::new();
+        }
+        let target_samples = if self.input_sample_rate != 16000 {
+            linear_resample(&raw_samples, self.input_sample_rate, 16000)
+        } else {
+            raw_samples
+        };
+        isolate_voice_and_suppress_noise(&target_samples, 16000)
+    }
 }
 
 /// 2nd order Butterworth high-pass filter for removing sub-vocal rumble (< 85 Hz)

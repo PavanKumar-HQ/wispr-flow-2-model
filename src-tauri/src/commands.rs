@@ -552,7 +552,11 @@ pub fn start_dictation_internal(state: &AppState, app: &AppHandle) -> Result<Ses
         s.interaction_mode.clone()
     };
 
-    // Realtime audio visualizer waveform stream for Wispr Flow audio effect
+    let auto_stop_eligible = mode == "toggle" || !crate::is_session_started_by_hotkey();
+
+    // Realtime audio visualizer waveform stream + Command-Only Auto-Stop
+    // Only auto-stops after ~1.3s pause if the captured opening utterance is an intentional voice command
+    // (e.g. "search Adobe Photoshop", "play ...", "set a reminder ..."); normal dictation is never interrupted.
     {
         let app_level_emitter = app.clone();
         let state_audio = Arc::clone(&state.audio);
@@ -561,6 +565,10 @@ pub fn start_dictation_internal(state: &AppState, app: &AppHandle) -> Result<Ses
 
         tauri::async_runtime::spawn(async move {
             let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(50));
+            let mut speech_ticks: u32 = 0;
+            let mut heard_speech = false;
+            let mut silent_ticks: u32 = 0;
+            let mut command_peek_done = false;
             loop {
                 interval.tick().await;
                 let is_rec = {
@@ -575,6 +583,55 @@ pub fn start_dictation_internal(state: &AppState, app: &AppHandle) -> Result<Ses
                     audio.get_current_audio_level()
                 };
                 let _ = app_level_emitter.emit("audio-level", level);
+
+                if auto_stop_eligible && !command_peek_done {
+                    if level >= 0.14 {
+                        speech_ticks += 1;
+                        if speech_ticks >= 2 {
+                            heard_speech = true;
+                        }
+                        silent_ticks = 0;
+                    } else if heard_speech && level < 0.10 {
+                        silent_ticks += 1;
+                        // After ~1.3s pause following speech, check once if it's a voice command
+                        if silent_ticks >= 26 {
+                            command_peek_done = true;
+                            if let Some(state_w) = app_level_emitter.try_state::<AppState>() {
+                                let peek_samples = {
+                                    let audio = state_w.audio.lock().unwrap();
+                                    audio.snapshot_16k_for_peek()
+                                };
+                                // Only peek short command-sized utterances (<= 8s)
+                                if peek_samples.len() >= 4800 && peek_samples.len() <= 16000 * 8 {
+                                    let lang_setting = {
+                                        let s = state_w.settings.lock().unwrap();
+                                        s.language.clone()
+                                    };
+                                    let lang = if lang_setting == "auto" { None } else { Some(lang_setting.as_str()) };
+                                    let is_cmd = {
+                                        let mut engine = state_w.whisper.lock().unwrap();
+                                        if engine.is_loaded() {
+                                            if let Ok(raw) = engine.transcribe(&peek_samples, lang, None) {
+                                                let cleaned = clean_whisper_transcript(&raw);
+                                                crate::action_engine::is_voice_command_intent(&cleaned)
+                                            } else {
+                                                false
+                                            }
+                                        } else {
+                                            false
+                                        }
+                                    };
+                                    if is_cmd {
+                                        let _ = stop_dictation(state_w, app_level_emitter.clone());
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    } else if level >= 0.12 {
+                        silent_ticks = 0;
+                    }
+                }
             }
         });
     }

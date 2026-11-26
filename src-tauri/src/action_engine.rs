@@ -83,6 +83,48 @@ fn looks_like_prose_dictation(trimmed: &str, max_words: usize) -> bool {
     PROSE_MARKERS.iter().any(|m| lower.contains(m))
 }
 
+/// Side-effect-free check: returns true if `input` is an intentional voice command
+/// (search, play, open, reminder, schedule, timer, system clean/scan, language switch)
+/// rather than normal prose dictation. Used for smart command-only auto-stop.
+pub fn is_voice_command_intent(input: &str) -> bool {
+    let trimmed = input.trim();
+    if trimmed.is_empty() {
+        return false;
+    }
+    let lower = trimmed.to_lowercase();
+    let lower_clean = lower.trim_matches(|c: char| c.is_ascii_punctuation() || c.is_whitespace());
+
+    if lower_clean.starts_with("open ") || lower_clean.starts_with("launch ") {
+        return !looks_like_prose_dictation(trimmed, 8);
+    }
+
+    let is_search_prefix = lower_clean.starts_with("search youtube for ")
+        || lower_clean.starts_with("search on youtube ")
+        || lower_clean.starts_with("search in youtube ")
+        || lower_clean.starts_with("search google for ")
+        || lower_clean.starts_with("search ")
+        || lower_clean.starts_with("google ");
+    if is_search_prefix && !looks_like_prose_dictation(trimmed, 10) {
+        return true;
+    }
+
+    if (lower_clean.starts_with("play ") || lower_clean.starts_with("play, ") || lower_clean.starts_with("play:"))
+        && !looks_like_prose_dictation(trimmed, 12)
+    {
+        return true;
+    }
+
+    if try_parse_reminder_or_schedule(trimmed, lower_clean).is_some() {
+        return true;
+    }
+
+    if try_parse_app_utility_command(trimmed, lower_clean).is_some() {
+        return true;
+    }
+
+    false
+}
+
 /// Detects voice-triggered system actions with strict dictation guardrails.
 /// Returns Some(VoiceActionResult) if an intentional command or dynamic snippet was recognized.
 pub fn detect_voice_action(input: &str) -> Option<VoiceActionResult> {
