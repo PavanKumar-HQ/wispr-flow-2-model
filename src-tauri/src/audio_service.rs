@@ -337,16 +337,16 @@ pub fn isolate_voice_and_suppress_noise(samples: &[f32], sample_rate: u32) -> Ve
         }
     };
 
-    // Generous safety pad of ~400ms (20 frames) to fully preserve rapid word boundaries and consonant transients.
-    // If speech started within the first 500ms (25 frames), keep from frame 0 so initial consonants/words are never clipped.
-    let pad_frames = 20;
-    let safe_start_frame = if start_frame <= 25 {
+    // Generous safety pad of ~320ms (16 frames) to fully preserve rapid word boundaries and consonant transients.
+    // If speech started within the first 240ms (12 frames), keep from frame 0 so initial consonants/words are never clipped.
+    let pad_frames = 16;
+    let safe_start_frame = if start_frame <= 12 {
         0
     } else {
         start_frame.saturating_sub(pad_frames)
     };
     // If speech ended near the close of recording, preserve to the final frame so trailing syllables are never cut off.
-    let safe_end_frame = if num_frames.saturating_sub(end_frame) <= 20 {
+    let safe_end_frame = if num_frames.saturating_sub(end_frame) <= 12 {
         num_frames
     } else {
         (end_frame + pad_frames + 1).min(num_frames)

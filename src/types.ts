@@ -33,6 +33,9 @@ export interface AppSettings {
   destination_sync_duration_secs?: number;
   enable_auto_model_routing?: boolean;
   enable_speech_repair?: boolean;
+  enable_wake_word?: boolean;
+  wake_word_name?: string;
+  assistant_greeting?: string;
 }
 
 export interface AppUsageStat {

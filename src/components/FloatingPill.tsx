@@ -345,29 +345,6 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
             <div className="w-10 h-1.5 bg-black/35 rounded-full blur-[1px] mt-1 anim-shadow-pulse pointer-events-none" />
           </div>
 
-          {/* Productivity Hub Trigger Button directly next to Mascot */}
-          <button
-            data-tauri-no-drag
-            onClick={(e) => {
-              e.stopPropagation();
-              handleToggleTray();
-            }}
-            className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 shadow-md active:scale-95 cursor-pointer border-2 ${
-              isTrayExpanded
-                ? 'bg-darkTeal dark:bg-darkTealAccent text-white border-amber shadow-lg'
-                : 'bg-cream/95 dark:bg-darkTealSurface text-charcoal dark:text-cream border-charcoal/40 hover:border-darkTeal dark:border-mint/50'
-            }`}
-            title={isTrayExpanded ? 'Close Productivity Hub' : 'Open Productivity Hub'}
-            aria-label="Toggle Hub"
-          >
-            {isTrayExpanded ? (
-              <X className="w-3.5 h-3.5 text-amber shrink-0" />
-            ) : (
-              <LayoutGrid className="w-3.5 h-3.5 text-darkTeal dark:text-amber shrink-0" />
-            )}
-            <span className="font-sans font-bold">{isTrayExpanded ? 'Close' : 'Hub'}</span>
-          </button>
-
           {/* Floating quick avatar, action & pill switch controls (shows on hover) */}
           <div className="absolute -bottom-7 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-30 bg-[#07514C]/90 backdrop-blur-md px-2 py-0.5 rounded-full border border-[#DDA44D]/30 shadow-lg">
             <button
@@ -503,6 +480,8 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
                     ? 'Playing'
                     : status.message?.startsWith('Drafted')
                     ? 'Drafted'
+                    : status.message?.toLowerCase().includes('service')
+                    ? 'At Your Service!'
                     : enhanced
                     ? 'Enhanced'
                     : 'Pasted'}

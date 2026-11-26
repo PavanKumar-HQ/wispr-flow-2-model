@@ -151,6 +151,54 @@ pub fn clean_whisper_transcript(raw: &str) -> String {
     deduplicate_repeated_speech(&cleaned)
 }
 
+/// Strips assistant wake word prefix from the transcription so dictated text has no awkward "Hey Vox" or "Hey Google" header
+pub fn strip_wake_word_prefix(transcript: &str, wake_name: &str) -> (bool, String) {
+    let trimmed = transcript.trim();
+    let name = wake_name.trim();
+    if name.is_empty() || trimmed.is_empty() {
+        return (false, trimmed.to_string());
+    }
+
+    let lower_t = trimmed.to_lowercase();
+    let lower_n = name.to_lowercase();
+
+    // Check if the entire transcript is just the wake word (e.g. "Hey Vox", "Hey Google", "Hey Vox!")
+    let cleaned_lower = lower_t.trim_matches(['.', '!', '?', ',', ';', ':', ' ', '"', '\'']);
+    if cleaned_lower == lower_n {
+        return (true, String::new());
+    }
+
+    // Check if transcript starts with the wake name, followed by punctuation or space
+    if lower_t.starts_with(&lower_n) {
+        let remainder = &trimmed[name.len()..];
+        let stripped = remainder.trim_start_matches(|c: char| c == ',' || c == ':' || c == '-' || c == ' ' || c == '.' || c == '!');
+        return (true, stripped.trim().to_string());
+    }
+
+    // Also check if wake_name without "Hey " / "Hi " matches, e.g. wake_name = "Hey Vox", but user said "Vox, what time is it?"
+    let alt_name = if lower_n.starts_with("hey ") {
+        name[4..].trim()
+    } else if lower_n.starts_with("hi ") {
+        name[3..].trim()
+    } else {
+        ""
+    };
+
+    if !alt_name.is_empty() {
+        let lower_alt = alt_name.to_lowercase();
+        if cleaned_lower == lower_alt {
+            return (true, String::new());
+        }
+        if lower_t.starts_with(&lower_alt) {
+            let remainder = &trimmed[alt_name.len()..];
+            let stripped = remainder.trim_start_matches(|c: char| c == ',' || c == ':' || c == '-' || c == ' ' || c == '.' || c == '!');
+            return (true, stripped.trim().to_string());
+        }
+    }
+
+    (false, trimmed.to_string())
+}
+
 static LAST_TECHNICAL_JARGON_TIME: std::sync::Mutex<Option<Instant>> = std::sync::Mutex::new(None);
 
 pub fn detect_technical_jargon(text: &str) -> Vec<String> {
@@ -844,7 +892,40 @@ pub fn stop_dictation(state: State<'_, AppState>, app: AppHandle) -> Result<Sess
     }
     let t_whisper_done = Instant::now();
 
-    let cleaned_transcript = clean_whisper_transcript(&raw_transcript);
+    let mut cleaned_transcript = clean_whisper_transcript(&raw_transcript);
+
+    // Assistant Persona Wake Word Processor:
+    // If the user says their wake word (e.g. "Hey Vox", "Hey Google", "Hey Jarvis"):
+    // 1. If it's solely the wake word, respond with the assistant greeting ("I'm at your service! Listening...")
+    // 2. If it's followed by speech, strip the wake phrase prefix so destination apps receive clean dictated text.
+    if settings.enable_wake_word && !settings.wake_word_name.trim().is_empty() {
+        let (triggered, stripped_payload) = strip_wake_word_prefix(&cleaned_transcript, &settings.wake_word_name);
+        if triggered {
+            if stripped_payload.is_empty() {
+                let greeting = if !settings.assistant_greeting.trim().is_empty() {
+                    settings.assistant_greeting.clone()
+                } else {
+                    "I'm at your service! Listening...".to_string()
+                };
+                let mut session_lock = state.active_session.lock().unwrap();
+                session_lock.state = SessionState::Completed;
+                session_lock.sequence += 1;
+                session_lock.active_model_name = Some(current_info.name.clone());
+                session_lock.last_transcript = Some(greeting.clone());
+                session_lock.message = Some(greeting);
+                session_lock.timestamp_ms = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_millis() as u64;
+                let snap = session_lock.clone();
+                let _ = app.emit("dictation-session-changed", &snap);
+                if let Some(w) = app.get_webview_window("floating-indicator") {
+                    let _ = w.emit("dictation-session-changed", &snap);
+                }
+                return Ok(snap);
+            } else {
+                cleaned_transcript = stripped_payload;
+            }
+        }
+    }
 
     // Native Voice Action Intent Router (e.g. "open YouTube", "open WhatsApp", "open Brave", "play music")
     if let Some(action) = try_execute_voice_action(&cleaned_transcript) {

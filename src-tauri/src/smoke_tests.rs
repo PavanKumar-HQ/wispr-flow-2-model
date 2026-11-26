@@ -215,6 +215,43 @@ fn test_clean_whisper_transcript() {
 }
 
 #[test]
+fn test_strip_wake_word_prefix() {
+    use crate::commands::strip_wake_word_prefix;
+
+    // Sole wake word should trigger with empty payload
+    let (triggered, payload) = strip_wake_word_prefix("Hey Vox", "Hey Vox");
+    assert!(triggered);
+    assert_eq!(payload, "");
+
+    let (triggered, payload) = strip_wake_word_prefix("Hey Vox!", "Hey Vox");
+    assert!(triggered);
+    assert_eq!(payload, "");
+
+    let (triggered, payload) = strip_wake_word_prefix("Hey Google", "Hey Google");
+    assert!(triggered);
+    assert_eq!(payload, "");
+
+    // Wake word followed by sentence should be cleanly stripped
+    let (triggered, payload) = strip_wake_word_prefix("Hey Vox, summarize this email", "Hey Vox");
+    assert!(triggered);
+    assert_eq!(payload, "summarize this email");
+
+    let (triggered, payload) = strip_wake_word_prefix("Hey Google: open WhatsApp and message Sarah", "Hey Google");
+    assert!(triggered);
+    assert_eq!(payload, "open WhatsApp and message Sarah");
+
+    // Partial alternate without 'Hey'
+    let (triggered, payload) = strip_wake_word_prefix("Vox, write a note", "Hey Vox");
+    assert!(triggered);
+    assert_eq!(payload, "write a note");
+
+    // Normal speech should not be modified
+    let (triggered, payload) = strip_wake_word_prefix("Good morning everyone", "Hey Vox");
+    assert!(!triggered);
+    assert_eq!(payload, "Good morning everyone");
+}
+
+#[test]
 fn test_polish_grammar_and_syntax() {
     use crate::formatter::polish_text;
 

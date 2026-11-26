@@ -35,6 +35,9 @@ pub struct AppSettings {
     pub enable_student_dataset_mode: bool,
     pub student_speaker_id: String,
     pub theme: String, // "system", "light", "dark_teal"
+    pub enable_wake_word: bool,
+    pub wake_word_name: String,
+    pub assistant_greeting: String,
 }
 
 impl Default for AppSettings {
@@ -83,6 +86,9 @@ impl Default for AppSettings {
             enable_student_dataset_mode: true,
             student_speaker_id: "student_default".to_string(),
             theme: "light".to_string(),
+            enable_wake_word: true,
+            wake_word_name: "Hey Vox".to_string(),
+            assistant_greeting: "I'm at your service! Listening...".to_string(),
         }
     }
 }

@@ -531,6 +531,81 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
           </div>
         </div>
 
+        {/* Assistant Wake Word & Voice Persona */}
+        <div className="p-5 rounded-2xl border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface shadow-xs space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal dark:text-mint font-mono flex items-center gap-1.5">
+              <Bot className="w-3.5 h-3.5" /> Assistant Wake Word & Persona
+            </h3>
+            <span className="text-[10px] font-semibold text-amber-800 dark:text-amber bg-amber/10 px-2 py-0.5 rounded-full border border-amber/30">
+              {settings.enable_wake_word !== false ? 'Active' : 'Disabled'}
+            </span>
+          </div>
+
+          <p className="text-[11px] text-charcoal/70 dark:text-sage leading-relaxed">
+            Name your voice assistant tool (e.g. <span className="font-semibold text-darkTeal dark:text-mint">"Hey Vox"</span>, <span className="font-semibold text-darkTeal dark:text-mint">"Hey Google"</span>, or your own custom name). Calling this name will trigger an instant acknowledgement (<span className="italic">"I'm at your service!"</span>) and automatically strip the wake phrase so only your pure dictated speech is inserted into applications.
+          </p>
+
+          <div className="space-y-3 pt-1">
+            {/* Toggle Enable Wake Word */}
+            <label className="flex items-center justify-between cursor-pointer p-2.5 rounded-xl bg-neutral-50 dark:bg-darkTealCanvas border border-charcoal/10 dark:border-darkTealBorder">
+              <div>
+                <span className="text-xs font-bold text-charcoal dark:text-cream block">Enable Wake Word Trigger</span>
+                <span className="text-[10px] text-charcoal/60 dark:text-sage">Listen for your assistant's name and strip it from the transcript</span>
+              </div>
+              <input
+                type="checkbox"
+                checked={settings.enable_wake_word !== false}
+                onChange={(e) => handleChange('enable_wake_word', e.target.checked)}
+                className="w-4 h-4 rounded text-darkTeal focus:ring-darkTeal cursor-pointer"
+              />
+            </label>
+
+            {/* Custom Wake Word Name Input */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-charcoal dark:text-cream">Assistant Wake Name</label>
+                <div className="flex items-center gap-1">
+                  {['Hey Vox', 'Hey Google', 'Hey Jarvis', 'Hey Pavan'].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => handleChange('wake_word_name', preset)}
+                      className={`text-[9px] font-sans px-2 py-0.5 rounded-full border transition-all cursor-pointer ${
+                        (settings.wake_word_name || 'Hey Vox') === preset
+                          ? 'bg-darkTeal text-cream border-darkTeal font-bold shadow-xs'
+                          : 'bg-white dark:bg-darkTealCanvas text-charcoal/70 dark:text-sage border-charcoal/20 hover:border-darkTeal'
+                      }`}
+                    >
+                      {preset}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <input
+                type="text"
+                value={settings.wake_word_name ?? 'Hey Vox'}
+                onChange={(e) => handleChange('wake_word_name', e.target.value)}
+                placeholder="e.g. Hey Vox, Hey Google, Hey Jarvis"
+                className="w-full px-3 py-2 text-xs font-sans rounded-xl border border-charcoal/20 dark:border-darkTealBorder bg-neutral-50 dark:bg-darkTealCanvas focus:outline-none focus:ring-2 focus:ring-darkTeal/20 dark:focus:ring-mint/20 focus:border-darkTeal dark:focus:border-mint text-charcoal dark:text-cream shadow-xs"
+              />
+            </div>
+
+            {/* Assistant Voice Response Message */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-charcoal dark:text-cream">Assistant Response Message</label>
+              <input
+                type="text"
+                value={settings.assistant_greeting ?? "I'm at your service! Listening..."}
+                onChange={(e) => handleChange('assistant_greeting', e.target.value)}
+                placeholder="e.g. I'm at your service! Listening..."
+                className="w-full px-3 py-2 text-xs font-sans rounded-xl border border-charcoal/20 dark:border-darkTealBorder bg-neutral-50 dark:bg-darkTealCanvas focus:outline-none focus:ring-2 focus:ring-darkTeal/20 dark:focus:ring-mint/20 focus:border-darkTeal dark:focus:border-mint text-charcoal dark:text-cream shadow-xs"
+              />
+              <span className="text-[10px] text-charcoal/60 dark:text-sage block">Displayed when the assistant is called alone</span>
+            </div>
+          </div>
+        </div>
+
         {/* Audio Input Device */}
         <div className="p-5 rounded-2xl border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface shadow-xs space-y-3">
           <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal dark:text-mint font-mono flex items-center gap-1.5">
