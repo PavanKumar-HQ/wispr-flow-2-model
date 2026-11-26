@@ -296,18 +296,28 @@ fn parse_spoken_time_token(words: &[&str]) -> Option<(String, usize)> {
         let m = m_digits.parse::<u32>().ok()?;
         (h, m)
     } else {
-        let h = w0.parse::<u32>().ok()?;
-        let mut m = 0u32;
-        if words.len() > 1 {
-            let w1 = words[1].trim_matches(|c: char| !c.is_ascii_alphanumeric());
-            if let Ok(min_candidate) = w1.parse::<u32>() {
-                if min_candidate < 60 && w1.len() <= 2 && words.get(2).map(|w| !w.starts_with("min")).unwrap_or(true) {
-                    m = min_candidate;
-                    consumed = 2;
+        let num_digits: String = w0.chars().take_while(|c| c.is_ascii_digit()).collect();
+        let val = num_digits.parse::<u32>().ok()?;
+        if num_digits.len() == 3 {
+            // e.g. "837" -> 8:37
+            (val / 100, val % 100)
+        } else if num_digits.len() == 4 {
+            // e.g. "1730" -> 17:30 or "0837" -> 8:37
+            (val / 100, val % 100)
+        } else {
+            let h = val;
+            let mut m = 0u32;
+            if words.len() > 1 {
+                let w1 = words[1].trim_matches(|c: char| !c.is_ascii_alphanumeric());
+                if let Ok(min_candidate) = w1.parse::<u32>() {
+                    if min_candidate < 60 && w1.len() <= 2 && words.get(2).map(|w| !w.starts_with("min")).unwrap_or(true) {
+                        m = min_candidate;
+                        consumed = 2;
+                    }
                 }
             }
+            (h, m)
         }
-        (h, m)
     };
 
     if hour > 23 || minute > 59 {
@@ -357,6 +367,9 @@ fn try_parse_reminder_or_schedule(trimmed: &str, lower_clean: &str) -> Option<Vo
         "add reminder ",
         "create a reminder ",
         "create reminder ",
+        "reminder for ",
+        "reminder at ",
+        "reminder to ",
     ];
 
     for prefix in REMINDER_PREFIXES {

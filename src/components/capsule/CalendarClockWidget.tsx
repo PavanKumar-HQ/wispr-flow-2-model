@@ -196,7 +196,7 @@ export const CalendarClockWidget: React.FC = () => {
   const handleTodayClick = () => {
     const today = new Date();
     setViewDate(today);
-    setSelectedDateStr(today.toISOString().slice(0, 10));
+    setSelectedDateStr(toLocalDateStr(today));
   };
 
   const handleToggleDateMark = (dateStr: string) => {
@@ -234,7 +234,7 @@ export const CalendarClockWidget: React.FC = () => {
     if (existingIndex >= 0) {
       updated = markedDates.map((item) =>
         item.dateStr === selectedDateStr
-          ? { ...item, label, timeStr: newReminderTime, reminderEnabled }
+          ? { ...item, label, timeStr: newReminderTime, reminderEnabled, lastNotifiedDate: undefined }
           : item
       );
     } else {

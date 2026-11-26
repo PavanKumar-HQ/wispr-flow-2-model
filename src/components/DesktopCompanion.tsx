@@ -111,7 +111,7 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
     };
   }, [status.state]);
 
-  // Show reminder popup above VoxBot whenever a reminder/timer fires
+  // Show reminder popup above VoxBot AND run unthrottled reminder check every 3s
   useEffect(() => {
     let cancelled = false;
     let unlisten: (() => void) | undefined;
@@ -124,8 +124,50 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
     }).then((fn) => {
       unlisten = fn;
     });
+
+    const checkReminders = () => {
+      try {
+        const stored = localStorage.getItem('voxquest_marked_calendar_dates');
+        if (!stored) return;
+        const items: Array<{
+          dateStr: string;
+          label: string;
+          timeStr?: string;
+          reminderEnabled?: boolean;
+          lastNotifiedDate?: string;
+        }> = JSON.parse(stored);
+        const now = new Date();
+        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        let changed = false;
+        const updated = items.map((item) => {
+          if (item.dateStr === todayStr && item.reminderEnabled !== false && item.label?.trim()) {
+            if (item.lastNotifiedDate === todayStr) return item;
+            const targetTime = item.timeStr || '09:00';
+            if (currentTime >= targetTime) {
+              safeInvoke('send_system_notification_cmd', {
+                title: '📅 VoxQuest Task Reminder',
+                message: `Task Due Today: ${item.label}`,
+              });
+              changed = true;
+              return { ...item, lastNotifiedDate: todayStr };
+            }
+          }
+          return item;
+        });
+        if (changed) {
+          localStorage.setItem('voxquest_marked_calendar_dates', JSON.stringify(updated));
+          window.dispatchEvent(new Event('voxquest-utility-updated'));
+        }
+      } catch {}
+    };
+
+    checkReminders();
+    const timer = setInterval(checkReminders, 3000);
+
     return () => {
       cancelled = true;
+      clearInterval(timer);
       if (hideTimer) clearTimeout(hideTimer);
       if (unlisten) unlisten();
     };
