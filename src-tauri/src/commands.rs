@@ -966,6 +966,30 @@ pub fn stop_dictation_internal(state: &AppState, app: &AppHandle) -> Result<Sess
                 Some(ref dp) if !dp.trim().is_empty() => Some(format!("{} {}", indian_bias, dp)),
                 _ => Some(indian_bias.to_string()),
             }
+        } else if settings.language == "kn" {
+            let kn_bias = "ನಮಸ್ಕಾರ, ಕನ್ನಡ ಭಾಷೆ, ಬೆಂಗಳೂರು, ಕರ್ನಾಟಕ.";
+            match dict_prompt {
+                Some(ref dp) if !dp.trim().is_empty() => Some(format!("{} {}", kn_bias, dp)),
+                _ => Some(kn_bias.to_string()),
+            }
+        } else if settings.language == "ta" {
+            let ta_bias = "வணக்கம், தமிழ் மொழி, சென்னை, தமிழ்நாடு.";
+            match dict_prompt {
+                Some(ref dp) if !dp.trim().is_empty() => Some(format!("{} {}", ta_bias, dp)),
+                _ => Some(ta_bias.to_string()),
+            }
+        } else if settings.language == "te" {
+            let te_bias = "నమస్కారం, తెలుగు భాష, హైదరాబాద్, ఆంధ్రప్రదేశ్, తెలంగాణ.";
+            match dict_prompt {
+                Some(ref dp) if !dp.trim().is_empty() => Some(format!("{} {}", te_bias, dp)),
+                _ => Some(te_bias.to_string()),
+            }
+        } else if settings.language == "hi" {
+            let hi_bias = "नमस्ते, हिंदी भाषा, भारत.";
+            match dict_prompt {
+                Some(ref dp) if !dp.trim().is_empty() => Some(format!("{} {}", hi_bias, dp)),
+                _ => Some(hi_bias.to_string()),
+            }
         } else {
             dict_prompt
         };
