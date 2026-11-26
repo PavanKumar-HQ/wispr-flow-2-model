@@ -432,15 +432,22 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                 onChange={(e) => handleChange('language', e.target.value)}
                 className="w-full px-3 py-2 text-xs font-sans rounded-xl border border-charcoal/20 dark:border-darkTealBorder bg-neutral-50 dark:bg-darkTealCanvas text-charcoal dark:text-cream focus:outline-none focus:ring-2 focus:ring-darkTeal/20 dark:focus:ring-mint/20 focus:border-darkTeal dark:focus:border-mint shadow-xs"
               >
-                <option value="auto">Auto-detect Language</option>
-                <option value="en">English</option>
+                <option value="en-IN">English (India — en-IN)</option>
+                <option value="en-US">English (US — en-US)</option>
+                <option value="en">English (General)</option>
+                <option value="auto">Auto-detect (Multilingual)</option>
+                <option value="kn">Kannada (ಕನ್ನಡ)</option>
+                <option value="ta">Tamil (தமிழ்)</option>
+                <option value="te">Telugu (తెలుగు)</option>
                 <option value="hi">Hindi (हिंदी)</option>
                 <option value="es">Spanish</option>
                 <option value="fr">French</option>
                 <option value="de">German</option>
                 <option value="ja">Japanese</option>
               </select>
-              <span className="text-[10px] text-charcoal/60 dark:text-sage block">Supports 99+ languages automatically</span>
+              <span className="text-[10px] text-charcoal/60 dark:text-sage block">
+                Use en-IN for Indian English accents & Indic terms; use Multilingual model for Kannada/Tamil/Telugu/Hindi
+              </span>
             </div>
           </div>
 

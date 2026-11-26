@@ -104,10 +104,11 @@ impl WhisperEngine {
             }
         }
 
-        // Strictly enforce English model vocabulary by default to prevent multilingual acoustic confusion
+        // Map regional English variants (en-IN, en-US) to "en", preserve Indic/multilingual codes, and allow "auto" detection
         let lang_code = match language {
+            Some("en-IN") | Some("en-US") | Some("en") => "en",
             Some(l) if !l.is_empty() && l != "auto" => l,
-            _ => "en",
+            _ => "auto",
         };
         params.set_language(Some(lang_code));
 

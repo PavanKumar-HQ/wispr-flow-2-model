@@ -903,9 +903,18 @@ pub fn stop_dictation_internal(state: &AppState, app: &AppHandle) -> Result<Sess
             (sess.target_app.clone(), sess.target_window.clone())
         };
         let dict_prompt = state.history.get_active_biasing_prompt(target_app_ctx.as_deref(), target_win_ctx.as_deref()).ok();
+        let effective_prompt: Option<String> = if settings.language == "en-IN" {
+            let indian_bias = "Indian English speaker; terms: Kannada, Tamil, Telugu, Hindi, Malayalam, Bengaluru, Chennai, Hyderabad, Mumbai, Delhi, rupees, lakh, crore.";
+            match dict_prompt {
+                Some(ref dp) if !dp.trim().is_empty() => Some(format!("{} {}", indian_bias, dp)),
+                _ => Some(indian_bias.to_string()),
+            }
+        } else {
+            dict_prompt
+        };
         let lang = if settings.language == "auto" { None } else { Some(settings.language.as_str()) };
         let mut engine = state.whisper.lock().unwrap();
-        raw_transcript = engine.transcribe(&trimmed_samples, lang, dict_prompt.as_deref())?;
+        raw_transcript = engine.transcribe(&trimmed_samples, lang, effective_prompt.as_deref())?;
     }
     let t_whisper_done = Instant::now();
 
