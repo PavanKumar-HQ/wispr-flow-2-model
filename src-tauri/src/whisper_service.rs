@@ -84,9 +84,10 @@ impl WhisperEngine {
         params.set_single_segment(false);
         params.set_suppress_blank(true);
         params.set_suppress_nst(true);
-        params.set_no_speech_thold(0.60);
-        params.set_logprob_thold(-1.20);
-        params.set_entropy_thold(2.40);
+        // Sensitive thresholds to prevent dropping soft, conversational, or paused speech in between words
+        params.set_no_speech_thold(0.85);
+        params.set_logprob_thold(-1.60);
+        params.set_entropy_thold(2.80);
         params.set_temperature(0.0);
         params.set_temperature_inc(0.0);
         // "Race to sleep" threading: use optimal cores (up to 4) so inference finishes rapidly and returns CPU/GPU to low-power idle
@@ -128,9 +129,8 @@ impl WhisperEngine {
                         continue;
                     }
                     // Whisper decoding loop detection:
-                    // If the current segment's text is identical to the previous segment,
-                    // or if the transcript already ends with this segment, it is a loop artifact. Skip it!
-                    if clean.eq_ignore_ascii_case(&last_segment_clean) || transcript.ends_with(clean) {
+                    // If the current segment's text is identical to the previous segment, it is a loop artifact. Skip it!
+                    if !last_segment_clean.is_empty() && clean.eq_ignore_ascii_case(&last_segment_clean) {
                         continue;
                     }
                     last_segment_clean = clean.to_string();

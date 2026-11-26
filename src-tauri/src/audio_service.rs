@@ -181,8 +181,8 @@ impl AudioCaptureService {
             }
         }
 
-        // Allow final hardware audio buffer (100ms) to drain so trailing word syllables are not truncated
-        std::thread::sleep(std::time::Duration::from_millis(100));
+        // Allow final hardware audio buffer (150ms) to drain so trailing word syllables are not truncated
+        std::thread::sleep(std::time::Duration::from_millis(150));
 
         {
             let mut rec_lock = self.is_recording.lock().unwrap();
@@ -302,8 +302,8 @@ pub fn isolate_voice_and_suppress_noise(samples: &[f32], sample_rate: u32) -> Ve
     let noise_floor_idx = (sorted_rms.len() as f32 * 0.25).floor() as usize;
     let noise_floor = sorted_rms.get(noise_floor_idx).copied().unwrap_or(0.001).min(0.003);
 
-    // Adaptive threshold for speech (at least 35% above noise floor, min 0.0022 RMS to reject ambient room noise)
-    let speech_threshold = (noise_floor * 1.35).clamp(0.0022, 0.0085);
+    // Adaptive threshold for speech (at least 25% above noise floor, min 0.0015 RMS to catch soft initial consonants)
+    let speech_threshold = (noise_floor * 1.25).clamp(0.0015, 0.0065);
 
     // Identify first and last frame containing genuine user speech
     let first_speech_frame = frame_rms.iter().position(|&r| r >= speech_threshold);
@@ -317,8 +317,8 @@ pub fn isolate_voice_and_suppress_noise(samples: &[f32], sample_rate: u32) -> Ve
         }
     };
 
-    // Generous pad of ~300ms (15 frames) to fully preserve rapid word boundaries and consonant transients
-    let pad_frames = 15;
+    // Generous safety pad of ~400ms (20 frames) to fully preserve rapid word boundaries and consonant transients
+    let pad_frames = 20;
     let safe_start_frame = start_frame.saturating_sub(pad_frames);
     let safe_end_frame = (end_frame + pad_frames + 1).min(num_frames);
 
@@ -407,7 +407,7 @@ pub fn trim_audio_silence(samples: &[f32], sample_rate: u32) -> Vec<f32> {
     }
 
     let frame_size = (sample_rate as usize * 20) / 1000; // 20ms frames
-    let pad_frames = (sample_rate as usize * 320) / 1000; // 320ms generous safety pad (preserves soft initial consonants like W/Th)
+    let pad_frames = (sample_rate as usize * 600) / 1000; // 600ms generous safety pad (preserves soft initial consonants like W/Th)
 
     let mut start_idx = 0;
     let mut end_idx = samples.len();
