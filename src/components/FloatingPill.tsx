@@ -233,7 +233,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
             isRecording
               ? 'w-[316px] bg-cream dark:bg-darkTealSurface border-terracotta dark:border-[#FF7A59] shadow-lg dark:shadow-[0_0_16px_rgba(255,122,89,0.4)]'
               : isTranscribing
-              ? 'w-[316px] bg-cream dark:bg-darkTealSurface border-amber dark:border-amber shadow-lg dark:shadow-[0_0_16px_rgba(221,164,77,0.4)]'
+              ? 'w-[316px] bg-cream dark:bg-darkTealSurface border-darkTeal dark:border-amber shadow-lg dark:shadow-[0_0_16px_rgba(221,164,77,0.4)]'
               : isDone && !isDismissed
               ? status.state === 'recovery_required'
                 ? 'w-[316px] bg-cream dark:bg-darkTealSurface border-amber dark:border-amber shadow-lg'

@@ -271,31 +271,31 @@
 
 @keyframes vbBodyWalk {
   0%, 100% {
-    transform: translateY(0px) rotate(2.5deg);
+    transform: translateY(0px) rotate(1.5deg);
   }
   25% {
-    transform: translateY(-5px) rotate(2.5deg);
+    transform: translateY(-2.5px) rotate(1.5deg);
   }
   50% {
-    transform: translateY(0px) rotate(2.5deg);
+    transform: translateY(0px) rotate(1.5deg);
   }
   75% {
-    transform: translateY(-5px) rotate(2.5deg);
+    transform: translateY(-2.5px) rotate(1.5deg);
   }
 }
 
 @keyframes vbBodyDance {
   0%, 100% {
-    transform: translateY(0px) rotate(-2deg);
+    transform: translateY(0px) rotate(-1.5deg);
   }
   25% {
-    transform: translateY(-6px) rotate(0deg);
+    transform: translateY(-4px) rotate(0deg);
   }
   50% {
-    transform: translateY(0px) rotate(2deg);
+    transform: translateY(0px) rotate(1.5deg);
   }
   75% {
-    transform: translateY(-6px) rotate(0deg);
+    transform: translateY(-4px) rotate(0deg);
   }
 }
 
@@ -310,37 +310,37 @@
 
 @keyframes vbLegSwingLeft {
   0%, 100% {
-    transform: translateY(-3px) rotate(-14deg);
+    transform: translateY(-3.5px) rotate(-9deg);
   }
   50% {
-    transform: translateY(1px) rotate(13deg);
+    transform: translateY(0.5px) rotate(8deg);
   }
 }
 
 @keyframes vbLegSwingRight {
   0%, 100% {
-    transform: translateY(1px) rotate(13deg);
+    transform: translateY(0.5px) rotate(8deg);
   }
   50% {
-    transform: translateY(-3px) rotate(-14deg);
+    transform: translateY(-3.5px) rotate(-9deg);
   }
 }
 
 @keyframes vbArmSwingLeft {
   0%, 100% {
-    transform: rotate(15deg);
+    transform: rotate(10deg);
   }
   50% {
-    transform: rotate(-15deg);
+    transform: rotate(-10deg);
   }
 }
 
 @keyframes vbArmSwingRight {
   0%, 100% {
-    transform: rotate(-15deg);
+    transform: rotate(-10deg);
   }
   50% {
-    transform: rotate(15deg);
+    transform: rotate(10deg);
   }
 }
 

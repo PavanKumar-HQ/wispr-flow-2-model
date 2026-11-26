@@ -178,8 +178,8 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
         const minY = 48; // Stay safely below menu bar / notch
         const maxY = Math.max(minY + 40, screenH - 255); // Stay above Dock
 
-        let nextX = currentX + walkVecRef.current.vx;
-        let nextY = currentY + walkVecRef.current.vy;
+        let nextX = currentX + walkVecRef.current.vx * 0.48;
+        let nextY = currentY + walkVecRef.current.vy * 0.48;
 
         if (nextX <= minX) {
           nextX = minX;
@@ -202,7 +202,7 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
       } catch {}
     };
 
-    const timer = setInterval(step, 80);
+    const timer = setInterval(step, 36);
     return () => {
       cancelled = true;
       clearInterval(timer);

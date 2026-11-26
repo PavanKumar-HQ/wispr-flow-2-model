@@ -473,7 +473,7 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
             <rect x="57" y="47" width="86" height="48" rx="12" fill="url(#vb3dScreen)" />
             <path d="M 64 52 Q 86 49 112 51" stroke="#46A8A0" strokeWidth="1.8" strokeLinecap="round" fill="none" opacity="0.32" />
 
-            {/* ================= FRIENDLY LED EXPRESSIONS ================= */}
+            {/* ================= CLEAN, SPACIOUS LED EXPRESSIONS ================= */}
             <g
               fill={eyeColor}
               filter="url(#vbLedGlow)"
@@ -483,110 +483,87 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
               }}
             >
               {isSleeping ? (
-                /* SLEEPING: Cute peaceful closed U U eyes + tiny peaceful mouth */
+                /* SLEEPING: Peaceful closed U U eyes + gentle dot */
                 <g>
-                  <path d="M 71 66 Q 78 73 85 66" fill="none" stroke={eyeColor} strokeWidth="3.4" strokeLinecap="round" />
-                  <path d="M 115 66 Q 122 73 129 66" fill="none" stroke={eyeColor} strokeWidth="3.4" strokeLinecap="round" />
-                  <circle cx="100" cy="81" r="2.6" fill={eyeColor} />
+                  <path d="M 68 65 Q 76 72 84 65" fill="none" stroke={eyeColor} strokeWidth="3.4" strokeLinecap="round" />
+                  <path d="M 116 65 Q 124 72 132 65" fill="none" stroke={eyeColor} strokeWidth="3.4" strokeLinecap="round" />
+                  <circle cx="100" cy="80" r="2.4" fill={eyeColor} />
                 </g>
               ) : isBlinking ? (
-                /* BLINK: Soft curved blink */
+                /* BLINK: Crisp horizontal blink + soft smile */
                 <g>
-                  <rect x="70" y="67" width="15" height="3.2" rx="1.6" />
-                  <rect x="115" y="67" width="15" height="3.2" rx="1.6" />
+                  <rect x="68" y="66" width="16" height="3.2" rx="1.6" />
+                  <rect x="116" y="66" width="16" height="3.2" rx="1.6" />
                   <path d="M 90 79 Q 100 85 110 79" fill="none" stroke={eyeColor} strokeWidth="2.8" strokeLinecap="round" />
                 </g>
               ) : isHovered && !isListening && !isTranscribing ? (
-                /* HOVERED / PETTED: Bright affectionate eyes + rosy blush cheeks + happy smile */
+                /* HOVERED: Bright affectionate eyes + rosy cheeks + happy smile */
                 <g>
-                  <rect x="72" y="58" width="12" height="14" rx="6" fill="#FFE08A" />
-                  <circle cx="80" cy="61" r="2.8" fill="#FFFDF5" />
-                  <rect x="116" y="58" width="12" height="14" rx="6" fill="#FFE08A" />
-                  <circle cx="124" cy="61" r="2.8" fill="#FFFDF5" />
-                  <rect x="64" y="75" width="7" height="3.5" rx="1.75" fill="#DA6C4C" opacity="0.85" />
-                  <rect x="129" y="75" width="7" height="3.5" rx="1.75" fill="#DA6C4C" opacity="0.85" />
-                  <path d="M 89 77 Q 100 86 111 77" fill="none" stroke={eyeColor} strokeWidth="3" strokeLinecap="round" />
+                  <rect x="69" y="57" width="13" height="15" rx="6.5" fill="#FFE08A" />
+                  <circle cx="78" cy="61" r="2.8" fill="#FFFDF5" />
+                  <rect x="118" y="57" width="13" height="15" rx="6.5" fill="#FFE08A" />
+                  <circle cx="127" cy="61" r="2.8" fill="#FFFDF5" />
+                  <rect x="62" y="75" width="7" height="3.5" rx="1.75" fill="#DA6C4C" opacity="0.85" />
+                  <rect x="131" y="75" width="7" height="3.5" rx="1.75" fill="#DA6C4C" opacity="0.85" />
+                  <path d="M 89 78 Q 100 86 111 78" fill="none" stroke={eyeColor} strokeWidth="3" strokeLinecap="round" />
                 </g>
               ) : isListening ? (
-                /* LISTENING: Cute, warm, friendly attentive eyes + rosy cheeks + happy smile */
+                /* LISTENING: Warm, friendly rounded eyes + rosy cheeks + cheerful smile */
                 <g>
-                  {/* Warm friendly rounded pill eyes with bright sparkle */}
-                  <rect x="71" y="57" width="13" height="16" rx="6.5" fill="#FFE08A" />
-                  <circle cx="80" cy="61" r="3" fill="#FFFDF5" />
-                  <rect x="116" y="57" width="13" height="16" rx="6.5" fill="#FFE08A" />
-                  <circle cx="125" cy="61" r="3" fill="#FFFDF5" />
+                  <rect x="69" y="57" width="13" height="15" rx="6.5" fill="#FFE6A8" />
+                  <circle cx="78" cy="61" r="2.8" fill="#FFFDF5" />
+                  <rect x="118" y="57" width="13" height="15" rx="6.5" fill="#FFE6A8" />
+                  <circle cx="127" cy="61" r="2.8" fill="#FFFDF5" />
 
-                  {/* Cute rosy blush cheeks */}
-                  <rect x="64" y="75" width="7" height="3.5" rx="1.75" fill="#DA6C4C" opacity="0.85" />
-                  <rect x="129" y="75" width="7" height="3.5" rx="1.75" fill="#DA6C4C" opacity="0.85" />
+                  <rect x="62" y="75" width="7" height="3.5" rx="1.75" fill="#DA6C4C" opacity="0.9" />
+                  <rect x="131" y="75" width="7" height="3.5" rx="1.75" fill="#DA6C4C" opacity="0.9" />
 
-                  {/* Warm cheerful smile */}
                   <path
-                    d="M 90 77 Q 100 86 110 77"
+                    d="M 89 77 Q 100 86 111 77"
                     fill="none"
-                    stroke="#52E5D8"
+                    stroke="#DDA44D"
                     strokeWidth="3.2"
                     strokeLinecap="round"
                   />
                 </g>
               ) : isTranscribing ? (
-                /* TRANSCRIBING: Smooth glowing cyan-teal thinking arcs & bouncing dots */
+                /* TRANSCRIBING: Calm focused amber LED eyes + smooth sequential thinking dots */
                 <g>
-                  <circle
-                    cx="78"
-                    cy="66"
-                    r="6.5"
-                    fill="none"
-                    stroke={eyeColor}
-                    strokeWidth="2.8"
-                    strokeDasharray="10 6"
-                    className="animate-spin"
-                    style={{ transformOrigin: '78px 66px' }}
-                  />
-                  <circle
-                    cx="122"
-                    cy="66"
-                    r="6.5"
-                    fill="none"
-                    stroke={eyeColor}
-                    strokeWidth="2.8"
-                    strokeDasharray="10 6"
-                    className="animate-spin"
-                    style={{ transformOrigin: '122px 66px' }}
-                  />
-                  <rect x="88" y="80" width="4" height="4" rx="1" className="animate-bounce" />
-                  <rect x="98" y="80" width="4" height="4" rx="1" className="animate-bounce delay-75" />
-                  <rect x="108" y="80" width="4" height="4" rx="1" className="animate-bounce delay-150" />
+                  <rect x="69" y="59" width="14" height="10" rx="5" fill="#FFD27D" />
+                  <rect x="117" y="59" width="14" height="10" rx="5" fill="#FFD27D" />
+                  <circle cx="88" cy="80" r="3" fill="#DDA44D" className="anim-bubble-dot-1" />
+                  <circle cx="100" cy="80" r="3" fill="#FFD27D" className="anim-bubble-dot-2" />
+                  <circle cx="112" cy="80" r="3" fill="#DDA44D" className="anim-bubble-dot-3" />
                 </g>
               ) : isSuccess || isWaving || isDancing ? (
                 /* SUCCESS / WAVE / DANCE: Clean joyful ^ ^ eyes & wide smile */
                 <g>
-                  <path d="M 70 69 Q 78 58 86 69" fill="none" stroke={eyeColor} strokeWidth="3.6" strokeLinecap="round" />
-                  <path d="M 114 69 Q 122 58 130 69" fill="none" stroke={eyeColor} strokeWidth="3.6" strokeLinecap="round" />
-                  <path d="M 88 78 Q 100 88 112 78" fill="none" stroke={eyeColor} strokeWidth="3.2" strokeLinecap="round" />
+                  <path d="M 68 68 Q 76 58 84 68" fill="none" stroke={eyeColor} strokeWidth="3.5" strokeLinecap="round" />
+                  <path d="M 116 68 Q 124 58 132 68" fill="none" stroke={eyeColor} strokeWidth="3.5" strokeLinecap="round" />
+                  <path d="M 88 78 Q 100 87 112 78" fill="none" stroke={eyeColor} strokeWidth="3.2" strokeLinecap="round" />
                 </g>
               ) : isSitting ? (
                 /* SITTING: Cozy relaxed eyes & warm smile */
                 <g>
-                  <path d="M 71 67 Q 78 61 85 67" fill="none" stroke={eyeColor} strokeWidth="3.4" strokeLinecap="round" />
-                  <path d="M 115 67 Q 122 61 129 67" fill="none" stroke={eyeColor} strokeWidth="3.4" strokeLinecap="round" />
+                  <path d="M 69 66 Q 76 60 83 66" fill="none" stroke={eyeColor} strokeWidth="3.4" strokeLinecap="round" />
+                  <path d="M 117 66 Q 124 60 131 66" fill="none" stroke={eyeColor} strokeWidth="3.4" strokeLinecap="round" />
                   <path d="M 90 78 Q 100 84 110 78" fill="none" stroke={eyeColor} strokeWidth="2.8" strokeLinecap="round" />
                 </g>
               ) : isWalking ? (
                 /* WALKING: Cheerful wide eyes & happy smile */
                 <g>
-                  <rect x="72" y="59" width="12" height="13" rx="6" />
-                  <circle cx="80" cy="62" r="2.6" fill="#FFF7DF" />
-                  <rect x="116" y="59" width="12" height="13" rx="6" />
-                  <circle cx="124" cy="62" r="2.6" fill="#FFF7DF" />
+                  <rect x="70" y="58" width="12" height="13" rx="6" />
+                  <circle cx="78" cy="61" r="2.6" fill="#FFF7DF" />
+                  <rect x="118" y="58" width="12" height="13" rx="6" />
+                  <circle cx="126" cy="61" r="2.6" fill="#FFF7DF" />
                   <path d="M 89 77 Q 100 85 111 77" fill="none" stroke={eyeColor} strokeWidth="3" strokeLinecap="round" />
                 </g>
               ) : (
-                /* IDLE: Friendly ^ ^ eyes & warm smile */
+                /* IDLE: Signature friendly ^ ^ eyes & warm smile */
                 <g>
-                  <path d="M 71 68 Q 78 59 85 68" fill="none" stroke={eyeColor} strokeWidth="3.5" strokeLinecap="round" />
-                  <path d="M 115 68 Q 122 59 129 68" fill="none" stroke={eyeColor} strokeWidth="3.5" strokeLinecap="round" />
-                  <path d="M 90 78 Q 100 85 110 78" fill="none" stroke={eyeColor} strokeWidth="2.8" strokeLinecap="round" />
+                  <path d="M 69 67 Q 76 59 83 67" fill="none" stroke={eyeColor} strokeWidth="3.4" strokeLinecap="round" />
+                  <path d="M 117 67 Q 124 59 131 67" fill="none" stroke={eyeColor} strokeWidth="3.4" strokeLinecap="round" />
+                  <path d="M 90 78 Q 100 84 110 78" fill="none" stroke={eyeColor} strokeWidth="2.8" strokeLinecap="round" />
                 </g>
               )}
             </g>
