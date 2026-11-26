@@ -22,7 +22,7 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
   status,
   onToggleDictation,
 }) => {
-  const [autoPose, setAutoPose] = useState<'idle' | 'walk' | 'sit' | 'sleep'>('idle');
+  const [autoPose, setAutoPose] = useState<'idle' | 'walk' | 'sit' | 'sleep' | 'wave' | 'dance'>('idle');
   const [facing, setFacing] = useState<'left' | 'right'>('right');
   const [gaze, setGaze] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState<boolean>(false);
@@ -113,11 +113,17 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
     };
   }, [status.state, autoPose, isHovered]);
 
-  // Active autonomous behavior while mouse is moving/awake: walk -> idle -> sit -> walk
+  // Active autonomous behavior while mouse is moving/awake: walk -> wave -> idle -> sit -> dance -> walk
   useEffect(() => {
     if (status.state !== 'idle' || showSuccessFlash || isHovered || autoPose === 'sleep') return;
 
-    const sequence: Array<'walk' | 'idle' | 'sit'> = ['walk', 'idle', 'sit', 'walk'];
+    const sequence: Array<'walk' | 'wave' | 'idle' | 'sit' | 'dance'> = [
+      'walk',
+      'wave',
+      'idle',
+      'sit',
+      'dance',
+    ];
     let idx = 0;
 
     const interval = setInterval(() => {
@@ -133,7 +139,7 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
         };
       }
       setAutoPose(next);
-    }, 5500);
+    }, 5200);
 
     return () => clearInterval(interval);
   }, [status.state, showSuccessFlash, isHovered, autoPose]);
@@ -240,16 +246,16 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
           <div
             className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-wider uppercase border shadow-sm animate-fadeIn flex items-center gap-1.5 ${
               status.state === 'recording'
-                ? 'bg-darkTeal text-cream border-mint'
-                : 'bg-cream text-darkTeal border-darkTeal'
+                ? 'bg-cream text-terracotta border-terracotta'
+                : 'bg-cream text-darkTeal border-amber'
             }`}
           >
             <span
               className={`w-1.5 h-1.5 rounded-full ${
-                status.state === 'recording' ? 'bg-mint animate-ping' : 'bg-amber animate-pulse'
+                status.state === 'recording' ? 'bg-terracotta animate-ping' : 'bg-amber animate-pulse'
               }`}
             />
-            <span>{status.state === 'recording' ? 'Listening' : 'Thinking'}</span>
+            <span>{status.state === 'recording' ? 'Listening' : 'Transcribing'}</span>
           </div>
         )}
       </div>

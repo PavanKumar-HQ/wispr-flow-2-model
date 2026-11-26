@@ -10,11 +10,8 @@ import {
   Pause,
   SkipBack,
   SkipForward,
-  Bot,
-  Radio,
 } from 'lucide-react';
 import { SessionSnapshot, NowPlayingInfo } from '../types';
-import { MascotAvatar } from './Mascot';
 import { AudioWaveform } from './AudioWaveform';
 import { CapsuleTray } from './capsule/CapsuleTray';
 import { safeInvoke, safeListen, isNativeTauri } from '../lib/ipc';
@@ -44,13 +41,6 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
   const [noSpeechActive, setNoSpeechActive] = useState<boolean>(false);
   const [isTrayExpanded, setIsTrayExpanded] = useState<boolean>(false);
   const [nowPlaying, setNowPlaying] = useState<NowPlayingInfo | null>(null);
-  const [selectedAvatar, setSelectedAvatar] = useState<MascotAvatar>(() => {
-    try {
-      return (localStorage.getItem('voxquest_mascot_avatar') as MascotAvatar) || 'bot';
-    } catch {
-      return 'bot';
-    }
-  });
 
   useEffect(() => {
     try {
@@ -58,29 +48,10 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
     } catch {}
   }, []);
 
-  const handleCycleAvatar = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const order: MascotAvatar[] = ['bot', 'owl', 'cat'];
-    const nextIdx = (order.indexOf(selectedAvatar) + 1) % order.length;
-    const next = order[nextIdx];
-    setSelectedAvatar(next);
-    try {
-      localStorage.setItem('voxquest_mascot_avatar', next);
-    } catch {}
-  };
   const isDark = false;
 
   // Sync with Now Playing audio stream
   useEffect(() => {
-    const handleStorageChange = () => {
-      try {
-        const storedAvatar = (localStorage.getItem('voxquest_mascot_avatar') as MascotAvatar) || 'bot';
-        setSelectedAvatar(storedAvatar);
-      } catch {}
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-
     safeInvoke<NowPlayingInfo | null>('get_now_playing_cmd').then((info) => {
       if (info) setNowPlaying(info);
     });
@@ -93,7 +64,6 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
     });
 
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
       if (unlisten) unlisten();
     };
   }, []);
@@ -263,7 +233,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
             isRecording
               ? 'w-[316px] bg-cream dark:bg-darkTealSurface border-terracotta dark:border-[#FF7A59] shadow-lg dark:shadow-[0_0_16px_rgba(255,122,89,0.4)]'
               : isTranscribing
-              ? 'w-[316px] bg-cream dark:bg-darkTealSurface border-darkTeal dark:border-amber shadow-lg dark:shadow-[0_0_16px_rgba(221,164,77,0.4)]'
+              ? 'w-[316px] bg-cream dark:bg-darkTealSurface border-amber dark:border-amber shadow-lg dark:shadow-[0_0_16px_rgba(221,164,77,0.4)]'
               : isDone && !isDismissed
               ? status.state === 'recovery_required'
                 ? 'w-[316px] bg-cream dark:bg-darkTealSurface border-amber dark:border-amber shadow-lg'
@@ -436,20 +406,6 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
           /* MUTUALLY EXCLUSIVE: When music is PLAYING -> Now Playing Island ONLY */
           <>
             {/* Left: Hub Trigger */}
-            <button
-              type="button"
-              data-tauri-no-drag
-              onClick={(e) => {
-                e.stopPropagation();
-                handleToggleTray();
-              }}
-              className="hover:scale-110 active:scale-95 transition-transform cursor-pointer shrink-0 pl-1 text-darkTeal dark:text-amber"
-              title="Click to open Hub"
-              aria-label="Open Hub"
-            >
-              <Radio className="w-3.5 h-3.5" />
-            </button>
-
             {/* Middle: Source Pill + Track Name */}
             <div className="flex-1 min-w-0 flex items-center justify-between gap-1.5 px-1 font-sans">
               <div
@@ -559,21 +515,8 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
         ) : (
           /* MUTUALLY EXCLUSIVE: When music is NOT playing -> Clean Ready State ONLY */
           <>
-            {/* Left: Clean Hub toggle & Ready status */}
-            <div className="shrink-0 flex items-center gap-1.5 font-sans pl-1">
-              <button
-                type="button"
-                data-tauri-no-drag
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleToggleTray();
-                }}
-                className="hover:scale-110 active:scale-95 transition-transform cursor-pointer shrink-0 pr-0.5 text-darkTeal dark:text-amber"
-                title="Click to open Hub"
-                aria-label="Open Hub"
-              >
-                <Radio className="w-3.5 h-3.5" />
-              </button>
+            {/* Left: Clean Ready status */}
+            <div className="shrink-0 flex items-center gap-1.5 font-sans pl-1.5">
               {noSpeechActive ? (
                 <div className="flex items-center gap-1.5 animate-fadeIn">
                   <span className="w-2 h-2 rounded-full bg-amber shrink-0" />
@@ -628,17 +571,6 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
                   <LayoutGrid className="w-3 h-3 text-darkTeal dark:text-amber shrink-0" />
                 )}
                 <span>{isTrayExpanded ? 'Close' : 'Hub'}</span>
-              </button>
-
-              <button
-                data-tauri-no-drag
-                onMouseDown={(e) => e.stopPropagation()}
-                onClick={handleCycleAvatar}
-                className="p-1.5 rounded-full bg-black/5 dark:bg-darkTealElevated hover:bg-amber hover:text-charcoal text-charcoal/80 dark:text-[#DFDFD4] transition-all cursor-pointer active:scale-95 shrink-0"
-                title={`Companion Persona: ${selectedAvatar.toUpperCase()} (Click to cycle Bot/Owl/Cat)`}
-                aria-label="Cycle Companion Persona"
-              >
-                <Bot className="w-3.5 h-3.5 text-darkTeal dark:text-amber shrink-0" />
               </button>
 
               <button

@@ -1,6 +1,15 @@
 import React from 'react';
 
-export type VoxBotPose = 'idle' | 'walk' | 'sit' | 'sleep' | 'listening' | 'transcribing' | 'success';
+export type VoxBotPose =
+  | 'idle'
+  | 'walk'
+  | 'sit'
+  | 'sleep'
+  | 'wave'
+  | 'dance'
+  | 'listening'
+  | 'transcribing'
+  | 'success';
 
 interface VoxBotFullBodyProps {
   pose?: VoxBotPose;
@@ -14,7 +23,10 @@ interface VoxBotFullBodyProps {
 
 /**
  * Full-Body 3D-Styled Articulated VoxBot Desktop Companion.
- * Poses: idle, walk, sit, sleep, listening (warm/friendly), transcribing, success.
+ * Matches the Sovereign Pill color theme:
+ * - Ready/Idle: Teal/Green (#34A89E)
+ * - Listening: Traditional Pill Terracotta-Orange (#DA6C4C) with incoming ear waves
+ * - Transcribing: Warm Amber (#DDA44D)
  */
 export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
   pose = 'idle',
@@ -29,25 +41,27 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
   const isWalking = pose === 'walk';
   const isSitting = pose === 'sit' || pose === 'sleep';
   const isSleeping = pose === 'sleep';
+  const isWaving = pose === 'wave';
+  const isDancing = pose === 'dance';
   const isTranscribing = pose === 'transcribing';
   const isSuccess = pose === 'success';
 
-  // Friendly, warm palette — never harsh/scary red
+  // Color theme matched to Sovereign Pill: Ready = Green/Teal, Listening = Terracotta Orange, Transcribing = Amber
   const coreColor = isListening
-    ? '#34A89E'
+    ? '#DA6C4C'
     : isTranscribing
-    ? '#42D4C8'
+    ? '#DDA44D'
     : isSleeping
-    ? '#B58942'
-    : '#DDA44D';
+    ? '#7A9A96'
+    : '#34A89E';
 
   const eyeColor = isListening
-    ? '#FFE08A'
+    ? '#FFE6A8'
     : isTranscribing
-    ? '#52E5D8'
+    ? '#FFD27D'
     : isSleeping
-    ? '#C99B50'
-    : '#FFB84D';
+    ? '#9BC4BE'
+    : '#FFD07B';
 
   // Compensate X gaze when robot SVG is mirrored horizontally (facing === 'left')
   const rawGazeX = facing === 'left' ? -gaze.x : gaze.x;
@@ -167,43 +181,31 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
           </g>
         )}
 
-        {/* GENTLE FRIENDLY LISTENING HALO & EAR AUDIO WAVES */}
+        {/* INCOMING LISTENING WAVES: Flow toward both ears & disappear (Terracotta-Orange Pill Theme) */}
         {isListening && (
           <g className="pointer-events-none" filter="url(#vbLedGlow)">
-            {/* Soft Antenna Halo */}
-            <circle cx="100" cy="14" r="18" fill="url(#vb3dAntennaGlow)" />
+            {/* Soft Terracotta-Amber Antenna Halo */}
+            <circle cx="100" cy="14" r="17" fill="url(#vb3dAntennaGlow)" />
             <circle
               cx="100"
               cy="14"
-              r="16"
+              r="15"
               fill="none"
-              stroke="#34A89E"
+              stroke="#DA6C4C"
               strokeWidth="2"
               opacity="0.7"
               className="vb-radar-1"
             />
-            <circle
-              cx="100"
-              cy="14"
-              r="25"
-              fill="none"
-              stroke="#FFD07B"
-              strokeWidth="1.4"
-              opacity="0.45"
-              className="vb-radar-2"
-            />
 
-            {/* Friendly Pill-Style Audio Equalizer Waves Radiating from Both Ears */}
-            <g className="vb-wave-1">
-              <rect x="27" y="63" width="3.2" height="16" rx="1.6" fill="#34A89E" />
-              <rect x="21" y="59" width="3.2" height="24" rx="1.6" fill="#FFD07B" />
-              <rect x="15" y="65" width="3.2" height="12" rx="1.6" fill="#34A89E" opacity="0.75" />
-            </g>
-            <g className="vb-wave-2">
-              <rect x="169.8" y="63" width="3.2" height="16" rx="1.6" fill="#34A89E" />
-              <rect x="175.8" y="59" width="3.2" height="24" rx="1.6" fill="#FFD07B" />
-              <rect x="181.8" y="65" width="3.2" height="12" rx="1.6" fill="#34A89E" opacity="0.75" />
-            </g>
+            {/* Left Ear: Curved waves gliding INTO the left ear and disappearing */}
+            <path d="M 18 60 Q 11 71 18 82" fill="none" stroke="#DA6C4C" strokeWidth="2.8" strokeLinecap="round" className="vb-ear-in-l-1" />
+            <path d="M 18 62 Q 12 71 18 80" fill="none" stroke="#DDA44D" strokeWidth="2.4" strokeLinecap="round" className="vb-ear-in-l-2" />
+            <path d="M 18 64 Q 13 71 18 78" fill="none" stroke="#DA6C4C" strokeWidth="2" strokeLinecap="round" className="vb-ear-in-l-3" />
+
+            {/* Right Ear: Curved waves gliding INTO the right ear and disappearing */}
+            <path d="M 182 60 Q 189 71 182 82" fill="none" stroke="#DA6C4C" strokeWidth="2.8" strokeLinecap="round" className="vb-ear-in-r-1" />
+            <path d="M 182 62 Q 188 71 182 80" fill="none" stroke="#DDA44D" strokeWidth="2.4" strokeLinecap="round" className="vb-ear-in-r-2" />
+            <path d="M 182 64 Q 187 71 182 78" fill="none" stroke="#DA6C4C" strokeWidth="2" strokeLinecap="round" className="vb-ear-in-r-3" />
           </g>
         )}
 
@@ -243,6 +245,8 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
           className={
             isWalking
               ? 'vb-body-walk'
+              : isDancing
+              ? 'vb-body-dance'
               : isSleeping
               ? 'anim-mascot-sleep'
               : isSitting
@@ -313,7 +317,7 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
           {/* ======================== CHUNKY ARTICULATED ARMS ======================== */}
           <g
             className={
-              isWalking
+              isWalking || isDancing
                 ? 'vb-arm-left-walk'
                 : isSitting
                 ? 'vb-arm-left-sit'
@@ -335,7 +339,9 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
 
           <g
             className={
-              isWalking
+              isWaving
+                ? 'vb-arm-wave-right'
+                : isWalking || isDancing
                 ? 'vb-arm-right-walk'
                 : isSitting
                 ? 'vb-arm-right-sit'
@@ -552,8 +558,8 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
                   <rect x="98" y="80" width="4" height="4" rx="1" className="animate-bounce delay-75" />
                   <rect x="108" y="80" width="4" height="4" rx="1" className="animate-bounce delay-150" />
                 </g>
-              ) : isSuccess ? (
-                /* SUCCESS: Happy ^ ^ eyes & big smile */
+              ) : isSuccess || isWaving || isDancing ? (
+                /* SUCCESS / WAVE / DANCE: Clean joyful ^ ^ eyes & wide smile */
                 <g>
                   <path d="M 70 69 Q 78 58 86 69" fill="none" stroke={eyeColor} strokeWidth="3.6" strokeLinecap="round" />
                   <path d="M 114 69 Q 122 58 130 69" fill="none" stroke={eyeColor} strokeWidth="3.6" strokeLinecap="round" />
