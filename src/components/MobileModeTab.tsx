@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Mascot } from './Mascot';
 import {
   Smartphone,
   Layers,
@@ -10,8 +11,7 @@ import {
   Copy,
   Check,
   Zap,
-  Send,
-  Radio
+  Send
 } from 'lucide-react';
 
 export const MobileModeTab: React.FC = () => {
@@ -280,22 +280,21 @@ export const MobileModeTab: React.FC = () => {
                 )}
               </div>
 
-              {/* Floating Omnipresent Bubble (Trigger Option 1) */}
+              {/* Floating VoxBot Companion (Mobile Edge Trigger) */}
               {triggerMode === 'bubble' && (
                 <div
                   onClick={handleSimulateBubbleClick}
-                  className={`absolute right-2 top-48 z-20 w-11 h-11 rounded-full cursor-pointer flex items-center justify-center shadow-lg transition-all active:scale-90 ${
+                  className={`absolute right-2 top-44 z-20 w-12 h-12 rounded-2xl cursor-pointer flex items-center justify-center shadow-xl transition-all active:scale-90 bg-cream/95 backdrop-blur-xs border-2 ${
                     isSimulatedRecording
-                      ? 'bg-rose-500 text-white animate-pulse ring-4 ring-rose-400/50'
-                      : 'bg-darkTeal text-amber hover:scale-105 border-2 border-white'
+                      ? 'border-terracotta ring-4 ring-terracotta/40 animate-pulse'
+                      : 'border-darkTeal/40 hover:scale-110 hover:border-darkTeal'
                   }`}
-                  title="Click to dictate on mobile"
+                  title="VoxBot Companion • Tap to speak on mobile"
                 >
-                  {isSimulatedRecording ? (
-                    <Radio className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <Zap className="w-5 h-5 fill-amber" />
-                  )}
+                  <Mascot
+                    size={36}
+                    state={isSimulatedRecording ? 'listening' : 'idle'}
+                  />
                 </div>
               )}
 

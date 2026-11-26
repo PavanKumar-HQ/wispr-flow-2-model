@@ -10,6 +10,7 @@ import {
   Pause,
   SkipBack,
   SkipForward,
+  Bot,
 } from 'lucide-react';
 import { SessionSnapshot, NowPlayingInfo } from '../types';
 import { Mascot } from './Mascot';
@@ -42,6 +43,22 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
   const [noSpeechActive, setNoSpeechActive] = useState<boolean>(false);
   const [isTrayExpanded, setIsTrayExpanded] = useState<boolean>(false);
   const [nowPlaying, setNowPlaying] = useState<NowPlayingInfo | null>(null);
+  const [isMascotMode, setIsMascotMode] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('voxquest_mascot_mode') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const handleToggleMascotMode = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const next = !isMascotMode;
+    setIsMascotMode(next);
+    try {
+      localStorage.setItem('voxquest_mascot_mode', String(next));
+    } catch {}
+  };
   const isDark = false;
 
   // Sync with Now Playing audio stream
@@ -219,117 +236,146 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
       } select-none bg-transparent`}
       style={{ background: 'transparent' }}
     >
-      {/* Pill Capsule styled with exact platform tokens: #DFDFD4 cream, #07514C dark teal, #DA6C4C terracotta */}
-      <div
-        data-tauri-drag-region
-        onMouseDown={handleMouseDown}
-        className={`voxquest-pill-capsule flex items-center justify-between gap-2 px-3.5 py-1.5 rounded-full border transition-all duration-300 ease-out cursor-grab active:cursor-grabbing ${
-          isRecording
-            ? 'w-[310px] bg-cream dark:bg-darkTealSurface border-terracotta dark:border-[#FF7A59] shadow-lg dark:shadow-[0_0_16px_rgba(255,122,89,0.4)]'
-            : isTranscribing
-            ? 'w-[310px] bg-cream dark:bg-darkTealSurface border-darkTeal dark:border-amber shadow-lg dark:shadow-[0_0_16px_rgba(221,164,77,0.4)]'
-            : isDone && !isDismissed
-            ? status.state === 'recovery_required'
-              ? 'w-[310px] bg-cream dark:bg-darkTealSurface border-amber dark:border-amber shadow-lg'
-              : 'w-[310px] bg-cream dark:bg-darkTealSurface border-darkTeal dark:border-[#34A89E] shadow-lg'
-            : 'w-[310px] bg-cream dark:bg-darkTealSurface border-charcoal/25 hover:border-darkTeal dark:border-[#2B313A] dark:hover:border-[#34A89E] shadow-lg'
-        } h-[42px]`}
-      >
-        {isRecording ? (
-          <>
-            {/* Left: Sovereign Mascot & Recording status */}
-            <div className="shrink-0 flex items-center gap-1.5 font-sans pl-0.5">
-              <Mascot size={22} />
-              <div className="flex items-center gap-1.5">
-                <span className="relative flex h-2.5 w-2.5 items-center justify-center shrink-0">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-terracotta opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-terracotta shadow-xs" />
-                </span>
-                <span className="text-[11px] font-bold tracking-wider text-terracotta dark:text-[#FF8A65] uppercase">
-                  Listening
-                </span>
-                <span className="text-[11px] font-mono font-bold text-terracotta dark:text-[#FF8A65] bg-terracotta/10 dark:bg-terracotta/20 px-1.5 py-0.5 rounded border border-terracotta/30">
-                  {formatSeconds(status.elapsed_seconds)}
-                </span>
+      {/* Pill Capsule or Compact Mascot Companion */}
+      {isMascotMode && !isRecording && !isTranscribing && (!isDone || isDismissed) && (!nowPlaying || !nowPlaying.is_playing) ? (
+        /* COMPACT VOXBOT COMPANION (Mascot Mode) */
+        <div
+          data-tauri-drag-region
+          onMouseDown={handleMouseDown}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggle();
+          }}
+          className="group relative flex items-center justify-center p-2 rounded-2xl bg-cream dark:bg-darkTealSurface border-2 border-charcoal/25 hover:border-darkTeal dark:border-darkTealBorder shadow-xl cursor-pointer hover:scale-110 active:scale-95 transition-all select-none"
+          title="VoxBot Companion • Click or press hotkey to speak"
+        >
+          <Mascot size={36} state="idle" interactive />
+          {/* Subtle ready pulse */}
+          <span className="absolute -top-1 -right-1 flex h-3 w-3">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-darkTeal opacity-40" />
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-darkTeal border-2 border-cream" />
+          </span>
+          {/* Hover button to switch back to expanded pill */}
+          <button
+            data-tauri-no-drag
+            onClick={handleToggleMascotMode}
+            className="absolute -bottom-2.5 opacity-0 group-hover:opacity-100 transition-opacity bg-darkTeal text-amber text-[8px] font-pixel px-2 py-0.5 rounded-full border border-white/20 shadow-xs cursor-pointer z-10"
+            title="Expand to Full Pill"
+          >
+            PILL
+          </button>
+        </div>
+      ) : (
+        <div
+          data-tauri-drag-region
+          onMouseDown={handleMouseDown}
+          className={`voxquest-pill-capsule flex items-center justify-between gap-2 px-3.5 py-1.5 rounded-full border transition-all duration-300 ease-out cursor-grab active:cursor-grabbing ${
+            isRecording
+              ? 'w-[310px] bg-cream dark:bg-darkTealSurface border-terracotta dark:border-[#FF7A59] shadow-lg dark:shadow-[0_0_16px_rgba(255,122,89,0.4)]'
+              : isTranscribing
+              ? 'w-[310px] bg-cream dark:bg-darkTealSurface border-darkTeal dark:border-amber shadow-lg dark:shadow-[0_0_16px_rgba(221,164,77,0.4)]'
+              : isDone && !isDismissed
+              ? status.state === 'recovery_required'
+                ? 'w-[310px] bg-cream dark:bg-darkTealSurface border-amber dark:border-amber shadow-lg'
+                : 'w-[310px] bg-cream dark:bg-darkTealSurface border-darkTeal dark:border-[#34A89E] shadow-lg'
+              : 'w-[310px] bg-cream dark:bg-darkTealSurface border-charcoal/25 hover:border-darkTeal dark:border-[#2B313A] dark:hover:border-[#34A89E] shadow-lg'
+          } h-[42px]`}
+        >
+          {isRecording ? (
+            <>
+              {/* Left: Sovereign Mascot & Recording status */}
+              <div className="shrink-0 flex items-center gap-1.5 font-sans pl-0.5">
+                <Mascot size={22} state="listening" />
+                <div className="flex items-center gap-1.5">
+                  <span className="relative flex h-2.5 w-2.5 items-center justify-center shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-terracotta opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-terracotta shadow-xs" />
+                  </span>
+                  <span className="text-[11px] font-bold tracking-wider text-terracotta dark:text-[#FF8A65] uppercase">
+                    Listening
+                  </span>
+                  <span className="text-[11px] font-mono font-bold text-terracotta dark:text-[#FF8A65] bg-terracotta/10 dark:bg-terracotta/20 px-1.5 py-0.5 rounded border border-terracotta/30">
+                    {formatSeconds(status.elapsed_seconds)}
+                  </span>
+                </div>
               </div>
-            </div>
-            {/* Center: Live Soundwave Visualizer */}
-            <div
-              data-tauri-drag-region
-              className="shrink-0 flex items-center justify-center pointer-events-none px-1"
-            >
-              <AudioWaveform
-                isRecording={true}
-                isTranscribing={false}
-                barCount={10}
-                theme={isDark ? 'dark' : 'light'}
-              />
-            </div>
-            {/* Right: Stop Recording Button */}
-            <div className="shrink-0 flex items-center pr-0.5">
-              <button
-                data-tauri-no-drag
-                onMouseDown={(e) => e.stopPropagation()}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggle();
-                }}
-                className="p-1.5 rounded-full bg-terracotta text-white hover:bg-terracotta/90 shadow-xs transition-all active:scale-95 cursor-pointer"
-                title="Stop recording"
-                aria-label="Stop recording"
+              {/* Center: Live Soundwave Visualizer */}
+              <div
+                data-tauri-drag-region
+                className="shrink-0 flex items-center justify-center pointer-events-none px-1"
               >
-                <Square className="w-3.5 h-3.5 fill-current" />
-              </button>
-            </div>
-          </>
-        ) : isTranscribing ? (
-          <>
-            {/* Left: Sovereign Mascot & Transcribing Spinner */}
-            <div className="shrink-0 flex items-center gap-1.5 font-sans pl-0.5">
-              <Mascot size={22} />
-              <div className="flex items-center gap-1.5">
-                <span className="w-3.5 h-3.5 border-2 border-darkTeal dark:border-amber border-t-transparent rounded-full animate-spin shrink-0" />
-                <span className="text-[11px] font-bold tracking-wide text-darkTeal dark:text-[#DFDFD4] transcribing-shimmer shrink-0">
-                  Transcribing...
-                </span>
+                <AudioWaveform
+                  isRecording={true}
+                  isTranscribing={false}
+                  barCount={10}
+                  theme={isDark ? 'dark' : 'light'}
+                />
               </div>
-            </div>
-            {/* Center: Transcribing Soundwave */}
-            <div
-              data-tauri-drag-region
-              className="shrink-0 flex items-center justify-center pointer-events-none px-1"
-            >
-              <AudioWaveform
-                isRecording={false}
-                isTranscribing={true}
-                barCount={8}
-                theme={isDark ? 'dark' : 'light'}
-              />
-            </div>
-            <div className="w-7 shrink-0" />
-          </>
-        ) : isDone && !isDismissed ? (
-          <>
-            {/* Left: Sovereign Mascot & Pasted Status */}
-            <div className="shrink-0 flex items-center gap-1.5 font-sans pl-0.5">
-              <Mascot size={22} />
-              <div className="flex items-center gap-1.5 pl-1 font-sans">
-                <Check className="w-3.5 h-3.5 text-darkTeal dark:text-[#34A89E] shrink-0 stroke-[2.5]" />
-                <span className="text-[11px] font-bold text-darkTeal dark:text-[#DFDFD4] tracking-wide">
-                  {status.message?.startsWith('Opened ')
-                    ? 'Opened'
-                    : status.message?.startsWith('Searching')
-                    ? 'Searching'
-                    : status.message?.startsWith('Playing')
-                    ? 'Playing'
-                    : status.message?.startsWith('Drafted')
-                    ? 'Drafted'
-                    : enhanced
-                    ? 'Enhanced'
-                    : 'Pasted'}
-                </span>
+              {/* Right: Stop Recording Button */}
+              <div className="shrink-0 flex items-center pr-0.5">
+                <button
+                  data-tauri-no-drag
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggle();
+                  }}
+                  className="p-1.5 rounded-full bg-terracotta text-white hover:bg-terracotta/90 shadow-xs transition-all active:scale-95 cursor-pointer"
+                  title="Stop recording"
+                  aria-label="Stop recording"
+                >
+                  <Square className="w-3.5 h-3.5 fill-current" />
+                </button>
               </div>
-            </div>
+            </>
+          ) : isTranscribing ? (
+            <>
+              {/* Left: Sovereign Mascot & Transcribing Spinner */}
+              <div className="shrink-0 flex items-center gap-1.5 font-sans pl-0.5">
+                <Mascot size={22} state="transcribing" />
+                <div className="flex items-center gap-1.5">
+                  <span className="w-3.5 h-3.5 border-2 border-darkTeal dark:border-amber border-t-transparent rounded-full animate-spin shrink-0" />
+                  <span className="text-[11px] font-bold tracking-wide text-darkTeal dark:text-[#DFDFD4] transcribing-shimmer shrink-0">
+                    Transcribing...
+                  </span>
+                </div>
+              </div>
+              {/* Center: Transcribing Soundwave */}
+              <div
+                data-tauri-drag-region
+                className="shrink-0 flex items-center justify-center pointer-events-none px-1"
+              >
+                <AudioWaveform
+                  isRecording={false}
+                  isTranscribing={true}
+                  barCount={8}
+                  theme={isDark ? 'dark' : 'light'}
+                />
+              </div>
+              <div className="w-7 shrink-0" />
+            </>
+          ) : isDone && !isDismissed ? (
+            <>
+              {/* Left: Sovereign Mascot & Pasted Status */}
+              <div className="shrink-0 flex items-center gap-1.5 font-sans pl-0.5">
+                <Mascot size={22} state="success" />
+                <div className="flex items-center gap-1.5 pl-1 font-sans">
+                  <Check className="w-3.5 h-3.5 text-darkTeal dark:text-[#34A89E] shrink-0 stroke-[2.5]" />
+                  <span className="text-[11px] font-bold text-darkTeal dark:text-[#DFDFD4] tracking-wide">
+                    {status.message?.startsWith('Opened ')
+                      ? 'Opened'
+                      : status.message?.startsWith('Searching')
+                      ? 'Searching'
+                      : status.message?.startsWith('Playing')
+                      ? 'Playing'
+                      : status.message?.startsWith('Drafted')
+                      ? 'Drafted'
+                      : enhanced
+                      ? 'Enhanced'
+                      : 'Pasted'}
+                  </span>
+                </div>
+              </div>
             {/* Center: Ambient Soundwave */}
             <div
               data-tauri-drag-region
@@ -580,6 +626,17 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
 
               <button
                 data-tauri-no-drag
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={handleToggleMascotMode}
+                className="p-1.5 rounded-full bg-black/5 dark:bg-darkTealElevated hover:bg-amber hover:text-charcoal text-charcoal/80 dark:text-[#DFDFD4] transition-all cursor-pointer active:scale-95 shrink-0"
+                title="Switch to VoxBot Companion Mode"
+                aria-label="Switch to VoxBot Companion Mode"
+              >
+                <Bot className="w-3.5 h-3.5 text-darkTeal dark:text-amber shrink-0" />
+              </button>
+
+              <button
+                data-tauri-no-drag
                 disabled={isTranscribing}
                 onMouseDown={(e) => e.stopPropagation()}
                 onClick={(e) => {
@@ -601,6 +658,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
           </>
         )}
       </div>
+      )}
 
       {/* Expandable Productivity Hub Tray */}
       {isTrayExpanded && (
