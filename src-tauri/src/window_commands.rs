@@ -7,6 +7,9 @@ use objc::{msg_send, sel, sel_impl};
 pub static TRAY_EXPANDED: AtomicBool = AtomicBool::new(false);
 pub static PILL_HOVERED: AtomicBool = AtomicBool::new(false);
 pub static PILL_PERSISTENT: AtomicBool = AtomicBool::new(false);
+pub static SHOW_PILL_ENABLED: AtomicBool = AtomicBool::new(true);
+pub static SHOW_COMPANION_ENABLED: AtomicBool = AtomicBool::new(true);
+static COMPANION_IGNORE_CURSOR: AtomicBool = AtomicBool::new(false);
 
 pub fn clamp_pill_position_internal(w: &tauri::WebviewWindow) {
     if let Ok(Some(monitor)) = w.current_monitor().or_else(|_| w.primary_monitor()) {
@@ -55,6 +58,9 @@ pub fn clamp_pill_position_cmd(app: AppHandle) -> Result<(), String> {
 
 #[tauri::command]
 pub fn show_pill_window(app: AppHandle) -> Result<(), String> {
+    if !SHOW_PILL_ENABLED.load(Ordering::SeqCst) {
+        return Ok(());
+    }
     PILL_PERSISTENT.store(true, Ordering::SeqCst);
     let app_handle = app.clone();
     crate::run_on_main_thread(move || {
@@ -293,7 +299,8 @@ pub fn hide_companion_window(app: AppHandle) -> Result<(), String> {
     Ok(())
 }
 
-/// Battery-friendly quantized gaze vector (-1 | 0 | 1) plus integer cursor coordinates for rest/wake detection.
+/// Battery-friendly quantized gaze vector (-1 | 0 | 1) plus integer cursor coordinates,
+/// and automatic click-through outside VoxBot's tight body silhouette.
 #[tauri::command]
 pub fn get_companion_gaze(app: AppHandle) -> (i8, i8, i32, i32) {
     let Ok(cursor) = app.cursor_position() else {
@@ -305,6 +312,17 @@ pub fn get_companion_gaze(app: AppHandle) -> (i8, i8, i32, i32) {
     let (Ok(pos), Ok(size)) = (w.outer_position(), w.outer_size()) else {
         return (0, 0, cursor.x as i32, cursor.y as i32);
     };
+
+    let scale = w.scale_factor().unwrap_or(1.0);
+    let lx = (cursor.x - pos.x as f64) / scale;
+    let ly = (cursor.y - pos.y as f64) / scale;
+    // Tight silhouette box around VoxBot's body/head (164x204 logical window):
+    // outside this box, clicks & text selection pass straight through to underlying apps.
+    let in_robot = lx >= 32.0 && lx <= 132.0 && ly >= 40.0 && ly <= 200.0;
+    let should_ignore = !in_robot;
+    if COMPANION_IGNORE_CURSOR.swap(should_ignore, Ordering::SeqCst) != should_ignore {
+        let _ = w.set_ignore_cursor_events(should_ignore);
+    }
 
     let face_cx = pos.x as f64 + (size.width as f64 * 0.5);
     let face_cy = pos.y as f64 + (size.height as f64 * 0.42);
@@ -322,6 +340,8 @@ pub fn set_overlay_mode_cmd(app: AppHandle, mode: String) -> Result<(), String> 
     let show_pill = mode != "robot";
     let show_robot = mode != "pill";
 
+    SHOW_PILL_ENABLED.store(show_pill, Ordering::SeqCst);
+    SHOW_COMPANION_ENABLED.store(show_robot, Ordering::SeqCst);
     PILL_PERSISTENT.store(show_pill, Ordering::SeqCst);
 
     let app_handle = app.clone();

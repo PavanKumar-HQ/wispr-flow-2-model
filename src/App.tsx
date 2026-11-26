@@ -481,7 +481,7 @@ export default function App() {
         <div className="space-y-2 pt-3 border-t border-charcoal/15 dark:border-darkTealBorder">
           <button
             onClick={() => safeInvoke('center_pill_window')}
-            className="w-full flex items-center justify-center gap-1.5 px-2 md:px-3 py-2 text-xs font-semibold rounded-xl border border-charcoal/20 dark:border-darkTealBorder bg-white dark:bg-darkTealElevated text-darkTeal dark:text-cream hover:bg-darkTeal dark:hover:bg-darkTealAccent hover:text-white transition-all shadow-xs active:scale-95 cursor-pointer"
+            className="w-full flex items-center justify-center gap-1.5 px-2 md:px-3 py-2 text-xs font-semibold rounded-xl border border-charcoal/20 dark:border-darkTealBorder bg-white dark:bg-darkTealElevated !text-darkTeal dark:!text-cream hover:bg-darkTeal dark:hover:bg-darkTealAccent hover:!text-white transition-all shadow-xs active:scale-95 cursor-pointer"
             title="Summon the floating pill to the front of your screen"
           >
             <LocateFixed className="w-3.5 h-3.5 shrink-0" />
@@ -490,7 +490,7 @@ export default function App() {
 
           <button
             onClick={() => safeInvoke('show_companion_window')}
-            className="w-full flex items-center justify-center gap-1.5 px-2 md:px-3 py-2 text-xs font-semibold rounded-xl border border-charcoal/20 dark:border-darkTealBorder bg-white dark:bg-darkTealElevated text-darkTeal dark:text-cream hover:bg-darkTeal dark:hover:bg-darkTealAccent hover:text-white transition-all shadow-xs active:scale-95 cursor-pointer"
+            className="w-full flex items-center justify-center gap-1.5 px-2 md:px-3 py-2 text-xs font-semibold rounded-xl border border-charcoal/20 dark:border-darkTealBorder bg-white dark:bg-darkTealElevated !text-darkTeal dark:!text-cream hover:bg-darkTeal dark:hover:bg-darkTealAccent hover:!text-white transition-all shadow-xs active:scale-95 cursor-pointer"
             title="Summon VoxBot desktop companion"
           >
             <Bot className="w-3.5 h-3.5 shrink-0 text-amber" />

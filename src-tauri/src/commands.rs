@@ -521,25 +521,27 @@ pub fn start_dictation_internal(state: &AppState, app: &AppHandle) -> Result<Ses
     let _ = app.emit("dictation-session-changed", &snap);
     drop(session_lock);
 
-    // Make floating indicator visible immediately on main thread without stealing key focus from target app
+    // Make floating indicator visible immediately on main thread only if Pill is enabled in overlay mode
     let app_show = app.clone();
     let snap_for_pill = snap.clone();
     crate::run_on_main_thread(move || {
         if let Some(w) = app_show.get_webview_window("floating-indicator") {
-            let _ = w.show();
-            let _ = w.set_always_on_top(true);
-            #[cfg(target_os = "macos")]
-            if let Ok(ns_win) = w.ns_window() {
-                use cocoa::base::id;
-                let ns_win = ns_win as id;
-                unsafe {
-                    let () = objc::msg_send![ns_win, orderFrontRegardless];
+            if crate::window_commands::SHOW_PILL_ENABLED.load(std::sync::atomic::Ordering::SeqCst) {
+                let _ = w.show();
+                let _ = w.set_always_on_top(true);
+                #[cfg(target_os = "macos")]
+                if let Ok(ns_win) = w.ns_window() {
+                    use cocoa::base::id;
+                    let ns_win = ns_win as id;
+                    unsafe {
+                        let () = objc::msg_send![ns_win, orderFrontRegardless];
+                    }
+                } else {
+                    let _ = w.show();
                 }
-            } else {
+                #[cfg(not(target_os = "macos"))]
                 let _ = w.show();
             }
-            #[cfg(not(target_os = "macos"))]
-            let _ = w.show();
             let _ = w.emit("dictation-session-changed", &snap_for_pill);
         }
     });
