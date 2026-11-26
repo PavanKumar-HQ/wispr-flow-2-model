@@ -13,7 +13,7 @@ import {
   Bot,
 } from 'lucide-react';
 import { SessionSnapshot, NowPlayingInfo } from '../types';
-import { Mascot, MascotAvatar } from './Mascot';
+import { Mascot, MascotAvatar, MascotAction } from './Mascot';
 import { AudioWaveform } from './AudioWaveform';
 import { CapsuleTray } from './capsule/CapsuleTray';
 import { safeInvoke, safeListen, isNativeTauri } from '../lib/ipc';
@@ -58,6 +58,50 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
       return false;
     }
   });
+
+  const [mascotAction, setMascotAction] = useState<MascotAction>('float');
+  const actionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Autonomous idle pet behavior: float -> sit (after 12s) -> sleep (after 35s)
+  useEffect(() => {
+    if (!isMascotMode || status.state === 'recording' || status.state === 'transcribing') {
+      setMascotAction('float');
+      return;
+    }
+
+    const resetToIdle = () => {
+      setMascotAction('float');
+      if (actionTimerRef.current) clearTimeout(actionTimerRef.current);
+      actionTimerRef.current = setTimeout(() => {
+        setMascotAction('sit');
+        actionTimerRef.current = setTimeout(() => {
+          setMascotAction('sleep');
+        }, 23000);
+      }, 12000);
+    };
+
+    resetToIdle();
+
+    const handleUserActivity = () => {
+      if (mascotAction === 'sleep' || mascotAction === 'sit') {
+        resetToIdle();
+      }
+    };
+
+    window.addEventListener('mousemove', handleUserActivity);
+    return () => {
+      if (actionTimerRef.current) clearTimeout(actionTimerRef.current);
+      window.removeEventListener('mousemove', handleUserActivity);
+    };
+  }, [isMascotMode, status.state, mascotAction]);
+
+  const handleMascotClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setMascotAction('jump');
+    setTimeout(() => {
+      onToggle();
+    }, 180);
+  };
 
   const handleToggleMascotMode = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -273,35 +317,56 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
         <div
           data-tauri-drag-region
           onMouseDown={handleMouseDown}
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggle();
-          }}
+          onClick={handleMascotClick}
           className="group relative flex flex-col items-center justify-center cursor-pointer select-none py-1 px-4"
-          title={`${selectedAvatar.toUpperCase()} Companion • Click or press hotkey to speak`}
+          title={`${selectedAvatar.toUpperCase()} Companion (${mascotAction}) • Click or press hotkey to speak`}
         >
-          {/* Living Mascot with floating physics */}
-          <div className="anim-mascot-float group-hover:scale-110 active:scale-95 transition-transform duration-200">
-            <Mascot size={52} state="idle" avatar={selectedAvatar} interactive />
+          {/* Living Mascot with dynamic action animation physics */}
+          <div className={`${
+            mascotAction === 'walk' ? 'anim-mascot-walk' :
+            mascotAction === 'jump' ? 'anim-mascot-jump' :
+            mascotAction === 'sit' ? 'anim-mascot-sit' :
+            mascotAction === 'sleep' ? 'anim-mascot-sleep' :
+            'anim-mascot-float'
+          } group-hover:scale-105 active:scale-95 transition-transform duration-200`}>
+            <Mascot size={54} state="idle" avatar={selectedAvatar} action={mascotAction} interactive />
           </div>
 
           {/* Floating ground shadow */}
           <div className="w-10 h-1.5 bg-black/35 rounded-full blur-[1px] mt-1 anim-shadow-pulse pointer-events-none" />
 
-          {/* Floating quick avatar & pill switch pills (shows on hover) */}
-          <div className="absolute -bottom-6 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-30">
+          {/* Floating quick avatar, action & pill switch controls (shows on hover) */}
+          <div className="absolute -bottom-7 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-30 bg-[#07514C]/90 backdrop-blur-md px-2 py-0.5 rounded-full border border-[#DDA44D]/30 shadow-lg">
             <button
               data-tauri-no-drag
               onClick={handleCycleAvatar}
-              className="bg-cream/95 text-darkTeal hover:bg-darkTeal hover:text-amber text-[8px] font-pixel px-2 py-0.5 rounded-full border border-darkTeal/30 shadow-md cursor-pointer transition-colors"
+              className="text-[#DDA44D] hover:text-white text-[8px] font-pixel px-1.5 py-0.5 rounded cursor-pointer transition-colors"
               title="Cycle Avatar (Bot -> Owl -> Cat)"
             >
               {selectedAvatar.toUpperCase()}
             </button>
+            <span className="text-white/30 text-[8px]">•</span>
+            {(['float', 'walk', 'jump', 'sit', 'sleep'] as MascotAction[]).map((act) => (
+              <button
+                key={act}
+                data-tauri-no-drag
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMascotAction(act);
+                }}
+                className={`text-[8px] font-pixel px-1 py-0.5 rounded uppercase transition-colors ${
+                  mascotAction === act ? 'bg-[#DDA44D] text-[#212121] font-bold' : 'text-white/70 hover:text-white'
+                }`}
+                title={`Make pet ${act}`}
+              >
+                {act}
+              </button>
+            ))}
+            <span className="text-white/30 text-[8px]">•</span>
             <button
               data-tauri-no-drag
               onClick={handleToggleMascotMode}
-              className="bg-darkTeal text-amber hover:bg-darkTeal/90 text-[8px] font-pixel px-2 py-0.5 rounded-full border border-white/20 shadow-md cursor-pointer transition-colors"
+              className="text-[#DA6C4C] hover:text-[#FF8A65] text-[8px] font-pixel px-1.5 py-0.5 rounded cursor-pointer transition-colors"
               title="Switch to Full Pill"
             >
               PILL
@@ -328,7 +393,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
             <>
               {/* Left: Sovereign Mascot & Recording status */}
               <div className="shrink-0 flex items-center gap-1.5 font-sans pl-0.5">
-                <Mascot size={22} state="listening" />
+                <Mascot size={22} state="listening" avatar={selectedAvatar} />
                 <div className="flex items-center gap-1.5">
                   <span className="relative flex h-2.5 w-2.5 items-center justify-center shrink-0">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-terracotta opacity-75" />
@@ -375,7 +440,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
             <>
               {/* Left: Sovereign Mascot & Transcribing Spinner */}
               <div className="shrink-0 flex items-center gap-1.5 font-sans pl-0.5">
-                <Mascot size={22} state="transcribing" />
+                <Mascot size={22} state="transcribing" avatar={selectedAvatar} />
                 <div className="flex items-center gap-1.5">
                   <span className="w-3.5 h-3.5 border-2 border-darkTeal dark:border-amber border-t-transparent rounded-full animate-spin shrink-0" />
                   <span className="text-[11px] font-bold tracking-wide text-darkTeal dark:text-[#DFDFD4] transcribing-shimmer shrink-0">
@@ -401,7 +466,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
             <>
               {/* Left: Sovereign Mascot & Pasted Status */}
               <div className="shrink-0 flex items-center gap-1.5 font-sans pl-0.5">
-                <Mascot size={22} state="success" />
+                <Mascot size={22} state="success" avatar={selectedAvatar} />
                 <div className="flex items-center gap-1.5 pl-1 font-sans">
                   <Check className="w-3.5 h-3.5 text-darkTeal dark:text-[#34A89E] shrink-0 stroke-[2.5]" />
                   <span className="text-[11px] font-bold text-darkTeal dark:text-[#DFDFD4] tracking-wide">
@@ -507,7 +572,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
               title="VoxQuest Mascot • Click to open Hub"
               aria-label="VoxQuest Mascot"
             >
-              <Mascot size={22} />
+              <Mascot size={22} avatar={selectedAvatar} />
             </button>
 
             {/* Middle: Source Pill + Track Name */}
@@ -609,7 +674,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
                 title="VoxQuest Mascot • Click to open Hub"
                 aria-label="VoxQuest Mascot"
               >
-                <Mascot size={22} />
+                <Mascot size={22} avatar={selectedAvatar} />
               </button>
               {noSpeechActive ? (
                 <div className="flex items-center gap-1.5 animate-fadeIn">

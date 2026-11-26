@@ -2,12 +2,14 @@ import React from 'react';
 
 export type MascotAvatar = 'bot' | 'owl' | 'cat';
 export type MascotState = 'idle' | 'listening' | 'transcribing' | 'success';
+export type MascotAction = 'float' | 'walk' | 'jump' | 'sit' | 'sleep';
 
 interface MascotProps {
   size?: number;
   className?: string;
   state?: MascotState;
   avatar?: MascotAvatar;
+  action?: MascotAction;
   onClick?: (e: React.MouseEvent) => void;
   interactive?: boolean;
 }
@@ -27,6 +29,7 @@ export const Mascot: React.FC<MascotProps> = ({
   className = '',
   state = 'idle',
   avatar,
+  action = 'float',
   onClick,
   interactive = false,
 }) => {
@@ -112,14 +115,39 @@ export const Mascot: React.FC<MascotProps> = ({
 
             {/* DYNAMIC CRT FACE EXPRESSIONS */}
             {state === 'listening' ? (
-              <g className="animate-pulse">
-                <rect x="34" y="35" width="6" height="6" rx="1.5" fill="#DDA44D" />
-                <rect x="60" y="35" width="6" height="6" rx="1.5" fill="#DDA44D" />
-                <rect x="36" y="49" width="3" height="9" rx="1" fill="#DDA44D" />
-                <rect x="42" y="46" width="3" height="13" rx="1" fill="#DFDFD4" />
-                <rect x="48" y="44" width="4" height="16" rx="1" fill="#DDA44D" />
-                <rect x="55" y="46" width="3" height="13" rx="1" fill="#DFDFD4" />
-                <rect x="61" y="49" width="3" height="9" rx="1" fill="#DDA44D" />
+              /* CUTE FRIENDLY LISTENING: Wide glowing eyes, cute blush, warm curved smile */
+              <g>
+                <ellipse cx="37" cy="41" rx="6" ry="7" fill="#DDA44D" />
+                <circle cx="39" cy="39" r="2.5" fill="#FFF2D6" />
+                <ellipse cx="63" cy="41" rx="6" ry="7" fill="#DDA44D" />
+                <circle cx="65" cy="39" r="2.5" fill="#FFF2D6" />
+
+                {/* Cute rosy blush cheeks */}
+                <rect x="29" y="47" width="5" height="2.5" rx="1.2" fill="#DA6C4C" opacity="0.9" />
+                <rect x="66" y="47" width="5" height="2.5" rx="1.2" fill="#DA6C4C" opacity="0.9" />
+
+                {/* Friendly open smile */}
+                <path
+                  d="M 44 49 Q 50 54 56 49"
+                  stroke="#DFDFD4"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  fill="none"
+                />
+
+                {/* Gentle acoustic radio aura rings above antenna */}
+                <path d="M 40 4 Q 50 -1 60 4" stroke="#DDA44D" strokeWidth="1.5" strokeLinecap="round" fill="none" opacity="0.8" className="animate-pulse" />
+                <path d="M 44 0 Q 50 -4 56 0" stroke="#DDA44D" strokeWidth="1.5" strokeLinecap="round" fill="none" opacity="0.5" className="animate-pulse delay-75" />
+              </g>
+            ) : action === 'sleep' ? (
+              /* SLEEPING: Serene curved closed eyes (-.-) with floating z Z Z */
+              <g>
+                <path d="M 32 43 Q 37 47 42 43" stroke="#DDA44D" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+                <path d="M 58 43 Q 63 47 68 43" stroke="#DDA44D" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+                <path d="M 46 51 Q 50 53 54 51" stroke="#DFDFD4" strokeWidth="2" strokeLinecap="round" fill="none" />
+                {/* Floating retro pixel z Z Z */}
+                <text x="74" y="22" fill="#DDA44D" className="font-pixel text-[9px] anim-zzz-1 font-bold select-none">z</text>
+                <text x="82" y="14" fill="#DFDFD4" className="font-pixel text-[11px] anim-zzz-2 font-bold select-none">Z</text>
               </g>
             ) : state === 'transcribing' ? (
               <g>
