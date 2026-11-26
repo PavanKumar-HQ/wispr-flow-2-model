@@ -109,21 +109,36 @@ impl AudioCaptureService {
                                     sum_sq += s * s;
                                 }
                             } else {
+                                // Block-level channel energy profiling:
+                                // Computes total acoustic energy per channel across this chunk.
+                                let mut ch_energy = vec![0.0f32; channels];
                                 for chunk in data.chunks_exact(channels) {
-                                    // Multi-channel mic / stereo headset / audio interface:
-                                    // Capture the channel with strongest instantaneous magnitude to prevent
-                                    // microphones mapped to Channel 2 (Right) from capturing total silence.
-                                    let mut best = chunk[0];
-                                    let mut max_abs = chunk[0].abs();
-                                    for &ch in chunk.iter().skip(1) {
-                                        let a = ch.abs();
-                                        if a > max_abs {
-                                            max_abs = a;
-                                            best = ch;
-                                        }
+                                    for (c, &s) in chunk.iter().enumerate() {
+                                        ch_energy[c] += s * s;
                                     }
-                                    buf.push(best);
-                                    sum_sq += best * best;
+                                }
+                                let total_e: f32 = ch_energy.iter().sum();
+                                let (best_ch, max_e) = ch_energy.iter().enumerate()
+                                    .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
+                                    .map(|(c, &e)| (c, e))
+                                    .unwrap_or((0, 0.0));
+
+                                // If one channel has > 70% of total energy (e.g. single mono mic on stereo interface),
+                                // use that dominant channel consistently for the entire block.
+                                // Otherwise (balanced stereo mic array on Mac/USB), downmix to mono by averaging channels.
+                                if max_e > total_e * 0.70 && total_e > 1e-7 {
+                                    for chunk in data.chunks_exact(channels) {
+                                        let sample = chunk[best_ch];
+                                        buf.push(sample);
+                                        sum_sq += sample * sample;
+                                    }
+                                } else {
+                                    let inv_ch = 1.0 / channels as f32;
+                                    for chunk in data.chunks_exact(channels) {
+                                        let sample = chunk.iter().sum::<f32>() * inv_ch;
+                                        buf.push(sample);
+                                        sum_sq += sample * sample;
+                                    }
                                 }
                             }
                             let count = if channels == 1 { data.len() } else { data.len() / channels };
@@ -154,21 +169,32 @@ impl AudioCaptureService {
                                     sum_sq += s * s;
                                 }
                             } else {
+                                let mut ch_energy = vec![0.0f32; channels];
                                 for chunk in data.chunks_exact(channels) {
-                                    // Multi-channel mic / stereo headset / audio interface:
-                                    // Capture the channel with strongest instantaneous magnitude.
-                                    let mut best = chunk[0] as f32 / 32768.0;
-                                    let mut max_abs = best.abs();
-                                    for &ch in chunk.iter().skip(1) {
-                                        let val = ch as f32 / 32768.0;
-                                        let a = val.abs();
-                                        if a > max_abs {
-                                            max_abs = a;
-                                            best = val;
-                                        }
+                                    for (c, &s) in chunk.iter().enumerate() {
+                                        let v = s as f32 / 32768.0;
+                                        ch_energy[c] += v * v;
                                     }
-                                    buf.push(best);
-                                    sum_sq += best * best;
+                                }
+                                let total_e: f32 = ch_energy.iter().sum();
+                                let (best_ch, max_e) = ch_energy.iter().enumerate()
+                                    .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
+                                    .map(|(c, &e)| (c, e))
+                                    .unwrap_or((0, 0.0));
+
+                                if max_e > total_e * 0.70 && total_e > 1e-7 {
+                                    for chunk in data.chunks_exact(channels) {
+                                        let sample = chunk[best_ch] as f32 / 32768.0;
+                                        buf.push(sample);
+                                        sum_sq += sample * sample;
+                                    }
+                                } else {
+                                    let inv_ch = 1.0 / (32768.0 * channels as f32);
+                                    for chunk in data.chunks_exact(channels) {
+                                        let sample = chunk.iter().map(|&s| s as f32).sum::<f32>() * inv_ch;
+                                        buf.push(sample);
+                                        sum_sq += sample * sample;
+                                    }
                                 }
                             }
                             let count = if channels == 1 { data.len() } else { data.len() / channels };
@@ -322,8 +348,8 @@ pub fn isolate_voice_and_suppress_noise(samples: &[f32], sample_rate: u32) -> Ve
     let noise_floor_idx = (sorted_rms.len() as f32 * 0.25).floor() as usize;
     let noise_floor = sorted_rms.get(noise_floor_idx).copied().unwrap_or(0.001).min(0.003);
 
-    // Adaptive threshold for speech (at least 12% above noise floor, sensitive floor 0.0010 RMS to catch soft speech & whisper onset)
-    let speech_threshold = (noise_floor * 1.12).clamp(0.0010, 0.0055);
+    // Adaptive threshold for speech (at least 8% above noise floor, sensitive floor 0.0006 RMS to catch soft speech & low voices)
+    let speech_threshold = (noise_floor * 1.08).clamp(0.0006, 0.0040);
 
     // Identify first and last frame containing genuine user speech
     let first_speech_frame = frame_rms.iter().position(|&r| r >= speech_threshold);
@@ -337,9 +363,9 @@ pub fn isolate_voice_and_suppress_noise(samples: &[f32], sample_rate: u32) -> Ve
         }
     };
 
-    // Generous safety pad of ~320ms (16 frames) to fully preserve rapid word boundaries and consonant transients.
+    // Generous safety pad of ~360ms (18 frames) to fully preserve rapid word boundaries and consonant transients.
     // If speech started within the first 240ms (12 frames), keep from frame 0 so initial consonants/words are never clipped.
-    let pad_frames = 16;
+    let pad_frames = 18;
     let safe_start_frame = if start_frame <= 12 {
         0
     } else {
@@ -356,16 +382,16 @@ pub fn isolate_voice_and_suppress_noise(samples: &[f32], sample_rate: u32) -> Ve
     let end_sample = (safe_end_frame * frame_size).min(hp_samples.len());
     let speech_samples = hp_samples[start_sample..end_sample].to_vec();
 
-    // 3. Dynamic Speech AGC: automatically normalizes quiet/whispered speech into Whisper's optimal range (-16 to -22 dBFS)
+    // 3. Dynamic Speech AGC: automatically normalizes quiet/low-voice speech into Whisper's optimal range (-16 to -22 dBFS)
     let peak = speech_samples.iter().copied().fold(0.0f32, |m, s| m.max(s.abs()));
     let speech_rms = if !speech_samples.is_empty() {
         (speech_samples.iter().map(|&s| s * s).sum::<f32>() / speech_samples.len() as f32).sqrt()
     } else {
         0.0
     };
-    if speech_rms > 1e-4 && speech_rms < 0.06 && peak > 1e-4 {
+    if speech_rms > 1e-5 && peak > 1e-5 {
         let target_gain = (0.085 / speech_rms).min(0.85 / peak);
-        let gain = target_gain.clamp(1.0, 8.0);
+        let gain = target_gain.clamp(1.0, 25.0);
         if gain > 1.05 {
             speech_samples.iter().map(|&s| (s * gain).clamp(-0.95, 0.95)).collect()
         } else {
@@ -427,7 +453,7 @@ pub fn is_audio_silent_or_too_short(audio_samples: &[f32]) -> bool {
     let peak = audio_samples.iter().fold(0.0f32, |m, &s| m.max(s.abs()));
     let sum_sq: f32 = audio_samples.iter().map(|&s| s * s).sum();
     let rms = (sum_sq / audio_samples.len() as f32).sqrt();
-    peak < 0.0022 || rms < 0.0005
+    peak < 0.0022 || (peak < 0.0040 && rms < 0.0002)
 }
 
 /// Trims dead silence at the beginning and end of a 16kHz speech buffer to speed up Whisper processing and eliminate silence latency.
