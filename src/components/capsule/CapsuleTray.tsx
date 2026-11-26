@@ -124,7 +124,7 @@ export const CapsuleTray: React.FC<CapsuleTrayProps> = ({
   return (
     <div
       data-tauri-no-drag
-      className="w-full max-w-[440px] max-h-[660px] overflow-y-auto no-scrollbar rounded-3xl border border-charcoal/15 dark:border-darkTealBorder bg-[#F6F6F2] dark:bg-darkTealSurface shadow-2xl p-3.5 space-y-3 font-sans select-auto transition-all text-charcoal dark:text-cream"
+      className="w-full max-w-[440px] max-h-[660px] overflow-y-auto no-scrollbar rounded-3xl border-2 border-charcoal/30 dark:border-darkTealBorder bg-[#F6F6F2] dark:bg-darkTealSurface shadow-2xl p-3.5 space-y-3 font-sans select-auto transition-all text-charcoal dark:text-cream"
     >
       {/* Sleek Navigation Header */}
       <div className="flex items-center justify-between pb-2 border-b border-charcoal/10 dark:border-darkTealBorder gap-2">

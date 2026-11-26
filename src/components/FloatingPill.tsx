@@ -314,33 +314,59 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
     >
       {/* Pill Capsule or Free-Floating Mascot Companion */}
       {isMascotMode && !isRecording && !isTranscribing && (!isDone || isDismissed) && (!nowPlaying || !nowPlaying.is_playing) ? (
-        /* TRUE LIVING DESKTOP MASCOT COMPANION (WHEN IDLE ONLY) */
+        /* TRUE LIVING DESKTOP MASCOT COMPANION (WHEN IDLE ONLY) WITH DEDICATED HUB BUTTON */
         <div
           data-tauri-drag-region
           onMouseDown={handleMouseDown}
-          onClick={handleMascotClick}
-          className="group relative flex flex-col items-center justify-center cursor-pointer select-none pt-6 pb-2 px-4 overflow-visible border-none"
-          title={`${selectedAvatar.toUpperCase()} Companion • Click or press hotkey to speak`}
+          className="group relative flex items-center justify-center cursor-pointer select-none pt-6 pb-2 px-4 gap-3 overflow-visible border-none"
+          title={`${selectedAvatar.toUpperCase()} Companion • Click to speak`}
         >
-          {/* Living Mascot with dynamic action animation physics & ample headroom */}
-          <div className={`${
-            mascotAction === 'walk' ? 'anim-mascot-walk' :
-            mascotAction === 'jump' ? 'anim-mascot-jump' :
-            mascotAction === 'sit' ? 'anim-mascot-sit' :
-            mascotAction === 'sleep' ? 'anim-mascot-sleep' :
-            'anim-mascot-float'
-          } group-hover:scale-105 active:scale-95 transition-transform duration-200 overflow-visible`}>
-            <Mascot
-              size={54}
-              state="idle"
-              avatar={selectedAvatar}
-              action={mascotAction}
-              interactive
-            />
+          {/* Living Mascot */}
+          <div
+            onClick={handleMascotClick}
+            className="flex flex-col items-center justify-center shrink-0 cursor-pointer"
+          >
+            <div className={`${
+              mascotAction === 'walk' ? 'anim-mascot-walk' :
+              mascotAction === 'jump' ? 'anim-mascot-jump' :
+              mascotAction === 'sit' ? 'anim-mascot-sit' :
+              mascotAction === 'sleep' ? 'anim-mascot-sleep' :
+              'anim-mascot-float'
+            } group-hover:scale-105 active:scale-95 transition-transform duration-200 overflow-visible`}>
+              <Mascot
+                size={54}
+                state="idle"
+                avatar={selectedAvatar}
+                action={mascotAction}
+                interactive
+              />
+            </div>
+            {/* Floating ground shadow */}
+            <div className="w-10 h-1.5 bg-black/35 rounded-full blur-[1px] mt-1 anim-shadow-pulse pointer-events-none" />
           </div>
 
-          {/* Floating ground shadow */}
-          <div className="w-10 h-1.5 bg-black/35 rounded-full blur-[1px] mt-1 anim-shadow-pulse pointer-events-none" />
+          {/* Productivity Hub Trigger Button directly next to Mascot */}
+          <button
+            data-tauri-no-drag
+            onClick={(e) => {
+              e.stopPropagation();
+              handleToggleTray();
+            }}
+            className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 shadow-md active:scale-95 cursor-pointer border-2 ${
+              isTrayExpanded
+                ? 'bg-darkTeal dark:bg-darkTealAccent text-white border-amber shadow-lg'
+                : 'bg-cream/95 dark:bg-darkTealSurface text-charcoal dark:text-cream border-charcoal/40 hover:border-darkTeal dark:border-mint/50'
+            }`}
+            title={isTrayExpanded ? 'Close Productivity Hub' : 'Open Productivity Hub'}
+            aria-label="Toggle Hub"
+          >
+            {isTrayExpanded ? (
+              <X className="w-3.5 h-3.5 text-amber shrink-0" />
+            ) : (
+              <LayoutGrid className="w-3.5 h-3.5 text-darkTeal dark:text-amber shrink-0" />
+            )}
+            <span className="font-sans font-bold">{isTrayExpanded ? 'Close' : 'Hub'}</span>
+          </button>
 
           {/* Floating quick avatar, action & pill switch controls (shows on hover) */}
           <div className="absolute -bottom-7 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-30 bg-[#07514C]/90 backdrop-blur-md px-2 py-0.5 rounded-full border border-[#DDA44D]/30 shadow-lg">
@@ -384,17 +410,17 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
         <div
           data-tauri-drag-region
           onMouseDown={handleMouseDown}
-          className={`voxquest-pill-capsule flex items-center justify-between gap-2 px-3.5 py-1.5 rounded-full border transition-all duration-300 ease-out cursor-grab active:cursor-grabbing ${
+          className={`voxquest-pill-capsule flex items-center justify-between gap-2 px-3.5 py-1.5 rounded-full border-2 transition-all duration-300 ease-out cursor-grab active:cursor-grabbing ${
             isRecording
-              ? 'w-[310px] bg-cream dark:bg-darkTealSurface border-terracotta dark:border-[#FF7A59] shadow-lg dark:shadow-[0_0_16px_rgba(255,122,89,0.4)]'
+              ? 'w-[316px] bg-cream dark:bg-darkTealSurface border-terracotta dark:border-[#FF7A59] shadow-lg dark:shadow-[0_0_16px_rgba(255,122,89,0.4)]'
               : isTranscribing
-              ? 'w-[310px] bg-cream dark:bg-darkTealSurface border-darkTeal dark:border-amber shadow-lg dark:shadow-[0_0_16px_rgba(221,164,77,0.4)]'
+              ? 'w-[316px] bg-cream dark:bg-darkTealSurface border-darkTeal dark:border-amber shadow-lg dark:shadow-[0_0_16px_rgba(221,164,77,0.4)]'
               : isDone && !isDismissed
               ? status.state === 'recovery_required'
-                ? 'w-[310px] bg-cream dark:bg-darkTealSurface border-amber dark:border-amber shadow-lg'
-                : 'w-[310px] bg-cream dark:bg-darkTealSurface border-darkTeal dark:border-[#34A89E] shadow-lg'
-              : 'w-[310px] bg-cream dark:bg-darkTealSurface border-charcoal/25 hover:border-darkTeal dark:border-[#2B313A] dark:hover:border-[#34A89E] shadow-lg'
-          } h-[42px]`}
+                ? 'w-[316px] bg-cream dark:bg-darkTealSurface border-amber dark:border-amber shadow-lg'
+                : 'w-[316px] bg-cream dark:bg-darkTealSurface border-darkTeal dark:border-[#34A89E] shadow-lg'
+              : 'w-[316px] bg-cream dark:bg-darkTealSurface border-charcoal/40 hover:border-darkTeal dark:border-[#3A4350] dark:hover:border-[#34A89E] shadow-md'
+          } h-[44px]`}
         >
           {isRecording ? (
             <>
@@ -639,8 +665,31 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
               </div>
             </div>
 
-            {/* Right: Mic Button (Dictation always ready) */}
-            <div className="shrink-0 flex items-center pr-0.5">
+            {/* Right: Hub Toggle & Mic Button */}
+            <div className="shrink-0 flex items-center gap-1.5 pl-1 pr-0.5">
+              <button
+                data-tauri-no-drag
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleToggleTray();
+                }}
+                className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-all flex items-center gap-1.5 active:scale-95 shrink-0 border ${
+                  isTrayExpanded
+                    ? 'bg-darkTeal dark:bg-darkTealAccent text-white border-amber shadow-xs cursor-pointer'
+                    : 'bg-black/5 dark:bg-darkTealElevated hover:bg-darkTeal hover:text-white dark:hover:bg-darkTealBorder text-charcoal/90 dark:text-[#DFDFD4] border-charcoal/25 hover:border-darkTeal cursor-pointer'
+                }`}
+                title={isTrayExpanded ? 'Close Productivity Hub' : 'Open Productivity Hub'}
+                aria-label="Toggle Hub"
+              >
+                {isTrayExpanded ? (
+                  <X className="w-3 h-3 text-amber shrink-0" />
+                ) : (
+                  <LayoutGrid className="w-3.5 h-3.5 text-darkTeal dark:text-amber shrink-0" />
+                )}
+                <span>{isTrayExpanded ? 'Close' : 'Hub'}</span>
+              </button>
+
               <button
                 data-tauri-no-drag
                 onMouseDown={(e) => e.stopPropagation()}
@@ -648,7 +697,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
                   e.stopPropagation();
                   onToggle();
                 }}
-                className="group relative p-1.5 rounded-full bg-darkTeal text-white hover:bg-darkTeal/90 shadow-xs transition-all active:scale-95 cursor-pointer anim-mic-halo"
+                className="group relative p-1.5 rounded-full bg-darkTeal text-white hover:bg-darkTeal/90 shadow-xs transition-all active:scale-95 cursor-pointer anim-mic-halo shrink-0"
                 title="Click to dictate (auto-pauses music)"
                 aria-label="Start dictation"
               >
@@ -714,10 +763,10 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
                   e.stopPropagation();
                   handleToggleTray();
                 }}
-                className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-all flex items-center gap-1.5 active:scale-95 shrink-0 ${
+                className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-all flex items-center gap-1.5 active:scale-95 shrink-0 border ${
                   isTrayExpanded
-                    ? 'bg-darkTeal dark:bg-darkTealAccent text-white shadow-xs cursor-pointer'
-                    : 'bg-black/5 dark:bg-darkTealElevated hover:bg-darkTeal hover:text-white dark:hover:bg-darkTealBorder text-charcoal/80 dark:text-[#DFDFD4] border border-transparent dark:border-darkTealBorder/60 cursor-pointer'
+                    ? 'bg-darkTeal dark:bg-darkTealAccent text-white border-amber shadow-xs cursor-pointer'
+                    : 'bg-black/5 dark:bg-darkTealElevated hover:bg-darkTeal hover:text-white dark:hover:bg-darkTealBorder text-charcoal/90 dark:text-[#DFDFD4] border-charcoal/25 hover:border-darkTeal cursor-pointer'
                 }`}
                 title={isTrayExpanded ? 'Close Productivity Hub' : 'Open Productivity Hub'}
                 aria-label="Toggle Hub"
