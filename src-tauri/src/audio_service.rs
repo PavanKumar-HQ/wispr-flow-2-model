@@ -382,23 +382,48 @@ pub fn isolate_voice_and_suppress_noise(samples: &[f32], sample_rate: u32) -> Ve
     let end_sample = (safe_end_frame * frame_size).min(hp_samples.len());
     let speech_samples = hp_samples[start_sample..end_sample].to_vec();
 
-    // 3. Dynamic Speech AGC: automatically normalizes quiet/low-voice speech into Whisper's optimal range (-16 to -22 dBFS)
-    let peak = speech_samples.iter().copied().fold(0.0f32, |m, s| m.max(s.abs()));
-    let speech_rms = if !speech_samples.is_empty() {
-        (speech_samples.iter().map(|&s| s * s).sum::<f32>() / speech_samples.len() as f32).sqrt()
-    } else {
-        0.0
-    };
-    if speech_rms > 1e-5 && peak > 1e-5 {
-        let target_gain = (0.085 / speech_rms).min(0.85 / peak);
-        let gain = target_gain.clamp(1.0, 25.0);
-        if gain > 1.05 {
-            speech_samples.iter().map(|&s| (s * gain).clamp(-0.95, 0.95)).collect()
+    // 3. Smooth Windowed Speech AGC: normalizes quiet/low-voice segments in long dictations
+    //    without letting a single loud peak suppress gain for the whole recording.
+    let win_len = (sample_rate as usize * 2).max(16000); // 2-second windows
+    if speech_samples.len() <= win_len {
+        let peak = speech_samples.iter().copied().fold(0.0f32, |m, s| m.max(s.abs()));
+        let speech_rms = if !speech_samples.is_empty() {
+            (speech_samples.iter().map(|&s| s * s).sum::<f32>() / speech_samples.len() as f32).sqrt()
+        } else {
+            0.0
+        };
+        if speech_rms > 1e-5 && peak > 1e-5 {
+            let target_gain = (0.085 / speech_rms).min(0.85 / peak);
+            let gain = target_gain.clamp(1.0, 25.0);
+            if gain > 1.05 {
+                speech_samples.iter().map(|&s| (s * gain).clamp(-0.95, 0.95)).collect()
+            } else {
+                speech_samples
+            }
         } else {
             speech_samples
         }
     } else {
-        speech_samples
+        let mut out = Vec::with_capacity(speech_samples.len());
+        let mut prev_gain = 1.0f32;
+        for chunk in speech_samples.chunks(win_len) {
+            let chunk_rms = (chunk.iter().map(|&s| s * s).sum::<f32>() / chunk.len() as f32).sqrt();
+            let chunk_peak = chunk.iter().copied().fold(0.0f32, |m, s| m.max(s.abs()));
+            let raw_gain = if chunk_rms > 0.0015 && chunk_peak > 1e-5 {
+                (0.085 / chunk_rms).min(0.90 / chunk_peak).clamp(1.0, 22.0)
+            } else {
+                // Keep quiet pauses near previous gain (capped) so ambient noise isn't over-boosted
+                prev_gain.min(4.0)
+            };
+            let n = chunk.len() as f32;
+            for (idx, &s) in chunk.iter().enumerate() {
+                let alpha = (idx as f32 / n).min(1.0);
+                let g = prev_gain + (raw_gain - prev_gain) * alpha;
+                out.push((s * g).clamp(-0.95, 0.95));
+            }
+            prev_gain = raw_gain;
+        }
+        out
     }
 }
 

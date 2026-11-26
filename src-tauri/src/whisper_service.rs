@@ -79,17 +79,19 @@ impl WhisperEngine {
         params.set_print_realtime(false);
         params.set_print_timestamps(false);
         params.set_translate(false);
-        // Clean isolated dictation sessions: prevent previous session token residue or hallucination bleed
-        params.set_no_context(true);
+        // Preserve context across 30s chunks within the same long dictation session
+        // (each new session starts fresh via initial_prompt)
+        params.set_no_context(false);
         params.set_single_segment(false);
         params.set_suppress_blank(true);
         params.set_suppress_nst(true);
         // Sensitive thresholds to prevent dropping soft, conversational, or low-voice speech in between words
-        params.set_no_speech_thold(0.85);
+        params.set_no_speech_thold(0.90);
         params.set_logprob_thold(-2.80);
         params.set_entropy_thold(2.80);
         params.set_temperature(0.0);
-        params.set_temperature_inc(0.0);
+        // Allow standard temperature fallback so borderline 30s chunks aren't skipped
+        params.set_temperature_inc(0.2);
         // "Race to sleep" threading: use optimal cores (up to 4) so inference finishes rapidly and returns CPU/GPU to low-power idle
         let avail = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4);
         let n_threads = self.max_threads.unwrap_or(4).min(avail as u32).clamp(2, 4);
