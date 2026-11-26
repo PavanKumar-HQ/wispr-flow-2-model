@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Keyboard, Mic, Sliders, Shield, Target, CheckCircle2, AlertTriangle, ExternalLink, RotateCcw, BookOpen, Radio, Palette, Sun, RefreshCw, DownloadCloud } from 'lucide-react';
+import { Keyboard, Mic, Sliders, Shield, Target, CheckCircle2, AlertTriangle, ExternalLink, RotateCcw, BookOpen, Radio, Palette, Sun, RefreshCw, DownloadCloud, Bot } from 'lucide-react';
 import { AppSettings } from '../types';
 import { safeInvoke } from '../lib/ipc';
 import { checkForAppUpdates, relaunchToApplyUpdate, UpdateStatus } from '../lib/updater';
+import { Mascot, MascotAvatar } from './Mascot';
 
 interface SettingsTabProps {
   settings: AppSettings;
@@ -20,6 +21,36 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
   const [isCheckingUpdate, setIsCheckingUpdate] = useState<boolean>(false);
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
   const [updateMsg, setUpdateMsg] = useState<string | null>(null);
+  const [selectedAvatar, setSelectedAvatar] = useState<MascotAvatar>(() => {
+    try {
+      return (localStorage.getItem('voxquest_mascot_avatar') as MascotAvatar) || 'bot';
+    } catch {
+      return 'bot';
+    }
+  });
+  const [isMascotMode, setIsMascotMode] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('voxquest_mascot_mode') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const handleSetAvatar = (av: MascotAvatar) => {
+    setSelectedAvatar(av);
+    try {
+      localStorage.setItem('voxquest_mascot_avatar', av);
+      window.dispatchEvent(new Event('storage'));
+    } catch {}
+  };
+
+  const handleSetMascotMode = (mascot: boolean) => {
+    setIsMascotMode(mascot);
+    try {
+      localStorage.setItem('voxquest_mascot_mode', String(mascot));
+      window.dispatchEvent(new Event('storage'));
+    } catch {}
+  };
 
   const handleCheckUpdate = async () => {
     setIsCheckingUpdate(true);
@@ -146,7 +177,105 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
           </div>
         </div>
 
-        {/* System Permission Card */}
+        {/* Desktop Companion Mascot & Floating Pill Personalization */}
+        <div className="p-5 rounded-2xl border border-charcoal/15 bg-white shadow-xs space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal font-mono flex items-center gap-1.5">
+              <Bot className="w-3.5 h-3.5" /> Desktop Companion Mascot &amp; Pill Style
+            </h3>
+            <span className="text-[10px] font-mono font-bold text-darkTeal bg-darkTeal/10 px-2 py-0.5 rounded-full border border-darkTeal/20">
+              Personalize
+            </span>
+          </div>
+          <p className="text-xs text-charcoal/70 leading-relaxed">
+            Choose your preferred desktop companion experience. In <strong>Mascot Mode</strong>, your companion floats freely as an animated pet (no button outlines or card wrappers); click it or press your hotkey to dictate.
+          </p>
+
+          {/* Mode Selector: Free Mascot vs Full Pill */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            <div
+              onClick={() => handleSetMascotMode(true)}
+              className={`p-3.5 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${
+                isMascotMode
+                  ? 'bg-amber/10 border-amber shadow-xs ring-1 ring-amber/30'
+                  : 'bg-cream/40 border-charcoal/15 hover:border-charcoal/30'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white border border-charcoal/15 flex items-center justify-center">
+                  <Mascot size={28} avatar={selectedAvatar} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-xs text-charcoal">Free Mascot Companion</span>
+                    {isMascotMode && <CheckCircle2 className="w-3.5 h-3.5 text-amber" />}
+                  </div>
+                  <p className="text-[10px] text-charcoal/70 leading-tight mt-0.5">
+                    Free-floating animated pet with hover physics (no button box). Tap to speak.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div
+              onClick={() => handleSetMascotMode(false)}
+              className={`p-3.5 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${
+                !isMascotMode
+                  ? 'bg-darkTeal/10 border-darkTeal shadow-xs ring-1 ring-darkTeal/30'
+                  : 'bg-cream/40 border-charcoal/15 hover:border-charcoal/30'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white border border-charcoal/15 flex items-center justify-center">
+                  <div className="w-6 h-3 rounded-full bg-darkTeal" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-xs text-charcoal">Dynamic Island Pill</span>
+                    {!isMascotMode && <CheckCircle2 className="w-3.5 h-3.5 text-darkTeal" />}
+                  </div>
+                  <p className="text-[10px] text-charcoal/70 leading-tight mt-0.5">
+                    Classic horizontal floating capsule with live waveform bar.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Avatar Version Selection */}
+          <div className="space-y-2 pt-2 border-t border-charcoal/10">
+            <span className="text-[11px] font-mono font-bold text-darkTeal uppercase tracking-wider">
+              Select Companion Avatar:
+            </span>
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { id: 'bot', name: 'VoxBot', desc: 'Cyber Robot', icon: '🤖' },
+                { id: 'owl', name: 'VoxOwl', desc: 'Pixel Familiar', icon: '🦉' },
+                { id: 'cat', name: 'VoxCat', desc: 'Arcade Cyber Cat', icon: '🐱' },
+              ].map((av) => (
+                <div
+                  key={av.id}
+                  onClick={() => handleSetAvatar(av.id as MascotAvatar)}
+                  className={`p-3 rounded-xl border cursor-pointer transition-all flex flex-col items-center text-center gap-2 ${
+                    selectedAvatar === av.id
+                      ? 'bg-darkTeal text-white border-darkTeal shadow-md'
+                      : 'bg-cream/50 text-charcoal border-charcoal/15 hover:border-charcoal/30 hover:bg-cream'
+                  }`}
+                >
+                  <div className="w-12 h-12 flex items-center justify-center">
+                    <Mascot size={40} avatar={av.id as MascotAvatar} />
+                  </div>
+                  <div>
+                    <span className="font-pixel text-[10px] block">{av.name}</span>
+                    <span className={`text-[9px] block ${selectedAvatar === av.id ? 'text-amber' : 'text-charcoal/60'}`}>
+                      {av.desc}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
         <div className="p-5 rounded-2xl border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface shadow-xs space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal dark:text-mint font-mono flex items-center gap-1.5">

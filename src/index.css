@@ -32,6 +32,35 @@
   -webkit-user-select: none;
 }
 
+/* Living Companion Mascot Floating Physics */
+@keyframes mascotFloat {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes shadowPulse {
+  0%, 100% {
+    transform: scaleX(1);
+    opacity: 0.35;
+  }
+  50% {
+    transform: scaleX(0.75);
+    opacity: 0.18;
+  }
+}
+
+.anim-mascot-float {
+  animation: mascotFloat 2.6s ease-in-out infinite;
+}
+
+.anim-shadow-pulse {
+  animation: shadowPulse 2.6s ease-in-out infinite;
+}
+
 /* Native desktop drag regions for macOS */
 [data-tauri-drag-region] {
   -webkit-app-region: drag;

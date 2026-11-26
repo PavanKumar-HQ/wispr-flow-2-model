@@ -13,7 +13,7 @@ import {
   Bot,
 } from 'lucide-react';
 import { SessionSnapshot, NowPlayingInfo } from '../types';
-import { Mascot } from './Mascot';
+import { Mascot, MascotAvatar } from './Mascot';
 import { AudioWaveform } from './AudioWaveform';
 import { CapsuleTray } from './capsule/CapsuleTray';
 import { safeInvoke, safeListen, isNativeTauri } from '../lib/ipc';
@@ -43,6 +43,14 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
   const [noSpeechActive, setNoSpeechActive] = useState<boolean>(false);
   const [isTrayExpanded, setIsTrayExpanded] = useState<boolean>(false);
   const [nowPlaying, setNowPlaying] = useState<NowPlayingInfo | null>(null);
+  const [selectedAvatar, setSelectedAvatar] = useState<MascotAvatar>(() => {
+    try {
+      return (localStorage.getItem('voxquest_mascot_avatar') as MascotAvatar) || 'bot';
+    } catch {
+      return 'bot';
+    }
+  });
+
   const [isMascotMode, setIsMascotMode] = useState<boolean>(() => {
     try {
       return localStorage.getItem('voxquest_mascot_mode') === 'true';
@@ -59,10 +67,32 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
       localStorage.setItem('voxquest_mascot_mode', String(next));
     } catch {}
   };
+
+  const handleCycleAvatar = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const order: MascotAvatar[] = ['bot', 'owl', 'cat'];
+    const nextIdx = (order.indexOf(selectedAvatar) + 1) % order.length;
+    const next = order[nextIdx];
+    setSelectedAvatar(next);
+    try {
+      localStorage.setItem('voxquest_mascot_avatar', next);
+    } catch {}
+  };
   const isDark = false;
 
   // Sync with Now Playing audio stream
   useEffect(() => {
+    const handleStorageChange = () => {
+      try {
+        const storedAvatar = (localStorage.getItem('voxquest_mascot_avatar') as MascotAvatar) || 'bot';
+        setSelectedAvatar(storedAvatar);
+        const storedMode = localStorage.getItem('voxquest_mascot_mode') === 'true';
+        setIsMascotMode(storedMode);
+      } catch {}
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
     safeInvoke<NowPlayingInfo | null>('get_now_playing_cmd').then((info) => {
       if (info) setNowPlaying(info);
     });
@@ -75,6 +105,7 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
     });
 
     return () => {
+      window.removeEventListener('storage', handleStorageChange);
       if (unlisten) unlisten();
     };
   }, []);
@@ -236,9 +267,9 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
       } select-none bg-transparent`}
       style={{ background: 'transparent' }}
     >
-      {/* Pill Capsule or Compact Mascot Companion */}
+      {/* Pill Capsule or Free-Floating Mascot Companion */}
       {isMascotMode && !isRecording && !isTranscribing && (!isDone || isDismissed) && (!nowPlaying || !nowPlaying.is_playing) ? (
-        /* COMPACT VOXBOT COMPANION (Mascot Mode) */
+        /* TRUE LIVING DESKTOP MASCOT COMPANION (NO BUTTON BOX) */
         <div
           data-tauri-drag-region
           onMouseDown={handleMouseDown}
@@ -246,24 +277,36 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
             e.stopPropagation();
             onToggle();
           }}
-          className="group relative flex items-center justify-center p-2 rounded-2xl bg-cream dark:bg-darkTealSurface border-2 border-charcoal/25 hover:border-darkTeal dark:border-darkTealBorder shadow-xl cursor-pointer hover:scale-110 active:scale-95 transition-all select-none"
-          title="VoxBot Companion • Click or press hotkey to speak"
+          className="group relative flex flex-col items-center justify-center cursor-pointer select-none py-1 px-4"
+          title={`${selectedAvatar.toUpperCase()} Companion • Click or press hotkey to speak`}
         >
-          <Mascot size={36} state="idle" interactive />
-          {/* Subtle ready pulse */}
-          <span className="absolute -top-1 -right-1 flex h-3 w-3">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-darkTeal opacity-40" />
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-darkTeal border-2 border-cream" />
-          </span>
-          {/* Hover button to switch back to expanded pill */}
-          <button
-            data-tauri-no-drag
-            onClick={handleToggleMascotMode}
-            className="absolute -bottom-2.5 opacity-0 group-hover:opacity-100 transition-opacity bg-darkTeal text-amber text-[8px] font-pixel px-2 py-0.5 rounded-full border border-white/20 shadow-xs cursor-pointer z-10"
-            title="Expand to Full Pill"
-          >
-            PILL
-          </button>
+          {/* Living Mascot with floating physics */}
+          <div className="anim-mascot-float group-hover:scale-110 active:scale-95 transition-transform duration-200">
+            <Mascot size={52} state="idle" avatar={selectedAvatar} interactive />
+          </div>
+
+          {/* Floating ground shadow */}
+          <div className="w-10 h-1.5 bg-black/35 rounded-full blur-[1px] mt-1 anim-shadow-pulse pointer-events-none" />
+
+          {/* Floating quick avatar & pill switch pills (shows on hover) */}
+          <div className="absolute -bottom-6 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-30">
+            <button
+              data-tauri-no-drag
+              onClick={handleCycleAvatar}
+              className="bg-cream/95 text-darkTeal hover:bg-darkTeal hover:text-amber text-[8px] font-pixel px-2 py-0.5 rounded-full border border-darkTeal/30 shadow-md cursor-pointer transition-colors"
+              title="Cycle Avatar (Bot -> Owl -> Cat)"
+            >
+              {selectedAvatar.toUpperCase()}
+            </button>
+            <button
+              data-tauri-no-drag
+              onClick={handleToggleMascotMode}
+              className="bg-darkTeal text-amber hover:bg-darkTeal/90 text-[8px] font-pixel px-2 py-0.5 rounded-full border border-white/20 shadow-md cursor-pointer transition-colors"
+              title="Switch to Full Pill"
+            >
+              PILL
+            </button>
+          </div>
         </div>
       ) : (
         <div
