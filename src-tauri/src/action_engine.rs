@@ -28,8 +28,51 @@ fn safe_spawn_open(args: &[&str]) {
     let _ = cmd.spawn();
 }
 
-/// Detects voice-triggered system actions.
-/// Returns Some(VoiceActionResult) if a command or dynamic snippet was recognized.
+fn url_encode_query(query: &str) -> String {
+    query
+        .bytes()
+        .map(|b| {
+            if b.is_ascii_alphanumeric() || b == b'-' || b == b'_' || b == b'.' || b == b'~' {
+                (b as char).to_string()
+            } else if b == b' ' {
+                "+".to_string()
+            } else {
+                format!("%{:02X}", b)
+            }
+        })
+        .collect()
+}
+
+/// Guardrail: returns true if an utterance looks like multi-sentence prose or conversational
+/// dictation rather than a crisp, intentional voice command.
+fn looks_like_prose_dictation(trimmed: &str, max_words: usize) -> bool {
+    let words: Vec<&str> = trimmed.split_whitespace().collect();
+    if words.is_empty() || words.len() > max_words {
+        return true;
+    }
+    // Multi-sentence dictation (internal '.', '?', '!') is never a single command
+    let body = trimmed.trim_end_matches(|c: char| c == '.' || c == '!' || c == '?');
+    if body.contains(". ") || body.contains("? ") || body.contains("! ") {
+        return true;
+    }
+    let lower = body.to_lowercase();
+    // Prose / narrative connectors indicate normal dictation, not a command
+    const PROSE_MARKERS: &[&str] = &[
+        " and then ",
+        " because ",
+        " which is ",
+        " that is ",
+        " would be ",
+        " should be ",
+        " in the code",
+        " in this file",
+        " for the bug",
+    ];
+    PROSE_MARKERS.iter().any(|m| lower.contains(m))
+}
+
+/// Detects voice-triggered system actions with strict dictation guardrails.
+/// Returns Some(VoiceActionResult) if an intentional command or dynamic snippet was recognized.
 pub fn detect_voice_action(input: &str) -> Option<VoiceActionResult> {
     let trimmed = input.trim();
     if trimmed.is_empty() {
@@ -86,41 +129,55 @@ pub fn detect_voice_action(input: &str) -> Option<VoiceActionResult> {
         }
     }
 
-    // 3. Web Search ("search <query>", "google <query>")
-    if lower_clean.starts_with("search ") || lower_clean.starts_with("google ") {
-        let query = if lower_clean.starts_with("search ") {
-            &trimmed[7..]
-        } else {
-            &trimmed[7..]
-        }.trim();
+    // 3. Guarded Web / YouTube Search
+    //    Supports: "search youtube for <q>", "search on youtube <q>", "search google for <q>",
+    //    "google <q>", or short "search <q>" (guarded against long prose dictation).
+    let search_target: Option<(&str, &str)> = if lower_clean.starts_with("search youtube for ") {
+        Some(("youtube", trimmed[19..].trim()))
+    } else if lower_clean.starts_with("search on youtube ") {
+        Some(("youtube", trimmed[18..].trim()))
+    } else if lower_clean.starts_with("search in youtube ") {
+        Some(("youtube", trimmed[18..].trim()))
+    } else if lower_clean.starts_with("search google for ") {
+        Some(("google", trimmed[18..].trim()))
+    } else if lower_clean.starts_with("search ") {
+        Some(("google", trimmed[7..].trim()))
+    } else if lower_clean.starts_with("google ") {
+        Some(("google", trimmed[7..].trim()))
+    } else {
+        None
+    };
 
-        if !query.is_empty() {
-            let encoded: String = query
-                .bytes()
-                .map(|b| {
-                    if b.is_ascii_alphanumeric() || b == b'-' || b == b'_' || b == b'.' || b == b'~' {
-                        (b as char).to_string()
-                    } else if b == b' ' {
-                        "+".to_string()
-                    } else {
-                        format!("%{:02X}", b)
-                    }
-                })
-                .collect();
+    if let Some((engine, raw_query)) = search_target {
+        let query = raw_query.trim_matches(|c: char| c.is_ascii_punctuation() || c.is_whitespace());
+        let is_prose = looks_like_prose_dictation(trimmed, 10)
+            || query.to_lowercase().starts_with("if ")
+            || query.to_lowercase().starts_with("whether ")
+            || query.to_lowercase().starts_with("through ");
 
-            let url = format!("https://www.google.com/search?q={}", encoded);
+        if !query.is_empty() && !is_prose {
+            let encoded = url_encode_query(query);
+            let url = if engine == "youtube" {
+                format!("https://www.youtube.com/results?search_query={}", encoded)
+            } else {
+                format!("https://www.google.com/search?q={}", encoded)
+            };
             safe_spawn_open(&[&url]);
 
             return Some(VoiceActionResult {
                 action_type: "system_search".to_string(),
-                feedback_message: format!("Searching: {}", query),
+                feedback_message: if engine == "youtube" {
+                    format!("Searching YouTube: {}", query)
+                } else {
+                    format!("Searching: {}", query)
+                },
                 expanded_text: None,
                 suppress_paste: true,
             });
         }
     }
 
-    // 4. Play Music ("play <song/artist>", "play, <song>", "play music", "play ... on youtube/spotify")
+    // 4. Guarded Play Music ("play <song> in/on youtube", "play <song> on youtube music", "play <song>")
     let play_match = if lower_clean.starts_with("play ") {
         Some(&lower_clean[5..])
     } else if lower_clean.starts_with("play, ") {
@@ -133,11 +190,21 @@ pub fn detect_voice_action(input: &str) -> Option<VoiceActionResult> {
 
     if let Some(raw_target) = play_match {
         let music_query = raw_target.trim().trim_matches(|c: char| c.is_ascii_punctuation() || c.is_whitespace());
-        if !music_query.is_empty() {
-            // Detect service suffix if spoken: "on youtube", "on spotify", "on apple music"
-            let (clean_song, service) = if music_query.ends_with(" on youtube") {
+        const NON_MUSIC_PROSE: &[&str] = &[
+            "a role", "a part", "around", "with ", "the game", "games", "it safe", "by ear", "catch up",
+        ];
+        let is_non_music = looks_like_prose_dictation(trimmed, 12)
+            || NON_MUSIC_PROSE.iter().any(|p| music_query.starts_with(p));
+
+        if !music_query.is_empty() && !is_non_music {
+            // Detect service suffix if spoken: "on/in youtube", "on/in youtube music", "on spotify", "on apple music"
+            let (clean_song, service) = if music_query.ends_with(" on youtube music") {
+                (music_query[..music_query.len() - 17].trim(), "youtube_music")
+            } else if music_query.ends_with(" in youtube music") {
+                (music_query[..music_query.len() - 17].trim(), "youtube_music")
+            } else if music_query.ends_with(" on youtube") || music_query.ends_with(" in youtube") {
                 (music_query[..music_query.len() - 11].trim(), "youtube")
-            } else if music_query.ends_with(" on spotify") {
+            } else if music_query.ends_with(" on spotify") || music_query.ends_with(" in spotify") {
                 (music_query[..music_query.len() - 11].trim(), "spotify")
             } else if music_query.ends_with(" on apple music") {
                 (music_query[..music_query.len() - 15].trim(), "apple_music")
@@ -427,6 +494,24 @@ mod tests {
         let res2 = detect_voice_action("play lofi beats on youtube").unwrap();
         assert_eq!(res2.action_type, "system_music");
         assert!(res2.feedback_message.contains("lofi beats"));
+
+        let res3 = detect_voice_action("play believer in youtube").unwrap();
+        assert_eq!(res3.action_type, "system_music");
+        assert!(res3.feedback_message.contains("believer"));
+    }
+
+    #[test]
+    fn test_voice_action_prose_guardrails() {
+        // Long / conversational dictation containing "search" or "play" must NOT hijack dictation
+        assert!(detect_voice_action("search for the bug in the codebase and then check the logs please").is_none());
+        assert!(detect_voice_action("search if the user is logged in. Then paste the result.").is_none());
+        assert!(detect_voice_action("play a role in how the system schedules tasks").is_none());
+        assert!(detect_voice_action("play around with the UI until it looks clean").is_none());
+
+        // Explicit YouTube search works
+        let yt = detect_voice_action("search youtube for rust async").unwrap();
+        assert_eq!(yt.action_type, "system_search");
+        assert!(yt.feedback_message.contains("YouTube"));
     }
 
     #[test]

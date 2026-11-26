@@ -81,7 +81,10 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
       style={{
         width: size,
         height,
-        transform: facing === 'left' ? 'scaleX(-1)' : undefined,
+        transform: `perspective(520px) rotateY(${gaze.x * 6}deg) rotateX(${-gaze.y * 4}deg) ${
+          facing === 'left' ? 'scaleX(-1)' : ''
+        }`,
+        transition: 'transform 260ms ease-out',
       }}
     >
       <svg

@@ -28,6 +28,7 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
   const [isHovered, setIsHovered] = useState<boolean>(false);
   const [isBlinking, setIsBlinking] = useState<boolean>(false);
   const [showSuccessFlash, setShowSuccessFlash] = useState<boolean>(false);
+  const [actionToast, setActionToast] = useState<string | null>(null);
   const [isMusicPlaying, setIsMusicPlaying] = useState<boolean>(false);
 
   const lastSessionIdRef = useRef<string | null>(null);
@@ -39,7 +40,7 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
   });
   const walkVecRef = useRef<{ vx: number; vy: number }>({ vx: -2.4, vy: -1.1 });
 
-  // Brief celebration on completed transcription
+  // Brief celebration & action confirmation bubble when a transcription/command completes
   useEffect(() => {
     if (
       (status.state === 'completed' || status.state === 'recovery_required') &&
@@ -48,10 +49,21 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
     ) {
       lastSessionIdRef.current = status.session_id;
       setShowSuccessFlash(true);
-      const timer = setTimeout(() => setShowSuccessFlash(false), 2000);
+      const msg = status.message || '';
+      if (
+        msg.startsWith('Playing') ||
+        msg.startsWith('Searching') ||
+        msg.startsWith('Opened')
+      ) {
+        setActionToast(msg.length > 26 ? `${msg.slice(0, 24)}…` : msg);
+      }
+      const timer = setTimeout(() => {
+        setShowSuccessFlash(false);
+        setActionToast(null);
+      }, 2400);
       return () => clearTimeout(timer);
     }
-  }, [status.state, status.session_id]);
+  }, [status.state, status.session_id, status.message]);
 
   // Natural blinking when awake
   useEffect(() => {
@@ -294,14 +306,18 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
       className="w-screen h-screen flex flex-col items-center justify-end pb-1 pt-2 select-none bg-transparent overflow-visible"
       style={{ background: 'transparent' }}
     >
-      {/* Tiny Sleek Listening Pill Above Robot (never show Transcribing text on robot) */}
+      {/* Tiny Sleek Listening / Action Confirmation Pill Above Robot */}
       <div className="h-5 flex items-center justify-center mb-0.5 shrink-0">
-        {status.state === 'recording' && (
+        {status.state === 'recording' ? (
           <div className="px-2 py-[1px] rounded-full text-[8.5px] font-mono font-bold tracking-wider uppercase border border-terracotta bg-cream/95 text-terracotta shadow-xs animate-fadeIn flex items-center gap-1">
             <span className="w-1 h-1 rounded-full bg-terracotta animate-ping" />
             <span>Listening</span>
           </div>
-        )}
+        ) : actionToast ? (
+          <div className="px-2 py-[1px] rounded-full text-[8.5px] font-mono font-bold tracking-tight border border-darkTeal/40 bg-cream/95 text-darkTeal shadow-xs animate-fadeIn max-w-[152px] truncate">
+            {actionToast}
+          </div>
+        ) : null}
       </div>
 
       {/* Tight Interactive Hitbox Only Around VoxBot */}
