@@ -39,6 +39,8 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
     movedAt: Date.now(),
   });
   const walkVecRef = useRef<{ vx: number; vy: number }>({ vx: -2.4, vy: -1.1 });
+  const poseIdxRef = useRef<number>(0);
+  const isSleeping = autoPose === 'sleep';
 
   // Brief celebration & action confirmation bubble when a transcription/command completes
   useEffect(() => {
@@ -116,7 +118,7 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
     }
 
     let cancelled = false;
-    const pollMs = autoPose === 'sleep' && !isHovered ? 650 : 320;
+    const pollMs = isSleeping && !isHovered ? 650 : 320;
 
     const pollGaze = async () => {
       if (cancelled || document.hidden) return;
@@ -131,20 +133,20 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
 
         if (moved) {
           lastCursorRef.current = { x: cx, y: cy, movedAt: now };
-          if (autoPose === 'sleep' && status.state === 'idle') {
+          if (isSleeping && status.state === 'idle') {
             setAutoPose('idle');
           }
         } else if (
           status.state === 'idle' &&
           !isHovered &&
           !isMusicPlaying &&
-          autoPose !== 'sleep' &&
+          !isSleeping &&
           now - lastCursorRef.current.movedAt >= MOUSE_REST_SLEEP_MS
         ) {
           setAutoPose('sleep');
         }
 
-        if (autoPose !== 'sleep' || isHovered) {
+        if (!isSleeping || isHovered) {
           setGaze((prev) => (prev.x === gx && prev.y === gy ? prev : { x: gx, y: gy }));
         } else {
           setGaze({ x: 0, y: 0 });
@@ -157,11 +159,11 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
       cancelled = true;
       clearInterval(timer);
     };
-  }, [status.state, autoPose, isHovered]);
+  }, [status.state, isSleeping, isHovered, isMusicPlaying]);
 
   // Active autonomous behavior while mouse is moving/awake: walk -> fly -> wave -> idle -> sit -> dance
   useEffect(() => {
-    if (status.state !== 'idle' || showSuccessFlash || isHovered || autoPose === 'sleep') return;
+    if (status.state !== 'idle' || showSuccessFlash || isHovered || isSleeping) return;
 
     const sequence: Array<'walk' | 'fly' | 'wave' | 'idle' | 'sit' | 'dance'> = [
       'walk',
@@ -171,12 +173,11 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
       'sit',
       'dance',
     ];
-    let idx = 0;
 
     const interval = setInterval(() => {
       if (document.hidden) return;
-      idx = (idx + 1) % sequence.length;
-      const next = sequence[idx];
+      poseIdxRef.current = (poseIdxRef.current + 1) % sequence.length;
+      const next = sequence[poseIdxRef.current];
       if (next === 'walk') {
         // Walk briskly horizontally at current altitude so stride is clearly visible
         const dir = Math.random() > 0.5 ? 1 : -1;
@@ -193,7 +194,7 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
     }, 3200);
 
     return () => clearInterval(interval);
-  }, [status.state, showSuccessFlash, isHovered, autoPose]);
+  }, [status.state, showSuccessFlash, isHovered, isSleeping]);
 
   const effectiveIdlePose = isHovered && autoPose === 'sleep' ? 'sit' : autoPose;
 
