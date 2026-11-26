@@ -565,6 +565,7 @@ pub fn run() {
             commands::play_music_cmd,
             commands::get_now_playing_cmd,
             commands::set_now_playing_cmd,
+            commands::is_system_audio_playing,
             commands::get_system_telemetry_cmd,
             commands::get_system_clipboard_cmd,
             commands::get_dataset_stats_cmd,

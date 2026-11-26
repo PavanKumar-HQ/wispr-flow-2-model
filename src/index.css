@@ -325,6 +325,43 @@
   }
 }
 
+@keyframes vbHeadBeatBob {
+  0%, 100% {
+    transform: translateY(0px) rotate(-2deg);
+  }
+  50% {
+    transform: translateY(3.5px) rotate(2deg);
+  }
+}
+
+@keyframes vbNoteFloat1 {
+  0% {
+    transform: translate(0px, 0px) scale(0.75);
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.95;
+  }
+  100% {
+    transform: translate(-10px, -26px) scale(1.1);
+    opacity: 0;
+  }
+}
+
+@keyframes vbNoteFloat2 {
+  0% {
+    transform: translate(0px, 0px) scale(0.7);
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.95;
+  }
+  100% {
+    transform: translate(12px, -28px) scale(1.15);
+    opacity: 0;
+  }
+}
+
 @keyframes vbBodySit {
   0%, 100% {
     transform: translateY(0px);
@@ -518,8 +555,26 @@
 }
 
 .vb-body-dance {
-  animation: vbBodyDance 0.9s ease-in-out infinite;
+  animation: vbBodyDance 0.56s ease-in-out infinite;
   transform-origin: 100px 180px;
+}
+
+.vb-head-beat {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: vbHeadBeatBob 0.56s ease-in-out infinite;
+}
+
+.vb-note-1 {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: vbNoteFloat1 1.8s ease-out infinite;
+}
+
+.vb-note-2 {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: vbNoteFloat2 1.8s ease-out infinite 0.85s;
 }
 
 .vb-arm-wave-right {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { VoxBotFullBody, VoxBotPose } from './VoxBotFullBody';
-import { SessionSnapshot } from '../types';
-import { safeInvoke } from '../lib/ipc';
+import { SessionSnapshot, NowPlayingInfo } from '../types';
+import { safeInvoke, safeListen } from '../lib/ipc';
 import { getCurrentWindow, LogicalPosition, currentMonitor } from '@tauri-apps/api/window';
 
 interface DesktopCompanionProps {
@@ -28,6 +28,7 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
   const [isHovered, setIsHovered] = useState<boolean>(false);
   const [isBlinking, setIsBlinking] = useState<boolean>(false);
   const [showSuccessFlash, setShowSuccessFlash] = useState<boolean>(false);
+  const [isMusicPlaying, setIsMusicPlaying] = useState<boolean>(false);
 
   const lastSessionIdRef = useRef<string | null>(null);
   const pointerDownRef = useRef<{ x: number; y: number; dragged: boolean } | null>(null);
@@ -63,6 +64,38 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
     return () => clearInterval(blinkInterval);
   }, [status.state, autoPose, isHovered]);
 
+  // Detect live audio playback (YouTube, Instagram, Spotify, Apple Music) via CoreAudio + IPC
+  useEffect(() => {
+    let cancelled = false;
+    let unlisten: (() => void) | undefined;
+
+    safeListen<NowPlayingInfo | null>('now-playing-changed', (e) => {
+      if (!cancelled && e.payload) {
+        setIsMusicPlaying(Boolean(e.payload.is_playing));
+      }
+    }).then((fn) => {
+      unlisten = fn;
+    });
+
+    const checkAudio = async () => {
+      if (cancelled || document.hidden || status.state !== 'idle') return;
+      try {
+        const playing = await safeInvoke<boolean>('is_system_audio_playing');
+        if (!cancelled) {
+          setIsMusicPlaying((prev) => (prev === Boolean(playing) ? prev : Boolean(playing)));
+        }
+      } catch {}
+    };
+
+    checkAudio();
+    const timer = setInterval(checkAudio, 1500);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+      if (unlisten) unlisten();
+    };
+  }, [status.state]);
+
   // Low-power gaze & mouse-rest sleep/wake detector (~4Hz awake, ~2Hz sleeping)
   useEffect(() => {
     if (status.state === 'transcribing') {
@@ -92,6 +125,7 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
         } else if (
           status.state === 'idle' &&
           !isHovered &&
+          !isMusicPlaying &&
           autoPose !== 'sleep' &&
           now - lastCursorRef.current.movedAt >= MOUSE_REST_SLEEP_MS
         ) {
@@ -158,6 +192,8 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
       ? 'transcribing'
       : showSuccessFlash
       ? 'success'
+      : isMusicPlaying
+      ? 'music'
       : effectiveIdlePose;
 
   // Smooth desktop movement for 'walk' (horizontal) and 'fly' (2D jetpack flight)

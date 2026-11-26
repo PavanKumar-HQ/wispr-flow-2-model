@@ -155,6 +155,88 @@ pub fn get_now_playing_cmd() -> Option<NowPlayingInfo> {
     NOW_PLAYING_INFO.lock().ok().and_then(|g| g.clone())
 }
 
+/// Zero-overhead CoreAudio check: returns true if ANY app (YouTube, Instagram, Spotify,
+/// Apple Music, etc.) is actively playing audio through the default output device.
+#[tauri::command]
+pub fn is_system_audio_playing() -> bool {
+    if let Ok(g) = NOW_PLAYING_INFO.lock() {
+        if let Some(ref info) = *g {
+            if info.is_playing {
+                return true;
+            }
+        }
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        #[repr(C)]
+        struct AudioObjectPropertyAddress {
+            m_selector: u32,
+            m_scope: u32,
+            m_element: u32,
+        }
+
+        #[link(name = "CoreAudio", kind = "framework")]
+        extern "C" {
+            fn AudioObjectGetPropertyData(
+                in_object_id: u32,
+                in_address: *const AudioObjectPropertyAddress,
+                in_qualifier_data_size: u32,
+                in_qualifier_data: *const std::ffi::c_void,
+                io_data_size: *mut u32,
+                out_data: *mut std::ffi::c_void,
+            ) -> i32;
+        }
+
+        const K_AUDIO_OBJECT_SYSTEM_OBJECT: u32 = 1;
+        const K_AUDIO_HARDWARE_PROP_DEFAULT_OUTPUT: u32 = 0x644F_7574; // 'dOut'
+        const K_AUDIO_DEVICE_PROP_IS_RUNNING_SOMEWHERE: u32 = 0x676F_6E65; // 'gone'
+        const K_AUDIO_OBJECT_PROP_SCOPE_GLOBAL: u32 = 0x676C_6F62; // 'glob'
+        const K_AUDIO_OBJECT_PROP_ELEMENT_MAIN: u32 = 0;
+
+        unsafe {
+            let mut device_id: u32 = 0;
+            let mut size = std::mem::size_of::<u32>() as u32;
+            let addr = AudioObjectPropertyAddress {
+                m_selector: K_AUDIO_HARDWARE_PROP_DEFAULT_OUTPUT,
+                m_scope: K_AUDIO_OBJECT_PROP_SCOPE_GLOBAL,
+                m_element: K_AUDIO_OBJECT_PROP_ELEMENT_MAIN,
+            };
+            let status = AudioObjectGetPropertyData(
+                K_AUDIO_OBJECT_SYSTEM_OBJECT,
+                &addr,
+                0,
+                std::ptr::null(),
+                &mut size,
+                (&mut device_id as *mut u32).cast(),
+            );
+            if status != 0 || device_id == 0 {
+                return false;
+            }
+
+            let mut is_running: u32 = 0;
+            let mut run_size = std::mem::size_of::<u32>() as u32;
+            let run_addr = AudioObjectPropertyAddress {
+                m_selector: K_AUDIO_DEVICE_PROP_IS_RUNNING_SOMEWHERE,
+                m_scope: K_AUDIO_OBJECT_PROP_SCOPE_GLOBAL,
+                m_element: K_AUDIO_OBJECT_PROP_ELEMENT_MAIN,
+            };
+            let run_status = AudioObjectGetPropertyData(
+                device_id,
+                &run_addr,
+                0,
+                std::ptr::null(),
+                &mut run_size,
+                (&mut is_running as *mut u32).cast(),
+            );
+            return run_status == 0 && is_running != 0;
+        }
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    false
+}
+
 #[tauri::command]
 pub fn set_now_playing_cmd(app: AppHandle, info: Option<NowPlayingInfo>) -> Result<(), String> {
     if let Ok(mut g) = NOW_PLAYING_INFO.lock() {

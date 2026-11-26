@@ -8,6 +8,7 @@ export type VoxBotPose =
   | 'sleep'
   | 'wave'
   | 'dance'
+  | 'music'
   | 'listening'
   | 'transcribing'
   | 'success';
@@ -45,6 +46,7 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
   const isSleeping = pose === 'sleep';
   const isWaving = pose === 'wave';
   const isDancing = pose === 'dance';
+  const isMusic = pose === 'music';
   const isTranscribing = pose === 'transcribing';
   const isSuccess = pose === 'success';
 
@@ -247,6 +249,18 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
           </g>
         )}
 
+        {/* FLOATING MUSIC NOTES WHEN VIBING TO YOUTUBE / INSTA / SPOTIFY */}
+        {isMusic && (
+          <g className="pointer-events-none" filter="url(#vbLedGlow)">
+            <text x="26" y="42" fill="#DDA44D" className="text-[16px] font-bold vb-note-1">
+              ♪
+            </text>
+            <text x="164" y="38" fill="#34A89E" className="text-[17px] font-bold vb-note-2">
+              ♫
+            </text>
+          </g>
+        )}
+
         {/* MAIN ROBOT BODY */}
         <g
           filter="url(#vbSoftShadow)"
@@ -255,7 +269,7 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
               ? 'vb-body-fly'
               : isWalking
               ? 'vb-body-walk'
-              : isDancing
+              : isDancing || isMusic
               ? 'vb-body-dance'
               : isSleeping
               ? 'anim-mascot-sleep'
@@ -358,7 +372,7 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
           {/* ======================== CHUNKY 2-JOINT ARTICULATED ARMS ======================== */}
           <g
             className={
-              isWalking || isDancing
+              isWalking || isDancing || isMusic
                 ? 'vb-arm-left-walk'
                 : isSitting
                 ? 'vb-arm-left-sit'
@@ -385,7 +399,7 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
             className={
               isWaving
                 ? 'vb-arm-wave-right'
-                : isWalking || isDancing
+                : isWalking || isDancing || isMusic
                 ? 'vb-arm-right-walk'
                 : isSitting
                 ? 'vb-arm-right-sit'
@@ -477,15 +491,20 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
 
           {/* ======================== HEAD & CRT FACE (TURNS WITH GAZE) ======================== */}
           <g
-            style={{
-              transform: isTranscribing
-                ? 'rotate(-4deg)'
-                : isSleeping
-                ? 'translateY(3px) rotate(4deg)'
-                : `translateX(${rawGazeX * 2.5}px) rotate(${rawGazeX * 2.5}deg)`,
-              transformOrigin: '100px 104px',
-              transition: 'transform 220ms ease-out',
-            }}
+            className={isMusic ? 'vb-head-beat' : ''}
+            style={
+              isMusic
+                ? undefined
+                : {
+                    transform: isTranscribing
+                      ? 'rotate(-4deg)'
+                      : isSleeping
+                      ? 'translateY(3px) rotate(4deg)'
+                      : `translateX(${rawGazeX * 2.5}px) rotate(${rawGazeX * 2.5}deg)`,
+                    transformOrigin: '100px 104px',
+                    transition: 'transform 220ms ease-out',
+                  }
+            }
           >
             <line x1="100" y1="36" x2="100" y2="18" stroke="#182222" strokeWidth="5.5" strokeLinecap="round" />
             <line x1="100" y1="36" x2="100" y2="18" stroke="#0E6B64" strokeWidth="3" strokeLinecap="round" />
@@ -520,6 +539,30 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
                 strokeWidth="2"
               />
             </g>
+
+            {/* Sleek Cyber-Headphones Overlay when System Music/Audio is Playing */}
+            {isMusic && (
+              <g>
+                {/* Headband Arch */}
+                <path
+                  d="M 41 64 C 41 24, 159 24, 159 64"
+                  fill="none"
+                  stroke="#2B2F35"
+                  strokeWidth="6.5"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M 45 55 C 52 27, 148 27, 155 55"
+                  fill="none"
+                  stroke="#34A89E"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                />
+                {/* Left & Right Cushioned Earcups */}
+                <rect x="31" y="54" width="16" height="34" rx="8" fill="url(#vb3dDark)" stroke="#DDA44D" strokeWidth="2" />
+                <rect x="153" y="54" width="16" height="34" rx="8" fill="url(#vb3dDark)" stroke="#DDA44D" strokeWidth="2" />
+              </g>
+            )}
 
             {/* Outer Cream Head Chassis */}
             <rect
@@ -619,8 +662,8 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
                   <circle cx="127" cy="61" r="2.8" fill="#FFFDF5" />
                   <path d="M 88 77 Q 100 86 112 77" fill="none" stroke="#34A89E" strokeWidth="3.2" strokeLinecap="round" />
                 </g>
-              ) : isSuccess || isWaving || isDancing ? (
-                /* SUCCESS / WAVE / DANCE: Clean joyful ^ ^ eyes & wide smile */
+              ) : isSuccess || isWaving || isDancing || isMusic ? (
+                /* SUCCESS / WAVE / DANCE / MUSIC: Clean joyful ^ ^ eyes & wide smile */
                 <g>
                   <path d="M 68 68 Q 76 58 84 68" fill="none" stroke={eyeColor} strokeWidth="3.5" strokeLinecap="round" />
                   <path d="M 116 68 Q 124 58 132 68" fill="none" stroke={eyeColor} strokeWidth="3.5" strokeLinecap="round" />
