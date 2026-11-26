@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { VoxBotFullBody, VoxBotPose, VoxBotLookDir } from './VoxBotFullBody';
+import { VoxBotFullBody, VoxBotPose } from './VoxBotFullBody';
 import { SessionSnapshot } from '../types';
+import { safeInvoke } from '../lib/ipc';
 import { getCurrentWindow, LogicalPosition, currentMonitor } from '@tauri-apps/api/window';
 
 interface DesktopCompanionProps {
@@ -9,10 +10,12 @@ interface DesktopCompanionProps {
 }
 
 /**
- * Autonomous Desktop Companion Window (VoxBot).
+ * Autonomous, Battery-Friendly Desktop Companion Window (VoxBot).
+ * - Watches the mouse cursor smoothly (~4Hz quantized gaze, 0% when sleeping/hidden).
  * - Single click: immediately starts/stops dictation.
  * - Drag (>5px): smoothly repositions VoxBot anywhere on desktop.
- * - Autonomous idle behavior: looks around, blinks, walks across the desktop, sits, and naps.
+ * - Hovering wakes VoxBot from nap and triggers a friendly reaction.
+ * - Autonomously walks across the desktop, sits, naps, and blinks when idle.
  */
 export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
   status,
@@ -20,7 +23,8 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
 }) => {
   const [autoPose, setAutoPose] = useState<'idle' | 'walk' | 'sit' | 'sleep'>('idle');
   const [facing, setFacing] = useState<'left' | 'right'>('right');
-  const [lookDir, setLookDir] = useState<VoxBotLookDir>('center');
+  const [gaze, setGaze] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [isHovered, setIsHovered] = useState<boolean>(false);
   const [isBlinking, setIsBlinking] = useState<boolean>(false);
   const [showSuccessFlash, setShowSuccessFlash] = useState<boolean>(false);
 
@@ -44,32 +48,44 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
 
   // Natural blinking
   useEffect(() => {
-    if (status.state === 'transcribing' || autoPose === 'sleep') return;
+    if (status.state === 'transcribing' || (autoPose === 'sleep' && !isHovered)) return;
     const blinkInterval = setInterval(() => {
+      if (document.hidden) return;
       setIsBlinking(true);
       setTimeout(() => setIsBlinking(false), 150);
-    }, 3900);
+    }, 4200);
     return () => clearInterval(blinkInterval);
-  }, [status.state, autoPose]);
+  }, [status.state, autoPose, isHovered]);
 
-  // Curious looking around when idle or sitting
+  // Low-power quantized mouse-watching gaze (~4Hz, skipped when sleeping or hidden)
   useEffect(() => {
-    if (status.state !== 'idle' || autoPose === 'walk' || autoPose === 'sleep') {
-      setLookDir('center');
+    if (status.state === 'transcribing' || (autoPose === 'sleep' && !isHovered)) {
+      setGaze({ x: 0, y: 0 });
       return;
     }
-    const dirs: VoxBotLookDir[] = ['center', 'left', 'center', 'right', 'center'];
-    let i = 0;
-    const lookTimer = setInterval(() => {
-      i = (i + 1) % dirs.length;
-      setLookDir(dirs[i]);
-    }, 2400);
-    return () => clearInterval(lookTimer);
-  }, [status.state, autoPose]);
 
-  // Autonomous behavior cycle: idle -> walk -> idle -> sit -> sleep -> idle
+    let cancelled = false;
+    const pollGaze = async () => {
+      if (cancelled || document.hidden) return;
+      try {
+        const res = await safeInvoke<[number, number]>('get_companion_gaze');
+        if (!cancelled && Array.isArray(res) && res.length === 2) {
+          const [gx, gy] = res;
+          setGaze((prev) => (prev.x === gx && prev.y === gy ? prev : { x: gx, y: gy }));
+        }
+      } catch {}
+    };
+
+    const timer = setInterval(pollGaze, 240);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [status.state, autoPose, isHovered]);
+
+  // Autonomous behavior cycle: walk -> idle -> sit -> sleep -> idle
   useEffect(() => {
-    if (status.state !== 'idle' || showSuccessFlash) return;
+    if (status.state !== 'idle' || showSuccessFlash || isHovered) return;
 
     const sequence: Array<'idle' | 'walk' | 'idle' | 'sit' | 'sleep'> = [
       'walk',
@@ -81,12 +97,15 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
     let idx = 0;
 
     const interval = setInterval(() => {
+      if (document.hidden) return;
       idx = (idx + 1) % sequence.length;
       setAutoPose(sequence[idx]);
-    }, 6000);
+    }, 6500);
 
     return () => clearInterval(interval);
-  }, [status.state, showSuccessFlash]);
+  }, [status.state, showSuccessFlash, isHovered]);
+
+  const effectiveIdlePose = isHovered && autoPose === 'sleep' ? 'sit' : autoPose;
 
   const activePose: VoxBotPose =
     status.state === 'recording'
@@ -95,15 +114,15 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
       ? 'transcribing'
       : showSuccessFlash
       ? 'success'
-      : autoPose;
+      : effectiveIdlePose;
 
-  // Actually walk VoxBot's window smoothly across the desktop when in 'walk' pose
+  // Low-power desktop patrol (~12fps) when in 'walk' pose
   useEffect(() => {
-    if (activePose !== 'walk') return;
+    if (activePose !== 'walk' || isHovered) return;
 
     let cancelled = false;
     const step = async () => {
-      if (cancelled || pointerDownRef.current) return;
+      if (cancelled || document.hidden || pointerDownRef.current) return;
       try {
         const win = getCurrentWindow();
         const [pos, mon] = await Promise.all([win.outerPosition(), currentMonitor()]);
@@ -116,7 +135,7 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
 
         const minX = 30;
         const maxX = Math.max(minX + 40, screenW - 185);
-        let nextX = currentX + walkDirRef.current * 2.2;
+        let nextX = currentX + walkDirRef.current * 3.0;
 
         if (nextX <= minX) {
           nextX = minX;
@@ -134,12 +153,12 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
       } catch {}
     };
 
-    const timer = setInterval(step, 55);
+    const timer = setInterval(step, 80);
     return () => {
       cancelled = true;
       clearInterval(timer);
     };
-  }, [activePose]);
+  }, [activePose, isHovered]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.button !== 0) return;
@@ -194,6 +213,11 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
 
       {/* Tight Interactive Hitbox Only Around VoxBot */}
       <div
+        onMouseEnter={() => {
+          setIsHovered(true);
+          if (autoPose === 'sleep') setAutoPose('idle');
+        }}
+        onMouseLeave={() => setIsHovered(false)}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -204,7 +228,8 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
           pose={activePose}
           size={134}
           facing={facing}
-          lookDir={lookDir}
+          gaze={gaze}
+          isHovered={isHovered}
           isBlinking={isBlinking}
         />
       </div>

@@ -28,6 +28,20 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
       return 'bot';
     }
   });
+  const [overlayMode, setOverlayMode] = useState<'both' | 'robot' | 'pill'>(() => {
+    try {
+      const saved = localStorage.getItem('voxquest_desktop_overlay_mode');
+      if (saved === 'robot' || saved === 'pill' || saved === 'both') return saved;
+    } catch {}
+    return 'both';
+  });
+  const handleSetOverlayMode = (mode: 'both' | 'robot' | 'pill') => {
+    setOverlayMode(mode);
+    try {
+      localStorage.setItem('voxquest_desktop_overlay_mode', mode);
+    } catch {}
+    safeInvoke('set_overlay_mode_cmd', { mode });
+  };
   const handleSetAvatar = (av: MascotAvatar) => {
     setSelectedAvatar(av);
     try {
@@ -172,27 +186,48 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
             </span>
           </div>
           <p className="text-xs text-charcoal/70 leading-relaxed">
-            The <strong>Sovereign Pill Capsule</strong> permanently floats on your desktop with integrated Productivity Hub, real-time waveform visualizer, and instant persona switching.
+            Choose what floats on your desktop: both the <strong>Sovereign Pill Capsule</strong> and <strong>VoxBot Companion</strong>, or either one on its own.
           </p>
 
-          {/* Sovereign Pill Capsule Preview */}
-          <div className="p-3.5 rounded-xl border border-darkTeal/40 bg-cream/40 shadow-xs flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-white border border-charcoal/15 flex items-center justify-center">
-                <div className="w-7 h-3.5 rounded-full bg-darkTeal flex items-center justify-end pr-1">
-                  <div className="w-1.5 h-1.5 rounded-full bg-amber" />
-                </div>
-              </div>
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <span className="font-bold text-xs text-charcoal">Sovereign Pill Capsule with Internal Hub</span>
-                  <CheckCircle2 className="w-3.5 h-3.5 text-darkTeal" />
-                </div>
-                <p className="text-[10px] text-charcoal/70 leading-tight mt-0.5">
-                  Full floating capsule with integrated Hub, live soundwave, and one-tap voice dictation.
-                </p>
-              </div>
-            </div>
+          {/* Desktop Overlay Display Mode: Both / VoxBot Only / Pill Only */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            {[
+              {
+                id: 'both' as const,
+                title: 'Both (Pill + VoxBot)',
+                desc: 'Full pill capsule with Hub plus autonomous VoxBot companion.',
+              },
+              {
+                id: 'robot' as const,
+                title: 'VoxBot Only',
+                desc: 'Only the interactive desktop robot — click it to dictate.',
+              },
+              {
+                id: 'pill' as const,
+                title: 'Pill Only',
+                desc: 'Only the compact Sovereign Pill Capsule with Hub.',
+              },
+            ].map((opt) => {
+              const active = overlayMode === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => handleSetOverlayMode(opt.id)}
+                  className={`text-left p-3 rounded-xl border transition-all cursor-pointer ${
+                    active
+                      ? 'border-darkTeal bg-cream/60 shadow-xs ring-1 ring-darkTeal/30'
+                      : 'border-charcoal/15 bg-white hover:border-darkTeal/40 hover:bg-cream/20'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-1.5">
+                    <span className="font-bold text-xs text-charcoal">{opt.title}</span>
+                    {active && <CheckCircle2 className="w-3.5 h-3.5 text-darkTeal shrink-0" />}
+                  </div>
+                  <p className="text-[10px] text-charcoal/70 leading-tight mt-1">{opt.desc}</p>
+                </button>
+              );
+            })}
           </div>
 
           {/* Avatar Version Selection */}

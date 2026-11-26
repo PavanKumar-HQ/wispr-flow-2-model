@@ -1,13 +1,13 @@
 import React from 'react';
 
 export type VoxBotPose = 'idle' | 'walk' | 'sit' | 'sleep' | 'listening' | 'transcribing' | 'success';
-export type VoxBotLookDir = 'center' | 'left' | 'right';
 
 interface VoxBotFullBodyProps {
   pose?: VoxBotPose;
   size?: number;
   facing?: 'left' | 'right';
-  lookDir?: VoxBotLookDir;
+  gaze?: { x: number; y: number };
+  isHovered?: boolean;
   isBlinking?: boolean;
   className?: string;
 }
@@ -20,7 +20,8 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
   pose = 'idle',
   size = 134,
   facing = 'right',
-  lookDir = 'center',
+  gaze = { x: 0, y: 0 },
+  isHovered = false,
   isBlinking = false,
   className = '',
 }) => {
@@ -48,7 +49,10 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
     ? '#C99B50'
     : '#FFB84D';
 
-  const eyeShiftX = lookDir === 'left' ? -4 : lookDir === 'right' ? 4 : 0;
+  // Compensate X gaze when robot SVG is mirrored horizontally (facing === 'left')
+  const rawGazeX = facing === 'left' ? -gaze.x : gaze.x;
+  const eyeShiftX = isSleeping ? 0 : rawGazeX * 4.5;
+  const eyeShiftY = isSleeping ? 0 : gaze.y * 2.8;
   const height = Math.round(size * 1.2);
 
   return (
@@ -451,7 +455,14 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
             <path d="M 64 52 Q 86 49 112 51" stroke="#46A8A0" strokeWidth="1.8" strokeLinecap="round" fill="none" opacity="0.32" />
 
             {/* ================= FRIENDLY LED EXPRESSIONS ================= */}
-            <g fill={eyeColor} filter="url(#vbLedGlow)" transform={`translate(${eyeShiftX}, 0)`}>
+            <g
+              fill={eyeColor}
+              filter="url(#vbLedGlow)"
+              style={{
+                transform: `translate(${eyeShiftX}px, ${eyeShiftY}px)`,
+                transition: 'transform 180ms ease-out',
+              }}
+            >
               {isSleeping ? (
                 /* SLEEPING: Cute peaceful closed U U eyes + tiny peaceful mouth */
                 <g>
@@ -465,6 +476,17 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
                   <rect x="70" y="67" width="15" height="3.2" rx="1.6" />
                   <rect x="115" y="67" width="15" height="3.2" rx="1.6" />
                   <path d="M 90 79 Q 100 85 110 79" fill="none" stroke={eyeColor} strokeWidth="2.8" strokeLinecap="round" />
+                </g>
+              ) : isHovered && !isListening && !isTranscribing ? (
+                /* HOVERED / PETTED: Bright affectionate eyes + rosy blush cheeks + happy smile */
+                <g>
+                  <rect x="72" y="58" width="12" height="14" rx="6" fill="#FFE08A" />
+                  <circle cx="80" cy="61" r="2.8" fill="#FFFDF5" />
+                  <rect x="116" y="58" width="12" height="14" rx="6" fill="#FFE08A" />
+                  <circle cx="124" cy="61" r="2.8" fill="#FFFDF5" />
+                  <rect x="64" y="75" width="7" height="3.5" rx="1.75" fill="#DA6C4C" opacity="0.85" />
+                  <rect x="129" y="75" width="7" height="3.5" rx="1.75" fill="#DA6C4C" opacity="0.85" />
+                  <path d="M 89 77 Q 100 86 111 77" fill="none" stroke={eyeColor} strokeWidth="3" strokeLinecap="round" />
                 </g>
               ) : isListening ? (
                 /* LISTENING: Cute, warm, friendly attentive eyes + rosy cheeks + happy smile */

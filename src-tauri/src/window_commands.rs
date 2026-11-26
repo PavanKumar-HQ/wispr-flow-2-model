@@ -279,3 +279,73 @@ pub fn hide_companion_window(app: AppHandle) -> Result<(), String> {
     });
     Ok(())
 }
+
+/// Battery-friendly quantized gaze vector (-1 | 0 | 1) from VoxBot's face toward the mouse cursor.
+#[tauri::command]
+pub fn get_companion_gaze(app: AppHandle) -> (i8, i8) {
+    let Ok(cursor) = app.cursor_position() else {
+        return (0, 0);
+    };
+    let Some(w) = app.get_webview_window("desktop-companion") else {
+        return (0, 0);
+    };
+    let (Ok(pos), Ok(size)) = (w.outer_position(), w.outer_size()) else {
+        return (0, 0);
+    };
+
+    let face_cx = pos.x as f64 + (size.width as f64 * 0.5);
+    let face_cy = pos.y as f64 + (size.height as f64 * 0.42);
+    let dx = cursor.x - face_cx;
+    let dy = cursor.y - face_cy;
+
+    let gx = if dx < -36.0 { -1 } else if dx > 36.0 { 1 } else { 0 };
+    let gy = if dy < -36.0 { -1 } else if dy > 36.0 { 1 } else { 0 };
+    (gx, gy)
+}
+
+/// Switches desktop overlay visibility between "both", "robot", and "pill".
+#[tauri::command]
+pub fn set_overlay_mode_cmd(app: AppHandle, mode: String) -> Result<(), String> {
+    let show_pill = mode != "robot";
+    let show_robot = mode != "pill";
+
+    PILL_PERSISTENT.store(show_pill, Ordering::SeqCst);
+
+    let app_handle = app.clone();
+    crate::run_on_main_thread(move || {
+        if let Some(pill) = app_handle.get_webview_window("floating-indicator") {
+            if show_pill {
+                let _ = pill.show();
+                let _ = pill.set_always_on_top(true);
+                #[cfg(target_os = "macos")]
+                if let Ok(ns_win) = pill.ns_window() {
+                    use cocoa::base::id;
+                    let ns_win = ns_win as id;
+                    unsafe {
+                        let () = objc::msg_send![ns_win, orderFrontRegardless];
+                    }
+                }
+            } else {
+                let _ = pill.hide();
+            }
+        }
+
+        if let Some(comp) = app_handle.get_webview_window("desktop-companion") {
+            if show_robot {
+                let _ = comp.show();
+                let _ = comp.set_always_on_top(true);
+                #[cfg(target_os = "macos")]
+                if let Ok(ns_win) = comp.ns_window() {
+                    use cocoa::base::id;
+                    let ns_win = ns_win as id;
+                    unsafe {
+                        let () = objc::msg_send![ns_win, orderFrontRegardless];
+                    }
+                }
+            } else {
+                let _ = comp.hide();
+            }
+        }
+    });
+    Ok(())
+}

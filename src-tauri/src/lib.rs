@@ -576,6 +576,8 @@ pub fn run() {
             commands::hide_pill_window,
             commands::show_companion_window,
             commands::hide_companion_window,
+            commands::get_companion_gaze,
+            commands::set_overlay_mode_cmd,
             commands::get_insights,
             commands::get_dictionary_entries,
             commands::add_dictionary_entry,

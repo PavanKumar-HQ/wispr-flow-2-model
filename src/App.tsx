@@ -60,10 +60,18 @@ export default function App() {
     theme: 'light',
   });
 
-  // Enforce Sovereign Warm Linen light theme
+  // Enforce Sovereign Warm Linen light theme & apply saved desktop overlay mode
   useEffect(() => {
     applyTheme('light');
-  }, []);
+    if (!isOverlayWindow) {
+      try {
+        const mode = localStorage.getItem('voxquest_desktop_overlay_mode');
+        if (mode === 'robot' || mode === 'pill' || mode === 'both') {
+          safeInvoke('set_overlay_mode_cmd', { mode });
+        }
+      } catch {}
+    }
+  }, [isOverlayWindow]);
   const [history, setHistory] = useState<HistoryRecord[]>([]);
   const [devices, setDevices] = useState<string[]>([]);
   const [session, setSession] = useState<SessionSnapshot>({
