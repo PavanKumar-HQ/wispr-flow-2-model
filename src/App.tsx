@@ -137,13 +137,13 @@ export default function App() {
 
     let unlistenUtility: (() => void) | undefined;
     safeListen<{
-      kind: 'reminder' | 'schedule';
+      kind: 'reminder' | 'schedule' | 'timer' | 'system_clean' | 'system_scan' | 'navigate' | 'language';
       label: string;
       time_str?: string | null;
       offset_minutes?: number | null;
       day_offset?: number | null;
       duration_min?: number | null;
-    }>('voxquest-voice-utility', (e) => {
+    }>('voxquest-voice-utility', async (e) => {
       const payload = e.payload;
       if (!payload) return;
       try {
@@ -192,6 +192,49 @@ export default function App() {
           safeInvoke('send_system_notification_cmd', {
             title: 'Schedule Added',
             message: `${payload.label} (${durationMins}m)`,
+          });
+        } else if (payload.kind === 'timer') {
+          const action = payload.label === 'pause' || payload.label === 'reset' ? payload.label : 'start';
+          window.dispatchEvent(
+            new CustomEvent('voxquest-timer-command', {
+              detail: { action, minutes: payload.duration_min || undefined },
+            })
+          );
+          safeInvoke('send_system_notification_cmd', {
+            title: 'Focus Timer',
+            message:
+              action === 'start'
+                ? `Started${payload.duration_min ? ` (${payload.duration_min}m)` : ''}`
+                : action === 'pause'
+                ? 'Paused'
+                : 'Reset',
+          });
+        } else if (payload.kind === 'system_clean') {
+          const res = await safeInvoke<{ ram_reclaimed_mb: number; disk_cache_cleared_mb: number }>('run_system_clean_and_boost_cmd');
+          safeInvoke('send_system_notification_cmd', {
+            title: 'System Boost Complete',
+            message: `+${res.ram_reclaimed_mb} MB RAM · +${res.disk_cache_cleared_mb} MB Cache cleared`,
+          });
+        } else if (payload.kind === 'system_scan') {
+          const findings = await safeInvoke<Array<{ size_mb: number }>>('scan_mac_storage_cmd');
+          const totalMb = findings.reduce((sum, f) => sum + (f.size_mb || 0), 0);
+          safeInvoke('send_system_notification_cmd', {
+            title: 'Storage Scan Complete',
+            message: `${totalMb} MB reclaimable cache detected`,
+          });
+        } else if (payload.kind === 'navigate') {
+          const tab = payload.label as 'home' | 'meetings' | 'utilities' | 'train' | 'quests' | 'insights' | 'models' | 'dictionary' | 'history' | 'settings';
+          setActiveTab(tab);
+          await safeInvoke('show_main_window');
+        } else if (payload.kind === 'language') {
+          setSettings((prev) => {
+            const updated = { ...prev, language: payload.label };
+            safeInvoke('save_settings_cmd', { newSettings: updated });
+            return updated;
+          });
+          safeInvoke('send_system_notification_cmd', {
+            title: 'Language Updated',
+            message: `Switched to ${payload.label}`,
           });
         }
       } catch {}

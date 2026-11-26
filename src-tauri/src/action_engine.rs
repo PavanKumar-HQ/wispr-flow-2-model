@@ -277,9 +277,181 @@ pub fn detect_voice_action(input: &str) -> Option<VoiceActionResult> {
         }
     }
 
-    // 6. Voice-Triggered Reminders & Schedules
+    // 6. Voice-Triggered Reminders, Schedules, Timer, System Boost, Navigation & Language
     if let Some(utility_res) = try_parse_reminder_or_schedule(trimmed, lower_clean) {
         return Some(utility_res);
+    }
+
+    if let Some(app_ctrl_res) = try_parse_app_utility_command(trimmed, lower_clean) {
+        return Some(app_ctrl_res);
+    }
+
+    None
+}
+
+fn try_parse_app_utility_command(trimmed: &str, lower_clean: &str) -> Option<VoiceActionResult> {
+    if looks_like_prose_dictation(trimmed, 10) {
+        return None;
+    }
+
+    // A. Focus Timer ("start timer", "start focus timer for 17 minutes", "pause timer", "reset timer")
+    if lower_clean.contains("timer") {
+        if lower_clean.starts_with("pause ") || lower_clean.starts_with("stop ") {
+            return Some(VoiceActionResult {
+                action_type: "system_timer".to_string(),
+                feedback_message: "Focus timer paused".to_string(),
+                expanded_text: None,
+                suppress_paste: true,
+                utility_payload: Some(VoiceUtilityPayload {
+                    kind: "timer".to_string(),
+                    label: "pause".to_string(),
+                    time_str: None,
+                    offset_minutes: None,
+                    day_offset: None,
+                    duration_min: None,
+                }),
+            });
+        }
+        if lower_clean.starts_with("reset ") {
+            return Some(VoiceActionResult {
+                action_type: "system_timer".to_string(),
+                feedback_message: "Focus timer reset".to_string(),
+                expanded_text: None,
+                suppress_paste: true,
+                utility_payload: Some(VoiceUtilityPayload {
+                    kind: "timer".to_string(),
+                    label: "reset".to_string(),
+                    time_str: None,
+                    offset_minutes: None,
+                    day_offset: None,
+                    duration_min: None,
+                }),
+            });
+        }
+        if lower_clean.starts_with("start ") || lower_clean.starts_with("set ") {
+            let mins = lower_clean
+                .split_whitespace()
+                .find_map(|w| w.trim_matches(|c: char| !c.is_ascii_digit()).parse::<u32>().ok())
+                .map(|m| m.clamp(1, 180));
+            return Some(VoiceActionResult {
+                action_type: "system_timer".to_string(),
+                feedback_message: match mins {
+                    Some(m) => format!("Focus timer started ({}m)", m),
+                    None => "Focus timer started".to_string(),
+                },
+                expanded_text: None,
+                suppress_paste: true,
+                utility_payload: Some(VoiceUtilityPayload {
+                    kind: "timer".to_string(),
+                    label: "start".to_string(),
+                    time_str: None,
+                    offset_minutes: None,
+                    day_offset: None,
+                    duration_min: mins,
+                }),
+            });
+        }
+    }
+
+    // B. System Clean & Boost / Storage Scan
+    if matches!(
+        lower_clean,
+        "clean mac" | "clean system" | "system boost" | "clean and boost" | "boost system" | "boost my mac"
+    ) {
+        return Some(VoiceActionResult {
+            action_type: "system_clean".to_string(),
+            feedback_message: "Running System Boost & Clean".to_string(),
+            expanded_text: None,
+            suppress_paste: true,
+            utility_payload: Some(VoiceUtilityPayload {
+                kind: "system_clean".to_string(),
+                label: "clean".to_string(),
+                time_str: None,
+                offset_minutes: None,
+                day_offset: None,
+                duration_min: None,
+            }),
+        });
+    }
+    if matches!(lower_clean, "scan storage" | "scan mac" | "check storage") {
+        return Some(VoiceActionResult {
+            action_type: "system_scan".to_string(),
+            feedback_message: "Scanning Mac storage".to_string(),
+            expanded_text: None,
+            suppress_paste: true,
+            utility_payload: Some(VoiceUtilityPayload {
+                kind: "system_scan".to_string(),
+                label: "scan".to_string(),
+                time_str: None,
+                offset_minutes: None,
+                day_offset: None,
+                duration_min: None,
+            }),
+        });
+    }
+
+    // C. In-App Tab Navigation ("open utilities", "open settings", "open history", "open home", "open meetings")
+    if let Some(target) = lower_clean.strip_prefix("open ").or_else(|| lower_clean.strip_prefix("show ")) {
+        let tab = match target.trim() {
+            "utilities" | "utility" | "tools" => Some("utilities"),
+            "settings" | "preferences" => Some("settings"),
+            "history" | "transcripts" => Some("history"),
+            "home" | "dashboard" => Some("home"),
+            "meetings" | "meeting" => Some("meetings"),
+            "models" | "model manager" => Some("models"),
+            "dictionary" => Some("dictionary"),
+            _ => None,
+        };
+        if let Some(t) = tab {
+            return Some(VoiceActionResult {
+                action_type: "system_navigate".to_string(),
+                feedback_message: format!("Opened {}", t),
+                expanded_text: None,
+                suppress_paste: true,
+                utility_payload: Some(VoiceUtilityPayload {
+                    kind: "navigate".to_string(),
+                    label: t.to_string(),
+                    time_str: None,
+                    offset_minutes: None,
+                    day_offset: None,
+                    duration_min: None,
+                }),
+            });
+        }
+    }
+
+    // D. Language / Accent Switching ("switch to indian english", "switch to kannada", etc.)
+    if let Some(lang_phrase) = lower_clean
+        .strip_prefix("switch to ")
+        .or_else(|| lower_clean.strip_prefix("use "))
+        .or_else(|| lower_clean.strip_prefix("set language to "))
+    {
+        let code = match lang_phrase.trim() {
+            "indian english" | "india english" | "en in" => Some(("en-IN", "Indian English")),
+            "us english" | "american english" | "en us" => Some(("en-US", "US English")),
+            "kannada" | "canada" => Some(("kn", "Kannada")),
+            "tamil" => Some(("ta", "Tamil")),
+            "telugu" => Some(("te", "Telugu")),
+            "hindi" => Some(("hi", "Hindi")),
+            "auto" | "multilingual" => Some(("auto", "Auto Multilingual")),
+            _ => None,
+        };
+        if let Some((lang_code, display)) = code {
+            return Some(VoiceActionResult {
+                action_type: "system_language".to_string(),
+                feedback_message: format!("Switched language to {}", display),
+                expanded_text: None,
+                suppress_paste: true,
+                utility_payload: Some(VoiceUtilityPayload {
+                    kind: "language".to_string(),
+                    label: lang_code.to_string(),
+                    time_str: None,
+                    offset_minutes: None,
+                    day_offset: None,
+                    duration_min: None,
+                }),
+            });
+        }
     }
 
     None

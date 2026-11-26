@@ -125,30 +125,20 @@ export const UtilitiesTab: React.FC<UtilitiesTabProps> = ({ session, onCopy, onS
   };
 
   return (
-    <div className="space-y-6 w-full max-w-5xl mx-auto select-none animate-fadeIn pb-16 font-sans">
-      {/* Top Banner Header */}
-      <div className="p-6 rounded-2xl border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3.5">
-          <div className="p-3 bg-darkTeal dark:bg-[#0D6E67] text-white rounded-xl shadow-xs">
-            <LayoutGrid className="w-6 h-6 text-amber" />
+    <div className="space-y-5 w-full max-w-5xl mx-auto select-none animate-fadeIn pb-16 font-sans">
+      {/* Compact Header */}
+      <div className="px-5 py-4 rounded-2xl border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface shadow-xs flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-darkTeal dark:bg-[#0D6E67] text-white rounded-xl shadow-xs">
+            <LayoutGrid className="w-5 h-5 text-amber" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-bold text-darkTeal dark:text-cream">Productivity & System Utilities</h2>
-              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-darkTeal/10 dark:bg-darkTeal/30 text-darkTeal dark:text-[#34A89E] border border-darkTeal/20 dark:border-[#34A89E]/30">
-                Studio Tools & Mac Cleaner
-              </span>
-            </div>
-            <p className="text-xs text-charcoal/70 dark:text-sage mt-0.5">
-              1-Click System Boost, Squirrel Mac Cleaner, interactive calendar, focus stations, and voice clipboard.
-            </p>
-          </div>
+          <h2 className="text-lg font-bold text-darkTeal dark:text-cream">Utilities</h2>
         </div>
 
         <button
           type="button"
           onClick={handleFloatPill}
-          className="text-xs font-bold text-darkTeal dark:text-cream hover:text-deepTeal dark:hover:text-white flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-stone-50 hover:bg-stone-100 dark:bg-darkTealSurface dark:hover:bg-darkTealElevated border border-charcoal/15 dark:border-darkTealBorder shadow-2xs hover:shadow-xs transition-all active:scale-95 cursor-pointer shrink-0"
+          className="text-xs font-bold text-darkTeal dark:text-cream hover:text-deepTeal dark:hover:text-white flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-stone-50 hover:bg-stone-100 dark:bg-darkTealSurface dark:hover:bg-darkTealElevated border border-charcoal/15 dark:border-darkTealBorder shadow-2xs transition-all active:scale-95 cursor-pointer shrink-0"
           title="Float mini capsule pill over your active windows"
         >
           <LocateFixed className="w-3.5 h-3.5 text-terracotta" />
@@ -156,22 +146,17 @@ export const UtilitiesTab: React.FC<UtilitiesTabProps> = ({ session, onCopy, onS
         </button>
       </div>
 
-      {/* 1-Click System Boost & Squirrel Mac Cleaner */}
-      <div className="p-5 rounded-2xl border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-charcoal/10 dark:border-darkTealBorder pb-3">
+      {/* System Boost & Mac Cleaner */}
+      <div className="p-4 rounded-2xl border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface shadow-xs space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-terracotta/10 text-terracotta flex items-center justify-center font-bold">
-              <Activity className="w-5 h-5" />
+            <div className="w-8 h-8 rounded-xl bg-terracotta/10 text-terracotta flex items-center justify-center">
+              <Activity className="w-4 h-4" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold text-charcoal dark:text-cream">Quick Clean & System Boost</h3>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-darkTeal/10 dark:bg-darkTealElevated text-darkTeal dark:text-cream border border-darkTeal/20 dark:border-darkTealBorder">
-                  Ready
-                </span>
-              </div>
-              <p className="text-xs text-charcoal/60 dark:text-sage mt-0.5">
-                Purge GPU caches and kill orphaned dev ports in 1 click.
+              <h3 className="text-sm font-bold text-charcoal dark:text-cream">System Boost & Mac Cleaner</h3>
+              <p className="text-[11px] text-charcoal/55 dark:text-sage">
+                Clear caches & stale dev ports
               </p>
             </div>
           </div>
@@ -239,26 +224,8 @@ export const UtilitiesTab: React.FC<UtilitiesTabProps> = ({ session, onCopy, onS
           </div>
         )}
 
-        {/* Multi-Platform Storage Compatibility Banner */}
-        <div className="p-3.5 rounded-xl bg-stone-50 dark:bg-darkTealElevated border border-charcoal/10 dark:border-darkTealBorder flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2.5">
-            <div className="w-2 h-2 rounded-full bg-[#07514C] dark:bg-amber animate-pulse shrink-0" />
-            <div className="space-y-0.5">
-              <span className="font-bold text-charcoal dark:text-cream">
-                Multi-Platform Storage Rules (macOS &middot; Windows &middot; Mobile)
-              </span>
-              <p className="text-[11px] text-charcoal/60 dark:text-sage">
-                Native Squirrel rules adapt per OS: DerivedData &amp; logs on Mac, %TEMP% &amp; npm-cache on Windows, and sandboxed app caches on Android/iOS.
-              </p>
-            </div>
-          </div>
-          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-white dark:bg-darkTealSurface text-darkTeal dark:text-mint border border-charcoal/15 dark:border-darkTealBorder shrink-0">
-            AUTO-ADAPTING
-          </span>
-        </div>
-
         {/* Clean Results Panel & Detailed Report */}
-        {cleanResult ? (
+        {cleanResult && (
           <div className="p-4 rounded-xl bg-stone-50 dark:bg-darkTealSurface border border-charcoal/15 dark:border-darkTealBorder space-y-3 animate-fadeIn">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2">
@@ -367,12 +334,7 @@ export const UtilitiesTab: React.FC<UtilitiesTabProps> = ({ session, onCopy, onS
               </div>
             )}
           </div>
-        ) : !storageFindings ? (
-          <div className="flex items-center justify-between p-2.5 rounded-xl bg-[#F8F8F5] dark:bg-darkTealSurface border border-charcoal/15 dark:border-darkTealBorder text-xs text-charcoal/70 dark:text-cream/70">
-            <span>Optimize system resources, scan Mac caches, and terminate stale dev servers in 1 click.</span>
-            <span className="font-mono text-[10px] text-charcoal/50 dark:text-cream/50">Ports: 3000, 5173, 8080</span>
-          </div>
-        ) : null}
+        )}
       </div>
 
       {/* Main Utilities Grid (Comfortable 2-Column Responsive Layout) */}
@@ -424,14 +386,9 @@ export const UtilitiesTab: React.FC<UtilitiesTabProps> = ({ session, onCopy, onS
 
         {/* Tool 5: AI Multi-Tone & Voice Rewriter */}
         <div className="space-y-2 lg:col-span-2">
-          <div className="text-[11px] font-extrabold uppercase tracking-wider text-charcoal/60 dark:text-sage flex items-center justify-between px-1">
-            <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-darkTeal dark:bg-[#34A89E]" />
-              <span>AI Multi-Tone & Smart Voice Rewriter</span>
-            </div>
-            <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-darkTeal/10 text-darkTeal font-bold border border-darkTeal/20">
-              On-Demand • Zero Idle Battery
-            </span>
+          <div className="text-[11px] font-extrabold uppercase tracking-wider text-charcoal/60 dark:text-sage flex items-center gap-1.5 px-1">
+            <span className="w-2 h-2 rounded-full bg-darkTeal dark:bg-[#34A89E]" />
+            <span>AI Multi-Tone & Smart Voice Rewriter</span>
           </div>
           <ToneRewriterWidget lastTranscript={session.last_transcript} onCopy={onCopy} />
         </div>
