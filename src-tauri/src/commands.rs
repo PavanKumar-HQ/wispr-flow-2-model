@@ -142,6 +142,7 @@ pub fn clean_whisper_transcript(raw: &str) -> String {
         .replace("(music)", "")
         .replace("[music]", "")
         .trim()
+        .trim_start_matches(|c: char| matches!(c, ',' | ';' | ':' | ' '))
         .to_string();
 
     if !cleaned.chars().any(|c| c.is_alphanumeric()) {
@@ -1036,6 +1037,18 @@ pub fn stop_dictation_internal(state: &AppState, app: &AppHandle) -> Result<Sess
     let formatted_transcript = format_transcript(&deduped_raw, &fmt_cfg);
     let (mut formatted_transcript, _applied_vocab) = state.history.apply_personalization_pipeline(&formatted_transcript);
     formatted_transcript = crate::formatter::normalize_contraction_casing(&formatted_transcript);
+    // Strip any stray leading comma/semicolon/colon left behind by filler removal or Whisper punctuation
+    formatted_transcript = formatted_transcript
+        .trim_start_matches(|c: char| matches!(c, ',' | ';' | ':' | ' '))
+        .to_string();
+    if settings.auto_capitalization {
+        let mut chars = formatted_transcript.chars();
+        if let Some(first) = chars.next() {
+            if first.is_ascii_lowercase() {
+                formatted_transcript = first.to_uppercase().collect::<String>() + chars.as_str();
+            }
+        }
+    }
     if formatted_transcript.trim().is_empty() && !cleaned_transcript.trim().is_empty() {
         formatted_transcript = cleaned_transcript.trim().to_string();
     }

@@ -245,9 +245,9 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
       poseIdxRef.current = (poseIdxRef.current + 1) % sequence.length;
       const next = sequence[poseIdxRef.current];
       if (next === 'walk') {
-        // Walk briskly horizontally at current altitude so stride is clearly visible
+        // Walk smoothly horizontally at a natural pace matched to stride cycle
         const dir = Math.random() > 0.5 ? 1 : -1;
-        walkVecRef.current = { vx: dir * 4.2, vy: 0 };
+        walkVecRef.current = { vx: dir * 5.2, vy: 0 };
       } else if (next === 'fly') {
         // Fly freely in 2D across the desktop!
         const angle = Math.random() * Math.PI * 2;
