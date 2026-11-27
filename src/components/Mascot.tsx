@@ -165,8 +165,8 @@ export const Mascot: React.FC<MascotProps> = ({
                 <path d="M 58 43 Q 63 47 68 43" stroke="#DDA44D" strokeWidth="2.5" strokeLinecap="round" fill="none" />
                 <path d="M 46 51 Q 50 53 54 51" stroke="#DFDFD4" strokeWidth="2" strokeLinecap="round" fill="none" />
                 {/* Floating retro pixel z Z Z */}
-                <text x="74" y="22" fill="#DDA44D" className="font-pixel text-[9px] anim-zzz-1 font-bold select-none">z</text>
-                <text x="82" y="14" fill="#DFDFD4" className="font-pixel text-[11px] anim-zzz-2 font-bold select-none">Z</text>
+                <text x="74" y="22" fill="#DDA44D" className="font-sans text-[9px] anim-zzz-1 font-bold select-none">z</text>
+                <text x="82" y="14" fill="#DFDFD4" className="font-sans text-[11px] anim-zzz-2 font-bold select-none">Z</text>
               </g>
             ) : state === 'transcribing' ? (
               <g>

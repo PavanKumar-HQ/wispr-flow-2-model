@@ -231,10 +231,10 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
         {/* SLEEPING FLOATING Zzz */}
         {isSleeping && (
           <g className="pointer-events-none">
-            <text x="150" y="34" fill="#FFD07B" className="font-pixel text-[12px] anim-zzz-1 font-bold">
+            <text x="150" y="34" fill="#FFD07B" className="font-sans text-[12px] anim-zzz-1 font-bold">
               z
             </text>
-            <text x="164" y="20" fill="#34A89E" className="font-pixel text-[15px] anim-zzz-2 font-bold">
+            <text x="164" y="20" fill="#34A89E" className="font-sans text-[15px] anim-zzz-2 font-bold">
               Z
             </text>
           </g>

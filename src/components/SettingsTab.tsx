@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { Keyboard, Mic, Sliders, Shield, Target, CheckCircle2, AlertTriangle, ExternalLink, RotateCcw, BookOpen, Radio, Palette, Sun, RefreshCw, DownloadCloud, Bot } from 'lucide-react';
+import { Keyboard, Mic, Sliders, Shield, Target, CheckCircle2, AlertTriangle, ExternalLink, RotateCcw, BookOpen, Radio, RefreshCw, DownloadCloud, Bot } from 'lucide-react';
 import { AppSettings } from '../types';
 import { safeInvoke } from '../lib/ipc';
 import { checkForAppUpdates, relaunchToApplyUpdate, UpdateStatus } from '../lib/updater';
-import { Mascot, MascotAvatar } from './Mascot';
 
 interface SettingsTabProps {
   settings: AppSettings;
@@ -21,34 +20,6 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
   const [isCheckingUpdate, setIsCheckingUpdate] = useState<boolean>(false);
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
   const [updateMsg, setUpdateMsg] = useState<string | null>(null);
-  const [selectedAvatar, setSelectedAvatar] = useState<MascotAvatar>(() => {
-    try {
-      return (localStorage.getItem('voxquest_mascot_avatar') as MascotAvatar) || 'bot';
-    } catch {
-      return 'bot';
-    }
-  });
-  const [overlayMode, setOverlayMode] = useState<'both' | 'robot' | 'pill'>(() => {
-    try {
-      const saved = localStorage.getItem('voxquest_desktop_overlay_mode');
-      if (saved === 'robot' || saved === 'pill' || saved === 'both') return saved;
-    } catch {}
-    return 'both';
-  });
-  const handleSetOverlayMode = (mode: 'both' | 'robot' | 'pill') => {
-    setOverlayMode(mode);
-    try {
-      localStorage.setItem('voxquest_desktop_overlay_mode', mode);
-    } catch {}
-    safeInvoke('set_overlay_mode_cmd', { mode });
-  };
-  const handleSetAvatar = (av: MascotAvatar) => {
-    setSelectedAvatar(av);
-    try {
-      localStorage.setItem('voxquest_mascot_avatar', av);
-      window.dispatchEvent(new Event('storage'));
-    } catch {}
-  };
 
   const handleCheckUpdate = async () => {
     setIsCheckingUpdate(true);
@@ -136,137 +107,9 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
       </div>
 
       <div className="grid gap-5">
-        {/* Appearance & Theme Display */}
-        <div className="p-5 rounded-2xl border border-charcoal/15 bg-white shadow-xs space-y-3.5">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal font-mono flex items-center gap-1.5">
-              <Palette className="w-3.5 h-3.5" /> Appearance & Theme
-            </h3>
-            <span className="text-[10px] font-mono font-bold text-darkTeal bg-darkTeal/10 px-2 py-0.5 rounded-full border border-darkTeal/20">
-              Warm Linen
-            </span>
-          </div>
-          <p className="text-xs text-charcoal/70 leading-relaxed">
-            VoxQuest is styled in the signature Warm Linen aesthetic with Deep Teal typography and tactile paper surfaces.
-          </p>
-
-          <div className="pt-1">
-            <div className="p-4 rounded-xl border border-darkTeal ring-2 ring-darkTeal/20 bg-cream/40 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white border border-charcoal/15 flex items-center justify-center shadow-2xs">
-                  <Sun className="w-5 h-5 text-amber" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-sm text-charcoal">Warm Linen</span>
-                    <span className="text-[10px] font-mono font-bold text-darkTeal bg-white px-2 py-0.5 rounded border border-darkTeal/20">Active</span>
-                  </div>
-                  <p className="text-[11px] text-charcoal/70 leading-tight mt-0.5">
-                    Warm linen paper canvas (#DFDFD4) with Deep Teal ink (#07514C) and crisp card containers.
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-5 h-5 rounded-full border border-charcoal/20" style={{ backgroundColor: '#DFDFD4' }} title="#DFDFD4 (Linen Canvas)" />
-                <span className="w-5 h-5 rounded-full" style={{ backgroundColor: '#07514C' }} title="#07514C (Deep Teal)" />
-                <span className="w-5 h-5 rounded-full" style={{ backgroundColor: '#DA6C4C' }} title="#DA6C4C (Terracotta)" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Desktop Companion Mascot & Floating Pill Personalization */}
-        <div className="p-5 rounded-2xl border border-charcoal/15 bg-white shadow-xs space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal font-mono flex items-center gap-1.5">
-              <Bot className="w-3.5 h-3.5" /> Desktop Companion Mascot &amp; Pill Style
-            </h3>
-            <span className="text-[10px] font-mono font-bold text-darkTeal bg-darkTeal/10 px-2 py-0.5 rounded-full border border-darkTeal/20">
-              Personalize
-            </span>
-          </div>
-          <p className="text-xs text-charcoal/70 leading-relaxed">
-            Choose what floats on your desktop: both the <strong>Sovereign Pill Capsule</strong> and <strong>VoxBot Companion</strong>, or either one on its own.
-          </p>
-
-          {/* Desktop Overlay Display Mode: Both / VoxBot Only / Pill Only */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-            {[
-              {
-                id: 'both' as const,
-                title: 'Both (Pill + VoxBot)',
-                desc: 'Full pill capsule with Hub plus autonomous VoxBot companion.',
-              },
-              {
-                id: 'robot' as const,
-                title: 'VoxBot Only',
-                desc: 'Only the interactive desktop robot — click it to dictate.',
-              },
-              {
-                id: 'pill' as const,
-                title: 'Pill Only',
-                desc: 'Only the compact Sovereign Pill Capsule with Hub.',
-              },
-            ].map((opt) => {
-              const active = overlayMode === opt.id;
-              return (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() => handleSetOverlayMode(opt.id)}
-                  className={`text-left p-3 rounded-xl border transition-all cursor-pointer ${
-                    active
-                      ? 'border-darkTeal bg-cream/60 shadow-xs ring-1 ring-darkTeal/30'
-                      : 'border-charcoal/15 bg-white hover:border-darkTeal/40 hover:bg-cream/20'
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-1.5">
-                    <span className="font-bold text-xs text-charcoal">{opt.title}</span>
-                    {active && <CheckCircle2 className="w-3.5 h-3.5 text-darkTeal shrink-0" />}
-                  </div>
-                  <p className="text-[10px] text-charcoal/70 leading-tight mt-1">{opt.desc}</p>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Avatar Version Selection */}
-          <div className="space-y-2 pt-2 border-t border-charcoal/10">
-            <span className="text-[11px] font-mono font-bold text-darkTeal uppercase tracking-wider">
-              Select Companion Avatar:
-            </span>
-            <div className="grid grid-cols-3 gap-3">
-              {[
-                { id: 'bot', name: 'VoxBot', desc: 'Cyber Robot', icon: '🤖' },
-                { id: 'owl', name: 'VoxOwl', desc: 'Pixel Familiar', icon: '🦉' },
-                { id: 'cat', name: 'VoxCat', desc: 'Arcade Cyber Cat', icon: '🐱' },
-              ].map((av) => (
-                <div
-                  key={av.id}
-                  onClick={() => handleSetAvatar(av.id as MascotAvatar)}
-                  className={`p-3 rounded-xl border cursor-pointer transition-all flex flex-col items-center text-center gap-2 ${
-                    selectedAvatar === av.id
-                      ? 'bg-darkTeal text-white border-darkTeal shadow-md'
-                      : 'bg-cream/50 text-charcoal border-charcoal/15 hover:border-charcoal/30 hover:bg-cream'
-                  }`}
-                >
-                  <div className="w-12 h-12 flex items-center justify-center">
-                    <Mascot size={40} avatar={av.id as MascotAvatar} />
-                  </div>
-                  <div>
-                    <span className="font-pixel text-[10px] block">{av.name}</span>
-                    <span className={`text-[9px] block ${selectedAvatar === av.id ? 'text-amber' : 'text-charcoal/60'}`}>
-                      {av.desc}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
         <div className="p-5 rounded-2xl border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface shadow-xs space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal dark:text-mint font-mono flex items-center gap-1.5">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal dark:text-mint flex items-center gap-1.5">
               <Shield className="w-3.5 h-3.5" /> macOS Text Insertion Permission
             </h3>
             {accessChecked === true && (
@@ -294,7 +137,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
 
         {/* Destination Policy */}
         <div className="p-5 rounded-2xl border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface shadow-xs space-y-3.5">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal dark:text-mint font-mono flex items-center gap-1.5">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal dark:text-mint flex items-center gap-1.5">
             <Target className="w-3.5 h-3.5" /> Where to Insert Text
           </h3>
 
@@ -361,7 +204,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
 
         {/* Shortcut and Language */}
         <div className="p-5 rounded-2xl border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface shadow-xs space-y-4">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal dark:text-mint font-mono flex items-center gap-1.5">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal dark:text-mint flex items-center gap-1.5">
             <Keyboard className="w-3.5 h-3.5" /> Voice Shortcut & Language
           </h3>
 
@@ -529,7 +372,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
         {/* Assistant Wake Word & Voice Persona */}
         <div className="p-5 rounded-2xl border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface shadow-xs space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal dark:text-mint font-mono flex items-center gap-1.5">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal dark:text-mint flex items-center gap-1.5">
               <Bot className="w-3.5 h-3.5" /> Assistant Wake Word & Persona
             </h3>
             <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
@@ -611,7 +454,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
 
         {/* Audio Input Device */}
         <div className="p-5 rounded-2xl border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface shadow-xs space-y-3">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal dark:text-mint font-mono flex items-center gap-1.5">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal dark:text-mint flex items-center gap-1.5">
             <Mic className="w-3.5 h-3.5" /> Microphone
           </h3>
           <div className="space-y-1.5">
@@ -637,7 +480,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
 
         {/* Smart Formatting Options */}
         <div className="p-5 rounded-2xl border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface shadow-xs space-y-3">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal dark:text-mint font-mono flex items-center gap-1.5">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal dark:text-mint flex items-center gap-1.5">
             <Sliders className="w-3.5 h-3.5" /> Smart Formatting
           </h3>
 
@@ -694,7 +537,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
 
         {/* Dynamic Model Routing */}
         <div className="p-5 rounded-2xl border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface shadow-xs space-y-3">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal dark:text-mint font-mono flex items-center gap-1.5">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal dark:text-mint flex items-center gap-1.5">
             <Sliders className="w-3.5 h-3.5" /> Context-Aware Auto Model Routing
           </h3>
 
@@ -718,7 +561,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
 
         {/* Personal Vocabulary & Self-Learning */}
         <div className="p-5 rounded-2xl border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface shadow-xs space-y-3">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal dark:text-mint font-mono flex items-center gap-1.5">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal dark:text-mint flex items-center gap-1.5">
             <BookOpen className="w-3.5 h-3.5" /> Personal Vocabulary & Learning
           </h3>
 
@@ -763,7 +606,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
 
         {/* Privacy & Storage */}
         <div className="p-5 rounded-2xl border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface shadow-xs space-y-3">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal dark:text-mint font-mono flex items-center gap-1.5">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal dark:text-mint flex items-center gap-1.5">
             <Shield className="w-3.5 h-3.5" /> Privacy & Local Storage
           </h3>
 
@@ -789,7 +632,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
         {/* Software Updates & System Release */}
         <div className="p-5 rounded-2xl border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface shadow-xs space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal dark:text-mint font-mono flex items-center gap-1.5">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal dark:text-mint flex items-center gap-1.5">
               <DownloadCloud className="w-3.5 h-3.5" /> Software Updates & Release Channel
             </h3>
             <span className="text-[10px] font-mono font-bold bg-[#EAF2F1] text-darkTeal border border-[#07514C]/20 px-2 py-0.5 rounded-full">

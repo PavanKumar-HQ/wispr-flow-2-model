@@ -230,15 +230,15 @@ export const QuestsTab: React.FC<QuestsTabProps> = ({
     <div className="space-y-7 max-w-5xl mx-auto pb-16 font-sans select-none animate-fadeIn">
       {/* Top Banner Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 rounded-2xl bg-[#DFDFD4]/60 dark:bg-darkTealSurface border-2 border-charcoal shadow-[4px_4px_0px_#212121]">
-        <div className="space-y-2">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-sm bg-[#07514C] text-[#DFDFD4] font-pixel text-[8px] font-bold border border-charcoal">
+        <div className="space-y-1.5">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-sm bg-[#07514C] text-[#DFDFD4] font-mono text-[10px] font-bold border border-charcoal">
             <Trophy className="w-3.5 h-3.5 text-[#DDA44D]" />
             <span>SOVEREIGN PROGRESSION &amp; REPUTATION</span>
           </div>
-          <h2 className="text-xl font-bold font-pixel text-[#07514C] dark:text-cream tracking-tight leading-relaxed">
+          <h2 className="text-2xl font-bold text-[#07514C] dark:text-cream tracking-tight">
             Quests &amp; Habit Badges
           </h2>
-          <p className="text-xs font-mono text-charcoal/80 dark:text-sage leading-relaxed max-w-xl">
+          <p className="text-xs text-charcoal/80 dark:text-sage leading-relaxed max-w-xl">
             Build your high-speed spoken workflow. Earn XP, unlock milestone badges, and master hands-free voice dictation 100% on-device.
           </p>
         </div>
@@ -249,10 +249,10 @@ export const QuestsTab: React.FC<QuestsTabProps> = ({
             <Award className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-[9px] font-pixel text-[#DDA44D] font-bold tracking-wider mb-1">
+            <div className="text-[10px] font-mono text-[#DDA44D] font-bold tracking-wider">
               TIER {rankTier} &middot; {rankName.toUpperCase()}
             </div>
-            <div className="text-xs font-bold font-pixel text-white">
+            <div className="text-sm font-extrabold font-mono text-white">
               {totalEarnedXp} / {totalPossibleXp} XP
             </div>
           </div>
@@ -264,11 +264,11 @@ export const QuestsTab: React.FC<QuestsTabProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Star className="w-4 h-4 text-[#DDA44D] fill-[#DDA44D]" />
-            <h3 className="text-[10px] font-bold uppercase tracking-wider text-charcoal dark:text-cream font-pixel">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-charcoal dark:text-cream">
               Beginner Milestones (e.g. First 50 Words)
             </h3>
           </div>
-          <span className="text-[8px] font-pixel font-bold px-2.5 py-1 rounded-sm bg-[#07514C] text-[#DFDFD4] border border-charcoal">
+          <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-sm bg-[#07514C] text-[#DFDFD4] border border-charcoal">
             {unlockedBadges.length} / {beginnerBadges.length} UNLOCKED
           </span>
         </div>
@@ -285,25 +285,25 @@ export const QuestsTab: React.FC<QuestsTabProps> = ({
                     : 'bg-[#ECECE5]/80 dark:bg-darkTealSurface border-charcoal/40 opacity-85'
                 }`}
               >
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-1.5 truncate">
                     {badge.isUnlocked ? (
                       <CheckCircle2 className="w-3.5 h-3.5 text-[#07514C] dark:text-[#DDA44D] shrink-0" />
                     ) : (
                       <span className="w-2.5 h-2.5 rounded-full bg-charcoal/30 shrink-0" />
                     )}
-                    <span className="text-[10px] font-bold font-pixel text-charcoal dark:text-cream truncate">
+                    <span className="text-xs font-bold text-charcoal dark:text-cream truncate">
                       {badge.title}
                     </span>
                   </div>
-                  <span className="text-[8px] font-pixel font-bold px-1.5 py-0.5 rounded-sm bg-[#DDA44D] text-[#212121] border border-charcoal shrink-0 ml-1">
+                  <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-sm bg-[#DDA44D] text-[#212121] border border-charcoal shrink-0 ml-1">
                     +{badge.xp} XP
                   </span>
                 </div>
-                <p className="text-[11px] font-mono text-charcoal/80 dark:text-sage mb-2.5 leading-snug line-clamp-2">
+                <p className="text-[11px] text-charcoal/80 dark:text-sage mb-2.5 leading-snug line-clamp-2">
                   {badge.requirement}
                 </p>
-                <div className="flex items-center justify-between text-[8px] font-pixel text-charcoal/70 dark:text-sage mb-1">
+                <div className="flex items-center justify-between text-[10px] font-mono text-charcoal/70 dark:text-sage mb-1">
                   <span>{badge.currentValue} / {badge.targetValue}</span>
                   <span>{pct}%</span>
                 </div>
@@ -320,13 +320,13 @@ export const QuestsTab: React.FC<QuestsTabProps> = ({
         </div>
       </div>
 
-      {/* The 6 Canonical Pixel Quest Cards Grid (Pixel-Perfect Recreation of Attached Reference) */}
+      {/* The 6 Canonical Quest Cards Grid */}
       <div className="space-y-3.5">
         <div className="flex items-center justify-between px-1">
-          <div className="text-[11px] font-bold font-pixel uppercase tracking-widest text-charcoal dark:text-cream">
+          <div className="text-xs font-bold uppercase tracking-widest text-charcoal dark:text-cream">
             Active Quest Catalog
           </div>
-          <span className="text-[9px] font-pixel text-charcoal/60 dark:text-sage">
+          <span className="text-[11px] font-mono text-charcoal/60 dark:text-sage">
             {completedQuests.length} of {quests.length} Completed
           </span>
         </div>
@@ -346,11 +346,11 @@ export const QuestsTab: React.FC<QuestsTabProps> = ({
                   <div className="flex items-center justify-between gap-2 mb-3.5">
                     <div className="flex items-center gap-1.5">
                       {/* Category Badge */}
-                      <span className="px-2.5 py-1 border border-charcoal bg-[#07514C] text-[#DFDFD4] font-pixel text-[8px] font-bold uppercase tracking-wider rounded-xs">
+                      <span className="px-2.5 py-0.5 border border-charcoal bg-[#07514C] text-[#DFDFD4] font-mono text-[10px] font-bold uppercase tracking-wider rounded-xs">
                         {quest.category}
                       </span>
                       {/* XP Badge */}
-                      <span className="px-2.5 py-1 border border-charcoal bg-[#DDA44D] text-[#212121] font-pixel text-[8px] font-bold tracking-wider rounded-xs">
+                      <span className="px-2.5 py-0.5 border border-charcoal bg-[#DDA44D] text-[#212121] font-mono text-[10px] font-bold tracking-wider rounded-xs">
                         +{quest.xpReward} XP
                       </span>
                     </div>
@@ -358,12 +358,12 @@ export const QuestsTab: React.FC<QuestsTabProps> = ({
                     {/* Top Right: Status & Number (#01 .. #06) */}
                     <div className="flex items-center gap-2">
                       {isDone && (
-                        <span className="inline-flex items-center gap-1 text-[9px] font-pixel font-bold text-[#07514C] dark:text-[#DDA44D]">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#07514C] dark:text-[#DDA44D]">
                           <CheckCircle2 className="w-3.5 h-3.5 text-[#07514C] dark:text-[#DDA44D]" />
                           <span>DONE</span>
                         </span>
                       )}
-                      <span className="font-pixel font-bold text-[10px] text-charcoal/60 dark:text-sage/70">
+                      <span className="font-mono font-bold text-xs text-charcoal/60 dark:text-sage/70">
                         {quest.number}
                       </span>
                     </div>
@@ -374,11 +374,11 @@ export const QuestsTab: React.FC<QuestsTabProps> = ({
                     <div className="w-11 h-11 border-2 border-charcoal bg-[#D5DFD9] dark:bg-darkTealElevated flex items-center justify-center shrink-0 rounded-xs shadow-xs">
                       {renderIcon(quest.icon)}
                     </div>
-                    <div className="space-y-1.5">
-                      <h4 className="font-pixel font-bold text-xs sm:text-sm text-[#212121] dark:text-cream leading-normal tracking-wide">
+                    <div className="space-y-1">
+                      <h4 className="font-bold text-sm text-[#212121] dark:text-cream leading-tight">
                         {quest.title}
                       </h4>
-                      <p className="font-mono text-[11px] text-[#212121]/80 dark:text-sage leading-relaxed">
+                      <p className="text-[11px] text-[#212121]/80 dark:text-sage leading-relaxed">
                         {quest.description}
                       </p>
                     </div>
@@ -390,7 +390,7 @@ export const QuestsTab: React.FC<QuestsTabProps> = ({
 
                 {/* Bottom Section: Progress Labels & Segmented Retro Bar */}
                 <div>
-                  <div className="flex items-center justify-between text-[8px] font-pixel font-bold tracking-wider text-[#212121] dark:text-cream mb-1.5 uppercase">
+                  <div className="flex items-center justify-between text-[10px] font-mono font-bold tracking-wider text-[#212121] dark:text-cream mb-1.5 uppercase">
                     <span>PROGRESS</span>
                     <span>TARGET: {quest.targetCount}</span>
                   </div>

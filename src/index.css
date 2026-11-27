@@ -1,13 +1,8 @@
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-.font-pixel {
-  font-family: 'Press Start 2P', monospace, cursive;
-  letter-spacing: 0.02em;
-}
 
 :root {
   --color-cream: #DFDFD4;
