@@ -88,7 +88,7 @@ fn looks_like_prose_dictation(trimmed: &str, max_words: usize) -> bool {
 /// Strips assistant wake prefixes (e.g. "Hey Vox,", "Vox,", "Hey Google,", "Hey Jarvis,")
 /// so that command recognition and action dispatch work seamlessly whether called with or without a wake word.
 pub fn strip_wake_phrase(input: &str) -> &str {
-    let trimmed = input.trim();
+    let mut trimmed = input.trim();
     let lower = trimmed.to_lowercase();
     const WAKE_PREFIXES: &[&str] = &[
         "hey vox", "hi vox", "vox",
@@ -100,6 +100,29 @@ pub fn strip_wake_phrase(input: &str) -> &str {
     ];
     for p in WAKE_PREFIXES {
         if lower.starts_with(p) {
+            let remainder = &trimmed[p.len()..];
+            let stripped = remainder.trim_start_matches(|c: char| c.is_ascii_punctuation() || c.is_whitespace());
+            if !stripped.is_empty() {
+                trimmed = stripped;
+                break;
+            }
+        }
+    }
+
+    // Also strip polite conversational request wrappers ("can you ", "could you ", "please ")
+    let lower2 = trimmed.to_lowercase();
+    const POLITE_PREFIXES: &[&str] = &[
+        "can you please ",
+        "could you please ",
+        "would you please ",
+        "can you ",
+        "could you ",
+        "would you ",
+        "will you ",
+        "please ",
+    ];
+    for p in POLITE_PREFIXES {
+        if lower2.starts_with(p) {
             let remainder = &trimmed[p.len()..];
             let stripped = remainder.trim_start_matches(|c: char| c.is_ascii_punctuation() || c.is_whitespace());
             if !stripped.is_empty() {
@@ -635,6 +658,8 @@ fn try_parse_reminder_or_schedule(trimmed: &str, lower_clean: &str) -> Option<Vo
 
     const REMINDER_PREFIXES: &[&str] = &[
         "remind me ",
+        "schedule a reminder ",
+        "schedule reminder ",
         "set a reminder ",
         "set reminder ",
         "add a reminder ",
@@ -1120,6 +1145,24 @@ mod tests {
         assert!(is_voice_command_intent("Hey Google, search Spotify"));
         assert!(is_voice_command_intent("search Adobe Photoshop"));
         assert!(!is_voice_command_intent("Hey Vox, I think that in this project we should implement a new feature"));
+    }
+
+    #[test]
+    fn test_polite_reminder_and_timer_commands() {
+        let rem = detect_voice_action("Can you schedule a reminder tier at 2:50 PM?").unwrap();
+        assert_eq!(rem.action_type, "system_reminder");
+        assert!(rem.suppress_paste);
+        let payload = rem.utility_payload.unwrap();
+        assert_eq!(payload.kind, "reminder");
+        assert_eq!(payload.time_str.as_deref(), Some("14:50"));
+
+        let tmr = detect_voice_action("Could you set timer for 20 seconds?").unwrap();
+        assert_eq!(tmr.action_type, "system_timer");
+        assert!(tmr.suppress_paste);
+        assert_eq!(tmr.utility_payload.unwrap().duration_sec, Some(20));
+
+        // Polite prose must NOT trigger actions
+        assert!(detect_voice_action("Can you please send the report to the manager tomorrow morning?").is_none());
     }
 
     #[test]
