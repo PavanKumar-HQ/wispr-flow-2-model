@@ -14,7 +14,7 @@ import { UtilitiesTab } from './components/UtilitiesTab';
 import { QuestsTab } from './components/QuestsTab';
 import { MeetingAssistantTab } from './components/MeetingAssistantTab';
 import { ModelInfo, AppSettings, HistoryRecord, SessionSnapshot, InsightsData } from './types';
-import { Home, Layers, History, Settings as SettingsIcon, BookA, BarChart2, LocateFixed, GraduationCap, LayoutGrid, Trophy, Video, Bot, Bell } from 'lucide-react';
+import { Home, Layers, History, Settings as SettingsIcon, BookA, BarChart2, LocateFixed, GraduationCap, LayoutGrid, Trophy, Video, Bot, Bell, RotateCcw } from 'lucide-react';
 import { applyTheme } from './lib/theme';
 
 export default function App() {
@@ -88,12 +88,82 @@ export default function App() {
   const [updateAvailableVersion, setUpdateAvailableVersion] = useState<string | null>(null);
   const [reminderAlert, setReminderAlert] = useState<{ title: string; message: string } | null>(null);
 
+  const [activeReminder, setActiveReminder] = useState<{ label: string; timeStr?: string; dateStr?: string } | null>(() => {
+    try {
+      const s = localStorage.getItem('voxquest_active_reminder_alert');
+      if (s) return JSON.parse(s);
+    } catch {}
+    return null;
+  });
+
+  const handleSnoozeReminder = (mins: number) => {
+    if (!activeReminder) return;
+    const taskLabel = activeReminder.label.trim();
+    const now = new Date(Date.now() + mins * 60000);
+    const newTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+    try {
+      const stored = localStorage.getItem('voxquest_marked_calendar_dates');
+      if (stored) {
+        const list = JSON.parse(stored);
+        const updated = list.map((item: any) => {
+          if (item.label?.trim() === taskLabel || item.label?.includes(taskLabel) || taskLabel.includes(item.label)) {
+            return {
+              ...item,
+              timeStr: newTimeStr,
+              lastNotifiedDate: undefined,
+            };
+          }
+          return item;
+        });
+        localStorage.setItem('voxquest_marked_calendar_dates', JSON.stringify(updated));
+      }
+      localStorage.removeItem('voxquest_active_reminder_alert');
+    } catch {}
+
+    setActiveReminder(null);
+    window.dispatchEvent(new Event('voxquest-utility-updated'));
+  };
+
+  const handleDismissReminder = () => {
+    if (!activeReminder) return;
+    const taskLabel = activeReminder.label.trim();
+    try {
+      const stored = localStorage.getItem('voxquest_marked_calendar_dates');
+      if (stored) {
+        const list = JSON.parse(stored);
+        const updated = list.map((item: any) => {
+          if (item.label?.trim() === taskLabel || item.label?.includes(taskLabel) || taskLabel.includes(item.label)) {
+            return {
+              ...item,
+              reminderEnabled: false,
+            };
+          }
+          return item;
+        });
+        localStorage.setItem('voxquest_marked_calendar_dates', JSON.stringify(updated));
+      }
+      localStorage.removeItem('voxquest_active_reminder_alert');
+    } catch {}
+
+    setActiveReminder(null);
+    window.dispatchEvent(new Event('voxquest-utility-updated'));
+  };
+
   // Global Background Reminder Checker & Voice Utility Sync (runs even when Utilities tab is closed)
   useEffect(() => {
     if (isOverlayWindow) return;
 
     const toLocalYmd = (d: Date) =>
       `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+    const onUtilSync = () => {
+      try {
+        const s = localStorage.getItem('voxquest_active_reminder_alert');
+        setActiveReminder(s ? JSON.parse(s) : null);
+      } catch {}
+    };
+    window.addEventListener('voxquest-utility-updated', onUtilSync);
 
     const checkReminders = () => {
       try {
@@ -115,9 +185,20 @@ export default function App() {
             if (item.lastNotifiedDate === todayStr) return item;
             const targetTime = item.timeStr || '09:00';
             if (currentTime >= targetTime) {
+              const alertData = {
+                title: 'VoxQuest Task Reminder',
+                message: `Task Due: ${item.label}`,
+                label: item.label,
+                timeStr: item.timeStr || targetTime,
+                dateStr: item.dateStr,
+              };
+              setActiveReminder(alertData);
+              try {
+                localStorage.setItem('voxquest_active_reminder_alert', JSON.stringify(alertData));
+              } catch {}
               safeInvoke('send_system_notification_cmd', {
                 title: 'VoxQuest Task Reminder',
-                message: `Task Due Today: ${item.label}`,
+                message: `Task Due: ${item.label}`,
               });
               changed = true;
               return { ...item, lastNotifiedDate: todayStr };
@@ -179,19 +260,21 @@ export default function App() {
           const timeStr = payload.time_str || now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
           const stored = localStorage.getItem('voxquest_saved_commitments');
           const list = stored ? JSON.parse(stored) : [];
+          const isZoom = payload.label.toLowerCase().includes('zoom');
+          const dayPrefix = payload.day_offset === 1 ? 'Tomorrow' : 'Today';
           list.unshift({
             id: `voice-${Date.now()}`,
             title: payload.label,
-            platform: 'Focus Slot',
-            url: 'https://meet.google.com/new',
+            platform: isZoom ? 'Zoom' : 'Google Meet',
+            url: isZoom ? 'https://zoom.us/new' : 'https://meet.google.com/new',
             durationMins,
-            timeStr,
+            timeStr: `${dayPrefix} • ${timeStr}`,
           });
           localStorage.setItem('voxquest_saved_commitments', JSON.stringify(list));
           window.dispatchEvent(new Event('voxquest-utility-updated'));
           safeInvoke('send_system_notification_cmd', {
             title: 'Schedule Added',
-            message: `${payload.label} (${durationMins}m)`,
+            message: `${payload.label} (${dayPrefix} at ${timeStr})`,
           });
         } else if (payload.kind === 'timer') {
           const action = payload.label === 'pause' || payload.label === 'reset' ? payload.label : 'start';
@@ -243,19 +326,17 @@ export default function App() {
     });
 
     let unlistenAlert: (() => void) | undefined;
-    let hideAlertTimer: ReturnType<typeof setTimeout> | undefined;
     safeListen<{ title: string; message: string }>('voxquest-reminder-alert', (e) => {
       if (!e.payload) return;
       setReminderAlert(e.payload);
-      if (hideAlertTimer) clearTimeout(hideAlertTimer);
-      hideAlertTimer = setTimeout(() => setReminderAlert(null), 8000);
+      // Stays visible persistently until user snoozes or dismisses
     }).then((fn) => {
       unlistenAlert = fn;
     });
 
     return () => {
       clearInterval(timer);
-      if (hideAlertTimer) clearTimeout(hideAlertTimer);
+      window.removeEventListener('voxquest-utility-updated', onUtilSync);
       if (unlistenUtility) unlistenUtility();
       if (unlistenAlert) unlistenAlert();
     };
@@ -793,21 +874,72 @@ export default function App() {
         </div>
       </main>
 
-      {/* Global In-App Reminder / Schedule Popup */}
-      {!isOverlayWindow && reminderAlert && (
-        <div className="fixed top-4 right-4 z-50 max-w-xs bg-[#FAF8F2] border-2 border-[#DDA44D] rounded-2xl shadow-xl p-3.5 flex items-start gap-2.5 animate-fadeIn">
-          <Bell className="w-4 h-4 text-[#DA6C4C] shrink-0 mt-0.5" />
-          <div className="flex-1 min-w-0">
-            <div className="text-xs font-extrabold text-[#08534E] truncate">{reminderAlert.title}</div>
-            <div className="text-[11px] font-medium text-charcoal/85 mt-0.5">{reminderAlert.message}</div>
+      {/* Global In-App Reminder / Schedule Notification Card (Persistent until user acts) */}
+      {!isOverlayWindow && (reminderAlert || activeReminder) && (
+        <div className="fixed top-5 right-5 z-50 w-80 bg-[#FFFDF7] dark:bg-[#1A2628] border-2 border-amber dark:border-mint/50 rounded-2xl shadow-2xl p-4 flex flex-col gap-2.5 animate-fadeIn select-none">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-center gap-2 text-darkTeal dark:text-cream min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-amber/30 text-charcoal dark:text-amber flex items-center justify-center shrink-0">
+                <Bell className="w-4 h-4 text-terracotta animate-bounce" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-xs font-bold truncate">
+                  {(reminderAlert?.message || activeReminder?.label || 'Task Due').replace('Task Due Today: ', '').replace('Task Due: ', '')}
+                </div>
+                <div className="text-[10px] text-charcoal/60 dark:text-sage font-mono">
+                  {reminderAlert?.title || (activeReminder?.timeStr ? `Due at ${activeReminder.timeStr}` : 'Action required')}
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setReminderAlert(null);
+                handleDismissReminder();
+              }}
+              className="text-charcoal/40 hover:text-charcoal dark:text-sage dark:hover:text-cream p-1 cursor-pointer"
+              title="Dismiss"
+            >
+              ✕
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={() => setReminderAlert(null)}
-            className="text-[11px] font-bold text-charcoal/50 hover:text-charcoal cursor-pointer"
-          >
-            ✕
-          </button>
+
+          <div className="flex items-center gap-2 pt-2 border-t border-charcoal/10 dark:border-darkTealBorder">
+            <button
+              type="button"
+              onClick={() => {
+                setReminderAlert(null);
+                handleSnoozeReminder(15);
+              }}
+              className="flex-1 py-1.5 px-2.5 rounded-xl bg-darkTeal hover:bg-darkTeal/90 text-white text-xs font-bold flex items-center justify-center gap-1 shadow-xs cursor-pointer active:scale-95 transition-all"
+              title="Snooze and remind again in 15 minutes"
+            >
+              <RotateCcw className="w-3 h-3 text-amber" />
+              <span>Remind in 15m</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setReminderAlert(null);
+                handleSnoozeReminder(5);
+              }}
+              className="py-1.5 px-2 rounded-xl bg-stone-100 dark:bg-darkTealElevated hover:bg-stone-200 text-charcoal dark:text-cream text-xs font-bold border border-charcoal/15 dark:border-darkTealBorder cursor-pointer transition-all"
+              title="Snooze for 5 minutes"
+            >
+              +5m
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setReminderAlert(null);
+                handleDismissReminder();
+              }}
+              className="py-1.5 px-3 rounded-xl bg-terracotta/15 hover:bg-terracotta/25 text-terracotta text-xs font-bold border border-terracotta/20 cursor-pointer transition-all"
+              title="Mark Done"
+            >
+              Done
+            </button>
+          </div>
         </div>
       )}
 

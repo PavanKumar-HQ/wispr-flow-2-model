@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, Mic, MapPin, Footprints, AppWindow, X, Moon, Music, Smile } from 'lucide-react';
+import { Bell, Mic, MapPin, Footprints, AppWindow, X, Moon, Music, Smile, RotateCcw } from 'lucide-react';
 import { VoxBotFullBody, VoxBotPose } from './VoxBotFullBody';
 import { SessionSnapshot, NowPlayingInfo } from '../types';
 import { safeInvoke, safeListen } from '../lib/ipc';
@@ -30,7 +30,71 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
   const [isBlinking, setIsBlinking] = useState<boolean>(false);
   const [showSuccessFlash, setShowSuccessFlash] = useState<boolean>(false);
   const [actionToast, setActionToast] = useState<string | null>(null);
-  const [reminderAlert, setReminderAlert] = useState<{ title: string; message: string } | null>(null);
+  const [reminderAlert, setReminderAlert] = useState<{ title: string; message: string; label?: string; timeStr?: string } | null>(() => {
+    try {
+      const s = localStorage.getItem('voxquest_active_reminder_alert');
+      if (s) return JSON.parse(s);
+    } catch {}
+    return null;
+  });
+
+  const handleSnooze = (mins: number) => {
+    if (!reminderAlert) return;
+    const taskLabel = reminderAlert.label || reminderAlert.message.replace('Task Due Today: ', '').replace('Task Due: ', '').trim();
+    const now = new Date(Date.now() + mins * 60000);
+    const newTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+    try {
+      const stored = localStorage.getItem('voxquest_marked_calendar_dates');
+      if (stored) {
+        const list = JSON.parse(stored);
+        const updated = list.map((item: any) => {
+          if (item.label?.trim() === taskLabel || item.label?.includes(taskLabel) || taskLabel.includes(item.label)) {
+            return {
+              ...item,
+              timeStr: newTimeStr,
+              lastNotifiedDate: undefined,
+            };
+          }
+          return item;
+        });
+        localStorage.setItem('voxquest_marked_calendar_dates', JSON.stringify(updated));
+      }
+      localStorage.removeItem('voxquest_active_reminder_alert');
+    } catch {}
+
+    setReminderAlert(null);
+    window.dispatchEvent(new Event('voxquest-utility-updated'));
+    setActionToast(`Snoozed +${mins}m (${newTimeStr})`);
+    setTimeout(() => setActionToast(null), 3000);
+  };
+
+  const handleDismissAlert = () => {
+    if (!reminderAlert) return;
+    const taskLabel = reminderAlert.label || reminderAlert.message.replace('Task Due Today: ', '').replace('Task Due: ', '').trim();
+    try {
+      const stored = localStorage.getItem('voxquest_marked_calendar_dates');
+      if (stored) {
+        const list = JSON.parse(stored);
+        const updated = list.map((item: any) => {
+          if (item.label?.trim() === taskLabel || item.label?.includes(taskLabel) || taskLabel.includes(item.label)) {
+            return {
+              ...item,
+              reminderEnabled: false,
+            };
+          }
+          return item;
+        });
+        localStorage.setItem('voxquest_marked_calendar_dates', JSON.stringify(updated));
+      }
+      localStorage.removeItem('voxquest_active_reminder_alert');
+    } catch {}
+
+    setReminderAlert(null);
+    window.dispatchEvent(new Event('voxquest-utility-updated'));
+    setActionToast('Reminder dismissed');
+    setTimeout(() => setActionToast(null), 2000);
+  };
   const [isMusicPlaying, setIsMusicPlaying] = useState<boolean>(false);
   const [showContextMenu, setShowContextMenu] = useState<boolean>(false);
   const [freeRoam, setFreeRoam] = useState<boolean>(() => {
@@ -152,19 +216,32 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
     };
   }, [status.state]);
 
-  // Show reminder popup above VoxBot AND run unthrottled reminder check every 3s
+  // Show persistent reminder card above VoxBot with Snooze / Done actions
   useEffect(() => {
     let cancelled = false;
     let unlisten: (() => void) | undefined;
-    let hideTimer: ReturnType<typeof setTimeout> | undefined;
-    safeListen<{ title: string; message: string }>('voxquest-reminder-alert', (e) => {
+    
+    safeListen<{ title: string; message: string; label?: string; timeStr?: string }>('voxquest-reminder-alert', (e) => {
       if (cancelled || !e.payload) return;
       setReminderAlert(e.payload);
-      if (hideTimer) clearTimeout(hideTimer);
-      hideTimer = setTimeout(() => setReminderAlert(null), 7000);
+      try {
+        localStorage.setItem('voxquest_active_reminder_alert', JSON.stringify(e.payload));
+      } catch {}
     }).then((fn) => {
       unlisten = fn;
     });
+
+    const onUtilityUpdated = () => {
+      try {
+        const storedAlert = localStorage.getItem('voxquest_active_reminder_alert');
+        if (!storedAlert) {
+          setReminderAlert(null);
+        } else {
+          setReminderAlert(JSON.parse(storedAlert));
+        }
+      } catch {}
+    };
+    window.addEventListener('voxquest-utility-updated', onUtilityUpdated);
 
     const checkReminders = () => {
       try {
@@ -186,9 +263,19 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
             if (item.lastNotifiedDate === todayStr) return item;
             const targetTime = item.timeStr || '09:00';
             if (currentTime >= targetTime) {
+              const alertData = {
+                title: 'VoxQuest Task Reminder',
+                message: `Task Due: ${item.label}`,
+                label: item.label,
+                timeStr: item.timeStr || targetTime,
+              };
+              setReminderAlert(alertData);
+              try {
+                localStorage.setItem('voxquest_active_reminder_alert', JSON.stringify(alertData));
+              } catch {}
               safeInvoke('send_system_notification_cmd', {
                 title: 'VoxQuest Task Reminder',
-                message: `Task Due Today: ${item.label}`,
+                message: `Task Due: ${item.label}`,
               });
               changed = true;
               return { ...item, lastNotifiedDate: todayStr };
@@ -209,7 +296,7 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
     return () => {
       cancelled = true;
       clearInterval(timer);
-      if (hideTimer) clearTimeout(hideTimer);
+      window.removeEventListener('voxquest-utility-updated', onUtilityUpdated);
       if (unlisten) unlisten();
     };
   }, []);
@@ -410,25 +497,63 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
       className="w-screen h-screen flex flex-col items-center justify-end pb-1 pt-2 select-none bg-transparent overflow-visible"
       style={{ background: 'transparent' }}
     >
-      {/* Tiny Sleek Listening / Action / Reminder Pill Above Robot */}
-      <div className="h-5 flex items-center justify-center mb-0.5 shrink-0">
+      {/* Tiny Sleek Listening / Action / Persistent Reminder Card Above Robot */}
+      <div className="min-h-5 flex items-center justify-center mb-0.5 shrink-0 z-40">
         {reminderAlert ? (
-          <button
-            type="button"
-            onClick={() => setReminderAlert(null)}
-            className="px-2.5 py-[2px] rounded-full text-[9px] font-mono font-bold tracking-tight border border-[#DDA44D] bg-[#FAF8F2] text-[#08534E] shadow-sm animate-fadeIn max-w-[172px] flex items-center gap-1 cursor-pointer"
-            title={`${reminderAlert.title}: ${reminderAlert.message}`}
+          <div
+            data-tauri-no-drag
+            className="px-2 py-1 rounded-xl border border-amber/70 dark:border-mint/50 bg-[#FFFDF7] dark:bg-[#152224] text-charcoal dark:text-cream shadow-md animate-fadeIn flex flex-col gap-1 max-w-[160px]"
           >
-            <Bell className="w-2.5 h-2.5 text-[#DA6C4C] shrink-0" />
-            <span className="truncate">{reminderAlert.message.replace('Task Due Today: ', '')}</span>
-          </button>
+            <div className="flex items-center justify-between gap-1 text-[9px] font-bold">
+              <div className="flex items-center gap-1 min-w-0 text-darkTeal dark:text-mint">
+                <Bell className="w-2.5 h-2.5 text-terracotta shrink-0 animate-bounce" />
+                <span className="truncate">{reminderAlert.label || reminderAlert.message.replace('Task Due Today: ', '').replace('Task Due: ', '')}</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleDismissAlert}
+                className="text-charcoal/40 hover:text-charcoal dark:text-sage dark:hover:text-cream cursor-pointer shrink-0"
+                title="Dismiss"
+              >
+                <X className="w-2.5 h-2.5" />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-1 pt-0.5 border-t border-charcoal/10 dark:border-white/10">
+              <button
+                type="button"
+                onClick={() => handleSnooze(15)}
+                className="flex-1 py-0.5 px-1 rounded bg-darkTeal text-white text-[8px] font-bold hover:bg-darkTeal/90 transition-all cursor-pointer flex items-center justify-center gap-0.5 shadow-2xs"
+                title="Remind me again in 15 minutes"
+              >
+                <RotateCcw className="w-2 h-2 text-amber" />
+                <span>+15m Snooze</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSnooze(5)}
+                className="py-0.5 px-1 rounded bg-stone-100 dark:bg-darkTealElevated text-charcoal dark:text-cream text-[8px] font-bold hover:bg-stone-200 cursor-pointer"
+                title="Snooze for 5 minutes"
+              >
+                +5m
+              </button>
+              <button
+                type="button"
+                onClick={handleDismissAlert}
+                className="py-0.5 px-1 rounded bg-terracotta/15 text-terracotta text-[8px] font-bold hover:bg-terracotta/25 cursor-pointer"
+                title="Mark Done"
+              >
+                Done
+              </button>
+            </div>
+          </div>
         ) : status.state === 'recording' ? (
-          <div className="px-2 py-[1px] rounded-full text-[8.5px] font-mono font-bold tracking-wider uppercase border border-terracotta bg-cream/95 text-terracotta shadow-xs animate-fadeIn flex items-center gap-1.5">
+          <div className="px-2 py-[1px] rounded-full text-[8.5px] font-bold tracking-wider uppercase border border-terracotta bg-cream/95 text-terracotta shadow-xs animate-fadeIn flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-terracotta" />
             <span>Listening</span>
           </div>
         ) : actionToast ? (
-          <div className="px-2 py-[1px] rounded-full text-[8.5px] font-mono font-bold tracking-tight border border-darkTeal/40 bg-cream/95 text-darkTeal shadow-xs animate-fadeIn max-w-[152px] truncate">
+          <div className="px-2 py-[1px] rounded-full text-[8.5px] font-bold tracking-tight border border-darkTeal/40 bg-cream/95 text-darkTeal shadow-xs animate-fadeIn max-w-[152px] truncate">
             {actionToast}
           </div>
         ) : null}

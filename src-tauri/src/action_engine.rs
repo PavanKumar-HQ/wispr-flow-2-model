@@ -706,8 +706,20 @@ fn try_parse_reminder_or_schedule(trimmed: &str, lower_clean: &str) -> Option<Vo
         "set schedule ",
         "add a schedule ",
         "add schedule ",
+        "create a schedule ",
+        "create schedule ",
         "schedule a meeting ",
         "schedule meeting ",
+        "schedule an appointment ",
+        "schedule appointment ",
+        "schedule a call ",
+        "schedule call ",
+        "schedule a sync ",
+        "schedule sync ",
+        "schedule a ",
+        "schedule an ",
+        "schedule for ",
+        "schedule to ",
         "schedule ",
     ];
 
@@ -716,10 +728,21 @@ fn try_parse_reminder_or_schedule(trimmed: &str, lower_clean: &str) -> Option<Vo
             let words: Vec<&str> = rest.split_whitespace().collect();
             let mut duration_min: Option<u32> = None;
             let mut time_str: Option<String> = None;
+            let mut day_offset: Option<u32> = None;
             let mut label_words: Vec<&str> = Vec::new();
             let mut i = 0;
             while i < words.len() {
                 let w = words[i].trim_matches(|c: char| c.is_ascii_punctuation());
+                if w == "tomorrow" {
+                    day_offset = Some(1);
+                    i += 1;
+                    continue;
+                }
+                if w == "today" {
+                    day_offset = Some(0);
+                    i += 1;
+                    continue;
+                }
                 if w == "for" && i + 2 < words.len() {
                     if let Ok(mins) = words[i + 1].parse::<u32>() {
                         let unit = words[i + 2].trim_matches(|c: char| c.is_ascii_punctuation());
@@ -734,7 +757,7 @@ fn try_parse_reminder_or_schedule(trimmed: &str, lower_clean: &str) -> Option<Vo
                         }
                     }
                 }
-                if (w == "at" || w == "for") && i + 1 < words.len() && time_str.is_none() {
+                if (w == "at" || w == "for" || w == "after" || w == "by") && i + 1 < words.len() && time_str.is_none() {
                     if let Some((parsed_t, consumed)) = parse_spoken_time_token(&words[i + 1..]) {
                         time_str = Some(parsed_t);
                         i += 1 + consumed;
@@ -749,22 +772,26 @@ fn try_parse_reminder_or_schedule(trimmed: &str, lower_clean: &str) -> Option<Vo
             let clean_label = raw_label
                 .trim_start_matches("for ")
                 .trim_start_matches("to ")
+                .trim_start_matches("a ")
+                .trim_start_matches("an ")
                 .trim()
                 .to_string();
             let label = if clean_label.is_empty() {
-                "Scheduled Focus".to_string()
+                "Scheduled Commitment".to_string()
             } else {
                 let mut chars = clean_label.chars();
                 match chars.next() {
                     Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
-                    None => "Scheduled Focus".to_string(),
+                    None => "Scheduled Commitment".to_string(),
                 }
             };
             let dur = duration_min.unwrap_or(30);
+            let day_info = if day_offset == Some(1) { " tomorrow" } else { "" };
+            let time_info = if let Some(ref t) = time_str { format!(" at {}", t) } else { "".to_string() };
 
             return Some(VoiceActionResult {
                 action_type: "system_schedule".to_string(),
-                feedback_message: format!("Scheduled {} ({}m)", label, dur),
+                feedback_message: format!("Scheduled {}{}{} ({}m)", label, day_info, time_info, dur),
                 expanded_text: None,
                 suppress_paste: true,
                 utility_payload: Some(VoiceUtilityPayload {
@@ -772,7 +799,7 @@ fn try_parse_reminder_or_schedule(trimmed: &str, lower_clean: &str) -> Option<Vo
                     label,
                     time_str,
                     offset_minutes: None,
-                    day_offset: None,
+                    day_offset,
                     duration_min: Some(dur),
                 }),
             });
