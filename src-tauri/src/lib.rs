@@ -619,6 +619,7 @@ pub fn run() {
             commands::stop_meeting_recording_cmd,
             commands::get_active_meeting_cmd,
             commands::add_meeting_utterance_cmd,
+            commands::update_meeting_utterance_speaker_cmd,
             commands::generate_meeting_summary_cmd,
             commands::export_meeting_notes_cmd
         ])

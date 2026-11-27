@@ -126,6 +126,40 @@ impl MeetingService {
         }
     }
 
+    pub fn update_utterance_speaker(
+        &self,
+        session_id: &str,
+        utterance_id: &str,
+        speaker: String,
+        is_user: bool,
+    ) -> Result<MeetingSession, String> {
+        {
+            let mut active = self.active_session.lock().map_err(|e| e.to_string())?;
+            if let Some(session) = active.as_mut() {
+                if session.id == session_id {
+                    if let Some(utt) = session.utterances.iter_mut().find(|u| u.id == utterance_id) {
+                        utt.speaker = speaker;
+                        utt.is_user = is_user;
+                    }
+                    return Ok(session.clone());
+                }
+            }
+        }
+
+        let mut past = self.past_sessions.lock().map_err(|e| e.to_string())?;
+        for session in past.iter_mut() {
+            if session.id == session_id {
+                if let Some(utt) = session.utterances.iter_mut().find(|u| u.id == utterance_id) {
+                    utt.speaker = speaker;
+                    utt.is_user = is_user;
+                }
+                return Ok(session.clone());
+            }
+        }
+
+        Err("Meeting session not found".to_string())
+    }
+
     pub fn stop_meeting(&self) -> Result<MeetingSession, String> {
         let mut active = self.active_session.lock().map_err(|e| e.to_string())?;
         match active.take() {

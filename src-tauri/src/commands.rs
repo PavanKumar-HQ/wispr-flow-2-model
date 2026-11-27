@@ -2669,7 +2669,12 @@ pub fn start_meeting_recording_cmd(
     Ok(session)
 }
 
-fn transcribe_meeting_samples(state: &State<'_, AppState>, samples: &[f32]) {
+fn transcribe_meeting_samples(
+    state: &State<'_, AppState>,
+    samples: &[f32],
+    speaker: &str,
+    is_user: bool,
+) {
     if samples.is_empty() || crate::audio_service::is_audio_silent_or_too_short(samples) {
         return;
     }
@@ -2716,7 +2721,7 @@ fn transcribe_meeting_samples(state: &State<'_, AppState>, samples: &[f32]) {
                     for part in cleaned_trim.split_inclusive(['.', '!', '?']) {
                         let p = part.trim();
                         if !p.is_empty() {
-                            let _ = state.meeting.add_utterance("You".to_string(), p.to_string(), true);
+                            let _ = state.meeting.add_utterance(speaker.to_string(), p.to_string(), is_user);
                         }
                     }
                 }
@@ -2728,18 +2733,28 @@ fn transcribe_meeting_samples(state: &State<'_, AppState>, samples: &[f32]) {
 #[tauri::command]
 pub fn transcribe_live_meeting_chunk_cmd(
     state: State<'_, AppState>,
+    speaker: Option<String>,
+    is_user: Option<bool>,
 ) -> Result<Option<crate::meeting_service::MeetingSession>, String> {
     let samples = {
         let audio = state.audio.lock().unwrap();
         audio.drain_live_16k_chunk()
     };
-    transcribe_meeting_samples(&state, &samples);
+    let spk = speaker
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .unwrap_or("You");
+    let user_flag = is_user.unwrap_or_else(|| spk == "You");
+    transcribe_meeting_samples(&state, &samples, spk, user_flag);
     state.meeting.get_active_meeting()
 }
 
 #[tauri::command]
 pub fn stop_meeting_recording_cmd(
     state: State<'_, AppState>,
+    speaker: Option<String>,
+    is_user: Option<bool>,
 ) -> Result<crate::meeting_service::MeetingSession, String> {
     let samples = {
         let mut audio = state.audio.lock().unwrap();
@@ -2750,8 +2765,27 @@ pub fn stop_meeting_recording_cmd(
         }
     };
 
-    transcribe_meeting_samples(&state, &samples);
+    let spk = speaker
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .unwrap_or("You");
+    let user_flag = is_user.unwrap_or_else(|| spk == "You");
+    transcribe_meeting_samples(&state, &samples, spk, user_flag);
     state.meeting.stop_meeting()
+}
+
+#[tauri::command]
+pub fn update_meeting_utterance_speaker_cmd(
+    state: State<'_, AppState>,
+    session_id: String,
+    utterance_id: String,
+    speaker: String,
+    is_user: bool,
+) -> Result<crate::meeting_service::MeetingSession, String> {
+    state
+        .meeting
+        .update_utterance_speaker(&session_id, &utterance_id, speaker, is_user)
 }
 
 #[tauri::command]

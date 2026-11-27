@@ -71,8 +71,14 @@ export const MeetingAssistantTab: React.FC = () => {
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
   const [manualInput, setManualInput] = useState<string>('');
   const [activeSpeaker, setActiveSpeaker] = useState<string>('Lead Engineer');
+  const [liveSpeaker, setLiveSpeaker] = useState<string>('You');
+  const liveSpeakerRef = useRef<string>('You');
   const transcriptContainerRef = useRef<HTMLDivElement>(null);
   const prevUtteranceCountRef = useRef<number>(0);
+
+  useEffect(() => {
+    liveSpeakerRef.current = liveSpeaker;
+  }, [liveSpeaker]);
 
   // Poll active session on mount
   useEffect(() => {
@@ -106,7 +112,11 @@ export const MeetingAssistantTab: React.FC = () => {
         if (chunkInFlight) return;
         chunkInFlight = true;
         try {
-          const updated = await safeInvoke<MeetingSession | null>('transcribe_live_meeting_chunk_cmd');
+          const spk = liveSpeakerRef.current || 'You';
+          const updated = await safeInvoke<MeetingSession | null>('transcribe_live_meeting_chunk_cmd', {
+            speaker: spk,
+            isUser: spk === 'You',
+          });
           if (updated && updated.utterances.length !== prevUtteranceCountRef.current) {
             setCurrentSession(updated);
           }
@@ -179,7 +189,11 @@ export const MeetingAssistantTab: React.FC = () => {
 
   const handleStopMeeting = async () => {
     try {
-      const res = await safeInvoke<MeetingSession>('stop_meeting_recording_cmd');
+      const spk = liveSpeakerRef.current || 'You';
+      const res = await safeInvoke<MeetingSession>('stop_meeting_recording_cmd', {
+        speaker: spk,
+        isUser: spk === 'You',
+      });
       if (res) {
         setCurrentSession(res);
         setIsRecording(false);
@@ -272,6 +286,48 @@ export const MeetingAssistantTab: React.FC = () => {
     navigator.clipboard.writeText(text);
     setCopiedSection(label);
     setTimeout(() => setCopiedSection(null), 2500);
+  };
+
+  const handleCopyFullTranscript = () => {
+    if (!currentSession || currentSession.utterances.length === 0) return;
+    const formatted = currentSession.utterances
+      .map((utt) => {
+        const mins = Math.floor(utt.timestamp_offset_secs / 60);
+        const secs = (utt.timestamp_offset_secs % 60).toString().padStart(2, '0');
+        const label = utt.is_user && utt.speaker !== 'You' ? `${utt.speaker} (You)` : utt.speaker;
+        return `[${mins}:${secs}] ${label}: ${utt.text}`;
+      })
+      .join('\n');
+    handleCopy(formatted, 'transcript');
+  };
+
+  const handleReassignUtteranceSpeaker = async (utteranceId: string, newSpeaker: string) => {
+    if (!currentSession) return;
+    const isUser = newSpeaker === 'You';
+    try {
+      const updated = await safeInvoke<MeetingSession>('update_meeting_utterance_speaker_cmd', {
+        sessionId: currentSession.id,
+        utteranceId,
+        speaker: newSpeaker,
+        isUser,
+      });
+      if (updated) {
+        setCurrentSession(updated);
+        return;
+      }
+    } catch (err) {
+      console.warn('Failed to persist utterance speaker change', err);
+    }
+    setCurrentSession((prev) =>
+      prev
+        ? {
+            ...prev,
+            utterances: prev.utterances.map((u) =>
+              u.id === utteranceId ? { ...u, speaker: newSpeaker, is_user: isUser } : u
+            ),
+          }
+        : null
+    );
   };
 
   const handleExportMarkdown = async () => {
@@ -420,16 +476,58 @@ export const MeetingAssistantTab: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left Column: Live Verbatim Meeting Stream (7 cols) */}
         <div className="lg:col-span-7 p-6 rounded-2xl bg-white dark:bg-darkTealSurface border border-charcoal/15 dark:border-darkTealBorder shadow-xs space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-charcoal/10 dark:border-darkTealBorder">
+          <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-charcoal/10 dark:border-darkTealBorder">
             <div className="flex items-center gap-2">
               <Mic className="w-4 h-4 text-darkTeal dark:text-amber" />
               <h3 className="text-xs font-bold font-mono uppercase tracking-wider text-charcoal dark:text-cream">
                 Live Dual-Stream Verbatim Feed
               </h3>
             </div>
-            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-stone-100 dark:bg-darkTealElevated text-charcoal/70 dark:text-sage border border-charcoal/15 dark:border-darkTealBorder">
-              {currentSession?.utterances.length || 0} Exchanges
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-stone-100 dark:bg-darkTealElevated text-charcoal/70 dark:text-sage border border-charcoal/15 dark:border-darkTealBorder">
+                {currentSession?.utterances.length || 0} Exchanges
+              </span>
+              <button
+                type="button"
+                onClick={handleCopyFullTranscript}
+                disabled={!currentSession || currentSession.utterances.length === 0}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-stone-100 dark:bg-darkTealElevated hover:bg-stone-200 dark:hover:bg-darkTealBorder/60 disabled:opacity-40 disabled:cursor-not-allowed text-[10px] font-mono font-bold text-charcoal dark:text-cream border border-charcoal/15 dark:border-darkTealBorder transition-all cursor-pointer"
+                title="Copy entire transcript"
+              >
+                {copiedSection === 'transcript' ? (
+                  <>
+                    <Check className="w-3 h-3 text-emerald-500" />
+                    <span>Copied</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3 h-3" />
+                    <span>Copy Transcript</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Active Speaker Attribution Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-xl bg-stone-50 dark:bg-darkTealElevated/70 border border-charcoal/10 dark:border-darkTealBorder text-[11px] font-mono">
+            <span className="text-charcoal/60 dark:text-sage font-semibold">Speaking now:</span>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {['You', 'Participant', 'Speaker 2', 'Lead Engineer', 'Product Manager'].map((spk) => (
+                <button
+                  key={spk}
+                  type="button"
+                  onClick={() => setLiveSpeaker(spk)}
+                  className={`px-2 py-0.5 rounded-md border text-[10px] font-bold transition-all cursor-pointer ${
+                    liveSpeaker === spk
+                      ? 'bg-darkTeal text-white border-darkTeal dark:bg-amber dark:text-charcoal dark:border-amber'
+                      : 'bg-white dark:bg-darkTealSurface text-charcoal/70 dark:text-sage border-charcoal/15 dark:border-darkTealBorder hover:border-darkTeal/40'
+                  }`}
+                >
+                  {spk}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Transcript Feed Box */}
@@ -455,15 +553,22 @@ export const MeetingAssistantTab: React.FC = () => {
                   }`}
                 >
                   <div className="flex items-center justify-between mb-1 text-[11px] font-mono">
-                    <span
-                      className={`font-bold ${
+                    <select
+                      aria-label="Utterance speaker"
+                      value={utt.speaker}
+                      onChange={(e) => handleReassignUtteranceSpeaker(utt.id, e.target.value)}
+                      className={`font-bold bg-transparent border border-transparent hover:border-charcoal/20 dark:hover:border-darkTealBorder rounded px-1 py-0.5 cursor-pointer focus:outline-hidden ${
                         utt.is_user
                           ? 'text-amber-800 dark:text-amber'
                           : 'text-darkTeal dark:text-cream'
                       }`}
                     >
-                      {utt.speaker} {utt.is_user ? '(You)' : ''}
-                    </span>
+                      {Array.from(new Set([utt.speaker, 'You', 'Participant', 'Speaker 2', 'Lead Engineer', 'Product Manager', 'Security Architect'])).map((spk) => (
+                        <option key={spk} value={spk} className="bg-white dark:bg-darkTealSurface text-charcoal dark:text-cream">
+                          {spk}{spk === 'You' ? ' (You)' : ''}
+                        </option>
+                      ))}
+                    </select>
                     <span className="text-charcoal/40 dark:text-sage/60 text-[10px]">
                       {Math.floor(utt.timestamp_offset_secs / 60)}:
                       {(utt.timestamp_offset_secs % 60).toString().padStart(2, '0')}
