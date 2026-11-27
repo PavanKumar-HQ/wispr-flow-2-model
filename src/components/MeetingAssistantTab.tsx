@@ -467,7 +467,7 @@ export const MeetingAssistantTab: React.FC = () => {
             </span>
           </div>
           <span className="font-mono text-[11px] text-charcoal/50 dark:text-sage/60 shrink-0">
-            {isRecording ? 'Listening live...' : '100% On-Device &middot; Zero Cloud Leakage'}
+            {isRecording ? 'Listening live...' : '100% On-Device · Zero Cloud Leakage'}
           </span>
         </div>
       </div>
