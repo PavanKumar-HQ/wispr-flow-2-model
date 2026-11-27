@@ -440,7 +440,7 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
     if (status.state !== 'idle' || showSuccessFlash || isHovered || isSleeping || isCleaning) return;
 
     const sequence: Array<'idle' | 'sit' | 'dance' | 'walk' | 'fly'> = freeRoam
-      ? ['walk', 'walk', 'idle', 'fly', 'walk', 'dance', 'sit']
+      ? ['walk', 'idle', 'fly', 'dance', 'walk', 'sit', 'fly', 'walk']
       : ['idle', 'sit', 'dance', 'idle'];
 
     const interval = setInterval(() => {
