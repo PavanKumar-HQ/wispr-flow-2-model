@@ -122,18 +122,27 @@ export default function App() {
   }, [isOverlayWindow, activeReminder]);
 
   const handleSnoozeReminder = (mins: number) => {
-    if (!activeReminder) return;
-    const taskLabel = activeReminder.label.trim();
+    const rawLabel =
+      activeReminder?.label ||
+      reminderAlert?.message
+        ?.replace('Task Due Today: ', '')
+        .replace('Task Due: ', '')
+        .replace(' — Click Remind in 15m or Done', '') ||
+      'Reminder';
+    const taskLabel = rawLabel.trim();
     const triggerAtMs = Date.now() + mins * 60000;
     const now = new Date(triggerAtMs);
     const newTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
+    let matchedInCalendar = false;
     try {
       const stored = localStorage.getItem('voxquest_marked_calendar_dates');
       if (stored) {
         const list = JSON.parse(stored);
         const updated = list.map((item: any) => {
           if (item.label?.trim() === taskLabel || item.label?.includes(taskLabel) || taskLabel.includes(item.label)) {
+            matchedInCalendar = true;
             return {
               ...item,
               timeStr: newTimeStr,
@@ -143,37 +152,78 @@ export default function App() {
           }
           return item;
         });
+        if (!matchedInCalendar) {
+          updated.push({
+            dateStr: todayStr,
+            label: taskLabel,
+            createdAt: Date.now(),
+            timeStr: newTimeStr,
+            triggerAtMs,
+            reminderEnabled: true,
+          });
+        }
         localStorage.setItem('voxquest_marked_calendar_dates', JSON.stringify(updated));
+      } else {
+        localStorage.setItem(
+          'voxquest_marked_calendar_dates',
+          JSON.stringify([
+            {
+              dateStr: todayStr,
+              label: taskLabel,
+              createdAt: Date.now(),
+              timeStr: newTimeStr,
+              triggerAtMs,
+              reminderEnabled: true,
+            },
+          ])
+        );
       }
       localStorage.removeItem('voxquest_active_reminder_alert');
+      localStorage.setItem(
+        'voxquest_active_timer',
+        JSON.stringify({ endAt: triggerAtMs, label: taskLabel })
+      );
+      window.dispatchEvent(new Event('voxquest-timer-sync'));
     } catch {}
 
     setActiveReminder(null);
+    setReminderAlert(null);
     window.dispatchEvent(new Event('voxquest-utility-updated'));
   };
 
   const handleDismissReminder = () => {
-    if (!activeReminder) return;
-    const taskLabel = activeReminder.label.trim();
+    const rawLabel =
+      activeReminder?.label ||
+      reminderAlert?.message
+        ?.replace('Task Due Today: ', '')
+        .replace('Task Due: ', '')
+        .replace(' — Click Remind in 15m or Done', '') ||
+      '';
+    const taskLabel = rawLabel.trim();
     try {
-      const stored = localStorage.getItem('voxquest_marked_calendar_dates');
-      if (stored) {
-        const list = JSON.parse(stored);
-        const updated = list.map((item: any) => {
-          if (item.label?.trim() === taskLabel || item.label?.includes(taskLabel) || taskLabel.includes(item.label)) {
-            return {
-              ...item,
-              reminderEnabled: false,
-            };
-          }
-          return item;
-        });
-        localStorage.setItem('voxquest_marked_calendar_dates', JSON.stringify(updated));
+      if (taskLabel) {
+        const stored = localStorage.getItem('voxquest_marked_calendar_dates');
+        if (stored) {
+          const list = JSON.parse(stored);
+          const updated = list.map((item: any) => {
+            if (item.label?.trim() === taskLabel || item.label?.includes(taskLabel) || taskLabel.includes(item.label)) {
+              return {
+                ...item,
+                reminderEnabled: false,
+              };
+            }
+            return item;
+          });
+          localStorage.setItem('voxquest_marked_calendar_dates', JSON.stringify(updated));
+        }
       }
       localStorage.removeItem('voxquest_active_reminder_alert');
+      localStorage.removeItem('voxquest_active_timer');
+      window.dispatchEvent(new Event('voxquest-timer-sync'));
     } catch {}
 
     setActiveReminder(null);
+    setReminderAlert(null);
     window.dispatchEvent(new Event('voxquest-utility-updated'));
   };
 
@@ -448,6 +498,13 @@ export default function App() {
     let unlistenAlert: (() => void) | undefined;
     safeListen<{ title: string; message: string }>('voxquest-reminder-alert', (e) => {
       if (!e.payload) return;
+      const t = e.payload.title || '';
+      const isDueOrComplete =
+        t.includes('Task Reminder') ||
+        t.includes('Reminder Still Due') ||
+        t.includes('Timer Complete') ||
+        e.payload.message?.includes('Task Due');
+      if (!isDueOrComplete) return;
       setReminderAlert(e.payload);
       // Stays visible persistently until user snoozes or dismisses
     }).then((fn) => {
@@ -457,6 +514,7 @@ export default function App() {
     return () => {
       clearInterval(timer);
       window.removeEventListener('voxquest-utility-updated', onUtilSync);
+      window.removeEventListener('storage', onUtilSync);
       if (unlistenUtility) unlistenUtility();
       if (unlistenAlert) unlistenAlert();
     };

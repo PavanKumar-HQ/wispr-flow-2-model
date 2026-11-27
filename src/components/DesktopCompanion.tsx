@@ -232,6 +232,13 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
     
     safeListen<{ title: string; message: string; label?: string; timeStr?: string }>('voxquest-reminder-alert', (e) => {
       if (cancelled || !e.payload) return;
+      const t = e.payload.title || '';
+      const isDueOrComplete =
+        t.includes('Task Reminder') ||
+        t.includes('Reminder Still Due') ||
+        t.includes('Timer Complete') ||
+        e.payload.message?.includes('Task Due');
+      if (!isDueOrComplete) return;
       setReminderAlert(e.payload);
       try {
         localStorage.setItem('voxquest_active_reminder_alert', JSON.stringify(e.payload));
