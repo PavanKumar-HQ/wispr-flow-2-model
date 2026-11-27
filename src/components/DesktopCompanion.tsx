@@ -343,7 +343,7 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
     }
 
     let cancelled = false;
-    const pollMs = isSleeping && !isHovered ? 650 : 320;
+    const pollMs = isSleeping && !isHovered ? 360 : 80;
 
     const pollGaze = async () => {
       if (cancelled || document.hidden) return;

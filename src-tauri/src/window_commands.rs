@@ -116,8 +116,8 @@ pub fn resize_pill_window(app: AppHandle, expanded: bool, direction: Option<Stri
                     ns_win.setHasShadow_(NO);
                 }
             }
-            let target_w = if expanded { 480.0 } else { 340.0 };
-            let target_h = if expanded { 745.0 } else { 115.0 };
+            let target_w = if expanded { 480.0 } else { 328.0 };
+            let target_h = if expanded { 745.0 } else { 54.0 };
 
             if let Ok(pos) = w.outer_position() {
                 if let Ok(Some(monitor)) = w.current_monitor() {
@@ -131,12 +131,12 @@ pub fn resize_pill_window(app: AppHandle, expanded: bool, direction: Option<Stri
                     });
 
                     // Keep horizontal center aligned during expansion and collapse
-                    let current_w = if let Ok(sz) = w.outer_size() { sz.width as f64 / scale } else { 340.0 };
+                    let current_w = if let Ok(sz) = w.outer_size() { sz.width as f64 / scale } else { 328.0 };
                     let adjusted_x = (current_x + (current_w - target_w) / 2.0).max(10.0);
 
                     if expanded {
                         if dir == "up" {
-                            let delta = target_h - 115.0;
+                            let delta = target_h - 54.0;
                             let new_y = (current_y - delta).max(44.0);
                             let _ = w.set_position(tauri::Position::Logical(tauri::LogicalPosition::new(adjusted_x, new_y)));
                         } else {
@@ -145,7 +145,7 @@ pub fn resize_pill_window(app: AppHandle, expanded: bool, direction: Option<Stri
                         }
                     } else {
                         if dir == "up" {
-                            let delta = 745.0 - 70.0;
+                            let delta = 745.0 - 54.0;
                             let new_y = (current_y + delta).min(screen_h - 165.0);
                             let _ = w.set_position(tauri::Position::Logical(tauri::LogicalPosition::new(adjusted_x, new_y)));
                         } else {
@@ -314,9 +314,14 @@ pub fn get_companion_gaze(app: AppHandle) -> (i8, i8, i32, i32) {
     };
 
     let scale = w.scale_factor().unwrap_or(1.0);
-
-    // Keep window interactive for clicks and drags
-    let _ = w.set_ignore_cursor_events(false);
+    let lx = (cursor.x - pos.x as f64) / scale;
+    let ly = (cursor.y - pos.y as f64) / scale;
+    // Tight silhouette around VoxBot so empty transparent margins pass clicks through to apps underneath
+    let in_robot = lx >= 6.0 && lx <= 138.0 && ly >= 14.0 && ly <= 180.0;
+    let should_ignore = !in_robot;
+    if COMPANION_IGNORE_CURSOR.swap(should_ignore, Ordering::SeqCst) != should_ignore {
+        let _ = w.set_ignore_cursor_events(should_ignore);
+    }
 
     let face_cx = pos.x as f64 + (size.width as f64 * 0.5);
     let face_cy = pos.y as f64 + (size.height as f64 * 0.42);
