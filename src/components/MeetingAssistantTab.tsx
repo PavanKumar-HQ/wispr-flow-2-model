@@ -90,16 +90,35 @@ export const MeetingAssistantTab: React.FC = () => {
     fetchActive();
   }, []);
 
-  // Timer loop when recording
+  // Timer loop & live chunked transcription when recording
   useEffect(() => {
     let interval: any = null;
+    let liveInterval: any = null;
+    let chunkInFlight = false;
+
     if (isRecording) {
       interval = setInterval(() => {
         setDurationSecs((prev) => prev + 1);
       }, 1000);
+
+      liveInterval = setInterval(async () => {
+        if (chunkInFlight) return;
+        chunkInFlight = true;
+        try {
+          const updated = await safeInvoke<MeetingSession | null>('transcribe_live_meeting_chunk_cmd');
+          if (updated) {
+            setCurrentSession(updated);
+          }
+        } catch (err) {
+          console.warn('Live meeting chunk transcription failed:', err);
+        } finally {
+          chunkInFlight = false;
+        }
+      }, 4500);
     }
     return () => {
       if (interval) clearInterval(interval);
+      if (liveInterval) clearInterval(liveInterval);
     };
   }, [isRecording]);
 

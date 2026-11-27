@@ -2669,6 +2669,74 @@ pub fn start_meeting_recording_cmd(
     Ok(session)
 }
 
+fn transcribe_meeting_samples(state: &State<'_, AppState>, samples: &[f32]) {
+    if samples.is_empty() || crate::audio_service::is_audio_silent_or_too_short(samples) {
+        return;
+    }
+    let trimmed = crate::audio_service::trim_audio_silence(samples, 16000);
+    if trimmed.is_empty() {
+        return;
+    }
+    let settings = state.settings.lock().unwrap().clone();
+    let models_dir = model_manager::get_voxquest_models_dir();
+    let manifest = model_manifest::get_official_manifest();
+
+    let model_info = manifest
+        .iter()
+        .find(|m| m.id == settings.default_model_id && models_dir.join(&m.filename).exists())
+        .or_else(|| {
+            ["whisper-base-en-q5_1", "whisper-base-q5_1", "whisper-tiny-q5_1"]
+                .iter()
+                .filter_map(|id| manifest.iter().find(|m| &m.id == id))
+                .find(|m| models_dir.join(&m.filename).exists())
+        })
+        .cloned();
+
+    if let Some(info) = model_info {
+        let model_path = models_dir.join(&info.filename);
+        let mut engine = state.whisper.lock().unwrap();
+        let path_str = model_path.to_string_lossy().to_string();
+        let loaded = if !engine.is_loaded() || engine.current_model_path() != Some(&path_str) {
+            engine.load_model(&model_path).is_ok()
+        } else {
+            true
+        };
+        if loaded {
+            engine.set_max_threads(settings.max_cpu_threads.clamp(2, 4));
+            let lang = if settings.language == "auto" {
+                None
+            } else {
+                Some(settings.language.as_str())
+            };
+            if let Ok(raw) = engine.transcribe(&trimmed, lang, None) {
+                let cleaned = clean_whisper_transcript(&raw);
+                let cleaned_trim = cleaned.trim();
+                if !cleaned_trim.is_empty() {
+                    // Split multi-sentence meeting speech into individual transcript utterances
+                    for part in cleaned_trim.split_inclusive(['.', '!', '?']) {
+                        let p = part.trim();
+                        if !p.is_empty() {
+                            let _ = state.meeting.add_utterance("You".to_string(), p.to_string(), true);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[tauri::command]
+pub fn transcribe_live_meeting_chunk_cmd(
+    state: State<'_, AppState>,
+) -> Result<Option<crate::meeting_service::MeetingSession>, String> {
+    let samples = {
+        let audio = state.audio.lock().unwrap();
+        audio.drain_live_16k_chunk()
+    };
+    transcribe_meeting_samples(&state, &samples);
+    state.meeting.get_active_meeting()
+}
+
 #[tauri::command]
 pub fn stop_meeting_recording_cmd(
     state: State<'_, AppState>,
@@ -2682,58 +2750,7 @@ pub fn stop_meeting_recording_cmd(
         }
     };
 
-    if !samples.is_empty() && !crate::audio_service::is_audio_silent_or_too_short(&samples) {
-        let trimmed = crate::audio_service::trim_audio_silence(&samples, 16000);
-        if !trimmed.is_empty() {
-            let settings = state.settings.lock().unwrap().clone();
-            let models_dir = model_manager::get_voxquest_models_dir();
-            let manifest = model_manifest::get_official_manifest();
-
-            let model_info = manifest
-                .iter()
-                .find(|m| m.id == settings.default_model_id && models_dir.join(&m.filename).exists())
-                .or_else(|| {
-                    ["whisper-base-en-q5_1", "whisper-base-q5_1", "whisper-tiny-q5_1"]
-                        .iter()
-                        .filter_map(|id| manifest.iter().find(|m| &m.id == id))
-                        .find(|m| models_dir.join(&m.filename).exists())
-                })
-                .cloned();
-
-            if let Some(info) = model_info {
-                let model_path = models_dir.join(&info.filename);
-                let mut engine = state.whisper.lock().unwrap();
-                let path_str = model_path.to_string_lossy().to_string();
-                let loaded = if !engine.is_loaded() || engine.current_model_path() != Some(&path_str) {
-                    engine.load_model(&model_path).is_ok()
-                } else {
-                    true
-                };
-                if loaded {
-                    engine.set_max_threads(settings.max_cpu_threads.clamp(2, 4));
-                    let lang = if settings.language == "auto" {
-                        None
-                    } else {
-                        Some(settings.language.as_str())
-                    };
-                    if let Ok(raw) = engine.transcribe(&trimmed, lang, None) {
-                        let cleaned = clean_whisper_transcript(&raw);
-                        let cleaned_trim = cleaned.trim();
-                        if !cleaned_trim.is_empty() {
-                            // Split multi-sentence meeting speech into individual transcript utterances
-                            for part in cleaned_trim.split_inclusive(['.', '!', '?']) {
-                                let p = part.trim();
-                                if !p.is_empty() {
-                                    let _ = state.meeting.add_utterance("You".to_string(), p.to_string(), true);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
+    transcribe_meeting_samples(&state, &samples);
     state.meeting.stop_meeting()
 }
 

@@ -255,23 +255,27 @@ impl AudioCaptureService {
             return Ok(Vec::new());
         }
 
-        let target_samples = if self.input_sample_rate != 16000 {
-            linear_resample(&raw_samples, self.input_sample_rate, 16000)
-        } else {
-            raw_samples
-        };
-
-        // Intelligent Noise Suppression & Voice Activity Isolation:
-        // 1. High-pass filters low-frequency rumble (AC, desk bumps, fan noise < 85 Hz)
-        // 2. Profiles ambient noise floor and soft-gates background noise during pauses
-        // 3. Trims non-speech silence boundaries so Whisper only transcribes user speech
-        let isolated_samples = isolate_voice_and_suppress_noise(&target_samples, 16000);
-
-        Ok(isolated_samples)
+        Ok(Self::process_raw_samples_to_16k(raw_samples, self.input_sample_rate))
     }
 
     pub fn is_recording(&self) -> bool {
         *self.is_recording.lock().unwrap()
+    }
+
+    fn process_raw_samples_to_16k(raw_samples: Vec<f32>, input_sample_rate: u32) -> Vec<f32> {
+        if raw_samples.is_empty() {
+            return Vec::new();
+        }
+        let target_samples = if input_sample_rate != 16000 {
+            linear_resample(&raw_samples, input_sample_rate, 16000)
+        } else {
+            raw_samples
+        };
+        // Intelligent Noise Suppression & Voice Activity Isolation:
+        // 1. High-pass filters low-frequency rumble (AC, desk bumps, fan noise < 85 Hz)
+        // 2. Profiles ambient noise floor and soft-gates background noise during pauses
+        // 3. Trims non-speech silence boundaries so Whisper only transcribes user speech
+        isolate_voice_and_suppress_noise(&target_samples, 16000)
     }
 
     /// Non-destructive 16kHz snapshot of the current recording buffer (used to peek for voice commands).
@@ -280,15 +284,20 @@ impl AudioCaptureService {
             let buf = self.buffer.lock().unwrap();
             buf.clone()
         };
-        if raw_samples.is_empty() {
+        Self::process_raw_samples_to_16k(raw_samples, self.input_sample_rate)
+    }
+
+    /// Drains currently buffered audio as 16kHz voice-isolated samples while keeping recording active
+    /// (used for live chunked transcription during meetings).
+    pub fn drain_live_16k_chunk(&self) -> Vec<f32> {
+        if !self.is_recording() {
             return Vec::new();
         }
-        let target_samples = if self.input_sample_rate != 16000 {
-            linear_resample(&raw_samples, self.input_sample_rate, 16000)
-        } else {
-            raw_samples
+        let raw_samples = {
+            let mut buf = self.buffer.lock().unwrap();
+            std::mem::take(&mut *buf)
         };
-        isolate_voice_and_suppress_noise(&target_samples, 16000)
+        Self::process_raw_samples_to_16k(raw_samples, self.input_sample_rate)
     }
 }
 

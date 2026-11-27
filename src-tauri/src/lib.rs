@@ -615,6 +615,7 @@ pub fn run() {
             commands::run_system_clean_and_boost_cmd,
             commands::launch_squirrel_cleaner_cmd,
             commands::start_meeting_recording_cmd,
+            commands::transcribe_live_meeting_chunk_cmd,
             commands::stop_meeting_recording_cmd,
             commands::get_active_meeting_cmd,
             commands::add_meeting_utterance_cmd,
