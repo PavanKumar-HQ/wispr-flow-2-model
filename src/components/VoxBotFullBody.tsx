@@ -131,16 +131,37 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
           </radialGradient>
 
           <radialGradient id="vb3dCoreGlow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor={coreColor} stopOpacity="0.85" />
-            <stop offset="55%" stopColor={coreColor} stopOpacity="0.3" />
+            <stop offset="0%" stopColor={coreColor} stopOpacity="0.95" />
+            <stop offset="45%" stopColor={coreColor} stopOpacity="0.4" />
             <stop offset="100%" stopColor={coreColor} stopOpacity="0" />
           </radialGradient>
 
           <radialGradient id="vb3dAntennaGlow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor={isListening ? '#DA6C4C' : isTranscribing ? '#FFD07B' : '#34A89E'} stopOpacity="0.85" />
+            <stop offset="0%" stopColor={isListening ? '#DA6C4C' : isTranscribing ? '#FFD07B' : '#34A89E'} stopOpacity="0.9" />
             <stop offset="55%" stopColor={coreColor} stopOpacity="0.3" />
             <stop offset="100%" stopColor={coreColor} stopOpacity="0" />
           </radialGradient>
+
+          {/* High-Fidelity Visor Gloss & Eye Emission Glow Filters */}
+          <filter id="vbEyeGlow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="1.8" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+
+          <filter id="vbCoreBloom" x="-40%" y="-40%" width="180%" height="180%">
+            <feGaussianBlur stdDeviation="3.2" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+
+          <filter id="vbSoftShadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="3" stdDeviation="2.5" floodColor="#061211" floodOpacity="0.22" />
+          </filter>
         </defs>
 
         {/* Ground Shadow (hidden when sitting or flying high) */}
@@ -150,8 +171,9 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
             cy="242"
             rx={isWalking ? 40 : 36}
             ry="6.5"
-            fill="#0A1010"
-            opacity="0.25"
+            fill="#061211"
+            opacity="0.32"
+            filter="url(#vbSoftShadow)"
             className={isWalking ? 'vb-shadow-walk' : 'vb-shadow-idle'}
           />
         )}
@@ -446,7 +468,10 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
               style={{ transformOrigin: '100px 139px' }}
             >
               <title>{isListening ? 'Click center button to stop listening' : 'Click center button to start listening'}</title>
-              <circle cx="100" cy="139" r="22" fill="url(#vb3dCoreGlow)" />
+              <circle cx="100" cy="139" r="23" fill="url(#vb3dCoreGlow)" filter="url(#vbCoreBloom)" opacity={isListening ? 0.95 : 0.65} />
+              {isListening && (
+                <circle cx="100" cy="139" r="28" fill="none" stroke="#DA6C4C" strokeWidth="1.6" className="animate-ping" opacity="0.5" />
+              )}
               <circle cx="100" cy="139" r="16.5" fill="url(#vb3dDark)" stroke={coreColor} strokeWidth="2.4" />
               <circle cx="100" cy="139" r="12.5" fill="none" stroke="#8C949E" strokeWidth="1.3" opacity="0.85" />
               <circle cx="100" cy="139" r="8.5" fill="none" stroke={coreColor} strokeWidth="1.6" opacity="0.9" />
@@ -584,16 +609,18 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
             {/* Teal Inner Bezel */}
             <rect x="52" y="42" width="96" height="58" rx="16" fill="url(#vb3dTeal)" stroke="#042E2B" strokeWidth="1.2" />
 
-            {/* Deep Curved CRT Glass */}
+            {/* Deep Curved CRT Glass with Glossy Specular Arc */}
             <rect x="57" y="47" width="86" height="48" rx="12" fill="url(#vb3dScreen)" />
-            <path d="M 64 52 Q 86 49 112 51" stroke="#46A8A0" strokeWidth="1.8" strokeLinecap="round" fill="none" opacity="0.32" />
+            <path d="M 63 53 Q 100 48 137 53" stroke="#52D1C5" strokeWidth="2" strokeLinecap="round" fill="none" opacity="0.38" />
+            <path d="M 68 57 Q 100 52 132 57" stroke="#FFFFFF" strokeWidth="1" strokeLinecap="round" fill="none" opacity="0.22" />
 
-            {/* ================= CLEAN, SPACIOUS LED EXPRESSIONS ================= */}
+            {/* ================= CLEAN, SPACIOUS LED EXPRESSIONS (WITH EMISSIVE BLOOM) ================= */}
             <g
               fill={eyeColor}
+              filter="url(#vbEyeGlow)"
               style={{
                 transform: `translate(${eyeShiftX}px, ${eyeShiftY}px)`,
-                transition: 'transform 180ms ease-out',
+                transition: 'transform 180ms cubic-bezier(0.2, 0.8, 0.3, 1)',
               }}
             >
               {isSleeping ? (

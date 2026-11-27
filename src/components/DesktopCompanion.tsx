@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell } from 'lucide-react';
+import { Bell, Mic, MapPin, Footprints, AppWindow, X, Moon, Music, Smile } from 'lucide-react';
 import { VoxBotFullBody, VoxBotPose } from './VoxBotFullBody';
 import { SessionSnapshot, NowPlayingInfo } from '../types';
 import { safeInvoke, safeListen } from '../lib/ipc';
@@ -14,16 +14,16 @@ const MOUSE_REST_SLEEP_MS = 6000; // Fall asleep after 6s of no mouse movement
 
 /**
  * Autonomous, Battery-Friendly Desktop Companion Window (VoxBot).
- * - Active whenever the mouse moves; falls asleep after 6s of mouse rest.
- * - Wakes immediately when the mouse moves again or when hovered/clicked.
- * - Roams freely in 2D (up, down, left, right) across the desktop when walking.
- * - Single click: immediately starts/stops dictation; drag (>5px): repositions.
+ * - Anchored by default: stays right where you place it without window jitter.
+ * - Active gaze tracking: eyes and head follow your cursor with zero latency.
+ * - Right-click context menu: 1-click dock, mood/pose changer, and roam toggle.
+ * - Single click on chest core: starts/stops dictation; drag (>5px): moves window smoothly.
  */
 export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
   status,
   onToggleDictation,
 }) => {
-  const [autoPose, setAutoPose] = useState<'idle' | 'walk' | 'fly' | 'sit' | 'sleep' | 'wave' | 'dance'>('walk');
+  const [autoPose, setAutoPose] = useState<'idle' | 'walk' | 'fly' | 'sit' | 'sleep' | 'wave' | 'dance'>('idle');
   const [facing, setFacing] = useState<'left' | 'right'>('right');
   const [gaze, setGaze] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState<boolean>(false);
@@ -32,6 +32,14 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
   const [actionToast, setActionToast] = useState<string | null>(null);
   const [reminderAlert, setReminderAlert] = useState<{ title: string; message: string } | null>(null);
   const [isMusicPlaying, setIsMusicPlaying] = useState<boolean>(false);
+  const [showContextMenu, setShowContextMenu] = useState<boolean>(false);
+  const [freeRoam, setFreeRoam] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('voxquest_bot_freeroam') === 'true';
+    } catch {
+      return false;
+    }
+  });
 
   const lastSessionIdRef = useRef<string | null>(null);
   const pointerDownRef = useRef<{ x: number; y: number; dragged: boolean } | null>(null);
@@ -40,9 +48,42 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
     y: -1,
     movedAt: Date.now(),
   });
-  const walkVecRef = useRef<{ vx: number; vy: number }>({ vx: -2.4, vy: -1.1 });
+  const walkVecRef = useRef<{ vx: number; vy: number }>({ vx: -2.0, vy: -0.9 });
   const poseIdxRef = useRef<number>(0);
   const isSleeping = autoPose === 'sleep';
+
+  // Close context menu on outside click
+  useEffect(() => {
+    if (!showContextMenu) return;
+    const handleOutsideClick = () => setShowContextMenu(false);
+    window.addEventListener('click', handleOutsideClick);
+    return () => window.removeEventListener('click', handleOutsideClick);
+  }, [showContextMenu]);
+
+  // Toggle free roam preference
+  const toggleFreeRoam = () => {
+    const next = !freeRoam;
+    setFreeRoam(next);
+    try {
+      localStorage.setItem('voxquest_bot_freeroam', String(next));
+    } catch {}
+  };
+
+  // Reset companion position to bottom-right corner
+  const handleDockBottomRight = async () => {
+    setShowContextMenu(false);
+    try {
+      const win = getCurrentWindow();
+      const mon = await currentMonitor();
+      if (!mon) return;
+      const scale = mon.scaleFactor || 1;
+      const screenW = mon.size.width / scale;
+      const screenH = mon.size.height / scale;
+      const x = Math.max(20, screenW - 190);
+      const y = Math.max(44, screenH - 255);
+      await win.setPosition(new LogicalPosition(x, y));
+    } catch {}
+  };
 
   // Brief celebration & action confirmation bubble when a transcription/command completes
   useEffect(() => {
@@ -227,40 +268,33 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
     };
   }, [status.state, isSleeping, isHovered, isMusicPlaying]);
 
-  // Active autonomous behavior while mouse is moving/awake: walk -> fly -> wave -> idle -> sit -> dance
+  // Active autonomous behavior while awake: gentle sequence (idle -> wave -> sit -> dance)
   useEffect(() => {
     if (status.state !== 'idle' || showSuccessFlash || isHovered || isSleeping) return;
 
-    const sequence: Array<'walk' | 'fly' | 'wave' | 'idle' | 'sit' | 'dance'> = [
-      'walk',
-      'fly',
-      'wave',
-      'idle',
-      'sit',
-      'dance',
-    ];
+    const sequence: Array<'idle' | 'wave' | 'sit' | 'dance' | 'walk' | 'fly'> = freeRoam
+      ? ['walk', 'fly', 'wave', 'idle', 'sit', 'dance']
+      : ['idle', 'wave', 'sit', 'dance', 'idle'];
 
     const interval = setInterval(() => {
       if (document.hidden) return;
       poseIdxRef.current = (poseIdxRef.current + 1) % sequence.length;
       const next = sequence[poseIdxRef.current];
-      if (next === 'walk') {
-        // Walk smoothly horizontally at a natural pace matched to stride cycle
+      if (freeRoam && next === 'walk') {
         const dir = Math.random() > 0.5 ? 1 : -1;
-        walkVecRef.current = { vx: dir * 5.2, vy: 0 };
-      } else if (next === 'fly') {
-        // Fly freely in 2D across the desktop!
+        walkVecRef.current = { vx: dir * 4.2, vy: 0 };
+      } else if (freeRoam && next === 'fly') {
         const angle = Math.random() * Math.PI * 2;
         walkVecRef.current = {
-          vx: Math.cos(angle) * 4.4,
-          vy: Math.sin(angle) * 2.8,
+          vx: Math.cos(angle) * 3.6,
+          vy: Math.sin(angle) * 2.2,
         };
       }
       setAutoPose(next);
-    }, 3200);
+    }, 4500);
 
     return () => clearInterval(interval);
-  }, [status.state, showSuccessFlash, isHovered, isSleeping]);
+  }, [status.state, showSuccessFlash, isHovered, isSleeping, freeRoam]);
 
   const effectiveIdlePose = isHovered && autoPose === 'sleep' ? 'sit' : autoPose;
 
@@ -275,9 +309,9 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
       ? 'music'
       : effectiveIdlePose;
 
-  // Smooth 30fps GPU-friendly desktop movement for 'walk' (horizontal) and 'fly' (2D jetpack flight)
+  // GPU-friendly desktop roaming (ONLY active when freeRoam is explicitly enabled)
   useEffect(() => {
-    if ((activePose !== 'walk' && activePose !== 'fly') || isHovered) return;
+    if (!freeRoam || (activePose !== 'walk' && activePose !== 'fly') || isHovered) return;
 
     let cancelled = false;
     let cachedBounds: { screenW: number; screenH: number } | null = null;
@@ -305,8 +339,8 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
           if (cancelled) return;
           rafId = requestAnimationFrame(tick);
           if (document.hidden || pointerDownRef.current || !cachedBounds || !currentPos) return;
-          if (now - lastFrameAt < 32) return; // ~30fps cap for low thermal/CPU load
-          const dt = lastFrameAt ? Math.min((now - lastFrameAt) / 95, 1.5) : 0.35;
+          if (now - lastFrameAt < 48) return; // ~20fps relaxed step interval for silky smooth desktop compositing
+          const dt = lastFrameAt ? Math.min((now - lastFrameAt) / 100, 1.2) : 0.35;
           lastFrameAt = now;
 
           const minX = 24;
@@ -314,8 +348,8 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
           const minY = 48;
           const maxY = Math.max(minY + 40, cachedBounds.screenH - 255);
 
-          let nextX = currentPos.x + walkVecRef.current.vx * 1.1 * dt;
-          let nextY = currentPos.y + walkVecRef.current.vy * 1.1 * dt;
+          let nextX = currentPos.x + walkVecRef.current.vx * 1.0 * dt;
+          let nextY = currentPos.y + walkVecRef.current.vy * 1.0 * dt;
 
           if (nextX <= minX) {
             nextX = minX;
@@ -358,7 +392,7 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
       cancelled = true;
       if (rafId) cancelAnimationFrame(rafId);
     };
-  }, [activePose, isHovered]);
+  }, [activePose, isHovered, freeRoam]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.button !== 0) return;
@@ -427,8 +461,12 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
-        className="cursor-grab active:cursor-grabbing hover:scale-[1.03] transition-transform shrink-0 will-change-transform"
-        title="Click center chest core to dictate • Drag anywhere else to move"
+        onContextMenu={(e) => {
+          e.preventDefault();
+          setShowContextMenu((prev) => !prev);
+        }}
+        className="relative cursor-grab active:cursor-grabbing hover:scale-[1.03] transition-transform shrink-0 will-change-transform"
+        title="Click chest core to dictate • Drag anywhere to move • Right-click for options"
       >
         <VoxBotFullBody
           pose={activePose}
@@ -439,6 +477,110 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
           isBlinking={isBlinking}
           onCoreClick={onToggleDictation}
         />
+
+        {/* Sleek Right-Click Floating Quick Menu */}
+        {showContextMenu && (
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="absolute -top-36 left-1/2 -translate-x-1/2 w-44 bg-[#141C1E]/95 backdrop-blur-md border border-[#34A89E]/40 rounded-xl p-1.5 shadow-2xl text-[11px] text-[#E6E2D3] z-50 flex flex-col gap-0.5 animate-fadeIn"
+          >
+            <div className="flex items-center justify-between px-2 py-1 border-b border-white/10 text-[10px] font-mono uppercase tracking-wider text-[#34A89E]">
+              <span>VoxBot Menu</span>
+              <button
+                type="button"
+                onClick={() => setShowContextMenu(false)}
+                className="hover:text-white cursor-pointer"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setShowContextMenu(false);
+                onToggleDictation();
+              }}
+              className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-[#1E2B2D] text-left cursor-pointer transition-colors"
+            >
+              <Mic className="w-3.5 h-3.5 text-[#DA6C4C]" />
+              <span>{status.state === 'recording' ? 'Stop Listening' : 'Start Dictation'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleDockBottomRight}
+              className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-[#1E2B2D] text-left cursor-pointer transition-colors"
+            >
+              <MapPin className="w-3.5 h-3.5 text-[#DDA44D]" />
+              <span>Dock to Corner</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                toggleFreeRoam();
+                setShowContextMenu(false);
+              }}
+              className="flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-[#1E2B2D] text-left cursor-pointer transition-colors"
+            >
+              <span className="flex items-center gap-2">
+                <Footprints className="w-3.5 h-3.5 text-[#34A89E]" />
+                <span>Roam Desktop</span>
+              </span>
+              <span className="text-[9px] font-mono px-1 rounded bg-black/40 text-[#FFE08A]">
+                {freeRoam ? 'ON' : 'ANCHORED'}
+              </span>
+            </button>
+
+            <div className="flex items-center justify-between px-2 py-1 gap-1 border-t border-white/10 mt-0.5 pt-1">
+              <button
+                type="button"
+                title="Wave"
+                onClick={() => {
+                  setAutoPose('wave');
+                  setShowContextMenu(false);
+                }}
+                className="p-1 rounded hover:bg-[#1E2B2D] cursor-pointer"
+              >
+                <Smile className="w-3 h-3 text-[#FFE08A]" />
+              </button>
+              <button
+                type="button"
+                title="Dance"
+                onClick={() => {
+                  setAutoPose('dance');
+                  setShowContextMenu(false);
+                }}
+                className="p-1 rounded hover:bg-[#1E2B2D] cursor-pointer"
+              >
+                <Music className="w-3 h-3 text-[#34A89E]" />
+              </button>
+              <button
+                type="button"
+                title="Sleep"
+                onClick={() => {
+                  setAutoPose('sleep');
+                  setShowContextMenu(false);
+                }}
+                className="p-1 rounded hover:bg-[#1E2B2D] cursor-pointer"
+              >
+                <Moon className="w-3 h-3 text-[#7A9A96]" />
+              </button>
+              <button
+                type="button"
+                title="Open VoxQuest App"
+                onClick={() => {
+                  setShowContextMenu(false);
+                  safeInvoke('show_main_window_cmd');
+                }}
+                className="p-1 rounded hover:bg-[#1E2B2D] cursor-pointer"
+              >
+                <AppWindow className="w-3 h-3 text-[#DFDFD4]" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
