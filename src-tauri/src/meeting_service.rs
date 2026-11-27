@@ -197,19 +197,19 @@ impl MeetingService {
                 md.push_str("\n---\n\n");
 
                 if let Some(ref sum) = s.summary {
-                    md.push_str("## 🎯 Executive Summary\n\n");
+                    md.push_str("## Executive Summary\n\n");
                     for item in &sum.executive_summary {
                         md.push_str(&format!("- {}\n", item));
                     }
                     md.push_str("\n");
 
-                    md.push_str("## 💡 Key Decisions\n\n");
+                    md.push_str("## Key Decisions\n\n");
                     for decision in &sum.key_decisions {
                         md.push_str(&format!("- {}\n", decision));
                     }
                     md.push_str("\n");
 
-                    md.push_str("## ✅ Action Items\n\n");
+                    md.push_str("## Action Items\n\n");
                     md.push_str("| Assignee | Task | Priority | Deadline |\n");
                     md.push_str("| :--- | :--- | :--- | :--- |\n");
                     for act in &sum.action_items {
@@ -217,12 +217,12 @@ impl MeetingService {
                     }
                     md.push_str("\n");
 
-                    md.push_str("## ✉️ Draft Follow-up Email\n\n```text\n");
+                    md.push_str("## Draft Follow-up Email\n\n```text\n");
                     md.push_str(&sum.follow_up_email);
                     md.push_str("\n```\n\n---\n\n");
                 }
 
-                md.push_str("## 🎙️ Verbatim Transcript\n\n");
+                md.push_str("## Verbatim Transcript\n\n");
                 for utt in &s.utterances {
                     let mins = utt.timestamp_offset_secs / 60;
                     let secs = utt.timestamp_offset_secs % 60;
@@ -245,34 +245,102 @@ impl MeetingService {
             executive_summary.push("Meeting initiated and concluded with no spoken utterances recorded.".to_string());
             key_decisions.push("No explicit decisions logged.".to_string());
         } else {
-            // Intelligent heuristic synthesis from transcript
+            // Collect unique speakers and build dynamic summary from real utterances
+            let mut speakers: Vec<String> = Vec::new();
+            for u in &session.utterances {
+                if !speakers.contains(&u.speaker) {
+                    speakers.push(u.speaker.clone());
+                }
+            }
+
             executive_summary.push(format!(
-                "Reviewed cross-functional alignment and technical milestones across {} recorded exchanges.",
-                session.utterances.len()
+                "Captured {} spoken exchanges ({} min) with participants: {}.",
+                session.utterances.len(),
+                duration_mins.max(1),
+                speakers.join(", ")
             ));
-            executive_summary.push("Evaluated mobile trigger feasibility and real-time on-device voice processing performance.".to_string());
-            executive_summary.push("Confirmed zero-cloud privacy architecture with local Whisper quantization.".to_string());
 
-            key_decisions.push("Adopted Android AccessibilityService and Floating Edge Bubble overlay for zero-friction mobile activation.".to_string());
-            key_decisions.push("Enforced 100% on-device local transcription for all meeting audio to eliminate third-party data leakage.".to_string());
+            const DECISION_MARKERS: &[&str] = &[
+                "agreed", "agree", "decided", "decide", "let's use", "let's go with",
+                "we will use", "approved", "confirmed", "finalized", "settled on", "resolved",
+            ];
+            const ACTION_MARKERS: &[&str] = &[
+                "i will", "i'll", "we will", "we'll", "let's ", "we need to", "need to", "have to", "should ",
+                "must ", "action item", "todo", "to-do", "follow up", "finalize",
+                "send ", "prepare ", "fix ", "build ", "check ", "schedule ", "review ",
+            ];
 
-            action_items.push(MeetingActionItem {
-                id: "act-1".to_string(),
-                assignee: "Mobile Engineering Lead".to_string(),
-                task: "Finalize Android FloatingPillService and IME text injection pipeline.".to_string(),
-                priority: "High".to_string(),
-                deadline: "Sprint End".to_string(),
-                is_completed: false,
-            });
+            let mut highlights: Vec<String> = Vec::new();
+            for utt in &session.utterances {
+                let text = utt.text.trim();
+                if text.is_empty() {
+                    continue;
+                }
+                let lower = text.to_lowercase();
 
-            action_items.push(MeetingActionItem {
-                id: "act-2".to_string(),
-                assignee: "Voice Pipeline Team".to_string(),
-                task: "Verify 120 FPS latency metrics and Air-gapped offline model downloads.".to_string(),
-                priority: "Medium".to_string(),
-                deadline: "Friday".to_string(),
-                is_completed: false,
-            });
+                let is_decision = DECISION_MARKERS.iter().any(|m| lower.contains(m));
+                let is_action = ACTION_MARKERS.iter().any(|m| lower.contains(m));
+
+                if is_decision && key_decisions.len() < 5 {
+                    key_decisions.push(format!("{}: {}", utt.speaker, text));
+                }
+
+                if is_action && action_items.len() < 6 {
+                    let priority = if lower.contains("urgent")
+                        || lower.contains("asap")
+                        || lower.contains("critical")
+                        || lower.contains("today")
+                        || lower.contains("immediately")
+                    {
+                        "High"
+                    } else {
+                        "Medium"
+                    };
+
+                    let deadline = if lower.contains("today") {
+                        "Today"
+                    } else if lower.contains("tomorrow") {
+                        "Tomorrow"
+                    } else if lower.contains("friday") {
+                        "Friday"
+                    } else if lower.contains("monday") {
+                        "Monday"
+                    } else if lower.contains("next week") {
+                        "Next Week"
+                    } else if lower.contains("sprint") {
+                        "Sprint End"
+                    } else {
+                        "TBD"
+                    };
+
+                    action_items.push(MeetingActionItem {
+                        id: format!("act-{}", action_items.len() + 1),
+                        assignee: utt.speaker.clone(),
+                        task: text.to_string(),
+                        priority: priority.to_string(),
+                        deadline: deadline.to_string(),
+                        is_completed: false,
+                    });
+                }
+
+                if !is_decision && !is_action && text.split_whitespace().count() >= 4 && highlights.len() < 3 {
+                    highlights.push(format!("{}: {}", utt.speaker, text));
+                }
+            }
+
+            // Fill executive summary with top discussion highlights from real transcript
+            for h in highlights {
+                executive_summary.push(h);
+            }
+            if executive_summary.len() == 1 {
+                if let Some(first) = session.utterances.first() {
+                    executive_summary.push(format!("{}: {}", first.speaker, first.text.trim()));
+                }
+            }
+
+            if key_decisions.is_empty() {
+                key_decisions.push("No explicit decision statements detected in the transcript.".to_string());
+            }
         }
 
         let follow_up = format!(
