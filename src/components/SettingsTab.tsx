@@ -532,25 +532,33 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
             <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal dark:text-mint font-mono flex items-center gap-1.5">
               <Bot className="w-3.5 h-3.5" /> Assistant Wake Word & Persona
             </h3>
-            <span className="text-[10px] font-semibold text-amber-800 dark:text-amber bg-amber/10 px-2 py-0.5 rounded-full border border-amber/30">
-              {settings.enable_wake_word !== false ? 'Active' : 'Disabled'}
+            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+              settings.enable_wake_word
+                ? 'text-amber-800 dark:text-amber bg-amber/10 border-amber/30'
+                : 'text-darkTeal dark:text-mint bg-darkTeal/10 border-darkTeal/30'
+            }`}>
+              {settings.enable_wake_word ? 'Always-Listening (Uses Battery)' : 'Battery Saver (Zero Mic Idle)'}
             </span>
           </div>
 
           <p className="text-[11px] text-charcoal/70 dark:text-sage leading-relaxed">
-            Name your voice assistant tool (e.g. <span className="font-semibold text-darkTeal dark:text-mint">"Hey Vox"</span>, <span className="font-semibold text-darkTeal dark:text-mint">"Hey Google"</span>, or your own custom name). Calling this name will trigger an instant acknowledgement (<span className="italic">"I'm at your service!"</span>) and automatically strip the wake phrase so only your pure dictated speech is inserted into applications.
+            Name your voice assistant tool (e.g. <span className="font-semibold text-darkTeal dark:text-mint">"Hey Vox"</span>, <span className="font-semibold text-darkTeal dark:text-mint">"Hey Google"</span>, or your own custom name). Calling this name triggers hands-free listening and automatically strips the wake phrase so only your pure dictated speech is inserted into applications.
           </p>
 
           <div className="space-y-3 pt-1">
             {/* Toggle Enable Wake Word */}
             <label className="flex items-center justify-between cursor-pointer p-2.5 rounded-xl bg-neutral-50 dark:bg-darkTealCanvas border border-charcoal/10 dark:border-darkTealBorder">
               <div>
-                <span className="text-xs font-bold text-charcoal dark:text-cream block">Enable Wake Word Trigger</span>
-                <span className="text-[10px] text-charcoal/60 dark:text-sage">Listen for your assistant's name and strip it from the transcript</span>
+                <span className="text-xs font-bold text-charcoal dark:text-cream block">Hands-Free Wake Word Trigger</span>
+                <span className="text-[10px] text-charcoal/60 dark:text-sage">
+                  {settings.enable_wake_word
+                    ? 'Microphone remains continuously open in background (shows macOS orange indicator).'
+                    : 'Off (Recommended): Microphone is completely off when idle, saving battery.'}
+                </span>
               </div>
               <input
                 type="checkbox"
-                checked={settings.enable_wake_word !== false}
+                checked={Boolean(settings.enable_wake_word)}
                 onChange={(e) => handleChange('enable_wake_word', e.target.checked)}
                 className="w-4 h-4 rounded text-darkTeal focus:ring-darkTeal cursor-pointer"
               />

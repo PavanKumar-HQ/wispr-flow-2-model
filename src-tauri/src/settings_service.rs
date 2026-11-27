@@ -86,7 +86,7 @@ impl Default for AppSettings {
             enable_student_dataset_mode: true,
             student_speaker_id: "student_default".to_string(),
             theme: "light".to_string(),
-            enable_wake_word: true,
+            enable_wake_word: false,
             wake_word_name: "Hey Vox".to_string(),
             assistant_greeting: "I'm at your service! Listening...".to_string(),
         }
