@@ -1064,7 +1064,7 @@ export default function App() {
                 <div className="text-xs font-bold truncate">
                   {(reminderAlert?.message || activeReminder?.label || 'Task Due').replace('Task Due Today: ', '').replace('Task Due: ', '')}
                 </div>
-                <div className="text-[10px] text-charcoal/60 dark:text-sage font-mono">
+                <div className="text-[10px] text-charcoal/60 dark:text-sage">
                   {reminderAlert?.title || (activeReminder?.timeStr ? `Due at ${activeReminder.timeStr}` : 'Action required')}
                 </div>
               </div>
