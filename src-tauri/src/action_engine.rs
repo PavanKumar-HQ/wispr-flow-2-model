@@ -83,11 +83,37 @@ fn looks_like_prose_dictation(trimmed: &str, max_words: usize) -> bool {
     PROSE_MARKERS.iter().any(|m| lower.contains(m))
 }
 
+/// Strips assistant wake prefixes (e.g. "Hey Vox,", "Vox,", "Hey Google,", "Hey Jarvis,")
+/// so that command recognition and action dispatch work seamlessly whether called with or without a wake word.
+pub fn strip_wake_phrase(input: &str) -> &str {
+    let trimmed = input.trim();
+    let lower = trimmed.to_lowercase();
+    const WAKE_PREFIXES: &[&str] = &[
+        "hey vox", "hi vox", "vox",
+        "hey google", "ok google",
+        "hey jarvis", "jarvis",
+        "hey assistant", "assistant",
+        "hey bot", "bot",
+        "computer",
+    ];
+    for p in WAKE_PREFIXES {
+        if lower.starts_with(p) {
+            let remainder = &trimmed[p.len()..];
+            let stripped = remainder.trim_start_matches(|c: char| c.is_ascii_punctuation() || c.is_whitespace());
+            if !stripped.is_empty() {
+                return stripped;
+            }
+        }
+    }
+    trimmed
+}
+
 /// Side-effect-free check: returns true if `input` is an intentional voice command
 /// (search, play, open, reminder, schedule, timer, system clean/scan, language switch)
 /// rather than normal prose dictation. Used for smart command-only auto-stop.
 pub fn is_voice_command_intent(input: &str) -> bool {
-    let trimmed = input.trim();
+    let unprompted = strip_wake_phrase(input);
+    let trimmed = unprompted.trim();
     if trimmed.is_empty() {
         return false;
     }
@@ -128,7 +154,8 @@ pub fn is_voice_command_intent(input: &str) -> bool {
 /// Detects voice-triggered system actions with strict dictation guardrails.
 /// Returns Some(VoiceActionResult) if an intentional command or dynamic snippet was recognized.
 pub fn detect_voice_action(input: &str) -> Option<VoiceActionResult> {
-    let trimmed = input.trim();
+    let unprompted = strip_wake_phrase(input);
+    let trimmed = unprompted.trim();
     if trimmed.is_empty() {
         return None;
     }
@@ -188,17 +215,15 @@ pub fn detect_voice_action(input: &str) -> Option<VoiceActionResult> {
     //    Supports: "search youtube for <q>", "search on youtube <q>", "search google for <q>",
     //    "google <q>", or short "search <q>" (guarded against long prose dictation).
     let search_target: Option<(&str, &str)> = if lower_clean.starts_with("search youtube for ") {
-        Some(("youtube", trimmed[19..].trim()))
-    } else if lower_clean.starts_with("search on youtube ") {
-        Some(("youtube", trimmed[18..].trim()))
-    } else if lower_clean.starts_with("search in youtube ") {
-        Some(("youtube", trimmed[18..].trim()))
+        trimmed.get(19..).map(|q| ("youtube", q.trim()))
+    } else if lower_clean.starts_with("search on youtube ") || lower_clean.starts_with("search in youtube ") {
+        trimmed.get(18..).map(|q| ("youtube", q.trim()))
     } else if lower_clean.starts_with("search google for ") {
-        Some(("google", trimmed[18..].trim()))
+        trimmed.get(18..).map(|q| ("google", q.trim()))
     } else if lower_clean.starts_with("search ") {
-        Some(("google", trimmed[7..].trim()))
+        trimmed.get(7..).map(|q| ("google", q.trim()))
     } else if lower_clean.starts_with("google ") {
-        Some(("google", trimmed[7..].trim()))
+        trimmed.get(7..).map(|q| ("google", q.trim()))
     } else {
         None
     };
@@ -1009,6 +1034,13 @@ mod tests {
         let yt = detect_voice_action("search youtube for rust async").unwrap();
         assert_eq!(yt.action_type, "system_search");
         assert!(yt.feedback_message.contains("YouTube"));
+
+        // Assistant wake word prefixes ("Hey Vox, search ...")
+        assert!(is_voice_command_intent("Hey Vox, search Adobe Photoshop"));
+        assert!(is_voice_command_intent("Vox search Figma"));
+        assert!(is_voice_command_intent("Hey Google, search Spotify"));
+        assert!(is_voice_command_intent("search Adobe Photoshop"));
+        assert!(!is_voice_command_intent("Hey Vox, I think that in this project we should implement a new feature"));
     }
 
     #[test]

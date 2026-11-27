@@ -552,11 +552,10 @@ pub fn start_dictation_internal(state: &AppState, app: &AppHandle) -> Result<Ses
         s.interaction_mode.clone()
     };
 
-    let auto_stop_eligible = mode == "toggle" || !crate::is_session_started_by_hotkey();
-
-    // Realtime audio visualizer waveform stream + Command-Only Auto-Stop
-    // Only auto-stops after ~1.3s pause if the captured opening utterance is an intentional voice command
-    // (e.g. "search Adobe Photoshop", "play ...", "set a reminder ..."); normal dictation is never interrupted.
+    // Realtime audio visualizer waveform stream + Smart Command-Only Auto-Stop
+    // When the user speaks an intentional voice command (e.g. "search Adobe Photoshop", "play ...", "set a reminder ...")
+    // followed by a natural ~0.95s pause, VoxQuest auto-executes and ends the session hands-free!
+    // Normal dictation (narratives/emails/prose) is never auto-stopped.
     {
         let app_level_emitter = app.clone();
         let state_audio = Arc::clone(&state.audio);
@@ -568,7 +567,7 @@ pub fn start_dictation_internal(state: &AppState, app: &AppHandle) -> Result<Ses
             let mut speech_ticks: u32 = 0;
             let mut heard_speech = false;
             let mut silent_ticks: u32 = 0;
-            let mut command_peek_done = false;
+            let mut peek_attempts: u32 = 0;
             loop {
                 interval.tick().await;
                 let is_rec = {
@@ -584,25 +583,27 @@ pub fn start_dictation_internal(state: &AppState, app: &AppHandle) -> Result<Ses
                 };
                 let _ = app_level_emitter.emit("audio-level", level);
 
-                if auto_stop_eligible && !command_peek_done {
-                    if level >= 0.14 {
+                if peek_attempts < 4 {
+                    // Sensitive speech threshold calibrated for natural speaking volume on Mac microphones
+                    if level >= 0.05 {
                         speech_ticks += 1;
                         if speech_ticks >= 2 {
                             heard_speech = true;
                         }
                         silent_ticks = 0;
-                    } else if heard_speech && level < 0.10 {
+                    } else if heard_speech && level < 0.045 {
                         silent_ticks += 1;
-                        // After ~1.3s pause following speech, check once if it's a voice command
-                        if silent_ticks >= 26 {
-                            command_peek_done = true;
+                        // After ~0.95s (19 ticks at 50ms) pause following speech, peek and verify voice command intent
+                        if silent_ticks >= 19 {
+                            silent_ticks = 0;
+                            peek_attempts += 1;
                             if let Some(state_w) = app_level_emitter.try_state::<AppState>() {
                                 let peek_samples = {
                                     let audio = state_w.audio.lock().unwrap();
                                     audio.snapshot_16k_for_peek()
                                 };
-                                // Only peek short command-sized utterances (<= 8s)
-                                if peek_samples.len() >= 4800 && peek_samples.len() <= 16000 * 8 {
+                                // Only peek command-sized audio (0.4s to 8s)
+                                if peek_samples.len() >= 6400 && peek_samples.len() <= 16000 * 8 {
                                     let lang_setting = {
                                         let s = state_w.settings.lock().unwrap();
                                         s.language.clone()
@@ -622,13 +623,14 @@ pub fn start_dictation_internal(state: &AppState, app: &AppHandle) -> Result<Ses
                                         }
                                     };
                                     if is_cmd {
+                                        println!("[VoxQuest Auto-Stop] Voice command confirmed -> auto-stopping dictation");
                                         let _ = stop_dictation(state_w, app_level_emitter.clone());
                                         break;
                                     }
                                 }
                             }
                         }
-                    } else if level >= 0.12 {
+                    } else if level >= 0.05 {
                         silent_ticks = 0;
                     }
                 }
