@@ -2650,13 +2650,90 @@ pub fn start_meeting_recording_cmd(
     platform: String,
     meeting_url: Option<String>,
 ) -> Result<crate::meeting_service::MeetingSession, String> {
-    state.meeting.start_meeting(title, platform, meeting_url)
+    let session = state.meeting.start_meeting(title, platform, meeting_url)?;
+    let device_opt = {
+        let settings = state.settings.lock().unwrap();
+        settings.selected_microphone.clone()
+    };
+    {
+        let mut audio = state.audio.lock().unwrap();
+        if !audio.is_recording() {
+            let dev_ref = if device_opt.trim().is_empty() || device_opt == "default" {
+                None
+            } else {
+                Some(device_opt.as_str())
+            };
+            let _ = audio.start_recording(dev_ref);
+        }
+    }
+    Ok(session)
 }
 
 #[tauri::command]
 pub fn stop_meeting_recording_cmd(
     state: State<'_, AppState>,
 ) -> Result<crate::meeting_service::MeetingSession, String> {
+    let samples = {
+        let mut audio = state.audio.lock().unwrap();
+        if audio.is_recording() {
+            audio.stop_recording().unwrap_or_default()
+        } else {
+            Vec::new()
+        }
+    };
+
+    if !samples.is_empty() && !crate::audio_service::is_audio_silent_or_too_short(&samples) {
+        let trimmed = crate::audio_service::trim_audio_silence(&samples, 16000);
+        if !trimmed.is_empty() {
+            let settings = state.settings.lock().unwrap().clone();
+            let models_dir = model_manager::get_voxquest_models_dir();
+            let manifest = model_manifest::get_official_manifest();
+
+            let model_info = manifest
+                .iter()
+                .find(|m| m.id == settings.default_model_id && models_dir.join(&m.filename).exists())
+                .or_else(|| {
+                    ["whisper-base-en-q5_1", "whisper-base-q5_1", "whisper-tiny-q5_1"]
+                        .iter()
+                        .filter_map(|id| manifest.iter().find(|m| &m.id == id))
+                        .find(|m| models_dir.join(&m.filename).exists())
+                })
+                .cloned();
+
+            if let Some(info) = model_info {
+                let model_path = models_dir.join(&info.filename);
+                let mut engine = state.whisper.lock().unwrap();
+                let path_str = model_path.to_string_lossy().to_string();
+                let loaded = if !engine.is_loaded() || engine.current_model_path() != Some(&path_str) {
+                    engine.load_model(&model_path).is_ok()
+                } else {
+                    true
+                };
+                if loaded {
+                    engine.set_max_threads(settings.max_cpu_threads.clamp(2, 4));
+                    let lang = if settings.language == "auto" {
+                        None
+                    } else {
+                        Some(settings.language.as_str())
+                    };
+                    if let Ok(raw) = engine.transcribe(&trimmed, lang, None) {
+                        let cleaned = clean_whisper_transcript(&raw);
+                        let cleaned_trim = cleaned.trim();
+                        if !cleaned_trim.is_empty() {
+                            // Split multi-sentence meeting speech into individual transcript utterances
+                            for part in cleaned_trim.split_inclusive(['.', '!', '?']) {
+                                let p = part.trim();
+                                if !p.is_empty() {
+                                    let _ = state.meeting.add_utterance("You".to_string(), p.to_string(), true);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     state.meeting.stop_meeting()
 }
 
