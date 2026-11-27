@@ -224,15 +224,19 @@ export default function App() {
       offset_minutes?: number | null;
       day_offset?: number | null;
       duration_min?: number | null;
+      duration_sec?: number | null;
     }>('voxquest-voice-utility', async (e) => {
       const payload = e.payload;
       if (!payload) return;
       try {
         const now = new Date();
         if (payload.kind === 'reminder') {
-          const targetDate = payload.offset_minutes
-            ? new Date(now.getTime() + payload.offset_minutes * 60000)
-            : new Date(now.getTime());
+          const offsetMs = payload.duration_sec
+            ? payload.duration_sec * 1000
+            : payload.offset_minutes
+            ? payload.offset_minutes * 60000
+            : 0;
+          const targetDate = offsetMs > 0 ? new Date(now.getTime() + offsetMs) : new Date(now.getTime());
           if (payload.day_offset && payload.day_offset > 0) {
             targetDate.setDate(targetDate.getDate() + payload.day_offset);
           }
@@ -250,11 +254,11 @@ export default function App() {
             reminderEnabled: true,
           });
           localStorage.setItem('voxquest_marked_calendar_dates', JSON.stringify(list));
-          if (payload.offset_minutes && payload.offset_minutes > 0) {
+          if (offsetMs > 0) {
             localStorage.setItem(
               'voxquest_active_timer',
               JSON.stringify({
-                endAt: Date.now() + payload.offset_minutes * 60000,
+                endAt: Date.now() + offsetMs,
                 label: payload.label,
               })
             );
@@ -288,16 +292,38 @@ export default function App() {
           });
         } else if (payload.kind === 'timer') {
           const action = payload.label === 'pause' || payload.label === 'reset' ? payload.label : 'start';
+          const totalSecs =
+            payload.duration_sec ??
+            (payload.duration_min ? payload.duration_min * 60 : undefined);
+          if (action === 'start') {
+            const effectiveSecs = totalSecs || 25 * 60;
+            localStorage.setItem(
+              'voxquest_active_timer',
+              JSON.stringify({ endAt: Date.now() + effectiveSecs * 1000, label: 'Timer' })
+            );
+            window.dispatchEvent(new Event('voxquest-timer-sync'));
+          } else {
+            localStorage.removeItem('voxquest_active_timer');
+            window.dispatchEvent(new Event('voxquest-timer-sync'));
+          }
           window.dispatchEvent(
             new CustomEvent('voxquest-timer-command', {
-              detail: { action, minutes: payload.duration_min || undefined },
+              detail: {
+                action,
+                minutes: payload.duration_min || undefined,
+                seconds: totalSecs,
+              },
             })
           );
           safeInvoke('send_system_notification_cmd', {
             title: 'Focus Timer',
             message:
               action === 'start'
-                ? `Started${payload.duration_min ? ` (${payload.duration_min}m)` : ''}`
+                ? totalSecs && totalSecs < 60
+                  ? `Started (${totalSecs}s)`
+                  : payload.duration_min
+                  ? `Started (${payload.duration_min}m)`
+                  : 'Started'
                 : action === 'pause'
                 ? 'Paused'
                 : 'Reset',

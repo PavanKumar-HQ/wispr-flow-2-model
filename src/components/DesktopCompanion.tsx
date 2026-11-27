@@ -553,57 +553,9 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
       className="w-screen h-screen flex flex-col items-center justify-end pb-1 pt-2 select-none bg-transparent overflow-visible"
       style={{ background: 'transparent' }}
     >
-      {/* Tiny Sleek Listening / Action / Persistent Reminder Card Above Robot */}
-      <div className="min-h-5 flex items-center justify-center mb-0.5 shrink-0 z-40">
-        {reminderAlert ? (
-          <div
-            data-tauri-no-drag
-            className="px-2 py-1 rounded-xl border border-amber/70 dark:border-mint/50 bg-[#FFFDF7] dark:bg-[#152224] text-charcoal dark:text-cream shadow-md animate-fadeIn flex flex-col gap-1 max-w-[160px]"
-          >
-            <div className="flex items-center justify-between gap-1 text-[9px] font-bold">
-              <div className="flex items-center gap-1 min-w-0 text-darkTeal dark:text-mint">
-                <Bell className="w-2.5 h-2.5 text-terracotta shrink-0 animate-bounce" />
-                <span className="truncate">{reminderAlert.label || reminderAlert.message.replace('Task Due Today: ', '').replace('Task Due: ', '')}</span>
-              </div>
-              <button
-                type="button"
-                onClick={handleDismissAlert}
-                className="text-charcoal/40 hover:text-charcoal dark:text-sage dark:hover:text-cream cursor-pointer shrink-0"
-                title="Dismiss"
-              >
-                <X className="w-2.5 h-2.5" />
-              </button>
-            </div>
-
-            <div className="flex items-center gap-1 pt-0.5 border-t border-charcoal/10 dark:border-white/10">
-              <button
-                type="button"
-                onClick={() => handleSnooze(15)}
-                className="flex-1 py-0.5 px-1 rounded bg-darkTeal text-white text-[8px] font-bold hover:bg-darkTeal/90 transition-all cursor-pointer flex items-center justify-center gap-0.5 shadow-2xs"
-                title="Remind me again in 15 minutes"
-              >
-                <RotateCcw className="w-2 h-2 text-amber" />
-                <span>+15m Snooze</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSnooze(5)}
-                className="py-0.5 px-1 rounded bg-stone-100 dark:bg-darkTealElevated text-charcoal dark:text-cream text-[8px] font-bold hover:bg-stone-200 cursor-pointer"
-                title="Snooze for 5 minutes"
-              >
-                +5m
-              </button>
-              <button
-                type="button"
-                onClick={handleDismissAlert}
-                className="py-0.5 px-1 rounded bg-terracotta/15 text-terracotta text-[8px] font-bold hover:bg-terracotta/25 cursor-pointer"
-                title="Mark Done"
-              >
-                Done
-              </button>
-            </div>
-          </div>
-        ) : status.state === 'recording' ? (
+      {/* Tiny Sleek Listening / Action Pill Above Robot (No clipped card) */}
+      <div className="h-5 flex items-center justify-center mb-0.5 shrink-0 z-40">
+        {status.state === 'recording' ? (
           <div className="px-2 py-[1px] rounded-full text-[8.5px] font-bold tracking-wider uppercase border border-terracotta bg-cream/95 text-terracotta shadow-xs animate-fadeIn flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-terracotta" />
             <span>Listening</span>
@@ -639,7 +591,21 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
           gaze={gaze}
           isHovered={isHovered}
           isBlinking={isBlinking}
-          visorStatus={visorStatus}
+          visorStatus={
+            visorStatus.mode !== 'normal'
+              ? visorStatus
+              : reminderAlert
+              ? {
+                  mode: 'timer',
+                  timerText: 'DUE',
+                  agendaLabel:
+                    reminderAlert.label ||
+                    reminderAlert.message
+                      .replace('Task Due Today: ', '')
+                      .replace('Task Due: ', ''),
+                }
+              : visorStatus
+          }
           onCoreClick={onToggleDictation}
         />
 
@@ -659,6 +625,40 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
                 <X className="w-3 h-3" />
               </button>
             </div>
+
+            {reminderAlert && (
+              <div className="px-2 py-1.5 bg-[#1E2B2D] rounded-lg space-y-1 mb-0.5 border border-[#DDA44D]/30">
+                <div className="flex items-center gap-1 text-[10px] font-bold text-[#FFD07B] truncate">
+                  <Bell className="w-3 h-3 text-[#DA6C4C] shrink-0" />
+                  <span className="truncate">
+                    {reminderAlert.label || reminderAlert.message.replace('Task Due Today: ', '').replace('Task Due: ', '')}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleSnooze(15);
+                      setShowContextMenu(false);
+                    }}
+                    className="flex-1 py-0.5 px-1.5 rounded bg-[#08534E] text-white text-[9px] font-bold hover:bg-[#0D6E67] flex items-center justify-center gap-1 cursor-pointer"
+                  >
+                    <RotateCcw className="w-2.5 h-2.5 text-[#DDA44D]" />
+                    <span>+15m</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleDismissAlert();
+                      setShowContextMenu(false);
+                    }}
+                    className="py-0.5 px-2 rounded bg-[#DA6C4C]/25 text-[#FF9B7D] text-[9px] font-bold hover:bg-[#DA6C4C]/40 cursor-pointer"
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            )}
 
             <button
               type="button"

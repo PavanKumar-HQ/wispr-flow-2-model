@@ -3,16 +3,17 @@ import { Clock, Play, Pause, RotateCcw } from 'lucide-react';
 import { safeInvoke } from '../../lib/ipc';
 
 export const FocusTimerWidget: React.FC = () => {
-  const [customMins, setCustomMins] = useState<number>(25);
+  const [unit, setUnit] = useState<'min' | 'sec'>('min');
+  const [customVal, setCustomVal] = useState<number>(25);
   const [initialSeconds, setInitialSeconds] = useState<number>(25 * 60);
   const [secondsLeft, setSecondsLeft] = useState<number>(25 * 60);
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [mode, setMode] = useState<'focus' | 'break'>('focus');
 
-  // Voice command integration for timer ("start timer for 17 minutes", "pause timer", "reset timer")
+  // Voice command integration for timer ("set timer for 20 seconds", "start timer for 17 minutes", "pause timer", "reset timer")
   useEffect(() => {
     const onTimerCmd = (e: Event) => {
-      const detail = (e as CustomEvent<{ action: 'start' | 'pause' | 'reset'; minutes?: number }>).detail;
+      const detail = (e as CustomEvent<{ action: 'start' | 'pause' | 'reset'; minutes?: number; seconds?: number }>).detail;
       if (!detail) return;
       if (detail.action === 'pause') {
         setIsRunning(false);
@@ -20,10 +21,22 @@ export const FocusTimerWidget: React.FC = () => {
         setIsRunning(false);
         setSecondsLeft(initialSeconds);
       } else if (detail.action === 'start') {
-        if (detail.minutes && detail.minutes > 0) {
+        if (detail.seconds && detail.seconds > 0) {
+          const clampedSecs = Math.max(1, Math.min(10800, detail.seconds));
+          if (clampedSecs < 60 || clampedSecs % 60 !== 0) {
+            setUnit('sec');
+            setCustomVal(clampedSecs);
+          } else {
+            setUnit('min');
+            setCustomVal(Math.round(clampedSecs / 60));
+          }
+          setInitialSeconds(clampedSecs);
+          setSecondsLeft(clampedSecs);
+        } else if (detail.minutes && detail.minutes > 0) {
           const clamped = Math.max(1, Math.min(180, detail.minutes));
           const secs = clamped * 60;
-          setCustomMins(clamped);
+          setUnit('min');
+          setCustomVal(clamped);
           setInitialSeconds(secs);
           setSecondsLeft(secs);
         }
@@ -73,11 +86,12 @@ export const FocusTimerWidget: React.FC = () => {
     };
   }, [isRunning, secondsLeft, mode]);
 
-  const applyMinutes = (mins: number, nextMode: 'focus' | 'break' = mode) => {
-    const clamped = Math.max(1, Math.min(180, mins || 1));
-    const secs = clamped * 60;
+  const applyDuration = (val: number, nextUnit: 'min' | 'sec' = unit, nextMode: 'focus' | 'break' = mode) => {
+    const clamped = Math.max(1, Math.min(nextUnit === 'sec' ? 3600 : 180, val || 1));
+    const secs = nextUnit === 'sec' ? clamped : clamped * 60;
     setMode(nextMode);
-    setCustomMins(clamped);
+    setUnit(nextUnit);
+    setCustomVal(clamped);
     setIsRunning(false);
     setInitialSeconds(secs);
     setSecondsLeft(secs);
@@ -113,7 +127,7 @@ export const FocusTimerWidget: React.FC = () => {
             <div className="flex items-center gap-2 mt-1.5 text-[10px]">
               <button
                 type="button"
-                onClick={() => applyMinutes(mode === 'focus' ? customMins : 25, 'focus')}
+                onClick={() => applyDuration(mode === 'focus' ? customVal : 25, unit, 'focus')}
                 className={`font-bold cursor-pointer ${
                   mode === 'focus' ? 'text-darkTeal dark:text-mint underline underline-offset-4' : 'text-charcoal/50 dark:text-sage'
                 }`}
@@ -123,7 +137,7 @@ export const FocusTimerWidget: React.FC = () => {
               <span className="text-charcoal/25">·</span>
               <button
                 type="button"
-                onClick={() => applyMinutes(5, 'break')}
+                onClick={() => applyDuration(5, 'min', 'break')}
                 className={`font-bold cursor-pointer ${
                   mode === 'break' ? 'text-terracotta underline underline-offset-4' : 'text-charcoal/50 dark:text-sage'
                 }`}
@@ -134,16 +148,23 @@ export const FocusTimerWidget: React.FC = () => {
               <input
                 type="number"
                 min={1}
-                max={180}
-                value={customMins}
+                max={unit === 'sec' ? 3600 : 180}
+                value={customVal}
                 onChange={(e) => {
                   const v = parseInt(e.target.value, 10);
-                  if (!isNaN(v)) applyMinutes(v, mode);
+                  if (!isNaN(v)) applyDuration(v, unit, mode);
                 }}
-                aria-label="Timer minutes"
+                aria-label="Timer value"
                 className="w-10 text-center font-mono font-bold text-[11px] bg-transparent border-b border-charcoal/25 dark:border-darkTealBorder focus:border-darkTeal focus:outline-none text-charcoal dark:text-cream"
               />
-              <span className="text-charcoal/50 dark:text-sage font-medium">min</span>
+              <button
+                type="button"
+                onClick={() => applyDuration(customVal, unit === 'min' ? 'sec' : 'min', mode)}
+                className="text-darkTeal dark:text-mint font-bold hover:underline cursor-pointer"
+                title="Switch between seconds and minutes"
+              >
+                {unit}
+              </button>
             </div>
           </div>
         </div>
@@ -179,20 +200,26 @@ export const FocusTimerWidget: React.FC = () => {
         />
       </div>
 
-      {/* Subtle Quick-Minute Shortcuts (no boxy borders) */}
+      {/* Subtle Quick-Time Shortcuts (Seconds & Minutes) */}
       <div className="flex items-center gap-3 text-[10px] text-charcoal/55 dark:text-sage">
-        {[5, 8, 17, 25, 45].map((m) => (
+        {[
+          { val: 10, u: 'sec' as const, label: '10s' },
+          { val: 20, u: 'sec' as const, label: '20s' },
+          { val: 5, u: 'min' as const, label: '5m' },
+          { val: 15, u: 'min' as const, label: '15m' },
+          { val: 25, u: 'min' as const, label: '25m' },
+        ].map((item) => (
           <button
-            key={m}
+            key={item.label}
             type="button"
-            onClick={() => applyMinutes(m, m <= 10 && mode === 'break' ? 'break' : 'focus')}
+            onClick={() => applyDuration(item.val, item.u, item.u === 'min' && item.val <= 5 && mode === 'break' ? 'break' : 'focus')}
             className={`font-mono cursor-pointer transition-colors ${
-              customMins === m
+              customVal === item.val && unit === item.u
                 ? 'font-bold text-darkTeal dark:text-mint underline underline-offset-4'
                 : 'hover:text-charcoal dark:hover:text-cream'
             }`}
           >
-            {m}m
+            {item.label}
           </button>
         ))}
       </div>

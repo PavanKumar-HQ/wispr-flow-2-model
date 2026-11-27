@@ -11,12 +11,14 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct VoiceUtilityPayload {
-    pub kind: String, // "reminder" | "schedule"
+    pub kind: String, // "reminder" | "schedule" | "timer" | ...
     pub label: String,
     pub time_str: Option<String>, // "HH:mm" 24-hour
     pub offset_minutes: Option<u32>,
     pub day_offset: Option<u32>,
     pub duration_min: Option<u32>,
+    #[serde(default)]
+    pub duration_sec: Option<u32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -361,8 +363,8 @@ fn try_parse_app_utility_command(trimmed: &str, lower_clean: &str) -> Option<Voi
         return None;
     }
 
-    // A. Focus Timer ("start timer", "start focus timer for 17 minutes", "pause timer", "reset timer")
-    if lower_clean.contains("timer") {
+    // A. Focus Timer ("start timer", "set timer for 20 seconds", "start focus timer for 17 minutes", "pause timer", "reset timer")
+    if lower_clean.contains("timer") || lower_clean.starts_with("countdown ") {
         if lower_clean.starts_with("pause ") || lower_clean.starts_with("stop ") {
             return Some(VoiceActionResult {
                 action_type: "system_timer".to_string(),
@@ -376,6 +378,7 @@ fn try_parse_app_utility_command(trimmed: &str, lower_clean: &str) -> Option<Voi
                     offset_minutes: None,
                     day_offset: None,
                     duration_min: None,
+                    duration_sec: None,
                 }),
             });
         }
@@ -392,20 +395,52 @@ fn try_parse_app_utility_command(trimmed: &str, lower_clean: &str) -> Option<Voi
                     offset_minutes: None,
                     day_offset: None,
                     duration_min: None,
+                    duration_sec: None,
                 }),
             });
         }
-        if lower_clean.starts_with("start ") || lower_clean.starts_with("set ") {
-            let mins = lower_clean
-                .split_whitespace()
-                .find_map(|w| w.trim_matches(|c: char| !c.is_ascii_digit()).parse::<u32>().ok())
-                .map(|m| m.clamp(1, 180));
+        if lower_clean.starts_with("start ")
+            || lower_clean.starts_with("set ")
+            || lower_clean.starts_with("run ")
+            || lower_clean.starts_with("timer ")
+            || lower_clean.starts_with("countdown ")
+        {
+            let words: Vec<&str> = lower_clean.split_whitespace().collect();
+            let mut parsed_secs: Option<u32> = None;
+            let mut parsed_mins: Option<u32> = None;
+            for (idx, w) in words.iter().enumerate() {
+                if let Ok(val) = w.trim_matches(|c: char| !c.is_ascii_digit()).parse::<u32>() {
+                    if val == 0 {
+                        continue;
+                    }
+                    let next_unit = words
+                        .get(idx + 1)
+                        .map(|u| u.trim_matches(|c: char| c.is_ascii_punctuation()))
+                        .unwrap_or("");
+                    if next_unit.starts_with("sec") {
+                        parsed_secs = Some(val.clamp(1, 3600));
+                    } else if next_unit.starts_with("hour") || next_unit.starts_with("hr") {
+                        let m = (val * 60).clamp(1, 180);
+                        parsed_mins = Some(m);
+                        parsed_secs = Some(m * 60);
+                    } else {
+                        let m = val.clamp(1, 180);
+                        parsed_mins = Some(m);
+                        parsed_secs = Some(m * 60);
+                    }
+                    break;
+                }
+            }
+            let feedback = if let Some(m) = parsed_mins {
+                format!("Timer started ({}m)", m)
+            } else if let Some(s) = parsed_secs {
+                format!("Timer started ({}s)", s)
+            } else {
+                "Timer started".to_string()
+            };
             return Some(VoiceActionResult {
                 action_type: "system_timer".to_string(),
-                feedback_message: match mins {
-                    Some(m) => format!("Focus timer started ({}m)", m),
-                    None => "Focus timer started".to_string(),
-                },
+                feedback_message: feedback,
                 expanded_text: None,
                 suppress_paste: true,
                 utility_payload: Some(VoiceUtilityPayload {
@@ -414,7 +449,8 @@ fn try_parse_app_utility_command(trimmed: &str, lower_clean: &str) -> Option<Voi
                     time_str: None,
                     offset_minutes: None,
                     day_offset: None,
-                    duration_min: mins,
+                    duration_min: parsed_mins,
+                    duration_sec: parsed_secs,
                 }),
             });
         }
@@ -437,6 +473,7 @@ fn try_parse_app_utility_command(trimmed: &str, lower_clean: &str) -> Option<Voi
                 offset_minutes: None,
                 day_offset: None,
                 duration_min: None,
+                duration_sec: None,
             }),
         });
     }
@@ -453,6 +490,7 @@ fn try_parse_app_utility_command(trimmed: &str, lower_clean: &str) -> Option<Voi
                 offset_minutes: None,
                 day_offset: None,
                 duration_min: None,
+                duration_sec: None,
             }),
         });
     }
@@ -482,6 +520,7 @@ fn try_parse_app_utility_command(trimmed: &str, lower_clean: &str) -> Option<Voi
                     offset_minutes: None,
                     day_offset: None,
                     duration_min: None,
+                    duration_sec: None,
                 }),
             });
         }
@@ -516,6 +555,7 @@ fn try_parse_app_utility_command(trimmed: &str, lower_clean: &str) -> Option<Voi
                     offset_minutes: None,
                     day_offset: None,
                     duration_min: None,
+                    duration_sec: None,
                 }),
             });
         }
@@ -610,6 +650,7 @@ fn try_parse_reminder_or_schedule(trimmed: &str, lower_clean: &str) -> Option<Vo
         if let Some(rest) = lower_clean.strip_prefix(prefix) {
             let words: Vec<&str> = rest.split_whitespace().collect();
             let mut offset_minutes: Option<u32> = None;
+            let mut offset_seconds: Option<u32> = None;
             let mut day_offset: Option<u32> = None;
             let mut time_str: Option<String> = None;
             let mut label_words: Vec<&str> = Vec::new();
@@ -631,14 +672,21 @@ fn try_parse_reminder_or_schedule(trimmed: &str, lower_clean: &str) -> Option<Vo
                     continue;
                 }
                 if w == "in" && i + 2 < words.len() {
-                    if let Ok(mins) = words[i + 1].parse::<u32>() {
+                    if let Ok(val) = words[i + 1].parse::<u32>() {
                         let unit = words[i + 2].trim_matches(|c: char| c.is_ascii_punctuation());
-                        if unit.starts_with("min") {
-                            offset_minutes = Some(mins.clamp(1, 720));
+                        if unit.starts_with("sec") {
+                            offset_seconds = Some(val.clamp(1, 3600));
+                            i += 3;
+                            continue;
+                        } else if unit.starts_with("min") {
+                            offset_minutes = Some(val.clamp(1, 720));
+                            offset_seconds = Some(val.clamp(1, 720) * 60);
                             i += 3;
                             continue;
                         } else if unit.starts_with("hour") || unit.starts_with("hr") {
-                            offset_minutes = Some((mins * 60).clamp(1, 720));
+                            let mins = (val * 60).clamp(1, 720);
+                            offset_minutes = Some(mins);
+                            offset_seconds = Some(mins * 60);
                             i += 3;
                             continue;
                         }
@@ -676,6 +724,8 @@ fn try_parse_reminder_or_schedule(trimmed: &str, lower_clean: &str) -> Option<Vo
             let day_label = if day_offset == Some(1) { " tomorrow" } else { "" };
             let feedback = if let Some(mins) = offset_minutes {
                 format!("Reminder set in {}m: {}", mins, label)
+            } else if let Some(secs) = offset_seconds {
+                format!("Reminder set in {}s: {}", secs, label)
             } else if let Some(ref t) = time_str {
                 format!("Reminder set{} at {}: {}", day_label, t, label)
             } else {
@@ -694,6 +744,7 @@ fn try_parse_reminder_or_schedule(trimmed: &str, lower_clean: &str) -> Option<Vo
                     offset_minutes,
                     day_offset,
                     duration_min: None,
+                    duration_sec: offset_seconds,
                 }),
             });
         }
@@ -801,6 +852,7 @@ fn try_parse_reminder_or_schedule(trimmed: &str, lower_clean: &str) -> Option<Vo
                     offset_minutes: None,
                     day_offset,
                     duration_min: Some(dur),
+                    duration_sec: Some(dur * 60),
                 }),
             });
         }
