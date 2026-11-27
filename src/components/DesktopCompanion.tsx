@@ -23,7 +23,7 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
   status,
   onToggleDictation,
 }) => {
-  const [autoPose, setAutoPose] = useState<'idle' | 'walk' | 'fly' | 'sit' | 'sleep' | 'wave' | 'dance'>('idle');
+  const [autoPose, setAutoPose] = useState<'idle' | 'walk' | 'fly' | 'sit' | 'sleep' | 'dance'>('idle');
   const [facing, setFacing] = useState<'left' | 'right'>('right');
   const [gaze, setGaze] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState<boolean>(false);
@@ -42,7 +42,6 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
   });
 
   const lastSessionIdRef = useRef<string | null>(null);
-  const pointerDownRef = useRef<{ x: number; y: number; dragged: boolean } | null>(null);
   const lastCursorRef = useRef<{ x: number; y: number; movedAt: number }>({
     x: -1,
     y: -1,
@@ -268,13 +267,13 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
     };
   }, [status.state, isSleeping, isHovered, isMusicPlaying]);
 
-  // Active autonomous behavior while awake: gentle sequence (idle -> wave -> sit -> dance)
+  // Active autonomous behavior while awake: gentle sequence (idle -> sit -> dance)
   useEffect(() => {
     if (status.state !== 'idle' || showSuccessFlash || isHovered || isSleeping) return;
 
-    const sequence: Array<'idle' | 'wave' | 'sit' | 'dance' | 'walk' | 'fly'> = freeRoam
-      ? ['walk', 'fly', 'wave', 'idle', 'sit', 'dance']
-      : ['idle', 'wave', 'sit', 'dance', 'idle'];
+    const sequence: Array<'idle' | 'sit' | 'dance' | 'walk' | 'fly'> = freeRoam
+      ? ['walk', 'fly', 'idle', 'sit', 'dance']
+      : ['idle', 'sit', 'dance', 'idle'];
 
     const interval = setInterval(() => {
       if (document.hidden) return;
@@ -338,7 +337,7 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
         const tick = (now: number) => {
           if (cancelled) return;
           rafId = requestAnimationFrame(tick);
-          if (document.hidden || pointerDownRef.current || !cachedBounds || !currentPos) return;
+          if (document.hidden || !cachedBounds || !currentPos) return;
           if (now - lastFrameAt < 48) return; // ~20fps relaxed step interval for silky smooth desktop compositing
           const dt = lastFrameAt ? Math.min((now - lastFrameAt) / 100, 1.2) : 0.35;
           lastFrameAt = now;
@@ -400,25 +399,10 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
     if ((e.target as HTMLElement).closest('[data-voxbot-core="true"]')) {
       return;
     }
-    pointerDownRef.current = { x: e.clientX, y: e.clientY, dragged: false };
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    const down = pointerDownRef.current;
-    if (!down || down.dragged) return;
-    const dist = Math.hypot(e.clientX - down.x, e.clientY - down.y);
-    if (dist >= 5) {
-      down.dragged = true;
-      pointerDownRef.current = null;
-      try {
-        getCurrentWindow().startDragging().catch(() => {});
-      } catch {}
-    }
-  };
-
-  const handleMouseUp = () => {
-    // Clicking outside the chest core does NOT toggle listening (only chest core button toggles)
-    pointerDownRef.current = null;
+    // Instant native macOS window dragging on left-click
+    try {
+      getCurrentWindow().startDragging().catch(() => {});
+    } catch {}
   };
 
   return (
@@ -450,8 +434,9 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
         ) : null}
       </div>
 
-      {/* Tight Interactive Hitbox Only Around VoxBot */}
+      {/* Interactive Mascot Hitbox with Native Desktop Dragging */}
       <div
+        data-tauri-drag-region
         onMouseEnter={() => {
           setIsHovered(true);
           lastCursorRef.current.movedAt = Date.now();
@@ -459,8 +444,6 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
         }}
         onMouseLeave={() => setIsHovered(false)}
         onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
         onContextMenu={(e) => {
           e.preventDefault();
           setShowContextMenu((prev) => !prev);
@@ -536,9 +519,9 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
             <div className="flex items-center justify-between px-2 py-1 gap-1 border-t border-white/10 mt-0.5 pt-1">
               <button
                 type="button"
-                title="Wave"
+                title="Relax / Sit"
                 onClick={() => {
-                  setAutoPose('wave');
+                  setAutoPose('sit');
                   setShowContextMenu(false);
                 }}
                 className="p-1 rounded hover:bg-[#1E2B2D] cursor-pointer"

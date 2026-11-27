@@ -6,7 +6,6 @@ export type VoxBotPose =
   | 'fly'
   | 'sit'
   | 'sleep'
-  | 'wave'
   | 'dance'
   | 'music'
   | 'listening'
@@ -28,8 +27,8 @@ interface VoxBotFullBodyProps {
  * Full-Body 3D-Styled Articulated VoxBot Desktop Companion.
  * Matches the Sovereign Pill color theme:
  * - Ready/Idle/Walk/Fly: Teal/Green (#34A89E)
- * - Listening: Traditional Pill Terracotta-Orange (#DA6C4C) with incoming ear waves
- * - Transcribing: Warm Amber (#DDA44D) with neural equalizer wave
+ * - Listening: Traditional Pill Terracotta-Orange (#DA6C4C)
+ * - Transcribing: Warm Amber (#DDA44D)
  */
 export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
   pose = 'idle',
@@ -46,7 +45,6 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
   const isFlying = pose === 'fly';
   const isSitting = pose === 'sit' || pose === 'sleep';
   const isSleeping = pose === 'sleep';
-  const isWaving = pose === 'wave';
   const isDancing = pose === 'dance';
   const isMusic = pose === 'music';
   const isTranscribing = pose === 'transcribing';
@@ -389,8 +387,8 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
             </g>
           </g>
 
-          {/* Right Arm (hidden from background layer when waving/thinking so it renders cleanly in FRONT) */}
-          {!isWaving && !isTranscribing && (
+          {/* Right Arm (hidden from background layer when thinking so it renders cleanly in FRONT) */}
+          {!isTranscribing && (
             <g
               className={
                 isFlying
@@ -656,8 +654,8 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
                   <circle cx="127" cy="61" r="2.8" fill="#FFFDF5" />
                   <path d="M 88 77 Q 100 86 112 77" fill="none" stroke="#34A89E" strokeWidth="3.2" strokeLinecap="round" />
                 </g>
-              ) : isSuccess || isWaving || isDancing || isMusic ? (
-                /* SUCCESS / WAVE / DANCE / MUSIC: Clean joyful ^ ^ eyes & wide smile */
+              ) : isSuccess || isDancing || isMusic ? (
+                /* SUCCESS / DANCE / MUSIC: Clean joyful ^ ^ eyes & wide smile */
                 <g>
                   <path d="M 68 68 Q 76 58 84 68" fill="none" stroke={eyeColor} strokeWidth="3.5" strokeLinecap="round" />
                   <path d="M 116 68 Q 124 58 132 68" fill="none" stroke={eyeColor} strokeWidth="3.5" strokeLinecap="round" />
@@ -690,22 +688,20 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
             </g>
           </g>
 
-          {/* Foreground Right Arm when Waving or Thinking (renders cleanly in FRONT of body/head) */}
-          {(isWaving || isTranscribing) && (
+          {/* Foreground Right Arm when Thinking (renders cleanly in FRONT of body/head) */}
+          {isTranscribing && (
             <g
-              className={isWaving ? 'vb-arm-wave-right' : ''}
-              transform={isTranscribing ? 'rotate(-106 140 126)' : undefined}
+              transform="rotate(-106 140 126)"
             >
               <circle cx="140" cy="126" r="9" fill="url(#vb3dDark)" />
               <rect x="139" y="126" width="15" height="22" rx="7.5" fill="url(#vb3dDark)" />
               <g
-                className={isWaving ? 'vb-forearm-wave-right' : ''}
-                transform={isTranscribing ? 'rotate(-42 147 148)' : undefined}
+                transform="rotate(-42 147 148)"
               >
                 <circle cx="147" cy="148" r="7" fill="url(#vb3dDark)" />
                 <rect x="139" y="149" width="17" height="22" rx="8.5" fill="url(#vb3dCreamArm)" stroke="#2A2D32" strokeWidth="1.4" />
                 <line x1="143" y1="153" x2="143" y2="165" stroke="#FFFFFF" strokeWidth="1.8" strokeLinecap="round" opacity="0.55" />
-                {/* Friendly Rounded Mitten Palm (not a claw) */}
+                {/* Friendly Rounded Mitten Palm */}
                 <rect x="138" y="168" width="18" height="14" rx="7" fill="url(#vb3dDark)" />
                 <circle cx="139" cy="172" r="3.5" fill="url(#vb3dDark)" />
               </g>

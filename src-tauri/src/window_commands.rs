@@ -314,15 +314,9 @@ pub fn get_companion_gaze(app: AppHandle) -> (i8, i8, i32, i32) {
     };
 
     let scale = w.scale_factor().unwrap_or(1.0);
-    let lx = (cursor.x - pos.x as f64) / scale;
-    let ly = (cursor.y - pos.y as f64) / scale;
-    // Tight silhouette box around VoxBot's body/head (164x204 logical window):
-    // outside this box, clicks & text selection pass straight through to underlying apps.
-    let in_robot = lx >= 32.0 && lx <= 132.0 && ly >= 40.0 && ly <= 200.0;
-    let should_ignore = !in_robot;
-    if COMPANION_IGNORE_CURSOR.swap(should_ignore, Ordering::SeqCst) != should_ignore {
-        let _ = w.set_ignore_cursor_events(should_ignore);
-    }
+
+    // Keep window interactive for clicks and drags
+    let _ = w.set_ignore_cursor_events(false);
 
     let face_cx = pos.x as f64 + (size.width as f64 * 0.5);
     let face_cy = pos.y as f64 + (size.height as f64 * 0.42);
