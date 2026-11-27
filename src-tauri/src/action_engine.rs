@@ -671,7 +671,7 @@ fn try_parse_reminder_or_schedule(trimmed: &str, lower_clean: &str) -> Option<Vo
                     i += 2;
                     continue;
                 }
-                if w == "in" && i + 2 < words.len() {
+                if (w == "in" || w == "after") && i + 2 < words.len() {
                     if let Ok(val) = words[i + 1].parse::<u32>() {
                         let unit = words[i + 2].trim_matches(|c: char| c.is_ascii_punctuation());
                         if unit.starts_with("sec") {

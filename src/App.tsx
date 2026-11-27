@@ -124,7 +124,8 @@ export default function App() {
   const handleSnoozeReminder = (mins: number) => {
     if (!activeReminder) return;
     const taskLabel = activeReminder.label.trim();
-    const now = new Date(Date.now() + mins * 60000);
+    const triggerAtMs = Date.now() + mins * 60000;
+    const now = new Date(triggerAtMs);
     const newTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
     try {
@@ -136,6 +137,7 @@ export default function App() {
             return {
               ...item,
               timeStr: newTimeStr,
+              triggerAtMs,
               lastNotifiedDate: undefined,
             };
           }
@@ -189,6 +191,7 @@ export default function App() {
       } catch {}
     };
     window.addEventListener('voxquest-utility-updated', onUtilSync);
+    window.addEventListener('storage', onUtilSync);
 
     const checkReminders = () => {
       try {
@@ -198,10 +201,12 @@ export default function App() {
           dateStr: string;
           label: string;
           timeStr?: string;
+          triggerAtMs?: number;
           reminderEnabled?: boolean;
           lastNotifiedDate?: string;
         }> = JSON.parse(stored);
         const now = new Date();
+        const nowMs = now.getTime();
         const todayStr = toLocalYmd(now);
         const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
         let changed = false;
@@ -209,7 +214,8 @@ export default function App() {
           if (item.dateStr === todayStr && item.reminderEnabled !== false && item.label?.trim()) {
             if (item.lastNotifiedDate === todayStr) return item;
             const targetTime = item.timeStr || '09:00';
-            if (currentTime >= targetTime) {
+            const isDue = item.triggerAtMs ? nowMs >= item.triggerAtMs : currentTime >= targetTime;
+            if (isDue) {
               const alertData = {
                 title: 'VoxQuest Task Reminder',
                 message: `Task Due: ${item.label}`,
@@ -261,7 +267,13 @@ export default function App() {
             : payload.offset_minutes
             ? payload.offset_minutes * 60000
             : 0;
-          const targetDate = offsetMs > 0 ? new Date(now.getTime() + offsetMs) : new Date(now.getTime());
+          const triggerAtMs =
+            offsetMs > 0
+              ? now.getTime() + offsetMs
+              : !payload.time_str
+              ? now.getTime() + 15 * 60000
+              : undefined;
+          const targetDate = triggerAtMs ? new Date(triggerAtMs) : new Date(now.getTime());
           if (payload.day_offset && payload.day_offset > 0) {
             targetDate.setDate(targetDate.getDate() + payload.day_offset);
           }
@@ -276,6 +288,7 @@ export default function App() {
             label: payload.label,
             createdAt: Date.now(),
             timeStr,
+            triggerAtMs,
             reminderEnabled: true,
           });
           localStorage.setItem('voxquest_marked_calendar_dates', JSON.stringify(list));

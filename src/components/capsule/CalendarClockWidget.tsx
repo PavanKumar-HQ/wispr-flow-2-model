@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Trash2, Tag, Clock, Plus, Check, Bell, BellOff } from 'lucide-react';
-import { safeInvoke } from '../../lib/ipc';
 
 interface MarkedDateItem {
   dateStr: string; // YYYY-MM-DD
@@ -77,67 +76,12 @@ export const CalendarClockWidget: React.FC = () => {
       } catch {}
     };
     window.addEventListener('voxquest-utility-updated', reload);
-    return () => window.removeEventListener('voxquest-utility-updated', reload);
-  }, []);
-
-  // Automated background reminder check for tasks (runs every 10s while open)
-  useEffect(() => {
-    const checkReminders = async () => {
-      const today = new Date();
-      const todayStr = toLocalDateStr(today);
-      const currentHours = String(today.getHours()).padStart(2, '0');
-      const currentMins = String(today.getMinutes()).padStart(2, '0');
-      const currentTime = `${currentHours}:${currentMins}`;
-
-      let changed = false;
-      const updated = markedDates.map((item) => {
-        // If marked for today, has label, and reminder is enabled
-        if (item.dateStr === todayStr && item.reminderEnabled !== false && item.label.trim()) {
-          // If already notified today, skip
-          if (item.lastNotifiedDate === todayStr) return item;
-
-          const targetTime = item.timeStr || '09:00';
-          if (currentTime >= targetTime) {
-            // Trigger native macOS notification banner with sound
-            safeInvoke('send_system_notification_cmd', {
-              title: 'VoxQuest Task Reminder',
-              message: `Task Due Today: ${item.label}`,
-            });
-
-            // Also trigger standard Webview Notification if permitted
-            if (typeof window !== 'undefined' && 'Notification' in window) {
-              if (Notification.permission === 'granted') {
-                try {
-                  new Notification('📅 VoxQuest Task Reminder', {
-                    body: `Task Due Today: ${item.label}`,
-                  });
-                } catch {}
-              } else if (Notification.permission !== 'denied') {
-                Notification.requestPermission();
-              }
-            }
-
-            changed = true;
-            return { ...item, lastNotifiedDate: todayStr };
-          }
-        }
-        return item;
-      });
-
-      if (changed) {
-        setMarkedDates(updated);
-        try {
-          localStorage.setItem('voxquest_marked_calendar_dates', JSON.stringify(updated));
-        } catch (e) {
-          console.warn('Save marked dates failed:', e);
-        }
-      }
+    window.addEventListener('storage', reload);
+    return () => {
+      window.removeEventListener('voxquest-utility-updated', reload);
+      window.removeEventListener('storage', reload);
     };
-
-    checkReminders();
-    const interval = setInterval(checkReminders, 30000);
-    return () => clearInterval(interval);
-  }, [markedDates]);
+  }, []);
 
   // Live ticking clock in clean original format
   useEffect(() => {

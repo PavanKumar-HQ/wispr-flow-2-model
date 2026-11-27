@@ -41,7 +41,8 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
   const handleSnooze = (mins: number) => {
     if (!reminderAlert) return;
     const taskLabel = reminderAlert.label || reminderAlert.message.replace('Task Due Today: ', '').replace('Task Due: ', '').trim();
-    const now = new Date(Date.now() + mins * 60000);
+    const triggerAtMs = Date.now() + mins * 60000;
+    const now = new Date(triggerAtMs);
     const newTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
     try {
@@ -53,6 +54,7 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
             return {
               ...item,
               timeStr: newTimeStr,
+              triggerAtMs,
               lastNotifiedDate: undefined,
             };
           }
@@ -249,6 +251,7 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
       } catch {}
     };
     window.addEventListener('voxquest-utility-updated', onUtilityUpdated);
+    window.addEventListener('storage', onUtilityUpdated);
 
     const checkReminders = () => {
       try {
@@ -258,10 +261,12 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
           dateStr: string;
           label: string;
           timeStr?: string;
+          triggerAtMs?: number;
           reminderEnabled?: boolean;
           lastNotifiedDate?: string;
         }> = JSON.parse(stored);
         const now = new Date();
+        const nowMs = now.getTime();
         const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
         const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
         let changed = false;
@@ -269,7 +274,8 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
           if (item.dateStr === todayStr && item.reminderEnabled !== false && item.label?.trim()) {
             if (item.lastNotifiedDate === todayStr) return item;
             const targetTime = item.timeStr || '09:00';
-            if (currentTime >= targetTime) {
+            const isDue = item.triggerAtMs ? nowMs >= item.triggerAtMs : currentTime >= targetTime;
+            if (isDue) {
               const alertData = {
                 title: 'VoxQuest Task Reminder',
                 message: `Task Due: ${item.label}`,
@@ -304,6 +310,7 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
       cancelled = true;
       clearInterval(timer);
       window.removeEventListener('voxquest-utility-updated', onUtilityUpdated);
+      window.removeEventListener('storage', onUtilityUpdated);
       if (unlisten) unlisten();
     };
   }, []);
