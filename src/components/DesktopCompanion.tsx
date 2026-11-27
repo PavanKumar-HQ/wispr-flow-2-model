@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, Mic, MapPin, Footprints, AppWindow, X, Moon, Music, Smile, RotateCcw } from 'lucide-react';
-import { VoxBotFullBody, VoxBotPose } from './VoxBotFullBody';
+import { VoxBotFullBody, VoxBotPose, VoxBotVisorStatus } from './VoxBotFullBody';
 import { SessionSnapshot, NowPlayingInfo } from '../types';
 import { safeInvoke, safeListen } from '../lib/ipc';
 import { getCurrentWindow, LogicalPosition, currentMonitor } from '@tauri-apps/api/window';
@@ -10,7 +10,7 @@ interface DesktopCompanionProps {
   onToggleDictation: () => void;
 }
 
-const MOUSE_REST_SLEEP_MS = 6000; // Fall asleep after 6s of no mouse movement
+const MOUSE_REST_SLEEP_MS = 45000; // Stay active and roaming for 45s before taking a nap
 
 /**
  * Autonomous, Battery-Friendly Desktop Companion Window (VoxBot).
@@ -61,6 +61,11 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
         localStorage.setItem('voxquest_marked_calendar_dates', JSON.stringify(updated));
       }
       localStorage.removeItem('voxquest_active_reminder_alert');
+      localStorage.setItem(
+        'voxquest_active_timer',
+        JSON.stringify({ endAt: Date.now() + mins * 60000, label: taskLabel })
+      );
+      window.dispatchEvent(new Event('voxquest-timer-sync'));
     } catch {}
 
     setReminderAlert(null);
@@ -96,12 +101,14 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
     setTimeout(() => setActionToast(null), 2000);
   };
   const [isMusicPlaying, setIsMusicPlaying] = useState<boolean>(false);
+  const [isCleaning, setIsCleaning] = useState<boolean>(false);
+  const [visorStatus, setVisorStatus] = useState<VoxBotVisorStatus>({ mode: 'normal' });
   const [showContextMenu, setShowContextMenu] = useState<boolean>(false);
   const [freeRoam, setFreeRoam] = useState<boolean>(() => {
     try {
-      return localStorage.getItem('voxquest_bot_freeroam') === 'true';
+      return localStorage.getItem('voxquest_bot_freeroam') !== 'false';
     } catch {
-      return false;
+      return true;
     }
   });
 
@@ -354,12 +361,59 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
     };
   }, [status.state, isSleeping, isHovered, isMusicPlaying]);
 
-  // Active autonomous behavior while awake: gentle sequence (idle -> sit -> dance)
+  // Sync live timer / reminder countdown & system cleaning effects to VoxBot's face visor
   useEffect(() => {
-    if (status.state !== 'idle' || showSuccessFlash || isHovered || isSleeping) return;
+    const updateVisor = () => {
+      try {
+        const cleanFlag = localStorage.getItem('voxquest_cleaning_active') === 'true';
+        setIsCleaning(cleanFlag);
+        if (cleanFlag) {
+          setVisorStatus({ mode: 'cleaning' });
+          return;
+        }
+
+        const rawTimer = localStorage.getItem('voxquest_active_timer');
+        if (rawTimer) {
+          const parsed = JSON.parse(rawTimer) as { endAt: number; label?: string };
+          const remMs = parsed.endAt - Date.now();
+          if (remMs > 0) {
+            const totalSec = Math.ceil(remMs / 1000);
+            const mins = Math.floor(totalSec / 60);
+            const secs = totalSec % 60;
+            setVisorStatus({
+              mode: 'timer',
+              timerText: `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`,
+              agendaLabel: parsed.label,
+            });
+            return;
+          } else {
+            localStorage.removeItem('voxquest_active_timer');
+          }
+        }
+        setVisorStatus({ mode: 'normal' });
+      } catch {
+        setVisorStatus({ mode: 'normal' });
+      }
+    };
+
+    updateVisor();
+    const timer = setInterval(updateVisor, 1000);
+    window.addEventListener('storage', updateVisor);
+    window.addEventListener('voxquest-timer-sync', updateVisor);
+
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('storage', updateVisor);
+      window.removeEventListener('voxquest-timer-sync', updateVisor);
+    };
+  }, []);
+
+  // Active autonomous behavior while awake: lively walk-centric loop
+  useEffect(() => {
+    if (status.state !== 'idle' || showSuccessFlash || isHovered || isSleeping || isCleaning) return;
 
     const sequence: Array<'idle' | 'sit' | 'dance' | 'walk' | 'fly'> = freeRoam
-      ? ['walk', 'fly', 'idle', 'sit', 'dance']
+      ? ['walk', 'walk', 'idle', 'fly', 'walk', 'dance', 'sit']
       : ['idle', 'sit', 'dance', 'idle'];
 
     const interval = setInterval(() => {
@@ -380,12 +434,14 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
     }, 4500);
 
     return () => clearInterval(interval);
-  }, [status.state, showSuccessFlash, isHovered, isSleeping, freeRoam]);
+  }, [status.state, showSuccessFlash, isHovered, isSleeping, isCleaning, freeRoam]);
 
   const effectiveIdlePose = isHovered && autoPose === 'sleep' ? 'sit' : autoPose;
 
   const activePose: VoxBotPose =
-    status.state === 'recording'
+    isCleaning
+      ? 'cleaning'
+      : status.state === 'recording'
       ? 'listening'
       : status.state === 'transcribing'
       ? 'transcribing'
@@ -583,6 +639,7 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
           gaze={gaze}
           isHovered={isHovered}
           isBlinking={isBlinking}
+          visorStatus={visorStatus}
           onCoreClick={onToggleDictation}
         />
 

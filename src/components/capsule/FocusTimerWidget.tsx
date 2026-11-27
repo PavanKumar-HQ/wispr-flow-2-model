@@ -34,6 +34,22 @@ export const FocusTimerWidget: React.FC = () => {
     return () => window.removeEventListener('voxquest-timer-command', onTimerCmd);
   }, [initialSeconds]);
 
+  // Sync active timer to VoxBot visor display
+  useEffect(() => {
+    try {
+      if (isRunning && secondsLeft > 0) {
+        const endAt = Date.now() + secondsLeft * 1000;
+        localStorage.setItem(
+          'voxquest_active_timer',
+          JSON.stringify({ endAt, label: mode === 'break' ? 'Break' : 'Focus Timer' })
+        );
+      } else {
+        localStorage.removeItem('voxquest_active_timer');
+      }
+      window.dispatchEvent(new Event('voxquest-timer-sync'));
+    } catch {}
+  }, [isRunning, mode]);
+
   // Timer ticker only active when running to preserve battery / 0% CPU idle
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | null = null;

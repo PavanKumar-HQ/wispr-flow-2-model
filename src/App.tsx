@@ -250,6 +250,16 @@ export default function App() {
             reminderEnabled: true,
           });
           localStorage.setItem('voxquest_marked_calendar_dates', JSON.stringify(list));
+          if (payload.offset_minutes && payload.offset_minutes > 0) {
+            localStorage.setItem(
+              'voxquest_active_timer',
+              JSON.stringify({
+                endAt: Date.now() + payload.offset_minutes * 60000,
+                label: payload.label,
+              })
+            );
+            window.dispatchEvent(new Event('voxquest-timer-sync'));
+          }
           window.dispatchEvent(new Event('voxquest-utility-updated'));
           safeInvoke('send_system_notification_cmd', {
             title: 'Reminder Set',
@@ -293,11 +303,16 @@ export default function App() {
                 : 'Reset',
           });
         } else if (payload.kind === 'system_clean') {
-          const res = await safeInvoke<{ ram_reclaimed_mb: number; disk_cache_cleared_mb: number }>('run_system_clean_and_boost_cmd');
-          safeInvoke('send_system_notification_cmd', {
-            title: 'System Boost Complete',
-            message: `+${res.ram_reclaimed_mb} MB RAM · +${res.disk_cache_cleared_mb} MB Cache cleared`,
-          });
+          localStorage.setItem('voxquest_cleaning_active', 'true');
+          try {
+            const res = await safeInvoke<{ ram_reclaimed_mb: number; disk_cache_cleared_mb: number }>('run_system_clean_and_boost_cmd');
+            safeInvoke('send_system_notification_cmd', {
+              title: 'System Boost Complete',
+              message: `+${res.ram_reclaimed_mb} MB RAM · +${res.disk_cache_cleared_mb} MB Cache cleared`,
+            });
+          } finally {
+            setTimeout(() => localStorage.removeItem('voxquest_cleaning_active'), 2600);
+          }
         } else if (payload.kind === 'system_scan') {
           const findings = await safeInvoke<Array<{ size_mb: number }>>('scan_mac_storage_cmd');
           const totalMb = findings.reduce((sum, f) => sum + (f.size_mb || 0), 0);

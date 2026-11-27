@@ -92,6 +92,7 @@ export const UtilitiesTab: React.FC<UtilitiesTabProps> = ({ session, onCopy, onS
     if (isCleaning) return;
     setIsCleaning(true);
     try {
+      localStorage.setItem('voxquest_cleaning_active', 'true');
       const res = await safeInvoke<CleanResult>('run_system_clean_and_boost_cmd');
       setCleanResult(res);
       if (res.findings) {
@@ -101,6 +102,9 @@ export const UtilitiesTab: React.FC<UtilitiesTabProps> = ({ session, onCopy, onS
       console.warn('Clean error:', err);
     } finally {
       setIsCleaning(false);
+      setTimeout(() => {
+        try { localStorage.removeItem('voxquest_cleaning_active'); } catch {}
+      }, 2600);
     }
   };
 

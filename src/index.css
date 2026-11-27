@@ -725,6 +725,36 @@
   transform-origin: 100px 242px;
 }
 
+@keyframes vbCleanSweep {
+  0% { transform: translateX(-48px); opacity: 0.25; }
+  50% { transform: translateX(48px); opacity: 0.95; }
+  100% { transform: translateX(-48px); opacity: 0.25; }
+}
+
+@keyframes vbCleanSparkle {
+  0%, 100% { transform: scale(0.5) rotate(0deg); opacity: 0.3; }
+  50% { transform: scale(1.15) rotate(45deg); opacity: 1; }
+}
+
+.vb-clean-beam {
+  animation: vbCleanSweep 1.3s ease-in-out infinite;
+}
+
+.vb-clean-sparkle-1 {
+  transform-origin: 48px 34px;
+  animation: vbCleanSparkle 1.1s ease-in-out infinite;
+}
+
+.vb-clean-sparkle-2 {
+  transform-origin: 154px 40px;
+  animation: vbCleanSparkle 1.1s ease-in-out infinite 0.45s;
+}
+
+.vb-clean-sparkle-3 {
+  transform-origin: 138px 142px;
+  animation: vbCleanSparkle 1.1s ease-in-out infinite 0.25s;
+}
+
 /* Native desktop drag regions for macOS */
 [data-tauri-drag-region] {
   -webkit-app-region: drag;

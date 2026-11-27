@@ -10,7 +10,14 @@ export type VoxBotPose =
   | 'music'
   | 'listening'
   | 'transcribing'
+  | 'cleaning'
   | 'success';
+
+export interface VoxBotVisorStatus {
+  mode: 'normal' | 'timer' | 'cleaning' | 'agenda';
+  timerText?: string;
+  agendaLabel?: string;
+}
 
 interface VoxBotFullBodyProps {
   pose?: VoxBotPose;
@@ -19,6 +26,7 @@ interface VoxBotFullBodyProps {
   gaze?: { x: number; y: number };
   isHovered?: boolean;
   isBlinking?: boolean;
+  visorStatus?: VoxBotVisorStatus;
   onCoreClick?: () => void;
   className?: string;
 }
@@ -29,6 +37,7 @@ interface VoxBotFullBodyProps {
  * - Ready/Idle/Walk/Fly: Teal/Green (#34A89E)
  * - Listening: Traditional Pill Terracotta-Orange (#DA6C4C)
  * - Transcribing: Warm Amber (#DDA44D)
+ * - Cleaning: Radiant Mint-Cyan (#2CE6D3)
  */
 export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
   pose = 'idle',
@@ -37,6 +46,7 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
   gaze = { x: 0, y: 0 },
   isHovered = false,
   isBlinking = false,
+  visorStatus,
   onCoreClick,
   className = '',
 }) => {
@@ -48,6 +58,7 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
   const isDancing = pose === 'dance';
   const isMusic = pose === 'music';
   const isTranscribing = pose === 'transcribing';
+  const isCleaning = pose === 'cleaning' || visorStatus?.mode === 'cleaning';
   const isSuccess = pose === 'success';
 
   // Color theme matched to Sovereign Pill: Ready = Green/Teal, Listening = Terracotta Orange, Transcribing = Amber
@@ -55,6 +66,8 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
     ? '#DA6C4C'
     : isTranscribing
     ? '#DDA44D'
+    : isCleaning
+    ? '#2CE6D3'
     : isSleeping
     ? '#7A9A96'
     : '#34A89E';
@@ -63,6 +76,8 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
     ? '#FFE6A8'
     : isTranscribing
     ? '#FFD27D'
+    : isCleaning
+    ? '#7DF9EC'
     : isSleeping
     ? '#9BC4BE'
     : '#FFD07B';
@@ -572,11 +587,102 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
             <rect x="52" y="42" width="96" height="58" rx="16" fill="url(#vb3dTeal)" stroke="#042E2B" strokeWidth="1.2" />
 
             {/* Deep Curved CRT Glass with Glossy Specular Arc */}
+            <defs>
+              <clipPath id="vbVisorClip">
+                <rect x="57" y="47" width="86" height="48" rx="12" />
+              </clipPath>
+            </defs>
             <rect x="57" y="47" width="86" height="48" rx="12" fill="url(#vb3dScreen)" />
-            <path d="M 63 53 Q 100 48 137 53" stroke="#52D1C5" strokeWidth="2" strokeLinecap="round" fill="none" opacity="0.38" />
-            <path d="M 68 57 Q 100 52 132 57" stroke="#FFFFFF" strokeWidth="1" strokeLinecap="round" fill="none" opacity="0.22" />
+            <path d="M 60 51 Q 100 45 140 51 L 136 58 Q 100 54 64 58 Z" fill="#FFFFFF" opacity="0.09" />
+            <path d="M 63 53 Q 100 48 137 53" stroke="#52D1C5" strokeWidth="1.8" strokeLinecap="round" fill="none" opacity="0.35" />
 
             {/* ================= CLEAN, SPACIOUS LED EXPRESSIONS (WITH EMISSIVE BLOOM) ================= */}
+            {isCleaning ? (
+              /* CLEANING / SYSTEM BOOST: Sweeping Mint Laser Beam + Sparkle Stars + LED Readout */
+              <g clipPath="url(#vbVisorClip)">
+                <rect
+                  x="94"
+                  y="47"
+                  width="12"
+                  height="48"
+                  fill="#2CE6D3"
+                  opacity="0.35"
+                  className="vb-clean-beam"
+                />
+                <line
+                  x1="100"
+                  y1="47"
+                  x2="100"
+                  y2="95"
+                  stroke="#9DFCF2"
+                  strokeWidth="2.5"
+                  className="vb-clean-beam"
+                />
+                <g transform={facing === 'left' ? 'translate(200, 0) scale(-1, 1)' : undefined}>
+                  <text
+                    x="100"
+                    y="70"
+                    textAnchor="middle"
+                    fill="#9DFCF2"
+                    fontSize="11.5"
+                    fontWeight="800"
+                    fontFamily="JetBrains Mono, monospace"
+                    letterSpacing="0.8"
+                    filter="url(#vbEyeGlow)"
+                  >
+                    CLEAN
+                  </text>
+                  <text
+                    x="100"
+                    y="83"
+                    textAnchor="middle"
+                    fill="#34A89E"
+                    fontSize="7.5"
+                    fontWeight="700"
+                    fontFamily="Plus Jakarta Sans, sans-serif"
+                  >
+                    BOOSTING...
+                  </text>
+                </g>
+              </g>
+            ) : visorStatus?.mode === 'timer' && !isListening && !isTranscribing && !isSleeping ? (
+              /* LIVE TIMER / COUNTDOWN ON FACE VISOR */
+              <g transform={facing === 'left' ? 'translate(200, 0) scale(-1, 1)' : undefined}>
+                {/* Subtle peeking happy eyes at top of visor */}
+                <path d="M 76 55 Q 81 51 86 55" fill="none" stroke="#34A89E" strokeWidth="2.2" strokeLinecap="round" opacity="0.85" />
+                <path d="M 114 55 Q 119 51 124 55" fill="none" stroke="#34A89E" strokeWidth="2.2" strokeLinecap="round" opacity="0.85" />
+                {/* Big Crisp Digital LED Countdown */}
+                <text
+                  x="100"
+                  y="75"
+                  textAnchor="middle"
+                  fill="#FFD07B"
+                  fontSize="18"
+                  fontWeight="800"
+                  fontFamily="JetBrains Mono, monospace"
+                  letterSpacing="0.5"
+                  filter="url(#vbEyeGlow)"
+                >
+                  {visorStatus.timerText || '00:00'}
+                </text>
+                {/* Agenda / Reminder Label */}
+                {visorStatus.agendaLabel && (
+                  <text
+                    x="100"
+                    y="88"
+                    textAnchor="middle"
+                    fill="#52D1C5"
+                    fontSize="7.5"
+                    fontWeight="700"
+                    fontFamily="Plus Jakarta Sans, sans-serif"
+                  >
+                    {visorStatus.agendaLabel.length > 14
+                      ? `${visorStatus.agendaLabel.slice(0, 13)}…`
+                      : visorStatus.agendaLabel}
+                  </text>
+                )}
+              </g>
+            ) : (
             <g
               fill={eyeColor}
               filter="url(#vbEyeGlow)"
@@ -686,6 +792,16 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
                 </g>
               )}
             </g>
+            )}
+
+            {/* Cleaning / Boost Sparkle Stars around Head & Core */}
+            {isCleaning && (
+              <g fill="#7DF9EC" filter="url(#vbEyeGlow)">
+                <path d="M 48 26 L 50 32 L 56 34 L 50 36 L 48 42 L 46 36 L 40 34 L 46 32 Z" className="vb-clean-sparkle-1" />
+                <path d="M 154 32 L 156 38 L 162 40 L 156 42 L 154 48 L 152 42 L 146 40 L 152 38 Z" className="vb-clean-sparkle-2" />
+                <path d="M 138 134 L 140 140 L 146 142 L 140 144 L 138 150 L 136 144 L 130 142 L 136 140 Z" className="vb-clean-sparkle-3" />
+              </g>
+            )}
           </g>
 
           {/* Foreground Right Arm when Thinking (renders cleanly in FRONT of body/head) */}
