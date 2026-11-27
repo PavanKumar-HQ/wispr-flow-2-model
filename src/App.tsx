@@ -14,7 +14,7 @@ import { UtilitiesTab } from './components/UtilitiesTab';
 import { QuestsTab } from './components/QuestsTab';
 import { MeetingAssistantTab } from './components/MeetingAssistantTab';
 import { ModelInfo, AppSettings, HistoryRecord, SessionSnapshot, InsightsData } from './types';
-import { Home, Layers, History, Settings as SettingsIcon, BookA, BarChart2, LocateFixed, GraduationCap, LayoutGrid, Trophy, Video, Bot, Bell, RotateCcw, AlertTriangle } from 'lucide-react';
+import { Home, Layers, History, Settings as SettingsIcon, BookA, BarChart2, LocateFixed, GraduationCap, LayoutGrid, Trophy, Video, Bot, Bell, RotateCcw, AlertTriangle, X } from 'lucide-react';
 import { applyTheme } from './lib/theme';
 import {
   Commitment,
@@ -114,7 +114,7 @@ export default function App() {
     if (isOverlayWindow || !activeReminder) return;
     const repeatTimer = setInterval(() => {
       safeInvoke('send_system_notification_cmd', {
-        title: '⏰ Reminder Still Due',
+        title: 'Reminder Still Due',
         message: `${activeReminder.label} — Click Remind in 15m or Done`,
       });
     }, 45000);
@@ -365,7 +365,7 @@ export default function App() {
                   localStorage.setItem('voxquest_active_reminder_alert', JSON.stringify(alertData));
                 } catch {}
                 safeInvoke('send_system_notification_cmd', {
-                  title: '⏰ VoxQuest Task Reminder',
+                  title: 'VoxQuest Task Reminder',
                   message: `Task Due: ${payload.label}`,
                 });
                 window.dispatchEvent(new Event('voxquest-utility-updated'));
@@ -410,7 +410,7 @@ export default function App() {
           if (conflicts.length > 0) {
             setScheduleConflict({ newItem: newCommitment, conflictingWith: conflicts[0] });
             safeInvoke('send_system_notification_cmd', {
-              title: '⚠️ Schedule Conflict Detected',
+              title: 'Schedule Conflict Detected',
               message: `"${payload.label}" (${rawTimeStr}) overlaps with "${conflicts[0].title}" (${conflicts[0].timeStr})`,
             });
           } else {
@@ -1078,7 +1078,7 @@ export default function App() {
               className="text-charcoal/40 hover:text-charcoal dark:text-sage dark:hover:text-cream p-1 cursor-pointer"
               title="Dismiss"
             >
-              ✕
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
 
@@ -1143,7 +1143,7 @@ export default function App() {
               className="text-charcoal/40 hover:text-charcoal dark:text-sage dark:hover:text-cream p-1 cursor-pointer"
               title="Close"
             >
-              ✕
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
 

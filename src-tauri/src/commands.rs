@@ -1612,11 +1612,11 @@ pub fn stop_dictation_internal(state: &AppState, app: &AppHandle) -> Result<Sess
                     let _ = app.emit("settings-updated", &*settings_lock);
                 }
 
-                let msg = format!("⚡ Technical statement detected ({}). Toggled to {} profile.", sample, target_dev_model.name);
+                let msg = format!("Technical statement detected ({}). Toggled to {} profile.", sample, target_dev_model.name);
                 let _ = app.emit("technical-model-shifted", &msg);
                 Some(msg)
             } else {
-                let msg = format!("⚡ {} active for technical statement.", target_dev_model.name);
+                let msg = format!("{} active for technical statement.", target_dev_model.name);
                 let _ = app.emit("technical-model-shifted", &msg);
                 Some(msg)
             }
