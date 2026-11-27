@@ -577,7 +577,7 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
 
   return (
     <div
-      className="w-screen h-screen flex flex-col items-center justify-end pb-1 pt-2 select-none bg-transparent overflow-visible"
+      className="w-screen h-screen flex flex-col items-center justify-end pb-0.5 pt-1.5 select-none bg-transparent overflow-visible"
       style={{ background: 'transparent' }}
     >
       {/* Tiny Sleek Listening / Transcribing / Action Pill Above Robot (No clipped card) */}
@@ -624,7 +624,7 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
       >
         <VoxBotFullBody
           pose={activePose}
-          size={134}
+          size={122}
           facing={facing}
           gaze={gaze}
           isHovered={isHovered}
