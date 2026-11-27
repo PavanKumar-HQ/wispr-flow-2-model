@@ -71,7 +71,8 @@ export const MeetingAssistantTab: React.FC = () => {
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
   const [manualInput, setManualInput] = useState<string>('');
   const [activeSpeaker, setActiveSpeaker] = useState<string>('Lead Engineer');
-  const transcriptEndRef = useRef<HTMLDivElement>(null);
+  const transcriptContainerRef = useRef<HTMLDivElement>(null);
+  const prevUtteranceCountRef = useRef<number>(0);
 
   // Poll active session on mount
   useEffect(() => {
@@ -106,7 +107,7 @@ export const MeetingAssistantTab: React.FC = () => {
         chunkInFlight = true;
         try {
           const updated = await safeInvoke<MeetingSession | null>('transcribe_live_meeting_chunk_cmd');
-          if (updated) {
+          if (updated && updated.utterances.length !== prevUtteranceCountRef.current) {
             setCurrentSession(updated);
           }
         } catch (err) {
@@ -122,12 +123,20 @@ export const MeetingAssistantTab: React.FC = () => {
     };
   }, [isRecording]);
 
-  // Scroll transcript to bottom on new message
+  // Scroll only inside the transcript feed box when new utterances arrive and user is near the bottom
   useEffect(() => {
-    if (transcriptEndRef.current) {
-      transcriptEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    const count = currentSession?.utterances?.length ?? 0;
+    const prevCount = prevUtteranceCountRef.current;
+    prevUtteranceCountRef.current = count;
+
+    if (count > prevCount && transcriptContainerRef.current) {
+      const el = transcriptContainerRef.current;
+      const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+      if (isNearBottom) {
+        el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+      }
     }
-  }, [currentSession?.utterances]);
+  }, [currentSession?.utterances?.length]);
 
   const handleStartMeeting = async () => {
     try {
@@ -424,7 +433,7 @@ export const MeetingAssistantTab: React.FC = () => {
           </div>
 
           {/* Transcript Feed Box */}
-          <div className="h-[340px] overflow-y-auto space-y-3 pr-2 scrollbar-thin">
+          <div ref={transcriptContainerRef} className="h-[340px] overflow-y-auto space-y-3 pr-2 scrollbar-thin">
             {!currentSession || currentSession.utterances.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-2 border border-dashed border-charcoal/15 dark:border-darkTealBorder rounded-xl bg-stone-50/50 dark:bg-darkTealElevated/30">
                 <Video className="w-8 h-8 text-charcoal/30 dark:text-sage/40" />
@@ -466,7 +475,6 @@ export const MeetingAssistantTab: React.FC = () => {
                 </div>
               ))
             )}
-            <div ref={transcriptEndRef} />
           </div>
 
           {/* Quick Simulation / Injection Controls */}
