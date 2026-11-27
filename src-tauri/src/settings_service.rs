@@ -67,7 +67,7 @@ impl Default for AppSettings {
             auto_capitalization: true,
             retain_history: true,
             play_sound_effects: true,
-            max_duration_secs: 180, // 3 minutes limit with safety cutoff
+            max_duration_secs: 1800, // 30 minutes limit with safety cutoff
             selected_microphone: "default".to_string(),
             enable_personal_dictionary: true,
             enable_correction_learning: true,
@@ -108,6 +108,10 @@ pub fn load_settings() -> AppSettings {
             settings.enable_destination_sync = true;
             if settings.destination_sync_duration_secs > 12 {
                 settings.destination_sync_duration_secs = 12;
+            }
+            // Upgrade legacy 3-minute (180s) cutoff to 30 minutes (1800s) for long dictations
+            if settings.max_duration_secs > 0 && settings.max_duration_secs < 1800 {
+                settings.max_duration_secs = 1800;
             }
             return settings;
         }

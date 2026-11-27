@@ -64,7 +64,7 @@ let mockSettings: AppSettings = {
   auto_capitalization: true,
   retain_history: true,
   play_sound_effects: true,
-  max_duration_secs: 180,
+  max_duration_secs: 1800,
   theme: 'system',
   enable_personal_dictionary: true,
   enable_correction_learning: true,

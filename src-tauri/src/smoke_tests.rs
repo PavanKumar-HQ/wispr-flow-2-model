@@ -143,7 +143,7 @@ fn test_settings_serde_default_backward_compatibility() {
     assert_eq!(s.default_model_id, "whisper-tiny");
     assert_eq!(s.language, "en");
     assert_eq!(s.insertion_policy, "original_destination");
-    assert_eq!(s.max_duration_secs, 180);
+    assert_eq!(s.max_duration_secs, 1800);
     assert_eq!(s.retain_history, false);
 }
 
