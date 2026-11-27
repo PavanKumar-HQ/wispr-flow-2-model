@@ -1,4 +1,4 @@
-import React from 'react';
+ import React from 'react';
 
 export type VoxBotPose =
   | 'idle'
@@ -468,10 +468,7 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
               style={{ transformOrigin: '100px 139px' }}
             >
               <title>{isListening ? 'Click center button to stop listening' : 'Click center button to start listening'}</title>
-              <circle cx="100" cy="139" r="23" fill="url(#vb3dCoreGlow)" filter="url(#vbCoreBloom)" opacity={isListening ? 0.95 : 0.65} />
-              {isListening && (
-                <circle cx="100" cy="139" r="28" fill="none" stroke="#DA6C4C" strokeWidth="1.6" className="animate-ping" opacity="0.5" />
-              )}
+              <circle cx="100" cy="139" r="20" fill="url(#vb3dCoreGlow)" opacity={isListening ? 0.9 : 0.6} />
               <circle cx="100" cy="139" r="16.5" fill="url(#vb3dDark)" stroke={coreColor} strokeWidth="2.4" />
               <circle cx="100" cy="139" r="12.5" fill="none" stroke="#8C949E" strokeWidth="1.3" opacity="0.85" />
               <circle cx="100" cy="139" r="8.5" fill="none" stroke={coreColor} strokeWidth="1.6" opacity="0.9" />
@@ -480,7 +477,6 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
                 cy="139"
                 r="4.5"
                 fill={coreColor}
-                className={isListening || isTranscribing ? 'animate-pulse' : ''}
               />
             </g>
 
@@ -507,38 +503,6 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
             <line x1="100" y1="36" x2="100" y2="18" stroke="#182222" strokeWidth="5.5" strokeLinecap="round" />
             <line x1="100" y1="36" x2="100" y2="18" stroke="#0E6B64" strokeWidth="3" strokeLinecap="round" />
             <ellipse cx="100" cy="36" rx="10" ry="4" fill="url(#vb3dTeal)" />
-            {/* Antenna Glow & Listening Radar locked inside Head group so it moves & bends with the antenna */}
-            {(isListening || isTranscribing) && (
-              <circle
-                cx="100"
-                cy="14"
-                r={isListening ? 17 : 15}
-                fill="url(#vb3dAntennaGlow)"
-                className="pointer-events-none"
-              />
-            )}
-            {isListening && (
-              <g className="pointer-events-none">
-                <circle
-                  cx="100"
-                  cy="14"
-                  r="15"
-                  fill="none"
-                  stroke="#DA6C4C"
-                  strokeWidth="2"
-                  opacity="0.7"
-                  className="vb-radar-1"
-                />
-                {/* Left Ear: Curved waves gliding INTO the left ear and disappearing */}
-                <path d="M 18 60 Q 11 71 18 82" fill="none" stroke="#DA6C4C" strokeWidth="2.8" strokeLinecap="round" className="vb-ear-in-l-1" />
-                <path d="M 18 62 Q 12 71 18 80" fill="none" stroke="#DDA44D" strokeWidth="2.4" strokeLinecap="round" className="vb-ear-in-l-2" />
-                <path d="M 18 64 Q 13 71 18 78" fill="none" stroke="#DA6C4C" strokeWidth="2" strokeLinecap="round" className="vb-ear-in-l-3" />
-                {/* Right Ear: Curved waves gliding INTO the right ear and disappearing */}
-                <path d="M 182 60 Q 189 71 182 82" fill="none" stroke="#DA6C4C" strokeWidth="2.8" strokeLinecap="round" className="vb-ear-in-r-1" />
-                <path d="M 182 62 Q 188 71 182 80" fill="none" stroke="#DDA44D" strokeWidth="2.4" strokeLinecap="round" className="vb-ear-in-r-2" />
-                <path d="M 182 64 Q 187 71 182 78" fill="none" stroke="#DA6C4C" strokeWidth="2" strokeLinecap="round" className="vb-ear-in-r-3" />
-              </g>
-            )}
             <circle
               cx="100"
               cy="14"

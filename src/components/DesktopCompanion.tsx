@@ -439,8 +439,8 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
             <span className="truncate">{reminderAlert.message.replace('Task Due Today: ', '')}</span>
           </button>
         ) : status.state === 'recording' ? (
-          <div className="px-2 py-[1px] rounded-full text-[8.5px] font-mono font-bold tracking-wider uppercase border border-terracotta bg-cream/95 text-terracotta shadow-xs animate-fadeIn flex items-center gap-1">
-            <span className="w-1 h-1 rounded-full bg-terracotta animate-ping" />
+          <div className="px-2 py-[1px] rounded-full text-[8.5px] font-mono font-bold tracking-wider uppercase border border-terracotta bg-cream/95 text-terracotta shadow-xs animate-fadeIn flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-terracotta" />
             <span>Listening</span>
           </div>
         ) : actionToast ? (
