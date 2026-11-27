@@ -14,8 +14,16 @@ import { UtilitiesTab } from './components/UtilitiesTab';
 import { QuestsTab } from './components/QuestsTab';
 import { MeetingAssistantTab } from './components/MeetingAssistantTab';
 import { ModelInfo, AppSettings, HistoryRecord, SessionSnapshot, InsightsData } from './types';
-import { Home, Layers, History, Settings as SettingsIcon, BookA, BarChart2, LocateFixed, GraduationCap, LayoutGrid, Trophy, Video, Bot, Bell, RotateCcw } from 'lucide-react';
+import { Home, Layers, History, Settings as SettingsIcon, BookA, BarChart2, LocateFixed, GraduationCap, LayoutGrid, Trophy, Video, Bot, Bell, RotateCcw, AlertTriangle } from 'lucide-react';
 import { applyTheme } from './lib/theme';
+import {
+  Commitment,
+  findScheduleConflicts,
+  getLocalDayKey,
+  parseTimeToMinutes,
+  formatMinutesToHHMM,
+  getCommitmentWindow,
+} from './lib/schedule';
 
 export default function App() {
   const isPillOnlyWindow = typeof window !== 'undefined' && window.location.hash.includes('pill');
@@ -95,6 +103,23 @@ export default function App() {
     } catch {}
     return null;
   });
+  const [scheduleConflict, setScheduleConflict] = useState<{
+    newItem: Commitment;
+    conflictingWith: Commitment;
+  } | null>(null);
+
+  // Repeating Alarm Safety: if a due reminder has not been snoozed or marked Done,
+  // re-ring the macOS alarm chime & notification every 45 seconds so it is never missed.
+  useEffect(() => {
+    if (isOverlayWindow || !activeReminder) return;
+    const repeatTimer = setInterval(() => {
+      safeInvoke('send_system_notification_cmd', {
+        title: '⏰ Reminder Still Due',
+        message: `${activeReminder.label} — Click Remind in 15m or Done`,
+      });
+    }, 45000);
+    return () => clearInterval(repeatTimer);
+  }, [isOverlayWindow, activeReminder]);
 
   const handleSnoozeReminder = (mins: number) => {
     if (!activeReminder) return;
@@ -263,6 +288,26 @@ export default function App() {
               })
             );
             window.dispatchEvent(new Event('voxquest-timer-sync'));
+            if (offsetMs <= 86400000) {
+              setTimeout(() => {
+                const alertData = {
+                  title: 'VoxQuest Task Reminder',
+                  message: `Task Due: ${payload.label}`,
+                  label: payload.label,
+                  timeStr,
+                  dateStr,
+                };
+                setActiveReminder(alertData);
+                try {
+                  localStorage.setItem('voxquest_active_reminder_alert', JSON.stringify(alertData));
+                } catch {}
+                safeInvoke('send_system_notification_cmd', {
+                  title: '⏰ VoxQuest Task Reminder',
+                  message: `Task Due: ${payload.label}`,
+                });
+                window.dispatchEvent(new Event('voxquest-utility-updated'));
+              }, offsetMs);
+            }
           }
           window.dispatchEvent(new Event('voxquest-utility-updated'));
           safeInvoke('send_system_notification_cmd', {
@@ -271,25 +316,46 @@ export default function App() {
           });
         } else if (payload.kind === 'schedule') {
           const durationMins = payload.duration_min || 30;
-          const timeStr = payload.time_str || now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+          const rawTimeStr =
+            payload.time_str ||
+            `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
           const stored = localStorage.getItem('voxquest_saved_commitments');
-          const list = stored ? JSON.parse(stored) : [];
+          const list: Commitment[] = stored ? JSON.parse(stored) : [];
           const isZoom = payload.label.toLowerCase().includes('zoom');
-          const dayPrefix = payload.day_offset === 1 ? 'Tomorrow' : 'Today';
-          list.unshift({
+          const dayOffset = payload.day_offset === 1 ? 1 : 0;
+          const dayPrefix = dayOffset === 1 ? 'Tomorrow' : 'Today';
+          const dayKey = getLocalDayKey(dayOffset);
+          const startMinutes =
+            parseTimeToMinutes(rawTimeStr) ?? now.getHours() * 60 + now.getMinutes();
+
+          const newCommitment: Commitment = {
             id: `voice-${Date.now()}`,
             title: payload.label,
             platform: isZoom ? 'Zoom' : 'Google Meet',
             url: isZoom ? 'https://zoom.us/new' : 'https://meet.google.com/new',
             durationMins,
-            timeStr: `${dayPrefix} • ${timeStr}`,
-          });
+            timeStr: `${dayPrefix} • ${rawTimeStr}`,
+            dayKey,
+            startMinutes,
+          };
+
+          const conflicts = findScheduleConflicts(newCommitment, list);
+          list.unshift(newCommitment);
           localStorage.setItem('voxquest_saved_commitments', JSON.stringify(list));
           window.dispatchEvent(new Event('voxquest-utility-updated'));
-          safeInvoke('send_system_notification_cmd', {
-            title: 'Schedule Added',
-            message: `${payload.label} (${dayPrefix} at ${timeStr})`,
-          });
+
+          if (conflicts.length > 0) {
+            setScheduleConflict({ newItem: newCommitment, conflictingWith: conflicts[0] });
+            safeInvoke('send_system_notification_cmd', {
+              title: '⚠️ Schedule Conflict Detected',
+              message: `"${payload.label}" (${rawTimeStr}) overlaps with "${conflicts[0].title}" (${conflicts[0].timeStr})`,
+            });
+          } else {
+            safeInvoke('send_system_notification_cmd', {
+              title: 'Schedule Added',
+              message: `${payload.label} (${dayPrefix} at ${rawTimeStr})`,
+            });
+          }
         } else if (payload.kind === 'timer') {
           const action = payload.label === 'pause' || payload.label === 'reset' ? payload.label : 'start';
           const totalSecs =
@@ -979,6 +1045,84 @@ export default function App() {
               title="Mark Done"
             >
               Done
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Interactive Schedule Conflict Warning Card */}
+      {!isOverlayWindow && scheduleConflict && (
+        <div className="fixed bottom-5 right-5 z-50 w-84 bg-[#FFFDF7] dark:bg-[#1A2628] border-2 border-terracotta rounded-2xl shadow-2xl p-4 flex flex-col gap-2.5 animate-fadeIn select-none">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-center gap-2 text-charcoal dark:text-cream min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-terracotta/15 text-terracotta flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-xs font-bold text-terracotta">Schedule Conflict Detected</div>
+                <div className="text-[11px] text-charcoal/80 dark:text-sage leading-snug mt-0.5">
+                  <strong>{scheduleConflict.newItem.title}</strong> ({scheduleConflict.newItem.timeStr}) overlaps with{' '}
+                  <strong>{scheduleConflict.conflictingWith.title}</strong> ({scheduleConflict.conflictingWith.timeStr}).
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setScheduleConflict(null)}
+              className="text-charcoal/40 hover:text-charcoal dark:text-sage dark:hover:text-cream p-1 cursor-pointer"
+              title="Close"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2 pt-2 border-t border-charcoal/10 dark:border-darkTealBorder">
+            <button
+              type="button"
+              onClick={() => {
+                try {
+                  const win = getCommitmentWindow(scheduleConflict.conflictingWith);
+                  const nextStart = win ? win.end : (scheduleConflict.newItem.startMinutes ?? 720) + 30;
+                  const nextHHMM = formatMinutesToHHMM(nextStart);
+                  const dayLabel = scheduleConflict.newItem.timeStr.includes('Tomorrow') ? 'Tomorrow' : 'Today';
+                  const stored = localStorage.getItem('voxquest_saved_commitments');
+                  const list: Commitment[] = stored ? JSON.parse(stored) : [];
+                  const updated = list.map((c) =>
+                    c.id === scheduleConflict.newItem.id
+                      ? { ...c, startMinutes: nextStart, timeStr: `${dayLabel} • ${nextHHMM}` }
+                      : c
+                  );
+                  localStorage.setItem('voxquest_saved_commitments', JSON.stringify(updated));
+                  window.dispatchEvent(new Event('voxquest-utility-updated'));
+                } catch {}
+                setScheduleConflict(null);
+              }}
+              className="flex-1 py-1.5 px-2.5 rounded-xl bg-darkTeal hover:bg-darkTeal/90 text-white text-xs font-bold shadow-xs cursor-pointer active:scale-95 transition-all"
+            >
+              Shift After
+            </button>
+            <button
+              type="button"
+              onClick={() => setScheduleConflict(null)}
+              className="py-1.5 px-2.5 rounded-xl bg-stone-100 dark:bg-darkTealElevated hover:bg-stone-200 text-charcoal dark:text-cream text-xs font-bold border border-charcoal/15 dark:border-darkTealBorder cursor-pointer"
+            >
+              Keep Both
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                try {
+                  const stored = localStorage.getItem('voxquest_saved_commitments');
+                  const list: Commitment[] = stored ? JSON.parse(stored) : [];
+                  const updated = list.filter((c) => c.id !== scheduleConflict.newItem.id);
+                  localStorage.setItem('voxquest_saved_commitments', JSON.stringify(updated));
+                  window.dispatchEvent(new Event('voxquest-utility-updated'));
+                } catch {}
+                setScheduleConflict(null);
+              }}
+              className="py-1.5 px-2.5 rounded-xl bg-terracotta/15 hover:bg-terracotta/25 text-terracotta text-xs font-bold border border-terracotta/20 cursor-pointer"
+            >
+              Remove
             </button>
           </div>
         </div>

@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Link2, ExternalLink, Trash2, Clock } from 'lucide-react';
-
-interface Commitment {
-  id: string;
-  title: string;
-  platform: 'Google Meet' | 'Zoom' | 'Focus Slot';
-  url: string;
-  durationMins: number;
-  timeStr: string;
-}
+import { Calendar, Link2, ExternalLink, Trash2, Clock, AlertTriangle } from 'lucide-react';
+import {
+  Commitment,
+  findScheduleConflicts,
+  getLocalDayKey,
+  parseTimeToMinutes,
+  formatMinutesToHHMM,
+  getCommitmentWindow,
+} from '../../lib/schedule';
 
 export const ScheduleWidget: React.FC = () => {
   const [selectedDuration, setSelectedDuration] = useState<number>(30);
@@ -59,17 +58,18 @@ export const ScheduleWidget: React.FC = () => {
     if (!urlInput.trim()) return;
     const url = urlInput.trim();
     const isZoom = url.toLowerCase().includes('zoom');
-    const futureTime = new Date(Date.now() + selectedDuration * 60000).toLocaleTimeString([], {
-      hour: 'numeric',
-      minute: '2-digit',
-    });
+    const now = new Date();
+    const startMinutes = now.getHours() * 60 + now.getMinutes();
+    const futureTime = formatMinutesToHHMM(startMinutes);
     const newCommitment: Commitment = {
       id: Date.now().toString(),
       title: isZoom ? 'Zoom Meeting' : 'Google Meet Sync',
       platform: isZoom ? 'Zoom' : 'Google Meet',
       url,
       durationMins: selectedDuration,
-      timeStr: `Next ${selectedDuration}m • ${futureTime}`,
+      timeStr: `Today • ${futureTime}`,
+      dayKey: getLocalDayKey(0),
+      startMinutes: parseTimeToMinutes(futureTime) ?? startMinutes,
     };
     const updated = [newCommitment, ...commitments];
     setCommitments(updated);
@@ -79,6 +79,23 @@ export const ScheduleWidget: React.FC = () => {
     } catch (e) {
       console.warn('Save commitments failed:', e);
     }
+  };
+
+  const handleShiftAfterConflict = (target: Commitment, conflictWith: Commitment) => {
+    const win = getCommitmentWindow(conflictWith);
+    const nextStart = win ? win.end : (target.startMinutes ?? 720) + 30;
+    const nextHHMM = formatMinutesToHHMM(nextStart);
+    const dayLabel = target.timeStr.includes('Tomorrow') ? 'Tomorrow' : 'Today';
+    const updated = commitments.map((c) =>
+      c.id === target.id
+        ? { ...c, startMinutes: nextStart, timeStr: `${dayLabel} • ${nextHHMM}` }
+        : c
+    );
+    setCommitments(updated);
+    try {
+      localStorage.setItem('voxquest_saved_commitments', JSON.stringify(updated));
+      window.dispatchEvent(new Event('voxquest-utility-updated'));
+    } catch {}
   };
 
   const handleDelete = (id: string) => {
@@ -170,46 +187,76 @@ export const ScheduleWidget: React.FC = () => {
         </button>
       </div>
 
-      {/* Active commitments */}
+      {/* Active commitments with live conflict detection */}
       {commitments.length > 0 && (
-        <div className="space-y-1.5 pt-0.5 max-h-[110px] overflow-y-auto no-scrollbar">
-          {commitments.map((c) => (
-            <div
-              key={c.id}
-              className="flex items-center justify-between px-2.5 py-2 rounded-xl bg-[#F8F8F5] dark:bg-darkTealSurface border border-charcoal/15 dark:border-darkTealBorder text-xs hover:border-darkTeal/30 dark:hover:border-mint/40 transition-all"
-            >
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="w-1.5 h-1.5 rounded-full bg-terracotta shrink-0" />
-                <div className="truncate">
-                  <div className="font-semibold text-charcoal dark:text-cream truncate">{c.title}</div>
-                  <div className="text-[10px] text-charcoal/60 dark:text-sage flex items-center gap-1">
-                    <span>{c.platform}</span>
-                    <span>•</span>
-                    <span>{c.timeStr}</span>
+        <div className="space-y-1.5 pt-0.5 max-h-[140px] overflow-y-auto no-scrollbar">
+          {commitments.map((c) => {
+            const conflicts = findScheduleConflicts(c, commitments);
+            const hasConflict = conflicts.length > 0;
+            return (
+              <div
+                key={c.id}
+                className={`flex items-center justify-between px-2.5 py-2 rounded-xl border text-xs transition-all ${
+                  hasConflict
+                    ? 'bg-terracotta/5 dark:bg-terracotta/15 border-terracotta/40'
+                    : 'bg-[#F8F8F5] dark:bg-darkTealSurface border-charcoal/15 dark:border-darkTealBorder hover:border-darkTeal/30 dark:hover:border-mint/40'
+                }`}
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${hasConflict ? 'bg-terracotta animate-pulse' : 'bg-darkTeal dark:bg-mint'}`} />
+                  <div className="truncate">
+                    <div className="flex items-center gap-1.5 font-semibold text-charcoal dark:text-cream truncate">
+                      <span className="truncate">{c.title}</span>
+                      {hasConflict && (
+                        <span
+                          className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded bg-terracotta/15 text-terracotta text-[9px] font-bold shrink-0"
+                          title={`Overlaps with ${conflicts[0].title} (${conflicts[0].timeStr})`}
+                        >
+                          <AlertTriangle className="w-2.5 h-2.5" />
+                          <span>Conflict</span>
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[10px] text-charcoal/60 dark:text-sage flex items-center gap-1">
+                      <span>{c.platform}</span>
+                      <span>•</span>
+                      <span>{c.timeStr}</span>
+                      <span>({c.durationMins}m)</span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="flex items-center gap-1 shrink-0 ml-2">
-                <button
-                  onClick={() => handleOpenLink(c.url)}
-                  className="p-1 rounded-md text-darkTeal hover:bg-darkTeal/10 transition-colors cursor-pointer"
-                  title="Open Meeting Link"
-                  aria-label="Open Meeting Link"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => handleDelete(c.id)}
-                  className="p-1 rounded-md text-charcoal/40 hover:text-terracotta hover:bg-terracotta/10 transition-colors cursor-pointer"
-                  title="Remove Commitment"
-                  aria-label="Remove Commitment"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                <div className="flex items-center gap-1 shrink-0 ml-2">
+                  {hasConflict && (
+                    <button
+                      type="button"
+                      onClick={() => handleShiftAfterConflict(c, conflicts[0])}
+                      className="px-1.5 py-0.5 rounded bg-darkTeal text-white text-[9px] font-bold hover:bg-darkTeal/90 cursor-pointer"
+                      title={`Shift right after ${conflicts[0].title}`}
+                    >
+                      Shift
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleOpenLink(c.url)}
+                    className="p-1 rounded-md text-darkTeal hover:bg-darkTeal/10 transition-colors cursor-pointer"
+                    title="Open Meeting Link"
+                    aria-label="Open Meeting Link"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(c.id)}
+                    className="p-1 rounded-md text-charcoal/40 hover:text-terracotta hover:bg-terracotta/10 transition-colors cursor-pointer"
+                    title="Remove Commitment"
+                    aria-label="Remove Commitment"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
