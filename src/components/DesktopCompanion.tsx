@@ -104,6 +104,19 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
   };
   const [isMusicPlaying, setIsMusicPlaying] = useState<boolean>(false);
   const [isCleaning, setIsCleaning] = useState<boolean>(false);
+  const [transcribeSecs, setTranscribeSecs] = useState<number>(0);
+
+  useEffect(() => {
+    if (status.state !== 'transcribing' && status.state !== 'formatting') {
+      setTranscribeSecs(0);
+      return;
+    }
+    const start = Date.now();
+    const t = setInterval(() => {
+      setTranscribeSecs(Math.floor((Date.now() - start) / 1000));
+    }, 500);
+    return () => clearInterval(t);
+  }, [status.state]);
   const [visorStatus, setVisorStatus] = useState<VoxBotVisorStatus>({ mode: 'normal' });
   const [showContextMenu, setShowContextMenu] = useState<boolean>(false);
   const [freeRoam, setFreeRoam] = useState<boolean>(() => {
@@ -457,7 +470,7 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
       ? 'cleaning'
       : status.state === 'recording'
       ? 'listening'
-      : status.state === 'transcribing'
+      : status.state === 'transcribing' || status.state === 'formatting'
       ? 'transcribing'
       : showSuccessFlash
       ? 'success'
@@ -567,12 +580,23 @@ export const DesktopCompanion: React.FC<DesktopCompanionProps> = ({
       className="w-screen h-screen flex flex-col items-center justify-end pb-1 pt-2 select-none bg-transparent overflow-visible"
       style={{ background: 'transparent' }}
     >
-      {/* Tiny Sleek Listening / Action Pill Above Robot (No clipped card) */}
+      {/* Tiny Sleek Listening / Transcribing / Action Pill Above Robot (No clipped card) */}
       <div className="h-5 flex items-center justify-center mb-0.5 shrink-0 z-40">
         {status.state === 'recording' ? (
           <div className="px-2 py-[1px] rounded-full text-[8.5px] font-bold tracking-wider uppercase border border-terracotta bg-cream/95 text-terracotta shadow-xs animate-fadeIn flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-terracotta" />
             <span>Listening</span>
+          </div>
+        ) : status.state === 'transcribing' || status.state === 'formatting' ? (
+          <div className="px-2 py-[1px] rounded-full text-[8.5px] font-bold tracking-wider uppercase border border-amber bg-cream/95 text-darkTeal shadow-xs animate-fadeIn flex items-center gap-1.5">
+            <span className="w-2 h-2 border-[1.5px] border-darkTeal border-t-transparent rounded-full animate-spin" />
+            <span>
+              {status.state === 'formatting'
+                ? 'Formatting...'
+                : transcribeSecs > 0
+                ? `Transcribing ${transcribeSecs}s`
+                : 'Transcribing...'}
+            </span>
           </div>
         ) : actionToast ? (
           <div className="px-2 py-[1px] rounded-full text-[8.5px] font-bold tracking-tight border border-darkTeal/40 bg-cream/95 text-darkTeal shadow-xs animate-fadeIn max-w-[152px] truncate">

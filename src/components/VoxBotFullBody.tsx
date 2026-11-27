@@ -736,20 +736,22 @@ export const VoxBotFullBody: React.FC<VoxBotFullBodyProps> = ({
                   />
                 </g>
               ) : isTranscribing ? (
-                /* TRANSCRIBING / THINKING: Eyes glancing up in thought + small thoughtful mouth */
+                /* TRANSCRIBING / THINKING: Eyes glancing up + animated 3-dot neural indicator */
                 <g>
                   <rect x="70" y="54" width="12" height="14" rx="6" fill="#FFD27D" />
                   <circle cx="79" cy="57" r="2.8" fill="#FFFDF5" />
                   <rect x="118" y="54" width="12" height="14" rx="6" fill="#FFD27D" />
                   <circle cx="127" cy="57" r="2.8" fill="#FFFDF5" />
-                  {/* Thoughtful small curved mouth */}
-                  <path
-                    d="M 94 79 Q 100 76 106 79"
-                    fill="none"
-                    stroke="#DDA44D"
-                    strokeWidth="2.8"
-                    strokeLinecap="round"
-                  />
+                  {/* Animated 3-dot processing pulse */}
+                  <circle cx="88" cy="82" r="2.6" fill="#DDA44D">
+                    <animate attributeName="opacity" values="0.25;1;0.25" dur="1.1s" repeatCount="indefinite" begin="0s" />
+                  </circle>
+                  <circle cx="100" cy="82" r="2.6" fill="#FFD27D">
+                    <animate attributeName="opacity" values="0.25;1;0.25" dur="1.1s" repeatCount="indefinite" begin="0.25s" />
+                  </circle>
+                  <circle cx="112" cy="82" r="2.6" fill="#DDA44D">
+                    <animate attributeName="opacity" values="0.25;1;0.25" dur="1.1s" repeatCount="indefinite" begin="0.5s" />
+                  </circle>
                 </g>
               ) : isFlying ? (
                 /* FLYING: Excited happy ^ ^ eyes + confident grin */

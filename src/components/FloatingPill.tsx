@@ -104,6 +104,19 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
   const hasTranscript = Boolean(status.last_transcript && status.last_transcript.trim().length > 0);
   const isDone = (status.state === 'completed' || status.state === 'recovery_required') && hasTranscript;
 
+  const [transcribeSecs, setTranscribeSecs] = useState<number>(0);
+  useEffect(() => {
+    if (!isTranscribing) {
+      setTranscribeSecs(0);
+      return;
+    }
+    const startedAt = Date.now();
+    const timer = setInterval(() => {
+      setTranscribeSecs(Math.floor((Date.now() - startedAt) / 1000));
+    }, 500);
+    return () => clearInterval(timer);
+  }, [isTranscribing]);
+
   const currentActiveText = enhancedText || status.last_transcript || '';
 
   // Reset enhancement state ONLY when a genuinely NEW session begins or records
@@ -291,7 +304,13 @@ export const FloatingPill: React.FC<FloatingPillProps> = ({
               <div className="shrink-0 flex items-center gap-2 font-sans pl-1">
                 <span className="w-3.5 h-3.5 border-2 border-darkTeal dark:border-amber border-t-transparent rounded-full animate-spin shrink-0" />
                 <span className="text-[11px] font-bold tracking-wide text-darkTeal dark:text-[#DFDFD4] transcribing-shimmer shrink-0">
-                  Transcribing...
+                  {status.state === 'formatting'
+                    ? 'Formatting...'
+                    : status.state === 'inserting'
+                    ? 'Pasting...'
+                    : transcribeSecs > 0
+                    ? `Transcribing ${transcribeSecs}s...`
+                    : 'Transcribing...'}
                 </span>
               </div>
               {/* Center: Transcribing Soundwave */}

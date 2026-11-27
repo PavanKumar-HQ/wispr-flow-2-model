@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Mic,
   Square,
@@ -83,6 +83,18 @@ export const HomeTab: React.FC<HomeTabProps> = ({
 
   const isRecording = session.state === 'recording';
   const isTranscribing = session.state === 'transcribing' || session.state === 'formatting';
+  const [transcribeSecs, setTranscribeSecs] = useState<number>(0);
+  useEffect(() => {
+    if (!isTranscribing) {
+      setTranscribeSecs(0);
+      return;
+    }
+    const startedAt = Date.now();
+    const timer = setInterval(() => {
+      setTranscribeSecs(Math.floor((Date.now() - startedAt) / 1000));
+    }, 500);
+    return () => clearInterval(timer);
+  }, [isTranscribing]);
 
   const formatSeconds = (secs: number) => {
     const m = Math.floor(secs / 60);
@@ -239,7 +251,13 @@ export const HomeTab: React.FC<HomeTabProps> = ({
             ) : isTranscribing ? (
               <>
                 <span className="w-4 h-4 border-2 border-charcoal border-t-transparent rounded-full animate-spin" />
-                <span>Transcribing...</span>
+                <span>
+                  {session.state === 'formatting'
+                    ? 'Formatting...'
+                    : transcribeSecs > 0
+                    ? `Transcribing (${transcribeSecs}s)...`
+                    : 'Transcribing...'}
+                </span>
               </>
             ) : (
               <>
