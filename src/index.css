@@ -277,16 +277,16 @@
 
 @keyframes vbBodyWalk {
   0%, 100% {
-    transform: translateY(0px) rotate(1.5deg);
+    transform: translateY(0px) rotate(-1.5deg);
   }
   25% {
-    transform: translateY(-2.2px) rotate(1.5deg);
+    transform: translateY(-2.2px) rotate(0deg);
   }
   50% {
     transform: translateY(0px) rotate(1.5deg);
   }
   75% {
-    transform: translateY(-2.2px) rotate(1.5deg);
+    transform: translateY(-2.2px) rotate(0deg);
   }
 }
 
@@ -721,7 +721,7 @@
 }
 
 .vb-shadow-walk {
-  animation: shadowPulse 0.72s ease-in-out infinite;
+  animation: shadowPulse 0.85s ease-in-out infinite;
   transform-origin: 100px 242px;
 }
 
