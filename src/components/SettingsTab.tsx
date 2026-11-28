@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Keyboard, Mic, Sliders, Shield, Target, CheckCircle2, AlertTriangle, ExternalLink, RotateCcw, BookOpen, Radio, RefreshCw, DownloadCloud, Bot } from 'lucide-react';
+import { Keyboard, Mic, Sliders, Shield, Target, CheckCircle2, AlertTriangle, ExternalLink, RotateCcw, BookOpen, Radio, RefreshCw, DownloadCloud, Bot, Layers, PanelBottom } from 'lucide-react';
 import { AppSettings } from '../types';
 import { safeInvoke } from '../lib/ipc';
 import { checkForAppUpdates, relaunchToApplyUpdate, UpdateStatus } from '../lib/updater';
@@ -20,6 +20,22 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
   const [isCheckingUpdate, setIsCheckingUpdate] = useState<boolean>(false);
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
   const [updateMsg, setUpdateMsg] = useState<string | null>(null);
+  const [overlayMode, setOverlayMode] = useState<'both' | 'pill' | 'robot'>(() => {
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('voxquest_desktop_overlay_mode') : null;
+    return saved === 'pill' || saved === 'robot' || saved === 'both' ? saved : 'both';
+  });
+
+  const handleOverlayModeChange = async (mode: 'both' | 'pill' | 'robot') => {
+    setOverlayMode(mode);
+    try {
+      localStorage.setItem('voxquest_desktop_overlay_mode', mode);
+    } catch (_) {}
+    try {
+      await safeInvoke('set_overlay_mode_cmd', { mode });
+    } catch (err) {
+      console.warn('Failed to switch overlay mode:', err);
+    }
+  };
 
   const handleCheckUpdate = async () => {
     setIsCheckingUpdate(true);
@@ -366,6 +382,79 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                 </div>
               </button>
             </div>
+          </div>
+        </div>
+
+        {/* Desktop Overlay Visibility (Pill vs Bot) */}
+        <div className="p-5 rounded-2xl border border-charcoal/15 dark:border-darkTealBorder bg-white dark:bg-darkTealSurface shadow-xs space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-darkTeal dark:text-mint flex items-center gap-1.5">
+              <Layers className="w-3.5 h-3.5" /> Desktop Overlay Visibility
+            </h3>
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full border text-darkTeal dark:text-mint bg-darkTeal/10 border-darkTeal/30">
+              {overlayMode === 'pill' ? 'Pill Only' : overlayMode === 'robot' ? 'Bot Only' : 'Both Visible'}
+            </span>
+          </div>
+          <p className="text-[11px] text-charcoal/70 dark:text-sage leading-relaxed">
+            Choose whether to show both the Floating Pill and VoxBot companion, or only one of them on your desktop.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <button
+              type="button"
+              onClick={() => handleOverlayModeChange('both')}
+              className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                overlayMode === 'both'
+                  ? 'border-darkTeal dark:border-mint bg-darkTeal/5 dark:bg-darkTealElevated ring-2 ring-darkTeal/20 dark:ring-mint/30'
+                  : 'border-charcoal/20 dark:border-darkTealBorder bg-white dark:bg-darkTealCanvas hover:border-charcoal/40'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-bold text-charcoal dark:text-cream flex items-center gap-1.5">
+                  <Layers className="w-3.5 h-3.5 text-darkTeal dark:text-mint" />
+                  Both
+                </span>
+                {overlayMode === 'both' && <span className="w-2 h-2 rounded-full bg-darkTeal dark:bg-mint" />}
+              </div>
+              <p className="text-[10px] text-charcoal/65 dark:text-sage">Show Floating Pill and VoxBot together.</p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleOverlayModeChange('pill')}
+              className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                overlayMode === 'pill'
+                  ? 'border-darkTeal dark:border-mint bg-darkTeal/5 dark:bg-darkTealElevated ring-2 ring-darkTeal/20 dark:ring-mint/30'
+                  : 'border-charcoal/20 dark:border-darkTealBorder bg-white dark:bg-darkTealCanvas hover:border-charcoal/40'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-bold text-charcoal dark:text-cream flex items-center gap-1.5">
+                  <PanelBottom className="w-3.5 h-3.5 text-darkTeal dark:text-mint" />
+                  Pill Only
+                </span>
+                {overlayMode === 'pill' && <span className="w-2 h-2 rounded-full bg-darkTeal dark:bg-mint" />}
+              </div>
+              <p className="text-[10px] text-charcoal/65 dark:text-sage">Minimal floating dictation pill only.</p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleOverlayModeChange('robot')}
+              className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                overlayMode === 'robot'
+                  ? 'border-darkTeal dark:border-mint bg-darkTeal/5 dark:bg-darkTealElevated ring-2 ring-darkTeal/20 dark:ring-mint/30'
+                  : 'border-charcoal/20 dark:border-darkTealBorder bg-white dark:bg-darkTealCanvas hover:border-charcoal/40'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-bold text-charcoal dark:text-cream flex items-center gap-1.5">
+                  <Bot className="w-3.5 h-3.5 text-darkTeal dark:text-mint" />
+                  Bot Only
+                </span>
+                {overlayMode === 'robot' && <span className="w-2 h-2 rounded-full bg-darkTeal dark:bg-mint" />}
+              </div>
+              <p className="text-[10px] text-charcoal/65 dark:text-sage">Desktop VoxBot companion only.</p>
+            </button>
           </div>
         </div>
 

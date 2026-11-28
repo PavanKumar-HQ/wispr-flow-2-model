@@ -46,12 +46,18 @@ impl WakeWordService {
                 }
 
                 // Check if wake word is enabled and session is currently in Idle ("Ready") state
-                let (enabled, wake_name) = {
-                    let s = match state.settings.lock() {
-                        Ok(guard) => (guard.enable_wake_word, guard.wake_word_name.clone()),
-                        Err(_) => (false, String::new()),
-                    };
-                    s
+                let (enabled, wake_name, selected_mic, default_model_id, max_cpu_threads, language) = {
+                    match state.settings.lock() {
+                        Ok(guard) => (
+                            guard.enable_wake_word,
+                            guard.wake_word_name.clone(),
+                            guard.selected_microphone.clone(),
+                            guard.default_model_id.clone(),
+                            guard.max_cpu_threads,
+                            guard.language.clone(),
+                        ),
+                        Err(_) => (false, String::new(), String::new(), String::new(), 4, "en".to_string()),
+                    }
                 };
 
                 let is_idle = {
@@ -67,8 +73,17 @@ impl WakeWordService {
                     continue;
                 }
 
-                // Check default input microphone
-                let device = match host.default_input_device() {
+                // Respect user's selected microphone, falling back to macOS default input device
+                let device = if !selected_mic.trim().is_empty() && selected_mic != "default" {
+                    host.input_devices()
+                        .ok()
+                        .and_then(|mut devs| devs.find(|d| d.to_string() == selected_mic))
+                        .or_else(|| host.default_input_device())
+                } else {
+                    host.default_input_device()
+                };
+
+                let device = match device {
                     Some(d) => d,
                     None => {
                         std::thread::sleep(Duration::from_millis(1000));
@@ -177,7 +192,7 @@ impl WakeWordService {
 
                         // Only evaluate speech with Whisper when clear intentional vocal energy is detected
                         // (prevents ambient room noise, fans, or distant speech from firing Metal GPU inference)
-                        if rms >= 0.012 && peak >= 0.045 {
+                        if rms >= 0.008 && peak >= 0.030 {
                             // Apply 1.4s cooldown before next Whisper wake evaluation to keep CPU/GPU cool
                             last_check = Instant::now() + Duration::from_millis(900);
                             let samples_16k = if sample_rate != 16000 {
@@ -192,12 +207,35 @@ impl WakeWordService {
                                 Err(_) => continue,
                             };
 
+                            // Auto-load the downloaded Whisper model if not yet loaded (e.g. fresh app launch)
+                            if !engine.is_loaded() {
+                                let models_dir = crate::model_manager::get_voxquest_models_dir();
+                                let manifest = crate::model_manifest::get_official_manifest();
+                                let model_info = manifest
+                                    .iter()
+                                    .find(|m| m.id == default_model_id && models_dir.join(&m.filename).exists())
+                                    .or_else(|| {
+                                        ["whisper-base-en-q5_1", "whisper-base-q5_1", "whisper-tiny-q5_1"]
+                                            .iter()
+                                            .filter_map(|id| manifest.iter().find(|m| &m.id == id))
+                                            .find(|m| models_dir.join(&m.filename).exists())
+                                    });
+                                if let Some(info) = model_info {
+                                    let _ = engine.load_model(&models_dir.join(&info.filename));
+                                    engine.set_max_threads(max_cpu_threads.clamp(2, 4));
+                                }
+                            }
+
                             if !engine.is_loaded() {
                                 continue;
                             }
 
-                            if let Ok(transcript) = engine.transcribe(&samples_16k, Some("en"), None) {
-                                let lower = transcript.to_lowercase();
+                            let lang = if language == "auto" { None } else { Some(language.as_str()) };
+                            if let Ok(transcript) = engine.transcribe(&samples_16k, lang, None) {
+                                let normalized = transcript
+                                    .to_lowercase()
+                                    .replace([',', '.', '!', '?', ':', ';'], " ");
+                                let lower = normalized.split_whitespace().collect::<Vec<_>>().join(" ");
                                 let target = wake_name.to_lowercase();
                                 let target_trimmed = target.trim();
 
